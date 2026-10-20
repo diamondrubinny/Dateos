@@ -1,0 +1,36 @@
+import { z } from 'zod';
+
+/** Stable, machine-readable error codes shared by the API and its clients. */
+export const ErrorCode = {
+  BadRequest: 'BAD_REQUEST',
+  ValidationError: 'VALIDATION_ERROR',
+  Unauthorized: 'UNAUTHORIZED',
+  Forbidden: 'FORBIDDEN',
+  NotFound: 'NOT_FOUND',
+  Conflict: 'CONFLICT',
+  PayloadTooLarge: 'PAYLOAD_TOO_LARGE',
+  RateLimited: 'RATE_LIMITED',
+  ServiceUnavailable: 'SERVICE_UNAVAILABLE',
+  Internal: 'INTERNAL_ERROR',
+} as const;
+
+export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];
+
+export const validationIssueSchema = z.object({
+  path: z.string(),
+  message: z.string(),
+});
+
+export type ValidationIssue = z.infer<typeof validationIssueSchema>;
+
+/** Every non-2xx API response uses this envelope. It never contains stack traces or internals. */
+export const apiErrorSchema = z.object({
+  error: z.object({
+    code: z.enum(Object.values(ErrorCode) as [ErrorCode, ...ErrorCode[]]),
+    message: z.string(),
+    requestId: z.string().optional(),
+    issues: z.array(validationIssueSchema).optional(),
+  }),
+});
+
+export type ApiError = z.infer<typeof apiErrorSchema>;

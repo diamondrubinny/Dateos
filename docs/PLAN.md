@@ -9,7 +9,7 @@
 
 **Dateos** היא אפליקציית דייטינג נייטיב (iOS + Android), קוד פתוח מלא ו-self-hostable, שמתחרה ב-Tinder / Bumble / Hinge בשלושה צירים:
 
-1. **התאמה איכותית ולא התמכרותית** – מנוע המלצות הדדי (Reciprocal) מבוסס AI שממקסם סיכוי להתאמה *דו-צדדית* ולשיחה אמיתית, לא זמן מסך. "סלואו דייטינג": מכסה יומית של המלצות איכותיות + הסבר "למה התאמנו".
+1. **התאמה איכותית ולא התמכרותית** – מנוע המלצות הדדי (Reciprocal) מבוסס AI שממקסם סיכוי להתאמה _דו-צדדית_ ולשיחה אמיתית, לא זמן מסך. "סלואו דייטינג": מכסה יומית של המלצות איכותיות + הסבר "למה התאמנו".
 2. **בטיחות ואמון כברירת מחדל** – אימות פנים (liveness), זיהוי הטרדה ותרמיות בזמן אמת, שיתוף פרטי דייט עם איש קשר בטוח, אין חשיפת מיקום מדויק לעולם.
 3. **פרטיות ושקיפות של קוד פתוח** – האלגוריתם פתוח לביקורת, אפשרות להריץ AI מקומי (ללא שליחת מידע לצד שלישי), שליטה מלאה של המשתמש בנתונים שלו (ייצוא/מחיקה).
 
@@ -19,13 +19,13 @@
 
 ## 2. שאלות הבהרה (5) והנחות עבודה
 
-| # | שאלה | הנחת עבודה אם אין תשובה |
-|---|------|-------------------------|
-| 1 | שוק השקה: ישראל בלבד, או גם EU/US מהיום הראשון? | ישראל + EU (מתכננים ל-GDPR מההתחלה, זה זול יותר מהתאמה מאוחרת). |
-| 2 | רישיון | ✅ **הוחלט: MIT** – חופש מקסימלי, כל אחד יכול להקים, לשנות ולמתג. |
-| 3 | ספק AI | ✅ ברירת מחדל **מקומית וחינמית** (Ollama); Claude/ספק ענן – אופציה שהמפעיל מפעיל במפתח שלו, בהסכמת המשתמש. |
-| 4 | מודל הכנסות | ✅ **הוחלט: חינם לגמרי לכולם.** אין Premium, אין Paywall, אין פרסומות. כל הפיצ'רים פתוחים לכל משתמש. |
-| 5 | פילוחים מיוחדים (דתי/מסורתי, LGBTQ+, 50+)? | פילטרים אופציונליים; שדות רגישים (דת, נטייה) – אופציונליים, מוצפנים ולא חובה. ⚖️ |
+| #   | שאלה                                            | הנחת עבודה אם אין תשובה                                                                                    |
+| --- | ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| 1   | שוק השקה: ישראל בלבד, או גם EU/US מהיום הראשון? | ישראל + EU (מתכננים ל-GDPR מההתחלה, זה זול יותר מהתאמה מאוחרת).                                            |
+| 2   | רישיון                                          | ✅ **הוחלט: MIT** – חופש מקסימלי, כל אחד יכול להקים, לשנות ולמתג.                                          |
+| 3   | ספק AI                                          | ✅ ברירת מחדל **מקומית וחינמית** (Ollama); Claude/ספק ענן – אופציה שהמפעיל מפעיל במפתח שלו, בהסכמת המשתמש. |
+| 4   | מודל הכנסות                                     | ✅ **הוחלט: חינם לגמרי לכולם.** אין Premium, אין Paywall, אין פרסומות. כל הפיצ'רים פתוחים לכל משתמש.       |
+| 5   | פילוחים מיוחדים (דתי/מסורתי, LGBTQ+, 50+)?      | פילטרים אופציונליים; שדות רגישים (דת, נטייה) – אופציונליים, מוצפנים ולא חובה. ⚖️                           |
 
 **הנחות טכניות נוספות:** צוות קטן (1–3 מפתחים), תקציב תשתית נמוך בהתחלה (VPS יחיד + Docker Compose), סקייל יעד ראשון: 50K משתמשים.
 
@@ -43,6 +43,7 @@
 ## 3. פיצ'רים — MVP מול גרסאות הבאות
 
 ### MVP (v0.1)
+
 - הרשמה: **Email magic link / Passkeys (חינמי, ברירת מחדל)** + Apple / Google; טלפון (OTP) – אופציונלי למפעיל עם ספק SMS, אימות גיל 18+ (הצהרה + תאריך לידה; אימות מסמך – שלב 2).
 - פרופיל: 3–9 תמונות, 3 "Prompts" (טקסט/קול), כוונות (קשר רציני/דייטים/פתוח), תחומי עניין, שפה.
 - Discovery: כרטיסים + **Daily Picks** (10 המלצות AI ביום) + פילטרים (גיל, מרחק, כוונות).
@@ -56,6 +57,7 @@
 - לוח ניהול (Web) למודרציה.
 
 ### v0.2–v0.5
+
 - **"למה התאמנו"** – הסבר שקוף של ההמלצה (Explainable matching).
 - **AI Profile Coach** – משוב על תמונות ו-Prompts (איכות, תאורה, גיוון) – בהסכמה.
 - **Date Planner** – הצעות למקום/פעילות בנקודת אמצע (ללא חשיפת מיקום מדויק).
@@ -67,6 +69,7 @@
 - אירועים וקבוצות (Group/Double dating).
 
 ### v1+
+
 - הצפנה מקצה לקצה לצ'אט (Signal Protocol) – ראה סיכונים.
 - אימות זהות מבוסס מסמך דרך ספק חיצוני. ⚖️
 - Federated / multi-instance (קהילות שמריצות שרת משלהן).
@@ -123,7 +126,7 @@
                                    │ embeddings · recs · moderation│
                                    └──┬──────────┬───────────┬────┘
                                       ▼          ▼           ▼
-                               S3/MinIO     ClamAV      AI Provider
+                               S3/SeaweedFS     ClamAV      AI Provider
                           (quarantine→clean)          (Ollama | Claude)
                                                       LiveKit (video, v0.3)
 ```
@@ -131,6 +134,7 @@
 **עקרונות:** Monolith מודולרי (לא microservices) – מודולים: `auth`, `profiles`, `media`, `discovery`, `matching`, `chat`, `safety`, `ai`, `notifications`, `privacy`, `admin`. כל מודול: `routes → service → repository`. סכמות Zod משותפות לקליינט ולשרת.
 
 ### מנוע ההתאמה (AI Matching)
+
 1. **Candidate generation** – PostGIS (מרחק) + פילטרים הדדיים (שני הצדדים עומדים בהעדפות של השני) + החרגת חסומים/נראו.
 2. **Scoring** – ציון הדדי: `P(A likes B) × P(B likes A)`:
    - דמיון Embeddings (pgvector) של טקסט פרופיל, תחומי עניין וכוונות.
@@ -141,7 +145,9 @@
 5. **Anti-bias** – לא משתמשים בגזע/מוצא/דת כאיתות לדירוג; רק כפילטר מפורש שהמשתמש בחר. ⚖️
 
 ### שכבת AI (`packages/ai`)
+
 ממשק `LlmProvider` / `EmbeddingProvider` / `ModerationProvider` עם מימושים:
+
 - **מקומי:** Ollama (LLM + embeddings) – ברירת מחדל, אין העברת מידע לצד שלישי.
 - **ענן:** Claude API (`claude-sonnet-5-5` לאיכות, `claude-haiku-5-5` למהירות/עלות) – רק בהסכמה מפורשת. 📘
 - תוכן הצ'אט **לא נשלח** ל-LLM ענני. Moderation בצ'אט רץ מקומית (מסווג קל).
@@ -150,24 +156,24 @@
 
 ## 7. החלטות טכנולוגיות וחלופות
 
-| תחום | בחירה | למה | חלופות | מגבלות/עלות תחזוקה |
-|------|-------|-----|--------|---------------------|
-| Mobile | **React Native + Expo (TS)** | קוד אחד ל-iOS/Android, TS משותף עם השרת, OTA updates, RTL נתמך | Flutter (ביצועים טובים, Dart), Swift+Kotlin (הכי נייטיב, פי 2 עבודה) | מודולים נייטיביים דורשים dev build; RTL דורש reload |
-| API | **Fastify + Zod** | מהיר, פשוט, טיפוסים מצוינים | NestJS (מבנה כבד יותר), tRPC | פחות "batteries included" |
-| DB | **PostgreSQL 16 + PostGIS + pgvector** | גאו + וקטורים + רלציוני במקום אחד | Mongo+Elastic+Pinecone (3 מערכות) | pgvector מוגבל בסקייל של עשרות מיליונים |
-| ORM | **Drizzle** | SQL-first, תמיכה ב-custom types (geography/vector) 📘 | Prisma (פחות נוח עם PostGIS) | מיגרציות דורשות משמעת |
-| Queue/Cache | **Redis + BullMQ** | סטנדרט, פשוט | RabbitMQ, NATS | Redis יחיד = SPOF בהתחלה |
-| Auth | **better-auth** (self-hosted, magic link, passkeys, OAuth, phone OTP אופציונלי) 📘 | קוד פתוח, ללא Vendor lock-in | Supabase Auth, Ory Kratos, Clerk (סגור) | ספרייה צעירה – לאמת בשלות |
-| Email | **SMTP כלשהו** (של המפעיל) | חינמי/זול, סטנדרטי | SMS OTP (תוסף בתשלום) | deliverability – צריך SPF/DKIM |
-| Web/PWA | **react-native-web** דרך Expo | השקה חינמית בלי חנויות | אפליקציית Next נפרדת | חלק מהמודולים הנייטיביים חסרים ב-Web |
-| Media | **S3 API (MinIO self-host)** + presigned URLs + `sharp` | הסרת EXIF/GPS, re-encode | Cloudinary (סגור) | — |
-| AV | **ClamAV** (container) | קוד פתוח | שירות סריקה מנוהל | צריכת זיכרון ~1GB+ |
-| Realtime | **WebSocket (`ws`) + Redis pub/sub** | שליטה מלאה | Socket.IO, Matrix | ניהול reconnect בעצמנו |
-| Video | **LiveKit** (self-host) | WebRTC קוד פתוח, SDK ל-RN 📘 | Jitsi, Agora (סגור) | TURN server נדרש |
-| Push | **Expo Notifications** (FCM/APNs) | פשוט | ישיר ל-FCM/APNs | תלות בשירות Expo push 📘 |
-| Admin | **Next.js** | מהיר לבנייה | React+Vite | — |
-| Monorepo | **pnpm + Turborepo** | שיתוף קוד וטיפוסים | Nx | — |
-| Observability | OpenTelemetry + Pino (redaction) + Sentry self-host/GlitchTip | | | |
+| תחום          | בחירה                                                                              | למה                                                            | חלופות                                                               | מגבלות/עלות תחזוקה                                  |
+| ------------- | ---------------------------------------------------------------------------------- | -------------------------------------------------------------- | -------------------------------------------------------------------- | --------------------------------------------------- |
+| Mobile        | **React Native + Expo (TS)**                                                       | קוד אחד ל-iOS/Android, TS משותף עם השרת, OTA updates, RTL נתמך | Flutter (ביצועים טובים, Dart), Swift+Kotlin (הכי נייטיב, פי 2 עבודה) | מודולים נייטיביים דורשים dev build; RTL דורש reload |
+| API           | **Fastify + Zod**                                                                  | מהיר, פשוט, טיפוסים מצוינים                                    | NestJS (מבנה כבד יותר), tRPC                                         | פחות "batteries included"                           |
+| DB            | **PostgreSQL 16 + PostGIS + pgvector**                                             | גאו + וקטורים + רלציוני במקום אחד                              | Mongo+Elastic+Pinecone (3 מערכות)                                    | pgvector מוגבל בסקייל של עשרות מיליונים             |
+| ORM           | **Drizzle**                                                                        | SQL-first, תמיכה ב-custom types (geography/vector) 📘          | Prisma (פחות נוח עם PostGIS)                                         | מיגרציות דורשות משמעת                               |
+| Queue/Cache   | **Redis + BullMQ**                                                                 | סטנדרט, פשוט                                                   | RabbitMQ, NATS                                                       | Redis יחיד = SPOF בהתחלה                            |
+| Auth          | **better-auth** (self-hosted, magic link, passkeys, OAuth, phone OTP אופציונלי) 📘 | קוד פתוח, ללא Vendor lock-in                                   | Supabase Auth, Ory Kratos, Clerk (סגור)                              | ספרייה צעירה – לאמת בשלות                           |
+| Email         | **SMTP כלשהו** (של המפעיל)                                                         | חינמי/זול, סטנדרטי                                             | SMS OTP (תוסף בתשלום)                                                | deliverability – צריך SPF/DKIM                      |
+| Web/PWA       | **react-native-web** דרך Expo                                                      | השקה חינמית בלי חנויות                                         | אפליקציית Next נפרדת                                                 | חלק מהמודולים הנייטיביים חסרים ב-Web                |
+| Media         | **S3 API (SeaweedFS self-host, Apache-2.0)** + presigned URLs + `sharp`            | הסרת EXIF/GPS, re-encode                                       | Garage, RustFS, Cloudinary (סגור). MinIO CE הוצא משימוש              | —                                                   |
+| AV            | **ClamAV** (container)                                                             | קוד פתוח                                                       | שירות סריקה מנוהל                                                    | צריכת זיכרון ~1GB+                                  |
+| Realtime      | **WebSocket (`ws`) + Redis pub/sub**                                               | שליטה מלאה                                                     | Socket.IO, Matrix                                                    | ניהול reconnect בעצמנו                              |
+| Video         | **LiveKit** (self-host)                                                            | WebRTC קוד פתוח, SDK ל-RN 📘                                   | Jitsi, Agora (סגור)                                                  | TURN server נדרש                                    |
+| Push          | **Expo Notifications** (FCM/APNs)                                                  | פשוט                                                           | ישיר ל-FCM/APNs                                                      | תלות בשירות Expo push 📘                            |
+| Admin         | **Next.js**                                                                        | מהיר לבנייה                                                    | React+Vite                                                           | —                                                   |
+| Monorepo      | **pnpm + Turborepo**                                                               | שיתוף קוד וטיפוסים                                             | Nx                                                                   | —                                                   |
+| Observability | OpenTelemetry + Pino (redaction) + Sentry self-host/GlitchTip                      |                                                                |                                                                      |                                                     |
 
 ---
 
@@ -272,7 +278,7 @@ Dateos/
 │  ├─ ai/                providers (ollama, anthropic), prompts, matching scoring
 │  └─ config/            eslint, tsconfig, prettier
 ├─ infra/
-│  ├─ docker-compose.yml postgres(postgis+pgvector), redis, minio, clamav, ollama, livekit
+│  ├─ docker-compose.yml postgres(postgis+pgvector), redis, seaweedfs, clamav, ollama, livekit
 │  └─ caddy/             reverse proxy + TLS + security headers
 ├─ docs/                 PLAN.md, THREAT_MODEL.md, DATA_MAP.md, legal/ (טיוטות), ACCESSIBILITY.md
 ├─ .github/workflows/    ci.yml (lint, typecheck, test, audit, CodeQL, gitleaks)
@@ -285,37 +291,37 @@ Dateos/
 
 **נכסים רגישים:** מיקום, תמונות, הודעות פרטיות, מספר טלפון, נטייה מינית/דת (קטגוריה מיוחדת), נתוני אימות פנים, היסטוריית אינטראקציות.
 
-| איום | סיכון | בקרה |
-|------|-------|------|
+| איום                                          | סיכון   | בקרה                                                                                                                  |
+| --------------------------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------- |
 | **Trilateration** – חישוב מיקום מדויק ממרחקים | 🔴 גבוה | עיגול מיקום בשרת (~1 ק"מ grid + jitter קבוע לכל משתמש), הצגת מרחק בדליים ("פחות מ-5 ק"מ"), לעולם לא קואורדינטות ב-API |
-| **IDOR/BOLA** – גישה לפרופיל/שיחה של אחר | 🔴 גבוה | בדיקת בעלות בכל service, UUID, טסטים אוטומטיים ייעודיים לכל endpoint |
-| **חשיפה ע"י בלוק עוקף** – חשבון חדש של מטריד | 🟠 | Device fingerprint hash, חסימת מספר טלפון, אופציה לחסום אנשי קשר |
-| **Catfishing / בוטים / Romance scam** | 🔴 | Selfie liveness, rate limits על likes/הודעות, מסווג scam, אימות מכשיר (App Attest / Play Integrity 📘) |
-| **הטרדה ותמונות לא רצויות** | 🔴 | NSFW detection, תמונות בצ'אט רק אחרי X הודעות + blur כברירת מחדל, "Are you sure?" |
-| **Account takeover / SIM swap** | 🟠 | Refresh token rotation, התראה על מכשיר חדש, OAuth כחלופה, passkeys בעתיד |
-| **SMS pumping (הונאת OTP)** | 🟠 | Rate limit לפי מדינה/IP, CAPTCHA אחרי ניסיונות, allowlist קידומות |
-| **קבצים זדוניים** | 🟠 | quarantine bucket, ClamAV, אימות magic bytes, re-encode ב-sharp, הגבלת גודל |
-| **דליפת EXIF/GPS מתמונות** | 🔴 | הסרת metadata מלאה לפני שמירה ב-clean bucket |
-| **Prompt injection ב-AI** (Bio זדוני) | 🟡 | תוכן משתמש כ-data בלבד, output מוגבל ומסונן, אין tools/פעולות ל-LLM |
-| **גישת אדמין לרעה** | 🟠 | MFA חובה, Least privilege, צפייה בהודעות רק בהקשר דיווח, Audit log בלתי ניתן לשינוי |
-| **קטינים** | 🔴 | חסימה מתחת ל-18, דיווח "נראה קטין" בעדיפות עליונה, אימות גיל מתקדם בשלב 2 ⚖️ |
+| **IDOR/BOLA** – גישה לפרופיל/שיחה של אחר      | 🔴 גבוה | בדיקת בעלות בכל service, UUID, טסטים אוטומטיים ייעודיים לכל endpoint                                                  |
+| **חשיפה ע"י בלוק עוקף** – חשבון חדש של מטריד  | 🟠      | Device fingerprint hash, חסימת מספר טלפון, אופציה לחסום אנשי קשר                                                      |
+| **Catfishing / בוטים / Romance scam**         | 🔴      | Selfie liveness, rate limits על likes/הודעות, מסווג scam, אימות מכשיר (App Attest / Play Integrity 📘)                |
+| **הטרדה ותמונות לא רצויות**                   | 🔴      | NSFW detection, תמונות בצ'אט רק אחרי X הודעות + blur כברירת מחדל, "Are you sure?"                                     |
+| **Account takeover / SIM swap**               | 🟠      | Refresh token rotation, התראה על מכשיר חדש, OAuth כחלופה, passkeys בעתיד                                              |
+| **SMS pumping (הונאת OTP)**                   | 🟠      | Rate limit לפי מדינה/IP, CAPTCHA אחרי ניסיונות, allowlist קידומות                                                     |
+| **קבצים זדוניים**                             | 🟠      | quarantine bucket, ClamAV, אימות magic bytes, re-encode ב-sharp, הגבלת גודל                                           |
+| **דליפת EXIF/GPS מתמונות**                    | 🔴      | הסרת metadata מלאה לפני שמירה ב-clean bucket                                                                          |
+| **Prompt injection ב-AI** (Bio זדוני)         | 🟡      | תוכן משתמש כ-data בלבד, output מוגבל ומסונן, אין tools/פעולות ל-LLM                                                   |
+| **גישת אדמין לרעה**                           | 🟠      | MFA חובה, Least privilege, צפייה בהודעות רק בהקשר דיווח, Audit log בלתי ניתן לשינוי                                   |
+| **קטינים**                                    | 🔴      | חסימה מתחת ל-18, דיווח "נראה קטין" בעדיפות עליונה, אימות גיל מתקדם בשלב 2 ⚖️                                          |
 
 ---
 
 ## 12. פרטיות — Data Map (תקציר)
 
-| מידע | מטרה | בסיס עיבוד (GDPR) | אחסון | שמירה | צד שלישי |
-|------|------|-------------------|-------|-------|----------|
-| אימייל / טלפון (אופציונלי) | התחברות, מניעת כפילויות | חוזה | Postgres (hash + מוצפן) | עד מחיקת חשבון | ספק SMTP / SMS של המפעיל |
-| תאריך לידה | אימות גיל, סינון | חוזה / חובה חוקית | Postgres | חיי החשבון | — |
-| תמונות | פרופיל | חוזה | S3 (מוצפן at rest) | עד מחיקה + 30 יום גיבוי | — |
-| מיקום (מעוגל) | Discovery | חוזה + הסכמת הרשאת OS | Postgres | מתעדכן, ללא היסטוריה | — |
-| הודעות | צ'אט | חוזה | Postgres (מוצפן at rest) | עד unmatch/מחיקה; ראיות דיווח – 12 חודש ⚖️ | — |
-| נטייה/דת (אופציונלי) | התאמה | **הסכמה מפורשת (Art. 9)** ⚖️ | מוצפן ברמת שדה | ניתן למחיקה מיידית | — |
-| Selfie אימות | אימות אנושיות | **הסכמה מפורשת – ביומטרי** ⚖️ | זמני | נמחק מיד אחרי החלטה | ספק liveness (אם חיצוני) |
-| אינטראקציות | המלצות | אינטרס לגיטימי / חוזה | Postgres | 12 חודש ואז אגרגציה | — |
-| טקסט פרופיל ל-AI ענני | Coach/Icebreakers | הסכמה | לא נשמר אצל הספק 📘 | — | Anthropic (DPA) ⚖️ |
-| לוגים | אבטחה ותפעול | אינטרס לגיטימי | Loki/קבצים, ללא PII | 30–90 יום | — |
+| מידע                       | מטרה                    | בסיס עיבוד (GDPR)             | אחסון                    | שמירה                                      | צד שלישי                 |
+| -------------------------- | ----------------------- | ----------------------------- | ------------------------ | ------------------------------------------ | ------------------------ |
+| אימייל / טלפון (אופציונלי) | התחברות, מניעת כפילויות | חוזה                          | Postgres (hash + מוצפן)  | עד מחיקת חשבון                             | ספק SMTP / SMS של המפעיל |
+| תאריך לידה                 | אימות גיל, סינון        | חוזה / חובה חוקית             | Postgres                 | חיי החשבון                                 | —                        |
+| תמונות                     | פרופיל                  | חוזה                          | S3 (מוצפן at rest)       | עד מחיקה + 30 יום גיבוי                    | —                        |
+| מיקום (מעוגל)              | Discovery               | חוזה + הסכמת הרשאת OS         | Postgres                 | מתעדכן, ללא היסטוריה                       | —                        |
+| הודעות                     | צ'אט                    | חוזה                          | Postgres (מוצפן at rest) | עד unmatch/מחיקה; ראיות דיווח – 12 חודש ⚖️ | —                        |
+| נטייה/דת (אופציונלי)       | התאמה                   | **הסכמה מפורשת (Art. 9)** ⚖️  | מוצפן ברמת שדה           | ניתן למחיקה מיידית                         | —                        |
+| Selfie אימות               | אימות אנושיות           | **הסכמה מפורשת – ביומטרי** ⚖️ | זמני                     | נמחק מיד אחרי החלטה                        | ספק liveness (אם חיצוני) |
+| אינטראקציות                | המלצות                  | אינטרס לגיטימי / חוזה         | Postgres                 | 12 חודש ואז אגרגציה                        | —                        |
+| טקסט פרופיל ל-AI ענני      | Coach/Icebreakers       | הסכמה                         | לא נשמר אצל הספק 📘      | —                                          | Anthropic (DPA) ⚖️       |
+| לוגים                      | אבטחה ותפעול            | אינטרס לגיטימי                | Loki/קבצים, ללא PII      | 30–90 יום                                  | —                        |
 
 **ישראל:** חוק הגנת הפרטיות + **תיקון 13** (בתוקף מאוגוסט 2025) – סביר שיחול: חובת יידוע מורחבת, "מידע בעל רגישות מיוחדת" (נטייה מינית, מיקום, ביומטרי), תקנות אבטחת מידע (רמת אבטחה בינונית/גבוהה), אפשרות לחובת מינוי ממונה הגנת פרטיות בשל היקף עיבוד מידע רגיש. ⚖️ **דורש בדיקה משפטית.**
 **EU:** סביר שנדרש **DPIA** (מידע מיוחד בהיקף גדול + מיקום + פרופיילינג), נציג באיחוד (Art. 27) אם אין ישות ב-EU, DPA מול כל ספק, SCCs להעברה. כמו כן לבדוק תחולת DSA. ⚖️
@@ -345,18 +351,18 @@ Dateos/
 
 ## 15. תוכנית עבודה בשלבים
 
-| שלב | תוכן | תוצר | בדיקות |
-|-----|------|------|--------|
-| **0 – יסודות** | Monorepo, Docker Compose, CI (lint/typecheck/test/audit/gitleaks/CodeQL), README, .env.example, SECURITY.md, `install.sh` | `pnpm dev` מרים הכל | CI ירוק |
-| **1 – Auth + פרופיל** | OTP/OAuth, sessions, פרופיל, העדפות, העלאת תמונות מלאה (quarantine→scan→sharp→clean), onboarding במובייל, i18n+RTL | הרשמה עד פרופיל מלא | IDOR tests, upload tests, e2e (Maestro) |
-| **2 – Discovery + Matching** | מיקום מעוגל, candidates, embeddings, ציון הדדי, Daily Picks, interactions, matches | Discover + Picks + Likes You | בדיקות דירוג דטרמיניסטיות, trilateration test |
-| **3 – Chat** | WebSocket, הודעות, מדיה, push, read receipts, offline queue | צ'אט מלא | עומס בסיסי, הרשאות שיחה |
-| **1.5 – Instance** | Setup Wizard, מיתוג (שם/לוגו/צבעים/שפה), instance-settings, Web/PWA build | מפעיל מקים אתר ממותג | בדיקת נעילת setup |
-| **4 – Safety** | Block/Report, moderation מקומי, "Are you sure?", NSFW, selfie verification, Admin + MFA + audit | לוח מודרציה | תרחישי abuse |
-| **5 – AI** | Icebreakers, "למה התאמנו", Profile Coach, scam detection, provider switch | פיצ'רי AI | evals ל-prompts, injection tests |
-| **6 – Privacy & Compliance** | ייצוא/מחיקה, consents, retention jobs, טיוטות מסמכים משפטיים, הצהרת נגישות | DSAR עובד | בדיקת מחיקה מקצה לקצה |
-| **7 – Hardening & Release** | Pen-test, ביצועים, a11y audit ידני, App Store/Play review, Checklist פרודקשן | בטא סגורה | Checklist מלא |
-| **8 – v0.3+** | Video dates, Safety check-in, Date planner, Anti-ghosting, אירועים | | |
+| שלב                          | תוכן                                                                                                                      | תוצר                         | בדיקות                                        |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------- | ---------------------------- | --------------------------------------------- |
+| **0 – יסודות** ✅            | Monorepo, Docker Compose, CI (lint/typecheck/test/audit/gitleaks/CodeQL), README, .env.example, SECURITY.md, `install.sh` | `pnpm dev` מרים הכל          | CI ירוק                                       |
+| **1 – Auth + פרופיל**        | OTP/OAuth, sessions, פרופיל, העדפות, העלאת תמונות מלאה (quarantine→scan→sharp→clean), onboarding במובייל, i18n+RTL        | הרשמה עד פרופיל מלא          | IDOR tests, upload tests, e2e (Maestro)       |
+| **2 – Discovery + Matching** | מיקום מעוגל, candidates, embeddings, ציון הדדי, Daily Picks, interactions, matches                                        | Discover + Picks + Likes You | בדיקות דירוג דטרמיניסטיות, trilateration test |
+| **3 – Chat**                 | WebSocket, הודעות, מדיה, push, read receipts, offline queue                                                               | צ'אט מלא                     | עומס בסיסי, הרשאות שיחה                       |
+| **1.5 – Instance**           | Setup Wizard, מיתוג (שם/לוגו/צבעים/שפה), instance-settings, Web/PWA build                                                 | מפעיל מקים אתר ממותג         | בדיקת נעילת setup                             |
+| **4 – Safety**               | Block/Report, moderation מקומי, "Are you sure?", NSFW, selfie verification, Admin + MFA + audit                           | לוח מודרציה                  | תרחישי abuse                                  |
+| **5 – AI**                   | Icebreakers, "למה התאמנו", Profile Coach, scam detection, provider switch                                                 | פיצ'רי AI                    | evals ל-prompts, injection tests              |
+| **6 – Privacy & Compliance** | ייצוא/מחיקה, consents, retention jobs, טיוטות מסמכים משפטיים, הצהרת נגישות                                                | DSAR עובד                    | בדיקת מחיקה מקצה לקצה                         |
+| **7 – Hardening & Release**  | Pen-test, ביצועים, a11y audit ידני, App Store/Play review, Checklist פרודקשן                                              | בטא סגורה                    | Checklist מלא                                 |
+| **8 – v0.3+**                | Video dates, Safety check-in, Date planner, Anti-ghosting, אירועים                                                        |                              |                                               |
 
 כל שלב = PR נפרד עם קוד מלא, הוראות הרצה ובדיקות. **מעבר בין שלבים רק באישורך.**
 
