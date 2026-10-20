@@ -1,16 +1,27 @@
+import { runMigrations } from '@dateos/db';
 import { buildApp } from './app.js';
 import { loadEnv } from './config/env.js';
-import { createPostgres, createRedis } from './lib/dependencies.js';
+import { createRedis } from './lib/dependencies.js';
+import { createServices } from './services.js';
 
 const SHUTDOWN_TIMEOUT_MS = 10_000;
 
 async function main(): Promise<void> {
   const env = loadEnv();
-  const postgres = createPostgres(env.DATABASE_URL);
+  if (env.MIGRATE_ON_START) await runMigrations(env.DATABASE_URL);
   const redis = createRedis(env.REDIS_URL);
   await redis.client.connect().catch(() => undefined); // /ready reports the outage instead of crashing.
 
-  const app = await buildApp(env, { dependencies: [postgres, redis], redis: redis.client });
+  let mailErrorHandler: (error: unknown) => void = () => undefined;
+  const services = createServices(env, redis.client, (error) => mailErrorHandler(error));
+  await services.storage.ensureBuckets().catch(() => undefined); // retried by /ready and uploads.
+
+  const app = await buildApp(env, {
+    dependencies: [...services.dependencies, redis],
+    redis: redis.client,
+    services,
+  });
+  mailErrorHandler = (error) => app.log.error({ err: error }, 'failed to send email');
 
   const shutdown = (signal: NodeJS.Signals) => {
     app.log.info({ signal }, 'shutting down');

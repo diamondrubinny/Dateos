@@ -34,6 +34,15 @@ describe('loadEnv', () => {
     );
   });
 
+  it('requires https and an auth secret in production', () => {
+    try {
+      loadEnv({ ...baseEnv, NODE_ENV: 'production' });
+      expect.unreachable();
+    } catch (error) {
+      expect((error as EnvValidationError).invalidKeys).toEqual(['PUBLIC_API_URL', 'AUTH_SECRET']);
+    }
+  });
+
   it('forbids wildcard CORS in production', () => {
     expect(() => loadEnv({ ...baseEnv, NODE_ENV: 'production', CORS_ORIGINS: '*' })).toThrow(
       EnvValidationError,

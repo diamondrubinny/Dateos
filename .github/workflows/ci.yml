@@ -33,6 +33,31 @@ jobs:
       - name: Audit production dependencies
         run: pnpm audit --prod --audit-level high
 
+  integration:
+    name: Integration tests (Postgres, Redis, S3)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: ./install.sh
+      - run: docker compose -f infra/docker-compose.yml --env-file .env up -d --build --wait postgres redis
+      - run: docker compose -f infra/docker-compose.yml --env-file .env up -d seaweedfs
+      - name: Wait for object storage
+        run: |
+          for i in $(seq 1 60); do
+            [ "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8333/)" = "403" ] && exit 0
+            sleep 2
+          done
+          exit 1
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - run: pnpm --filter @dateos/api test:integration
+
   installer:
     name: Installer and compose config
     runs-on: ubuntu-latest
@@ -46,18 +71,21 @@ jobs:
       - run: docker compose -f infra/docker-compose.yml --env-file .env config --quiet
 
   docker:
-    name: API image
+    name: Docker image (${{ matrix.app }})
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    strategy:
+      matrix:
+        app: [api, worker]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
       - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: .
-          file: apps/api/Dockerfile
+          file: apps/${{ matrix.app }}/Dockerfile
           push: false
-          tags: dateos-api:ci
+          tags: dateos-${{ matrix.app }}:ci
 
   secrets:
     name: Secret scan

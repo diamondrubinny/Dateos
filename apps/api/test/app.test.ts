@@ -118,7 +118,11 @@ describe('security', () => {
   });
 
   it('sends HSTS only in production', async () => {
-    ({ app } = await buildTestApp({ NODE_ENV: 'production' }));
+    ({ app } = await buildTestApp({
+      NODE_ENV: 'production',
+      PUBLIC_API_URL: 'https://api.example',
+      AUTH_SECRET: 'x'.repeat(32),
+    }));
     const res = await app.inject({ method: 'GET', url: '/health' });
     expect(res.headers['strict-transport-security']).toContain('max-age=31536000');
   });

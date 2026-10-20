@@ -1,5 +1,4 @@
 import { Redis } from 'ioredis';
-import pg from 'pg';
 
 /** A backing service the API needs in order to serve traffic. */
 export interface Dependency {
@@ -22,18 +21,6 @@ async function withTimeout(task: Promise<unknown>): Promise<boolean> {
   } finally {
     clearTimeout(timer);
   }
-}
-
-export function createPostgres(databaseUrl: string): Dependency & { pool: pg.Pool } {
-  const pool = new pg.Pool({ connectionString: databaseUrl, max: 10, idleTimeoutMillis: 30_000 });
-  // Without a listener, an idle-client error would crash the process.
-  pool.on('error', () => undefined);
-  return {
-    name: 'postgres',
-    pool,
-    isHealthy: () => withTimeout(pool.query('SELECT 1')),
-    close: () => pool.end(),
-  };
 }
 
 export function createRedis(redisUrl: string): Dependency & { client: Redis } {

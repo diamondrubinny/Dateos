@@ -95,6 +95,9 @@ services:
       NODE_ENV: production
       DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
+      S3_ENDPOINT: http://seaweedfs:8333
+      # Inside Docker "localhost" is the container itself; set SMTP_HOST_DOCKER (e.g. mailpit) if needed.
+      SMTP_HOST: ${SMTP_HOST_DOCKER:-${SMTP_HOST}}
     depends_on:
       postgres:
         condition: service_healthy
@@ -102,6 +105,25 @@ services:
         condition: service_healthy
     ports:
       - '127.0.0.1:4000:4000'
+
+  worker:
+    build:
+      context: ..
+      dockerfile: apps/worker/Dockerfile
+    profiles: [app]
+    restart: unless-stopped
+    env_file: ../.env
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
+      S3_ENDPOINT: http://seaweedfs:8333
+      CLAMAV_HOST: clamav
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
 volumes:
   postgres-data:

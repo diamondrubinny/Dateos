@@ -10,6 +10,7 @@ export const ErrorCode = {
   Conflict: 'CONFLICT',
   PayloadTooLarge: 'PAYLOAD_TOO_LARGE',
   RateLimited: 'RATE_LIMITED',
+  Underage: 'UNDERAGE',
   ServiceUnavailable: 'SERVICE_UNAVAILABLE',
   Internal: 'INTERNAL_ERROR',
 } as const;
