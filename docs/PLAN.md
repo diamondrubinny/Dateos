@@ -1,6 +1,6 @@
 # Dateos — אפיון ותוכנית עבודה (MVP → v1)
 
-> סטטוס: **טיוטה לאישור**. אף שורת קוד מוצר לא תיכתב לפני אישור המסמך הזה (בהתאם לעקרונות העבודה).
+> סטטוס: **טיוטה לאישור (גרסה 2 – חינם לכולם, Self-hosted)**. אף שורת קוד מוצר לא תיכתב לפני אישור המסמך הזה (בהתאם לעקרונות העבודה).
 > כל סעיף שמסומן ⚖️ דורש בדיקה משפטית, וכל סעיף שמסומן 📘 דורש אימות מול התיעוד הרשמי.
 
 ---
@@ -22,19 +22,28 @@
 | # | שאלה | הנחת עבודה אם אין תשובה |
 |---|------|-------------------------|
 | 1 | שוק השקה: ישראל בלבד, או גם EU/US מהיום הראשון? | ישראל + EU (מתכננים ל-GDPR מההתחלה, זה זול יותר מהתאמה מאוחרת). |
-| 2 | רישיון: להישאר ב-MIT או לעבור ל-**AGPL-3.0** (מונע ממתחרה להריץ את הקוד כשירות סגור)? | ממליץ AGPL-3.0 לשרת + MIT לחבילות shared. דורש החלטה שלך. |
-| 3 | ספק AI: ענן (Claude API) / מקומי בלבד (Ollama) / שניהם? | שכבת Provider מופשטת: ברירת מחדל מקומית, Claude כאופציה בהסכמת המשתמש. |
-| 4 | מודל הכנסות: חינמי לגמרי / Freemium / תרומות? | מודול Premium אופציונלי וניתן לכיבוי (RevenueCat), ליבת הבטיחות תמיד חינמית. |
+| 2 | רישיון | ✅ **הוחלט: MIT** – חופש מקסימלי, כל אחד יכול להקים, לשנות ולמתג. |
+| 3 | ספק AI | ✅ ברירת מחדל **מקומית וחינמית** (Ollama); Claude/ספק ענן – אופציה שהמפעיל מפעיל במפתח שלו, בהסכמת המשתמש. |
+| 4 | מודל הכנסות | ✅ **הוחלט: חינם לגמרי לכולם.** אין Premium, אין Paywall, אין פרסומות. כל הפיצ'רים פתוחים לכל משתמש. |
 | 5 | פילוחים מיוחדים (דתי/מסורתי, LGBTQ+, 50+)? | פילטרים אופציונליים; שדות רגישים (דת, נטייה) – אופציונליים, מוצפנים ולא חובה. ⚖️ |
 
 **הנחות טכניות נוספות:** צוות קטן (1–3 מפתחים), תקציב תשתית נמוך בהתחלה (VPS יחיד + Docker Compose), סקייל יעד ראשון: 50K משתמשים.
 
 ---
 
+## 2.1 עיקרון מנחה: "חינם לכל העולם, כל אחד מקים"
+
+- **אפס עלות רישוי ואפס תלות בשירות בתשלום** – כל רכיב בסטאק הוא קוד פתוח וניתן להרצה עצמית. שירות בתשלום (SMS, AI ענני, ספק אימות) הוא תמיד **תוסף אופציונלי**, לעולם לא חובה.
+- **"Instance" לכל קהילה** – כל אדם/ארגון מקים אתר + אפליקציה משלו (עיר, קהילה, קהל יעד), עם שם, לוגו, צבעים, שפה, תנאים ופילטרים משלו – בלי לגעת בקוד.
+- **התקנה בפקודה אחת:** `docker compose up` / סקריפט `./install.sh` → **Setup Wizard** בדפדפן (יצירת אדמין עם MFA, דומיין, מיתוג, ספקי Login, מדיניות).
+- **Web + Native מאותו קוד:** אפליקציית Expo רצה גם כ-**Web/PWA** (react-native-web) – כך מפעיל יכול לעלות לאוויר מיד בחינם, בלי חשבון מפתח ב-App Store ($99/שנה) או Google Play ($25 חד-פעמי) 📘. בניית אפליקציה ממותגת לחנויות – מתועדת כשלב אופציונלי (EAS / build מקומי).
+- **דרישות שרת מינימליות:** יעד – VPS יחיד 4GB RAM ללא AI, 8–16GB עם AI מקומי. מצב "Lite" בלי ClamAV/Ollama לשרתים קטנים (עם אזהרה ברורה בלוח הניהול).
+- **אחריות המפעיל:** מי שמקים Instance הוא בעל המאגר והאחראי החוקי עליו ⚖️ – ה-Wizard יציג זאת, ויספק טיוטות מסמכים משפטיים לעריכה.
+
 ## 3. פיצ'רים — MVP מול גרסאות הבאות
 
 ### MVP (v0.1)
-- הרשמה: טלפון (OTP) / Apple / Google, אימות גיל 18+ (הצהרה + תאריך לידה; אימות מסמך – שלב 2).
+- הרשמה: **Email magic link / Passkeys (חינמי, ברירת מחדל)** + Apple / Google; טלפון (OTP) – אופציונלי למפעיל עם ספק SMS, אימות גיל 18+ (הצהרה + תאריך לידה; אימות מסמך – שלב 2).
 - פרופיל: 3–9 תמונות, 3 "Prompts" (טקסט/קול), כוונות (קשר רציני/דייטים/פתוח), תחומי עניין, שפה.
 - Discovery: כרטיסים + **Daily Picks** (10 המלצות AI ביום) + פילטרים (גיל, מרחק, כוונות).
 - Like / Pass / **Like עם תגובה לפריט ספציפי** (תמונה/Prompt) – כמו Hinge, מעלה איכות שיחות.
@@ -66,7 +75,8 @@
 
 ## 4. User Stories (MVP)
 
-- **US-01** כמשתמש חדש, אני רוצה להירשם עם מספר טלפון ו-OTP כדי להתחיל בלי סיסמה.
+- **US-01** כמשתמש חדש, אני רוצה להירשם עם אימייל (קישור קסם) או Passkey כדי להתחיל בלי סיסמה.
+- **US-00** כמפעיל, אני רוצה להקים Instance ממותג משלי בפקודה אחת ו-Wizard, בלי לכתוב קוד.
 - **US-02** כמשתמש, אני רוצה לבנות פרופיל עם תמונות ו-Prompts כדי להציג את עצמי מעבר למראה.
 - **US-03** כמשתמש, אני רוצה לקבל Daily Picks מותאמים כדי לא לבזבז זמן בהחלקות אינסופיות.
 - **US-04** כמשתמש, אני רוצה לעשות Like לפריט ספציפי עם תגובה כדי לפתוח שיחה משמעותית.
@@ -82,13 +92,13 @@
 
 ## 5. מסכים וזרימות
 
-**Onboarding:** Welcome → בחירת שפה → הרשמה (טלפון/Apple/Google) → OTP → תאריך לידה (חסימה מתחת ל-18) → הסכמות (תנאים, פרטיות, AI אופציונלי, מיקום) → שם + מגדר + מי מעניין אותי → תמונות → Prompts → כוונות → הרשאת מיקום (מוסבר) → הרשאת התראות → Discovery.
+**Onboarding:** Welcome → בחירת שפה → הרשמה (אימייל/Passkey/Apple/Google) → אימות → תאריך לידה (חסימה מתחת ל-18) → הסכמות (תנאים, פרטיות, AI אופציונלי, מיקום) → שם + מגדר + מי מעניין אותי → תמונות → Prompts → כוונות → הרשאת מיקום (מוסבר) → הרשאת התראות → Discovery.
 
 **טאבים ראשיים:** Discover (כרטיסים) · Picks (יומי) · Likes You · Chats · Profile.
 
 **מסכים נוספים:** פרופיל מלא של אחר · Like עם תגובה · מסך Match · שיחה · Icebreakers (Bottom sheet) · Report flow (קטגוריות + פירוט) · Block · Verification (מצלמה) · הגדרות (פרטיות, התראות, פילטרים, שפה, נגישות, Pause, מחיקה, ייצוא) · הצהרת נגישות · מדיניות פרטיות · תנאי שימוש · מצבי Empty/Error/Offline.
 
-**Admin (Web):** Login + MFA · Dashboard · תור דיווחים · צפייה בתיק משתמש (מינימלי, עם תיעוד גישה) · פעולות (אזהרה / השעיה / חסימה) · תור אימותים · Audit log · בקשות DSAR.
+**Admin (Web):** Setup Wizard (התקנה ראשונה) · Branding & Settings · Login + MFA · Dashboard · תור דיווחים · צפייה בתיק משתמש (מינימלי, עם תיעוד גישה) · פעולות (אזהרה / השעיה / חסימה) · תור אימותים · Audit log · בקשות DSAR.
 
 ---
 
@@ -147,8 +157,9 @@
 | DB | **PostgreSQL 16 + PostGIS + pgvector** | גאו + וקטורים + רלציוני במקום אחד | Mongo+Elastic+Pinecone (3 מערכות) | pgvector מוגבל בסקייל של עשרות מיליונים |
 | ORM | **Drizzle** | SQL-first, תמיכה ב-custom types (geography/vector) 📘 | Prisma (פחות נוח עם PostGIS) | מיגרציות דורשות משמעת |
 | Queue/Cache | **Redis + BullMQ** | סטנדרט, פשוט | RabbitMQ, NATS | Redis יחיד = SPOF בהתחלה |
-| Auth | **better-auth** (self-hosted, phone OTP, OAuth) 📘 | קוד פתוח, ללא Vendor lock-in | Supabase Auth, Ory Kratos, Clerk (סגור) | ספרייה צעירה – לאמת בשלות |
-| SMS OTP | ספק מוחלף (Twilio / Vonage / מקומי) | ממשק מופשט | — | עלות לכל SMS; SMS pumping fraud |
+| Auth | **better-auth** (self-hosted, magic link, passkeys, OAuth, phone OTP אופציונלי) 📘 | קוד פתוח, ללא Vendor lock-in | Supabase Auth, Ory Kratos, Clerk (סגור) | ספרייה צעירה – לאמת בשלות |
+| Email | **SMTP כלשהו** (של המפעיל) | חינמי/זול, סטנדרטי | SMS OTP (תוסף בתשלום) | deliverability – צריך SPF/DKIM |
+| Web/PWA | **react-native-web** דרך Expo | השקה חינמית בלי חנויות | אפליקציית Next נפרדת | חלק מהמודולים הנייטיביים חסרים ב-Web |
 | Media | **S3 API (MinIO self-host)** + presigned URLs + `sharp` | הסרת EXIF/GPS, re-encode | Cloudinary (סגור) | — |
 | AV | **ClamAV** (container) | קוד פתוח | שירות סריקה מנוהל | צריכת זיכרון ~1GB+ |
 | Realtime | **WebSocket (`ws`) + Redis pub/sub** | שליטה מלאה | Socket.IO, Matrix | ניהול reconnect בעצמנו |
@@ -203,8 +214,11 @@ audit_logs(id, actor_id, action, target_type, target_id, meta jsonb (ללא PII)
 
 ```
 Auth
- 🔓 POST /v1/auth/otp/request        {phone}           -- rate limit לפי IP+מספר, תגובה זהה תמיד
- 🔓 POST /v1/auth/otp/verify         {phone, code}     -> tokens
+ 🔓 POST /v1/auth/magic-link/request {email}           -- rate limit, תגובה זהה תמיד (לא חושף קיום משתמש)
+ 🔓 POST /v1/auth/magic-link/verify  {token}           -> tokens
+ 🔓 POST /v1/auth/passkey/*          (WebAuthn)
+ 🔓 POST /v1/auth/otp/*              (רק אם המפעיל הפעיל ספק SMS)
+ 🔓 GET  /v1/instance                (שם, מיתוג, שפות, ספקי Login פעילים – ציבורי)
  🔓 POST /v1/auth/oauth/{apple|google}
  🔓 POST /v1/auth/refresh            (rotation + reuse detection)
  🔐 POST /v1/auth/logout             / logout-all
@@ -233,6 +247,7 @@ Privacy
  🔐 GET|PUT /v1/me/consents · POST /v1/me/data-export · DELETE /v1/me (מחיקה, grace 14 יום)
 Admin
  🛡️ GET /v1/admin/reports · POST /v1/admin/reports/{id}/resolve · POST /v1/admin/users/{id}/actions
+ 🛡️ GET|PATCH /v1/admin/instance-settings (מיתוג, מדיניות, ספקים) · POST /v1/setup (פעם אחת בלבד, נעול אחרי השימוש)
  🛡️ GET /v1/admin/audit-logs · GET /v1/admin/verifications
 System
  🔓 GET /health · GET /ready
@@ -291,7 +306,7 @@ Dateos/
 
 | מידע | מטרה | בסיס עיבוד (GDPR) | אחסון | שמירה | צד שלישי |
 |------|------|-------------------|-------|-------|----------|
-| טלפון | התחברות, מניעת כפילויות | חוזה | Postgres (hash + מוצפן) | עד מחיקת חשבון | ספק SMS |
+| אימייל / טלפון (אופציונלי) | התחברות, מניעת כפילויות | חוזה | Postgres (hash + מוצפן) | עד מחיקת חשבון | ספק SMTP / SMS של המפעיל |
 | תאריך לידה | אימות גיל, סינון | חוזה / חובה חוקית | Postgres | חיי החשבון | — |
 | תמונות | פרופיל | חוזה | S3 (מוצפן at rest) | עד מחיקה + 30 יום גיבוי | — |
 | מיקום (מעוגל) | Discovery | חוזה + הסכמת הרשאת OS | Postgres | מתעדכן, ללא היסטוריה | — |
@@ -332,10 +347,11 @@ Dateos/
 
 | שלב | תוכן | תוצר | בדיקות |
 |-----|------|------|--------|
-| **0 – יסודות** | Monorepo, Docker Compose, CI (lint/typecheck/test/audit/gitleaks/CodeQL), README, .env.example, SECURITY.md | `pnpm dev` מרים הכל | CI ירוק |
+| **0 – יסודות** | Monorepo, Docker Compose, CI (lint/typecheck/test/audit/gitleaks/CodeQL), README, .env.example, SECURITY.md, `install.sh` | `pnpm dev` מרים הכל | CI ירוק |
 | **1 – Auth + פרופיל** | OTP/OAuth, sessions, פרופיל, העדפות, העלאת תמונות מלאה (quarantine→scan→sharp→clean), onboarding במובייל, i18n+RTL | הרשמה עד פרופיל מלא | IDOR tests, upload tests, e2e (Maestro) |
 | **2 – Discovery + Matching** | מיקום מעוגל, candidates, embeddings, ציון הדדי, Daily Picks, interactions, matches | Discover + Picks + Likes You | בדיקות דירוג דטרמיניסטיות, trilateration test |
 | **3 – Chat** | WebSocket, הודעות, מדיה, push, read receipts, offline queue | צ'אט מלא | עומס בסיסי, הרשאות שיחה |
+| **1.5 – Instance** | Setup Wizard, מיתוג (שם/לוגו/צבעים/שפה), instance-settings, Web/PWA build | מפעיל מקים אתר ממותג | בדיקת נעילת setup |
 | **4 – Safety** | Block/Report, moderation מקומי, "Are you sure?", NSFW, selfie verification, Admin + MFA + audit | לוח מודרציה | תרחישי abuse |
 | **5 – AI** | Icebreakers, "למה התאמנו", Profile Coach, scam detection, provider switch | פיצ'רי AI | evals ל-prompts, injection tests |
 | **6 – Privacy & Compliance** | ייצוא/מחיקה, consents, retention jobs, טיוטות מסמכים משפטיים, הצהרת נגישות | DSAR עובד | בדיקת מחיקה מקצה לקצה |
@@ -353,10 +369,12 @@ Dateos/
 3. **App Store / Google Play** – דרישות ל-UGC (דיווח, חסימה, מודרציה, מחיקת חשבון באפליקציה) ולאפליקציות דייטינג 📘.
 4. **Cold start** – אפליקציית דייטינג ללא מסה קריטית לא שורדת: השקה גאוגרפית ממוקדת (עיר אחת), מנוע שעובד גם עם מעט נתונים (content-based לפני CF).
 5. **עלויות AI** – icebreakers במודל קטן/מקומי, cache, מכסות יומיות.
-6. **SMS OTP** – עלות והונאות; לשקול OAuth/passkeys כברירת מחדל.
+6. **Email deliverability** – מיילים עלולים להגיע לספאם; ה-Wizard יבדוק SPF/DKIM ויציע Passkeys/OAuth.
 7. **מודרציה אנושית** – AI לא מחליף צוות; נדרש תהליך ו-SLA לדיווחים חמורים (קטינים, אלימות) וחובות דיווח לרשויות ⚖️.
 8. **אחריות משפטית של מפעיל self-hosted** – כל מי שמריץ instance הוא בעל המאגר; תיעוד ברור ב-README. ⚖️
-9. **רישיון** – MIT מאפשר לכל אחד לסגור את הקוד ולהתחרות בך; ראה שאלה 2.
+9. **רישיון MIT** – הוחלט במודע: כל אחד רשאי גם לסגור את הקוד. זה תואם את החזון.
+10. **Instances זדוניים** – כל אחד יכול להקים Instance גם לצורך פישינג/איסוף מידע. אין דרך טכנית למנוע בקוד פתוח; נוסיף תיעוד ואזהרות, ומפעילים לגיטימיים יחתמו את האפליקציה שלהם.
+11. **מודרציה לכל Instance** – כל מפעיל צריך מודרטורים משלו; נספק כלים טובים + רשימות חסימה משותפות (hash) כאופציה עתידית.
 
 **דורש אישור:** עורך דין פרטיות (ישראל + EU), ממונה הגנת פרטיות, יועץ נגישות, בודק חדירות לפני השקה.
 
@@ -364,6 +382,6 @@ Dateos/
 
 ## 17. הצעד הבא
 
-1. ענה על 5 שאלות ההבהרה (או אשר את הנחות העבודה).
-2. אשר את הסטאק הטכנולוגי.
+1. ✅ רישיון (MIT), מודל (חינם לגמרי), AI (מקומי כברירת מחדל) – הוחלטו.
+2. פתוח: שוק השקה ופילוחים – ממשיכים עם הנחות העבודה אם אין שינוי.
 3. לאחר אישור: **שלב 0** – Monorepo + Docker Compose + CI + מסמכי פרויקט, כ-PR ראשון.
