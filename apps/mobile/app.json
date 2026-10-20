@@ -1,0 +1,65 @@
+{
+  "expo": {
+    "name": "Dateos",
+    "slug": "dateos",
+    "scheme": "dateos",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "org.dateos.app",
+      "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "Choose photos for your dating profile.",
+        "NSCameraUsageDescription": "Take a photo for your dating profile."
+      }
+    },
+    "android": {
+      "package": "org.dateos.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#7C3AED",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "name": "Dateos",
+      "shortName": "Dateos",
+      "description": "Free, open-source dating. Built for real connections.",
+      "themeColor": "#7C3AED",
+      "backgroundColor": "#FFFFFF",
+      "output": "single",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-status-bar",
+      [
+        "expo-localization",
+        {
+          "supportedLocales": {
+            "ios": ["he", "en"],
+            "android": ["he", "en"]
+          }
+        }
+      ],
+      "expo-secure-store",
+      "expo-image",
+      "expo-web-browser",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Choose photos for your dating profile.",
+          "cameraPermission": false
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

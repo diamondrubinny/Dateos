@@ -1,6 +1,6 @@
 # Phase 1: Auth, profile, photos, mobile onboarding (+ sponsors, screenshots)
 
-> Status: in progress. Builds on phase 0. 📘 = verify against official docs, ⚖️ = needs legal review.
+> Status: ✅ done (2026-10-20). Builds on phase 0. 📘 = verify against official docs, ⚖️ = needs legal review.
 
 ## Scope
 
@@ -40,3 +40,29 @@
 - Unit: schemas, age calculation, image-type sniffing.
 - Integration (real Postgres/Redis/S3 when `INTEGRATION=1`): sign-in via magic link, profile CRUD, **IDOR** (user B cannot read/modify/delete A's photos), underage path, deletion removes everything.
 - E2E: Playwright web flow that also captures the screenshots.
+
+## Results
+
+| Check                                      | Result                                                                                                |
+| ------------------------------------------ | ----------------------------------------------------------------------------------------------------- |
+| Unit tests (shared, api, worker, mobile)   | 52 passed                                                                                             |
+| Integration tests (real Postgres/Redis/S3) | 20 passed: IDOR, race-safe photo limit, underage, single-use links, per-inbox throttle, deletion      |
+| Mutation checks                            | Removing the photo ownership check or the per-user lock makes the tests fail as expected              |
+| End-to-end pipeline                        | 3000×2000 JPEG with GPS → 2048×1365 WebP, no EXIF; EICAR planted in quarantine → rejected + audit log |
+| Browser flow (Playwright, he + en)         | Full sign-up via real email (Mailpit) through settings and account deletion                           |
+| axe-core WCAG 2.1 A/AA (18 screens)        | 26 violations found → fixed → **0**                                                                   |
+| Keyboard                                   | Tab reaches every control; focus ring only for keyboard users; Enter activates                        |
+| `expo-doctor`                              | 20/20 checks passed                                                                                   |
+
+## Changes from the plan
+
+- **MinIO → SeaweedFS** (phase 0): MinIO community edition is no longer maintained.
+- **Upload through the API** rather than presigned URLs, as planned above.
+- **EICAR note:** by design ClamAV only detects EICAR at the start of a file. A file like that can't pass the API's magic-byte check, so the malware branch was tested by placing the file directly in quarantine.
+
+## Known limitations / follow-ups
+
+- Native (iOS/Android) builds were not run in this environment: only the web build was tested end to end. Magic-link deep links on device (`dateos://`) need to be verified on a device 📘.
+- Passkeys and Google/Apple sign-in: Google/Apple are wired through env variables but untested without credentials. Passkeys move to phase 1b.
+- If a storage cleanup job fails permanently, orphaned files can remain. A periodic reconciliation sweep is planned for phase 6.
+- Legal texts in the app are drafts ⚖️.

@@ -1,0 +1,48 @@
+{
+  "name": "@dateos/mobile",
+  "version": "0.0.0",
+  "main": "expo-router/entry",
+  "dependencies": {
+    "@better-auth/expo": "1.7.12",
+    "@dateos/shared": "workspace:*",
+    "@tanstack/react-query": "^5.104.5",
+    "better-auth": "1.7.12",
+    "expo": "~58.0.16",
+    "expo-constants": "~58.0.12",
+    "expo-image": "~58.0.16",
+    "expo-image-picker": "~58.0.10",
+    "expo-linking": "~58.0.13",
+    "expo-localization": "~58.0.5",
+    "expo-network": "~58.0.3",
+    "expo-router": "~58.0.24",
+    "expo-secure-store": "~58.0.2",
+    "expo-status-bar": "~58.0.3",
+    "expo-updates": "~58.0.17",
+    "expo-web-browser": "~58.0.6",
+    "i18next": "^26.5.3",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "react-i18next": "^17.1.0",
+    "react-native": "0.88.0",
+    "react-native-safe-area-context": "~5.10.1",
+    "react-native-screens": "~4.30.0",
+    "react-native-web": "^0.21.4",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@types/react": "~19.3.0",
+    "typescript": "~6.0.3",
+    "vitest": "5.0.5"
+  },
+  "scripts": {
+    "start": "expo start",
+    "web": "expo start --web",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "build:web": "expo export --platform web",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "private": true,
+  "license": "MIT"
+}
