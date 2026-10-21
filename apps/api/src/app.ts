@@ -19,6 +19,8 @@ import { chatRoutes } from './modules/chat/routes.js';
 import { discoveryRoutes } from './modules/discovery/routes.js';
 import { meRoutes } from './modules/me/routes.js';
 import { photoRoutes } from './modules/photos/routes.js';
+import { adminRoutes } from './modules/admin/routes.js';
+import { safetyRoutes } from './modules/safety/routes.js';
 import type { Services } from './services.js';
 
 export interface AppDependencies {
@@ -63,6 +65,18 @@ export async function buildApp(env: Env, deps: AppDependencies): Promise<Fastify
     await typed.register(meRoutes, { auth: services.auth, me: services.me });
     await typed.register(photoRoutes, { auth: services.auth, photos: services.photos });
     await typed.register(discoveryRoutes, { auth: services.auth, discovery: services.discovery });
+    await typed.register(safetyRoutes, {
+      auth: services.auth,
+      reports: services.reports,
+      verification: services.verification,
+    });
+    await typed.register(adminRoutes, {
+      auth: services.auth,
+      mfa: services.staffMfa,
+      moderation: services.moderation,
+      verification: services.verification,
+      photos: services.photos,
+    });
     await app.register(websocket, { options: { maxPayload: 4096 } });
     await typed.register(chatRoutes, {
       auth: services.auth,

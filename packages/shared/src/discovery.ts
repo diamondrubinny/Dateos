@@ -81,6 +81,8 @@ export const publicProfileSchema = z.object({
   prompts: z.array(z.object({ id: z.uuid(), promptKey: promptKeySchema, answer: z.string() })),
   photos: z.array(publicPhotoSchema),
   distance: z.enum(distanceBuckets).nullable(),
+  /** A moderator compared a live selfie with the photos. */
+  verified: z.boolean(),
   reasons: z.array(z.enum(reasonCodes)),
 });
 export type PublicProfile = z.infer<typeof publicProfileSchema>;

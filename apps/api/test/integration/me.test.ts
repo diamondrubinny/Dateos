@@ -139,9 +139,32 @@ describe.skipIf(!integrationEnabled)('auth + profile (integration)', () => {
     );
     expect(profiles.rows[0].n).toBe(0);
 
-    // A new sign-in must not get around the suspension.
+    // A new sign-in must not get around the suspension: the member can only see the account
+    // state and delete the account (right to erasure).
     const again = await signIn(ctx, 'teen@example.test');
-    expect((await me(again)).statusCode).toBe(403);
+    const state = await me(again);
+    expect(state.statusCode).toBe(200);
+    expect(state.json().user.status).toBe('suspended');
+    for (const [method, url, payload] of [
+      ['POST', '/v1/me/profile', { ...validProfile, birthDate: '1990-01-01' }],
+      ['PUT', '/v1/me/preferences', { ageMin: 18, ageMax: 40, maxDistanceKm: 20, intentions: [] }],
+      ['GET', '/v1/discover', undefined],
+      ['GET', '/v1/me/verification', undefined],
+    ] as const) {
+      const blocked = await ctx.app.inject({
+        method,
+        url,
+        headers: { cookie: again },
+        ...(payload ? { payload } : {}),
+      });
+      expect(blocked.statusCode, `${method} ${url}`).toBe(403);
+    }
+    const del = await ctx.app.inject({
+      method: 'DELETE',
+      url: '/v1/me',
+      headers: { cookie: again },
+    });
+    expect(del.statusCode).toBe(200);
   });
 
   it('accepts users on their 18th birthday', async () => {

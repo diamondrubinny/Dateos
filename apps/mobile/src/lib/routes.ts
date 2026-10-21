@@ -10,10 +10,14 @@ export const onboardingRoutes = {
 
 export const ONBOARDING_TOTAL = 5;
 
-/** Where a signed-in user belongs: the first missing onboarding step, otherwise discovery. */
+/**
+ * Where a signed-in user belongs: the suspension notice, the first missing onboarding step,
+ * otherwise discovery.
+ */
 export function routeFor(
   me: MeResponse,
-): (typeof onboardingRoutes)[keyof typeof onboardingRoutes] | '/discover' {
+): (typeof onboardingRoutes)[keyof typeof onboardingRoutes] | '/discover' | '/suspended' {
+  if (me.user?.status === 'suspended') return '/suspended';
   const first = me.onboarding.missing[0];
   return first ? onboardingRoutes[first] : '/discover';
 }

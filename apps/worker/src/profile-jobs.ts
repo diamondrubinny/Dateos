@@ -1,6 +1,12 @@
 import { profileText, type EmbeddingProvider } from '@dateos/ai';
 import { schema, type Database } from '@dateos/db';
-import { UNMATCHED_CHAT_RETENTION_DAYS, type EmbedProfileJob } from '@dateos/shared';
+import {
+  MODERATION_LOG_RETENTION_DAYS,
+  RESOLVED_REPORT_RETENTION_DAYS,
+  UNMATCHED_CHAT_RETENTION_DAYS,
+  VERIFICATION_RECORD_RETENTION_DAYS,
+  type EmbedProfileJob,
+} from '@dateos/shared';
 import type { Storage } from '@dateos/storage';
 import { asc, eq, sql } from 'drizzle-orm';
 
@@ -82,4 +88,30 @@ export async function purgeClosedChats(
     await db.execute(sql`DELETE FROM photos WHERE id IN (${ids})`);
   }
   return { messages: deleted.rowCount ?? 0, images: images.rows.length };
+}
+
+/** Deletes moderation records past their retention period (evidence goes with its report). */
+export async function cleanupModeration(
+  db: Database,
+): Promise<{ reports: number; actions: number; verifications: number }> {
+  const days = (n: number) => sql.raw(String(n));
+  const reports = await db.execute(sql`
+    DELETE FROM reports WHERE status <> 'open'
+      AND resolved_at < now() - interval '${days(RESOLVED_REPORT_RETENTION_DAYS)} days'`);
+  const actions = await db.execute(sql`
+    DELETE FROM moderation_actions
+    WHERE created_at < now() - interval '${days(MODERATION_LOG_RETENTION_DAYS)} days'`);
+  const verifications = await db.execute(sql`
+    DELETE FROM verifications
+    WHERE (decided_at < now() - interval '${days(VERIFICATION_RECORD_RETENTION_DAYS)} days')
+       OR (status = 'awaiting_selfie' AND created_at < now() - interval '7 days')`);
+  // Step-up records are only valid for 12 hours anyway.
+  await db.execute(
+    sql`DELETE FROM staff_sessions WHERE mfa_verified_at < now() - interval '1 day'`,
+  );
+  return {
+    reports: reports.rowCount ?? 0,
+    actions: actions.rowCount ?? 0,
+    verifications: verifications.rowCount ?? 0,
+  };
 }

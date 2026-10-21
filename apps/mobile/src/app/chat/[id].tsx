@@ -197,6 +197,23 @@ function ChatScreen() {
               </AppText>
             </Pressable>
           ) : null}
+          {conversation ? (
+            <Pressable
+              onPress={() =>
+                router.push({
+                  pathname: '/report/[id]',
+                  params: { id: conversation.profile.id, name, matchId },
+                })
+              }
+              accessibilityRole="button"
+              accessibilityLabel={t('report.openLabel', { name })}
+              style={styles.iconBtn}
+            >
+              <AppText variant="caption" tone="danger">
+                {t('report.open')}
+              </AppText>
+            </Pressable>
+          ) : null}
         </View>
 
         <FlatList

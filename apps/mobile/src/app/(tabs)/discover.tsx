@@ -2,6 +2,7 @@ import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
+import { AccountNotices } from '../../components/AccountNotices';
 import { AppText } from '../../components/AppText';
 import { Banner } from '../../components/Banner';
 import { Button } from '../../components/Button';
@@ -33,6 +34,7 @@ export default function Discover() {
 
   return (
     <Screen title={t('discover.title')}>
+      <AccountNotices />
       {feed.error ? <Banner tone="error" message={t('common.genericError')} /> : null}
       {matchedWith ? (
         <MatchCelebration name={matchedWith} onClose={() => setMatchedWith(undefined)} />

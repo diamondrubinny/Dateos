@@ -103,6 +103,16 @@ function ProfileScreen() {
             label={t('profileView.block', { name: p.displayName })}
             onPress={() => setConfirm('block')}
           />
+          <Button
+            variant="dangerGhost"
+            label={t('report.openLabel', { name: p.displayName })}
+            onPress={() =>
+              router.push({
+                pathname: '/report/[id]',
+                params: { id: p.id, name: p.displayName, ...(matchId ? { matchId } : {}) },
+              })
+            }
+          />
         </View>
       )}
     </Screen>

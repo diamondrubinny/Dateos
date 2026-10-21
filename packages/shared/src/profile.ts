@@ -1,3 +1,4 @@
+import { accountNoticeSchema } from './moderation.js';
 import { z } from 'zod';
 
 export const MIN_AGE = 18;
@@ -138,6 +139,8 @@ export const meResponseSchema = z.object({
   photos: z.array(photoSchema),
   consents: z.record(z.string(), z.boolean()),
   onboarding: z.object({ complete: z.boolean(), missing: z.array(z.enum(onboardingSteps)) }),
+  verified: z.boolean(),
+  notices: z.array(accountNoticeSchema),
 });
 export type MeResponse = z.infer<typeof meResponseSchema>;
 

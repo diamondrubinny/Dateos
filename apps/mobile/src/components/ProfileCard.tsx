@@ -113,6 +113,17 @@ export function ProfileCard({ profile, onLikeItem }: ProfileCardProps) {
           {profile.displayName}, {profile.age}
         </AppText>
         <View style={styles.meta}>
+          {profile.verified ? (
+            <View
+              style={[styles.verified, { backgroundColor: colors.primarySoft }]}
+              accessible
+              accessibilityLabel={t('badge.verifiedLabel')}
+            >
+              <AppText variant="label" tone="primary">
+                ✓ {t('badge.verified')}
+              </AppText>
+            </View>
+          ) : null}
           <AppText variant="label" tone="primary">
             {t(`intention.${profile.intention}`)}
           </AppText>
@@ -189,6 +200,7 @@ export function ProfileCard({ profile, onLikeItem }: ProfileCardProps) {
 }
 
 const styles = StyleSheet.create({
+  verified: { paddingHorizontal: spacing.sm, paddingVertical: 2, borderRadius: radius.lg },
   card: { borderRadius: radius.lg, borderWidth: 1, overflow: 'hidden' },
   photoWrap: { width: '100%', aspectRatio: 4 / 5 },
   photo: { width: '100%', height: '100%' },

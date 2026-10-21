@@ -6,6 +6,7 @@ import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { magicLink } from 'better-auth/plugins/magic-link';
 import type { Redis } from 'ioredis';
 import type { Env } from '../config/env.js';
+import { createEmailHasher, isBanned } from '../lib/banned.js';
 import { magicLinkEmail, type Mailer } from '../lib/mailer.js';
 
 export const AUTH_BASE_PATH = '/v1/auth';
@@ -42,6 +43,8 @@ export function createAuth({ env, secret, db, redis, mailer, onMailError }: Auth
       : {}),
   };
 
+  const hashEmail = createEmailHasher(secret);
+
   return betterAuth({
     appName: env.INSTANCE_NAME,
     baseURL: env.PUBLIC_API_URL,
@@ -64,6 +67,15 @@ export function createAuth({ env, secret, db, redis, mailer, onMailError }: Auth
       additionalFields: {
         role: { type: 'string', defaultValue: 'user', input: false },
         status: { type: 'string', defaultValue: 'active', input: false },
+      },
+    },
+    databaseHooks: {
+      user: {
+        create: {
+          // Banned addresses cannot open a new account (with any sign-in method). The client
+          // only sees a generic sign-in failure.
+          before: async (data) => ((await isBanned(db, hashEmail, data.email)) ? false : undefined),
+        },
       },
     },
     session: {

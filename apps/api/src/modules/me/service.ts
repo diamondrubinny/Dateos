@@ -13,12 +13,22 @@ import {
   type ProfileUpdate,
   type PromptAnswer,
 } from '@dateos/shared';
-import { and, asc, desc, eq, ne } from 'drizzle-orm';
+import { and, asc, desc, eq, isNull, ne } from 'drizzle-orm';
 import { HttpError } from '../../plugins/error-handler.js';
 import type { MediaQueue, ProfileQueue } from '../../lib/queue.js';
 import { audit } from '../../lib/audit.js';
 
-const { profiles, preferences, prompts, photos, consents, user, session, locations } = schema;
+const {
+  profiles,
+  preferences,
+  prompts,
+  photos,
+  consents,
+  user,
+  session,
+  locations,
+  moderationLog,
+} = schema;
 
 export interface LegalVersions {
   termsVersion: string;
@@ -79,6 +89,21 @@ export class MeService {
       .from(locations)
       .where(eq(locations.userId, userId));
     if (!location) missing.push('location');
+    const warnings = await this.db
+      .select({
+        id: moderationLog.id,
+        category: moderationLog.category,
+        createdAt: moderationLog.createdAt,
+      })
+      .from(moderationLog)
+      .where(
+        and(
+          eq(moderationLog.targetId, userId),
+          eq(moderationLog.action, 'warn'),
+          isNull(moderationLog.acknowledgedAt),
+        ),
+      )
+      .orderBy(asc(moderationLog.createdAt));
 
     return {
       user: account,
@@ -115,6 +140,14 @@ export class MeService {
         Object.entries(consentState).map(([kind, c]) => [kind, c.granted]),
       ),
       onboarding: { complete: missing.length === 0, missing },
+      verified: Boolean(profile?.verifiedAt),
+      // Members see the category of a warning, never the moderator's internal note.
+      notices: warnings.map((w) => ({
+        id: w.id,
+        kind: 'warning' as const,
+        category: w.category ?? 'other',
+        createdAt: w.createdAt.toISOString(),
+      })),
     };
   }
 
@@ -257,6 +290,15 @@ export class MeService {
   }
 
   /** Permanently deletes the account and all owned rows; stored files are removed by the worker. */
+  async acknowledgeNotice(userId: string, noticeId: string): Promise<void> {
+    const updated = await this.db
+      .update(moderationLog)
+      .set({ acknowledgedAt: new Date() })
+      .where(and(eq(moderationLog.id, noticeId), eq(moderationLog.targetId, userId)))
+      .returning({ id: moderationLog.id });
+    if (updated.length === 0) throw new HttpError(404, ErrorCode.NotFound, 'Resource not found.');
+  }
+
   async deleteAccount(userId: string): Promise<void> {
     const keys = await this.db
       .select({ quarantineKey: photos.quarantineKey, mediaKey: photos.mediaKey })

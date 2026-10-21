@@ -51,7 +51,8 @@ Dateos is in active development. Here is what works today and what comes next. T
 | Real-time chat (WebSocket), read receipts, typing, icebreakers                 | ✅ Available       |
 | "Are you sure?", hidden offensive messages, scam warnings, blurred photos      | ✅ Available       |
 | Voice messages, push notifications                                             | 🛠️ Next (phase 3b) |
-| Report, moderation dashboard, selfie verification                              | 🗓️ Phase 4         |
+| Report (with chat evidence), moderation dashboard with mandatory TOTP, audit   | ✅ Available       |
+| Photo verification (live selfie, human review, no face recognition), badge     | ✅ Available       |
 | Video dates, safety check-in, date planner                                     | 🗓️ Later           |
 
 ## Screenshots
@@ -66,6 +67,14 @@ Dateos is in active development. Here is what works today and what comes next. T
 
 <img src="docs/screenshots/showcase-chat-en.png" alt="Chat screens: icebreaker suggestions, a live conversation with read receipts, the Are-you-sure prompt, a hidden offensive message with a scam warning, and a blurred photo" width="100%">
 
+**Safety: report, verify, moderate**
+
+<img src="docs/screenshots/showcase-safety-en.png" alt="Reporting a scammer from the chat, the photo-verification pose step, the selfie waiting for review, and the suspension screen" width="100%">
+
+| Moderation queue                                                                                                             | Report with chat evidence                                                                                                                 | Selfie review                                                                                                                         | Two-factor setup                                                                                                          |
+| ---------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| <img src="docs/screenshots/en/admin-03-reports.png" width="220" alt="Moderation dashboard: report queue sorted by priority"> | <img src="docs/screenshots/en/admin-04-report-detail.png" width="220" alt="Report detail with copied chat messages, profile and history"> | <img src="docs/screenshots/en/admin-06-verification.png" width="220" alt="Selfie next to the profile photos with approve and reject"> | <img src="docs/screenshots/en/admin-02-mfa-setup.png" width="220" alt="Authenticator QR code for staff two-factor setup"> |
+
 **Onboarding**
 
 <img src="docs/screenshots/showcase-onboarding-en.png" alt="Welcome, profile form, photo upload, prompts and the approximate-location step" width="100%">
@@ -74,8 +83,8 @@ Dateos is in active development. Here is what works today and what comes next. T
 
 <img src="docs/screenshots/showcase-he.png" alt="The discovery screens in Hebrew with right-to-left layout" width="100%">
 
-<sub>All 46 screens (English and Hebrew) are in <a href="docs/screenshots">docs/screenshots</a>. Demo members are fictional and their pictures are illustrations.
-Chat screenshots come from two real accounts chatting live in two browsers (<a href="e2e/chat.ts">e2e/chat.ts</a>).</sub>
+<sub>All 74 screens (37 in English, 37 in Hebrew) are in <a href="docs/screenshots">docs/screenshots</a>. Demo members are fictional and their pictures are illustrations.
+Chat screenshots come from two real accounts chatting live in two browsers (<a href="e2e/chat.ts">e2e/chat.ts</a>); the safety screens from a reporter, a reported member and a moderator in three browsers (<a href="e2e/safety.ts">e2e/safety.ts</a>).</sub>
 
 ## Quick start
 
@@ -183,6 +192,8 @@ What each tier includes, and what sponsorship will **never** buy (user data, mod
 Thank you to everyone in [SUPPORTERS.md](SUPPORTERS.md).
 
 ## Running a public instance
+
+Moderation is part of running an instance: see [`docs/ADMIN.md`](docs/ADMIN.md) for granting staff roles, two-factor setup and serving the dashboard.
 
 Whoever deploys an instance is the operator, and legal controller, of its users' data. Before going public you need, at minimum,
 a reviewed privacy policy, terms of use, an accessibility statement and a moderation process.

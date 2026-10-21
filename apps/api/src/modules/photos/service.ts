@@ -32,7 +32,7 @@ export class PhotoService {
   async upload(
     userId: string,
     buffer: Buffer,
-    purpose: 'profile' | 'chat' = 'profile',
+    purpose: 'profile' | 'chat' | 'verification' = 'profile',
   ): Promise<Photo> {
     const mime = await sniffImageType(buffer);
     if (!mime) {
@@ -60,7 +60,7 @@ export class PhotoService {
         throw new HttpError(409, ErrorCode.Conflict, `You can upload up to ${MAX_PHOTOS} photos.`);
       }
       const position =
-        purpose === 'chat' ? 0 : existing.reduce((max, p) => Math.max(max, p.position + 1), 0);
+        purpose !== 'profile' ? 0 : existing.reduce((max, p) => Math.max(max, p.position + 1), 0);
       const [inserted] = await tx
         .insert(photos)
         .values({ userId, position, status: 'quarantine', purpose })
@@ -98,12 +98,38 @@ export class PhotoService {
       .from(photos)
       .where(and(eq(photos.id, photoId), eq(photos.status, 'clean')));
     if (!row?.mediaKey) throw notFound();
+    // Verification selfies are only ever shown to staff, through the audited admin API.
+    if (row.purpose === 'verification') throw notFound();
     const allowed =
       row.purpose === 'chat'
         ? await this.canViewChatImage(viewerId, photoId)
         : await this.canView(viewerId, row.userId);
     if (!allowed) throw notFound();
     return this.storage.get(this.storage.buckets.media, row.mediaKey);
+  }
+
+  /** Staff access (admin API only): any clean photo of a member, regardless of visibility. */
+  async openForStaff(photoId: string, ownerId?: string): Promise<StoredObject> {
+    const [row] = await this.db
+      .select({ mediaKey: photos.mediaKey, userId: photos.userId })
+      .from(photos)
+      .where(and(eq(photos.id, photoId), eq(photos.status, 'clean')));
+    if (!row?.mediaKey || (ownerId && row.userId !== ownerId)) throw notFound();
+    return this.storage.get(this.storage.buckets.media, row.mediaKey);
+  }
+
+  /** Deletes a photo row and its stored objects (used for decided verification selfies). */
+  async purge(photoId: string): Promise<void> {
+    const [row] = await this.db.delete(photos).where(eq(photos.id, photoId)).returning({
+      userId: photos.userId,
+      quarantineKey: photos.quarantineKey,
+      mediaKey: photos.mediaKey,
+    });
+    if (!row) return;
+    await this.mediaQueue.deleteObjects({
+      quarantineKeys: row.quarantineKey ? [row.quarantineKey] : [],
+      mediaKeys: row.mediaKey ? [row.mediaKey] : [mediaKey(row.userId, photoId)],
+    });
   }
 
   /** Chat images are visible only to the two people in an active match where it was sent. */

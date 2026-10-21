@@ -20,6 +20,11 @@ import {
 } from 'drizzle-orm/pg-core';
 import {
   consentKinds,
+  moderationActions,
+  reportCategories,
+  reportPriorities,
+  reportStatuses,
+  verificationPoses,
   EMBEDDING_DIM,
   genders,
   intentions,
@@ -118,7 +123,7 @@ export const rateLimit = pgTable('rate_limit', {
 export const gender = pgEnum('gender', genders);
 export const intention = pgEnum('intention', intentions);
 export const photoStatus = pgEnum('photo_status', photoStatuses);
-export const photoPurpose = pgEnum('photo_purpose', ['profile', 'chat']);
+export const photoPurpose = pgEnum('photo_purpose', ['profile', 'chat', 'verification']);
 export const consentKind = pgEnum('consent_kind', consentKinds);
 export const promptKey = pgEnum('prompt_key', promptKeys);
 
@@ -139,6 +144,8 @@ export const profiles = pgTable('profiles', {
     .array()
     .notNull()
     .default(sql`'{}'::text[]`),
+  /** Set when a moderator approved a photo verification. */
+  verifiedAt: timestamp('verified_at', { withTimezone: true }),
   ...timestamps,
 });
 
@@ -395,4 +402,138 @@ export const matchReads = pgTable(
     lastReadAt: timestamp('last_read_at', { withTimezone: true }).notNull(),
   },
   (t) => [uniqueIndex('match_reads_uq').on(t.matchId, t.userId)],
+);
+
+// ---------------------------------------------------------------------------
+// Safety & moderation (phase 4)
+// ---------------------------------------------------------------------------
+
+export const reportCategoryEnum = pgEnum('report_category', reportCategories);
+export const reportPriorityEnum = pgEnum('report_priority', reportPriorities);
+export const reportStatusEnum = pgEnum('report_status', reportStatuses);
+export const moderationActionEnum = pgEnum('moderation_action', [
+  ...moderationActions,
+  'unsuspend',
+] as const);
+
+export const reports = pgTable(
+  'reports',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    /** Kept when the reporter deletes their account, so the report can still be handled. */
+    reporterId: text('reporter_id').references(() => user.id, { onDelete: 'set null' }),
+    reportedId: text('reported_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    matchId: uuid('match_id').references(() => matches.id, { onDelete: 'set null' }),
+    category: reportCategoryEnum('category').notNull(),
+    priority: reportPriorityEnum('priority').notNull(),
+    details: varchar('details', { length: 1000 }),
+    status: reportStatusEnum('status').notNull().default('open'),
+    resolvedBy: text('resolved_by').references(() => user.id, { onDelete: 'set null' }),
+    resolvedAction: moderationActionEnum('resolved_action'),
+    resolvedReason: varchar('resolved_reason', { length: 500 }),
+    resolvedAt: timestamp('resolved_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index('reports_queue_idx').on(t.status, t.priority, t.createdAt),
+    index('reports_reported_idx').on(t.reportedId, t.status),
+    // One open report per reporter and target: repeated reports add nothing but noise.
+    uniqueIndex('reports_open_pair_uq')
+      .on(t.reporterId, t.reportedId)
+      .where(sql`status = 'open'`),
+  ],
+);
+
+/** Copies of chat messages taken when the report was filed; they outlive chat purges. */
+export const reportEvidence = pgTable(
+  'report_evidence',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    reportId: uuid('report_id')
+      .notNull()
+      .references(() => reports.id, { onDelete: 'cascade' }),
+    fromReported: boolean('from_reported').notNull(),
+    body: varchar('body', { length: 2000 }).notNull(),
+    flags: text('flags')
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
+    sentAt: timestamp('sent_at', { withTimezone: true }).notNull(),
+  },
+  (t) => [index('report_evidence_report_idx').on(t.reportId)],
+);
+
+export const moderationLog = pgTable(
+  'moderation_actions',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    targetId: text('target_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    staffId: text('staff_id').references(() => user.id, { onDelete: 'set null' }),
+    reportId: uuid('report_id').references(() => reports.id, { onDelete: 'set null' }),
+    action: moderationActionEnum('action').notNull(),
+    /** Shown to the member for warnings (the category only, never the internal reason). */
+    category: reportCategoryEnum('category'),
+    reason: varchar('reason', { length: 500 }).notNull(),
+    acknowledgedAt: timestamp('acknowledged_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index('moderation_actions_target_idx').on(t.targetId, t.createdAt)],
+);
+
+/** Salted SHA-256 of normalised emails that may not create a new account. */
+export const bannedEmails = pgTable('banned_emails', {
+  emailHash: varchar('email_hash', { length: 64 }).primaryKey(),
+  userId: text('user_id'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const staffMfa = pgTable('staff_mfa', {
+  userId: ownerId().primaryKey(),
+  /** AES-256-GCM ciphertext (iv.tag.data, base64url) of the TOTP secret. */
+  secret: text('secret').notNull(),
+  enabledAt: timestamp('enabled_at', { withTimezone: true }),
+  /** Highest TOTP time step accepted so far; codes are never accepted twice. */
+  lastStep: bigint('last_step', { mode: 'number' }).notNull().default(0),
+  failedAttempts: integer('failed_attempts').notNull().default(0),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+/** Sessions that passed the TOTP step-up, and when. */
+export const staffSessions = pgTable('staff_sessions', {
+  sessionId: text('session_id')
+    .primaryKey()
+    .references(() => session.id, { onDelete: 'cascade' }),
+  userId: ownerId(),
+  mfaVerifiedAt: timestamp('mfa_verified_at', { withTimezone: true }).notNull(),
+});
+
+export const verificationPoseEnum = pgEnum('verification_pose', verificationPoses);
+export const verificationStatusEnum = pgEnum('verification_status', [
+  'awaiting_selfie',
+  'pending',
+  'approved',
+  'rejected',
+]);
+
+export const verifications = pgTable(
+  'verifications',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: ownerId(),
+    pose: verificationPoseEnum('pose').notNull(),
+    status: verificationStatusEnum('status').notNull().default('awaiting_selfie'),
+    /** Deleted (set null) as soon as a decision is made. */
+    selfiePhotoId: uuid('selfie_photo_id').references(() => photos.id, { onDelete: 'set null' }),
+    decidedBy: text('decided_by').references(() => user.id, { onDelete: 'set null' }),
+    decidedAt: timestamp('decided_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index('verifications_user_idx').on(t.userId, t.createdAt),
+    index('verifications_status_idx').on(t.status, t.createdAt),
+  ],
 );

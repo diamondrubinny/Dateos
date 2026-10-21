@@ -450,6 +450,36 @@ export class DiscoveryService {
       this.notify([blockerId, blockedId], { type: 'match.closed', matchId: m.id });
   }
 
+  /**
+   * Whether the reporter has had any contact with the target: can see them now, matched at
+   * some point, or received a like from them. Reports outside this are treated as not found,
+   * so reporting cannot be used to probe accounts.
+   */
+  async hasContact(viewerId: string, targetId: string): Promise<boolean> {
+    if (viewerId === targetId) return false;
+    if (await this.canView(viewerId, targetId)) return true;
+    const result = await this.db.execute<{ ok: boolean }>(sql`
+      SELECT EXISTS (
+        SELECT 1 FROM matches m
+        WHERE (m.user_a = ${viewerId} AND m.user_b = ${targetId}) OR (m.user_a = ${targetId} AND m.user_b = ${viewerId})
+      ) OR EXISTS (
+        SELECT 1 FROM interactions i WHERE i.actor_id = ${targetId} AND i.target_id = ${viewerId}
+      ) AS ok`);
+    return Boolean(result.rows[0]?.ok);
+  }
+
+  /** Ends every active match of a member (suspension) and tells both sides. */
+  async closeAllMatches(userId: string): Promise<void> {
+    const ended = await this.db
+      .update(matches)
+      .set({ unmatchedAt: new Date(), unmatchedBy: null })
+      .where(
+        and(or(eq(matches.userA, userId), eq(matches.userB, userId)), isNull(matches.unmatchedAt)),
+      )
+      .returning({ id: matches.id, userA: matches.userA, userB: matches.userB });
+    for (const m of ended) this.notify([m.userA, m.userB], { type: 'match.closed', matchId: m.id });
+  }
+
   // ---------------------------------------------------------------- presentation
 
   private async toProfiles(viewerId: string, items: Ranked[]): Promise<PublicProfile[]> {
@@ -495,6 +525,7 @@ export class DiscoveryService {
             .filter((r) => r.userId === p.userId)
             .map(({ id, width, height }) => ({ id, url: photoUrl(id), width, height })),
           distance: Number.isFinite(item.km) ? distanceBucket(item.km) : null,
+          verified: p.verifiedAt !== null,
           reasons: item.result?.reasons ?? [],
         },
       ];

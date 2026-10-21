@@ -16,7 +16,7 @@ export default function TabsLayout() {
   const me = useMe(Boolean(session.data));
   if (session.isPending || (session.data && me.isPending)) return <Loading />;
   if (!session.data) return <Redirect href="/welcome" />;
-  if (me.data && !me.data.onboarding.complete) return <Redirect href={routeFor(me.data)} />;
+  if (me.data && routeFor(me.data) !== '/discover') return <Redirect href={routeFor(me.data)} />;
 
   return (
     <Tabs

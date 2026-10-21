@@ -66,6 +66,11 @@ function SettingsContent() {
         label={t('settings.preferences')}
         onPress={() => router.push('/preferences')}
       />
+      <Button
+        variant="secondary"
+        label={me.data?.verified ? `✓ ${t('verify.approved')}` : t('verify.entry')}
+        onPress={() => router.push('/verify')}
+      />
 
       <AppText variant="heading">{t('settings.privacy')}</AppText>
       <Checkbox

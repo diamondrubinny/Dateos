@@ -11,6 +11,14 @@ describe('routeFor', () => {
     expect(routeFor(me(['photos', 'prompts']))).toBe('/onboarding/photos');
   });
 
+  it('sends suspended members to the suspension notice first', () => {
+    const suspended = {
+      ...me([]),
+      user: { id: 'u', email: 'e', status: 'suspended' },
+    } as MeResponse;
+    expect(routeFor(suspended)).toBe('/suspended');
+  });
+
   it('sends onboarded users to discovery', () => {
     expect(routeFor(me([]))).toBe('/discover');
   });

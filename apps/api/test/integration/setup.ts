@@ -20,6 +20,8 @@ export interface TestContext {
   mail: MailMessage[];
   jobs: { process: ProcessPhotoJob[]; delete: DeleteObjectsJob[]; embed: string[] };
   today: { value: string };
+  /** Clock used for TOTP checks; advance it by 30 s to get a fresh code. */
+  clock: { value: number };
 }
 
 /**
@@ -76,6 +78,7 @@ export async function setupIntegration(): Promise<TestContext> {
     close: async () => undefined,
   };
   const today = { value: '2026-10-20' };
+  const clock = { value: Date.parse('2026-10-20T10:00:00Z') };
   const redis = new Redis(env.REDIS_URL);
   const services = createServices(
     env,
@@ -88,16 +91,17 @@ export async function setupIntegration(): Promise<TestContext> {
       mediaQueue,
       profileQueue,
       today: () => today.value,
+      now: () => clock.value,
     },
   );
   await services.storage.ensureBuckets();
   const app = await buildApp(env, { dependencies: services.dependencies, redis, services });
-  return { app, env, services, redis, mail, jobs, today };
+  return { app, env, services, redis, mail, jobs, today, clock };
 }
 
 export async function resetState(ctx: TestContext): Promise<void> {
   await ctx.services.dbHandle.pool.query(
-    'TRUNCATE "user", verification, rate_limit, audit_logs RESTART IDENTITY CASCADE',
+    'TRUNCATE "user", verification, rate_limit, audit_logs, banned_emails RESTART IDENTITY CASCADE',
   );
   const { storage } = ctx.services;
   for (const bucket of Object.values(storage.buckets)) {
@@ -110,6 +114,7 @@ export async function resetState(ctx: TestContext): Promise<void> {
   ctx.jobs.delete.length = 0;
   ctx.jobs.embed.length = 0;
   ctx.today.value = '2026-10-20';
+  ctx.clock.value = Date.parse('2026-10-20T10:00:00Z');
 }
 
 export async function teardown(ctx: TestContext): Promise<void> {

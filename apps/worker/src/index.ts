@@ -17,7 +17,12 @@ import { pino } from 'pino';
 import { createClamavScanner, noopScanner } from './clamav.js';
 import { loadWorkerEnv } from './env.js';
 import { deleteObjects, processPhoto, type JobContext } from './jobs.js';
-import { cleanupDiscovery, embedProfile, purgeClosedChats } from './profile-jobs.js';
+import {
+  cleanupDiscovery,
+  cleanupModeration,
+  embedProfile,
+  purgeClosedChats,
+} from './profile-jobs.js';
 
 async function main(): Promise<void> {
   const env = loadWorkerEnv();
@@ -84,7 +89,11 @@ async function main(): Promise<void> {
         case ProfileJob.EmbedProfile:
           return embedProfile(db, embeddings, job.data as EmbedProfileJob);
         case 'cleanup-discovery':
-          return { ...(await cleanupDiscovery(db)), ...(await purgeClosedChats(db, storage)) };
+          return {
+            ...(await cleanupDiscovery(db)),
+            ...(await purgeClosedChats(db, storage)),
+            ...(await cleanupModeration(db)),
+          };
         default:
           throw new Error(`Unknown job: ${job.name}`);
       }

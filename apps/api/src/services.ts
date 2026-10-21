@@ -17,6 +17,11 @@ import { ChatService } from './modules/chat/service.js';
 import { DiscoveryService } from './modules/discovery/service.js';
 import { MeService, todayUtc } from './modules/me/service.js';
 import { PhotoService } from './modules/photos/service.js';
+import { createEmailHasher } from './lib/banned.js';
+import { StaffMfaService } from './modules/admin/mfa.js';
+import { ModerationService } from './modules/admin/moderation.js';
+import { ReportService } from './modules/safety/reports.js';
+import { VerificationService } from './modules/safety/verification.js';
 
 export interface Services {
   dbHandle: DbHandle;
@@ -30,6 +35,10 @@ export interface Services {
   mailer: Mailer;
   me: MeService;
   photos: PhotoService;
+  reports: ReportService;
+  verification: VerificationService;
+  staffMfa: StaffMfaService;
+  moderation: ModerationService;
   /** Health checks and shutdown hooks for the resources above. */
   dependencies: Dependency[];
 }
@@ -39,6 +48,8 @@ export interface ServiceOverrides {
   mediaQueue?: MediaQueue;
   profileQueue?: ProfileQueue;
   today?: () => string;
+  /** Clock for TOTP checks (tests). */
+  now?: () => number;
 }
 
 export function createServices(
@@ -80,6 +91,9 @@ export function createServices(
       ? ollamaIcebreakers(env.OLLAMA_URL, env.OLLAMA_CHAT_MODEL)
       : templateIcebreakers;
 
+  const verification = new VerificationService(dbHandle.db, photos);
+  const hashEmail = createEmailHasher(secrets.authSecret);
+
   return {
     dbHandle,
     auth,
@@ -92,6 +106,15 @@ export function createServices(
     photos,
     realtime,
     chat: new ChatService(dbHandle.db, realtime, discovery, photos, icebreakers),
+    reports: new ReportService(dbHandle.db, discovery, mailer, env.INSTANCE_NAME, onMailError),
+    verification,
+    staffMfa: new StaffMfaService(
+      dbHandle.db,
+      secrets.authSecret,
+      env.INSTANCE_NAME,
+      overrides.now,
+    ),
+    moderation: new ModerationService(dbHandle.db, discovery, hashEmail, today),
     dependencies: [
       {
         name: 'postgres',

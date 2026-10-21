@@ -11,6 +11,8 @@ export const ErrorCode = {
   PayloadTooLarge: 'PAYLOAD_TOO_LARGE',
   RateLimited: 'RATE_LIMITED',
   Underage: 'UNDERAGE',
+  /** Staff tools need a fresh TOTP check for this session. */
+  MfaRequired: 'MFA_REQUIRED',
   ServiceUnavailable: 'SERVICE_UNAVAILABLE',
   Internal: 'INTERNAL_ERROR',
 } as const;

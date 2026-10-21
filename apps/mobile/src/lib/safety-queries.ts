@@ -1,0 +1,75 @@
+import type { ReportInput, VerificationState } from '@dateos/shared';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Platform } from 'react-native';
+import { apiFetch, json } from './api';
+import { discoveryKeys, keys, type PickedImage } from './queries';
+import { chatKeys } from './realtime';
+
+export const safetyKeys = { verification: ['verification'] as const };
+
+export function useReport() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (input: ReportInput) =>
+      apiFetch<{ reportId: string }>('/v1/reports', { method: 'POST', body: json(input) }),
+    // A report usually blocks too: refresh every list the person could appear in.
+    onSuccess: () => {
+      for (const key of Object.values(discoveryKeys)) {
+        if (Array.isArray(key)) void client.invalidateQueries({ queryKey: key });
+      }
+      void client.invalidateQueries({ queryKey: chatKeys.conversations });
+    },
+  });
+}
+
+export function useVerification() {
+  return useQuery({
+    queryKey: safetyKeys.verification,
+    queryFn: () => apiFetch<VerificationState>('/v1/me/verification'),
+    // While the selfie is being scanned, check again shortly.
+    refetchInterval: (query) => (query.state.data?.processing ? 2000 : false),
+  });
+}
+
+function useVerificationMutation<T>(request: (input: T) => Promise<VerificationState>) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: request,
+    onSuccess: (state) => {
+      client.setQueryData(safetyKeys.verification, state);
+      void client.invalidateQueries({ queryKey: keys.me });
+    },
+  });
+}
+
+export const useStartVerification = () =>
+  useVerificationMutation(() =>
+    apiFetch<VerificationState>('/v1/me/verification', { method: 'POST' }),
+  );
+
+export const useSubmitSelfie = () =>
+  useVerificationMutation(async (image: PickedImage) => {
+    const form = new FormData();
+    if (Platform.OS === 'web') {
+      const blob = image.file ?? (await (await fetch(image.uri)).blob());
+      form.append('file', blob, image.fileName ?? 'selfie.jpg');
+    } else {
+      form.append('file', {
+        uri: image.uri,
+        name: image.fileName ?? 'selfie.jpg',
+        type: image.mimeType ?? 'image/jpeg',
+      } as unknown as Blob);
+    }
+    return apiFetch<VerificationState>('/v1/me/verification/selfie', {
+      method: 'POST',
+      body: form,
+    });
+  });
+
+export function useAcknowledgeNotice() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => apiFetch(`/v1/me/notices/${id}/ack`, { method: 'POST' }),
+    onSuccess: () => client.invalidateQueries({ queryKey: keys.me }),
+  });
+}
