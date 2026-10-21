@@ -2,7 +2,7 @@
  * Captures real screenshots of the web build by walking the full flow against a running
  * stack: API, worker, Mailpit and the exported web app (see README "Screenshots").
  */
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import AxeBuilder from '@axe-core/playwright';
 import { chromium, type Page } from 'playwright';
@@ -10,6 +10,7 @@ import sharp from 'sharp';
 import { en } from '../apps/mobile/src/i18n/en.ts';
 import { he } from '../apps/mobile/src/i18n/he.ts';
 import { demoPhoto, demoScenes } from './demo-images.ts';
+import { demoLikes, seedDemo } from './seed-demo.ts';
 
 const WEB = process.env.WEB_URL ?? 'http://localhost:8081';
 const MAILPIT = process.env.MAILPIT_URL ?? 'http://localhost:8025';
@@ -84,6 +85,39 @@ async function audit(page: Page, screen: string) {
   }
 }
 
+const escape = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+async function waitForImages(page: Page) {
+  await page.waitForFunction(() =>
+    [...document.querySelectorAll<HTMLImageElement>('img')].every(
+      (img) => img.complete && img.naturalWidth > 0,
+    ),
+  );
+}
+
+const likers = {
+  en: [
+    {
+      name: 'Itai',
+      comment: 'Your first date idea sounds perfect. I know the best hummus place!',
+      onPrompt: true,
+    },
+    { name: 'Daniel', comment: 'Fellow beach person here 🌊' },
+  ],
+  he: [
+    {
+      name: 'Itai',
+      comment: 'רעיון מושלם לדייט ראשון. אני מכיר את החומוס הכי טוב!',
+      onPrompt: true,
+    },
+    { name: 'Daniel', comment: 'גם אני חי על החוף 🌊' },
+  ],
+};
+const comments = {
+  en: 'Kindness to strangers is the best green flag 💜',
+  he: 'אדיבות לזרים זה הדגל הירוק הכי טוב 💜',
+};
+
 async function shot(page: Page, locale: string, name: string) {
   // Drop focus left by the last click so screenshots show the resting state.
   await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
@@ -109,6 +143,8 @@ async function run(locale: keyof typeof people) {
     viewport: { width: 390, height: 844 },
     deviceScaleFactor: 2,
     locale: locale === 'he' ? 'he-IL' : 'en-US',
+    geolocation: { latitude: 32.0809, longitude: 34.7806 }, // Tel Aviv
+    permissions: ['geolocation'],
   });
   const page = await context.newPage();
   page.on('pageerror', (e) => process.stderr.write(`pageerror: ${e.message}\n`));
@@ -183,16 +219,60 @@ async function run(locale: keyof typeof people) {
   await shot(page, locale, '07-prompts');
   await page.getByRole('button', { name: t.onboarding.done }).click();
 
+  // Demo activity: two fictional members already liked this account.
+  await page.getByRole('button', { name: t.location.allow }).waitFor();
+  await demoLikes(email, likers[locale]);
+  await shot(page, locale, '08-location');
+  await page.getByRole('button', { name: t.location.allow }).click();
+
+  // Discover: the card, then "like this prompt" with a comment.
+  await page.getByText(t.discover.whyTitle).first().waitFor();
+  await waitForImages(page);
+  await shot(page, locale, '09-discover');
+  const likePrompt = page
+    .getByRole('button', {
+      name: new RegExp(`^${escape(t.discover.likeItemLabel.split('{{')[0]!)}`),
+    })
+    .first();
+  await likePrompt.scrollIntoViewIfNeeded();
+  await likePrompt.click();
+  await page.getByLabel(new RegExp(`^${t.discover.commentOptional}`)).fill(comments[locale]);
+  await shot(page, locale, '10-like-comment');
+  await page.getByRole('button', { name: t.discover.send }).click();
+  const celebration = page.getByRole('dialog', { name: t.matches.newMatchTitle });
+  // isVisible() does not wait, so wait explicitly for the overlay.
+  if (
+    await celebration.waitFor({ timeout: 5_000 }).then(
+      () => true,
+      () => false,
+    )
+  ) {
+    await shot(page, locale, '11-match');
+    await page.getByRole('button', { name: t.matches.keepExploring }).click();
+  } else {
+    process.stdout.write('  (no match on the first like; 11-match skipped)\n');
+  }
+
+  for (const [name, url, ready] of [
+    ['12-picks', '/picks', t.picks.title],
+    ['13-likes', '/likes', t.likes.title],
+    ['14-matches', '/matches', t.matches.title],
+  ] as const) {
+    await page.goto(`${WEB}${url}`);
+    await page.getByText(ready).first().waitFor();
+    await waitForImages(page);
+    await shot(page, locale, name);
+  }
+
+  await page.goto(`${WEB}/profile`);
   await page.getByText(t.home.readyTitle).waitFor();
-  await page.waitForFunction(() =>
-    [...document.querySelectorAll<HTMLImageElement>('img')].every((img) => img.complete),
-  );
-  await shot(page, locale, '08-home');
+  await waitForImages(page);
+  await shot(page, locale, '15-profile');
 
   await page.getByRole('button', { name: t.home.settings }).click();
   await page.getByText(t.settings.deleteAccount).waitFor();
   await page.getByRole('button', { name: t.settings.support }).first().scrollIntoViewIfNeeded();
-  await shot(page, locale, '09-settings');
+  await shot(page, locale, '16-settings');
 
   // Clean up: deleting the demo account also exercises the deletion flow end to end.
   await page.getByRole('button', { name: t.settings.deleteAccount }).click();
@@ -202,7 +282,8 @@ async function run(locale: keyof typeof people) {
   await browser.close();
 }
 
-async function showcase(locale: string, names: string[]) {
+async function showcase(file: string, locale: string, names: string[]) {
+  names = names.filter((n) => existsSync(join(OUT, locale, `${n}.png`)));
   const width = 300;
   const gap = 28;
   const tiles = await Promise.all(
@@ -228,14 +309,28 @@ async function showcase(locale: string, names: string[]) {
     )
     .png({ compressionLevel: 9, palette: true })
     .toBuffer();
-  writeFileSync(join(OUT, `showcase-${locale}.png`), out);
-  process.stdout.write(`  ✓ showcase-${locale}.png\n`);
+  writeFileSync(join(OUT, `showcase-${file}.png`), out);
+  process.stdout.write(`  ✓ showcase-${file}.png\n`);
 }
 
+await seedDemo({ reset: true });
 for (const locale of ['en', 'he'] as const) {
   process.stdout.write(`${locale}:\n`);
   await run(locale);
-  await showcase(locale, ['01-welcome', '04-profile', '06-photos', '07-prompts', '08-home']);
+  await showcase(`${locale}`, locale, [
+    '09-discover',
+    '10-like-comment',
+    '11-match',
+    '12-picks',
+    '13-likes',
+  ]);
+  await showcase(`onboarding-${locale}`, locale, [
+    '01-welcome',
+    '04-profile',
+    '06-photos',
+    '07-prompts',
+    '08-location',
+  ]);
 }
 
 process.stdout.write(`\naxe-core WCAG 2.1 AA: ${a11yIssues.length} violation(s)\n`);

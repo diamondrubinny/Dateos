@@ -12,6 +12,7 @@ import {
   type LikeReceived,
   type LocationInput,
   type MatchSummary,
+  type PromptKey,
   type PublicProfile,
   type ReasonCode,
 } from '@dateos/shared';
@@ -29,7 +30,6 @@ const {
   matches,
   blocks,
   dailyPicks,
-  impressions,
   locations,
   consents,
   user,
@@ -317,11 +317,13 @@ export class DiscoveryService {
       comment: string | null;
       item_type: 'photo' | 'prompt' | null;
       item_id: string | null;
+      prompt_key: PromptKey | null;
       created_at: Date;
     }>(sql`
-      SELECT i.actor_id, i.comment, i.item_type, i.item_id, i.created_at
+      SELECT i.actor_id, i.comment, i.item_type, i.item_id, p.prompt_key, i.created_at
       FROM interactions i
       JOIN "user" u ON u.id = i.actor_id AND u.status = 'active'
+      LEFT JOIN prompts p ON i.item_type = 'prompt' AND p.id = i.item_id AND p.user_id = ${viewerId}
       WHERE i.target_id = ${viewerId} AND i.kind = 'like'
         AND NOT EXISTS (SELECT 1 FROM interactions mine WHERE mine.actor_id = ${viewerId} AND mine.target_id = i.actor_id)
         AND ${notSeparated(sql`${viewerId}`, sql`i.actor_id`)}
@@ -348,6 +350,7 @@ export class DiscoveryService {
               comment: r.comment,
               itemType: r.item_type,
               itemId: r.item_id,
+              promptKey: r.prompt_key,
               createdAt: new Date(r.created_at).toISOString(),
             },
           ]

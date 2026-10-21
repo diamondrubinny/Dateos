@@ -117,6 +117,8 @@ export const likeReceivedSchema = z.object({
   comment: z.string().nullable(),
   itemType: z.enum(['photo', 'prompt']).nullable(),
   itemId: z.uuid().nullable(),
+  /** Which of my prompts was liked, when the like was on a prompt. */
+  promptKey: promptKeySchema.nullable(),
   createdAt: z.string(),
 });
 export type LikeReceived = z.infer<typeof likeReceivedSchema>;

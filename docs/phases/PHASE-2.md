@@ -1,6 +1,6 @@
 # Phase 2: Discovery, reciprocal AI matching, Daily Picks, matches
 
-> Status: in progress. 📘 = verify against official docs, ⚖️ = needs legal review.
+> Status: ✅ done (2026-10-21). 📘 = verify against official docs, ⚖️ = needs legal review.
 
 ## Scope
 
@@ -59,3 +59,29 @@
 - Unit: grid snapping and distance buckets, scoring components, reasons, fairness, hashing embeddings.
 - Integration: mutual filters (gender, age, distance, intention), blocks hide in both directions, like→match, unmatch, interaction on non-visible user → 404, photo access for viewers vs strangers, raw coordinates never stored, daily picks idempotent, daily cap.
 - E2E: screenshots of the new screens + axe-core audit.
+
+## Results
+
+| Check                                                         | Result                                                                                                                                                                 |
+| ------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Unit tests                                                    | shared 17, ai 15, api 22, worker 9, mobile 5                                                                                                                           |
+| Integration tests (real Postgres/PostGIS/pgvector, Redis, S3) | 37 passed: symmetric filters, snapping stored, blocks both ways, IDOR on profiles/photos/likes, unmatch, picks stable, daily cap, deletion cascade, embedding re-queue |
+| Ollama (`paraphrase-multilingual`, 768-d)                     | Worker job stores real embeddings; EN↔HE same meaning 0.93 vs unrelated 0.18                                                                                           |
+| Browser flow (he + en)                                        | Sign-up → location → Discover → like a prompt with a comment → match → Picks → Likes → Matches → Settings → delete                                                     |
+| axe-core WCAG 2.1 A/AA (32 screens)                           | 6 violations found (label-in-name) → fixed → **0**                                                                                                                     |
+
+## Bugs found and fixed during this phase
+
+1. **Match pair constraint vs. collation.** `user_a < user_b` used the database's `en_US` collation, which disagrees with JavaScript ordering for mixed-case ids, so about half of all real matches would have failed with a 500. Fixed with `COLLATE "C"` (migration 0003) and covered by a deterministic regression test.
+2. **Stale onboarding state after the last step.** `/v1/me` was invalidated but not refetched while no screen observed it, so the app redirected back to the location step. Fixed by refetching inactive queries.
+3. **Embeddings never refreshed after the first edit.** BullMQ silently drops a job whose id still exists, including completed jobs. Fixed by removing finished embed jobs. The regression test exercises the real queue and fails on the old code.
+4. **Match celebration off-screen.** It rendered at the top of a scrolled page. It is now a modal dialog.
+5. **Likes didn't say which prompt was liked.** The API now returns `promptKey`.
+6. **RTL arrows and Hebrew grammar with Latin names.** Arrows now mirror, and the Hebrew strings were rephrased so prefixes aren't glued to names.
+
+## Known limitations / follow-ups
+
+- Hashing embeddings are lexical: they don't match across languages. Use Ollama for semantic, multilingual matching.
+- Candidate generation scans the mutual-filter SQL per request (fine for tens of thousands of members). ANN indexes, caching and the candidate cap need load testing before large instances.
+- Native builds still need on-device testing (location permission prompts, deep links).
+- Reporting and moderation arrive in phase 4. Block and unmatch exist now as the safety baseline.

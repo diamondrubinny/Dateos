@@ -2,18 +2,17 @@ import { Image } from 'expo-image';
 import { Redirect, router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Platform, StyleSheet, View } from 'react-native';
-import { AppText } from '../components/AppText';
-import { Button } from '../components/Button';
-import { Loading } from '../components/Loading';
-import { RequireSession } from '../components/RequireSession';
-import { Screen } from '../components/Screen';
-import { mediaUrl } from '../lib/api';
-import { useMe } from '../lib/queries';
-import { routeFor } from '../lib/routes';
-import { radius, spacing, useColors } from '../lib/theme';
-import { useSessionCookie } from '../lib/use-cookie';
+import { AppText } from '../../components/AppText';
+import { Button } from '../../components/Button';
+import { Loading } from '../../components/Loading';
+import { Screen } from '../../components/Screen';
+import { mediaUrl } from '../../lib/api';
+import { useMe } from '../../lib/queries';
+import { routeFor } from '../../lib/routes';
+import { radius, spacing, useColors } from '../../lib/theme';
+import { useSessionCookie } from '../../lib/use-cookie';
 
-function HomeContent() {
+function ProfileContent() {
   const { t } = useTranslation();
   const colors = useColors();
   const me = useMe();
@@ -80,12 +79,8 @@ function HomeContent() {
   );
 }
 
-export default function Home() {
-  return (
-    <RequireSession>
-      <HomeContent />
-    </RequireSession>
-  );
+export default function ProfileTab() {
+  return <ProfileContent />;
 }
 
 const styles = StyleSheet.create({

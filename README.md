@@ -10,7 +10,7 @@ Native iOS & Android plus web from one codebase, privacy by design, and safety b
 [![WCAG 2.1 AA target](https://img.shields.io/badge/accessibility-WCAG%202.1%20AA%20target-067647.svg)](#accessibility)
 [![Sponsor](https://img.shields.io/badge/sponsor-%F0%9F%92%9C-ea4aaa.svg?logo=githubsponsors)](https://github.com/sponsors/diamondrubinny)
 
-<img src="docs/screenshots/showcase-en.png" alt="Dateos screens: welcome, profile setup, photo upload, prompts and the finished profile" width="100%">
+<img src="docs/screenshots/showcase-en.png" alt="Dateos screens: a Discover card with reasons, liking a prompt with a comment, the match screen, Daily Picks and Likes You" width="100%">
 
 <sub>Real screenshots of the current web build, captured automatically by <a href="e2e/screenshots.ts">e2e/screenshots.ts</a>. Profile photos are illustrations; no real people appear.</sub>
 
@@ -27,7 +27,9 @@ Dateos is built the other way around:
 - 🏠 **Run your own instance.** A city, a community or an organisation can launch a branded dating app with one install script.
 - 🛡️ **Safety first.** Photos are scanned for malware and stripped of location data. Location is only ever approximate. Under-18 sign-ups are blocked.
 - 🔒 **Privacy by design.** Passwordless sign-in, minimal data, versioned consent, and full account deletion from inside the app.
-- 🤖 **AI that respects you.** Matching and assistance run on the instance's own server by default; cloud AI is opt-in only.
+- 💞 **Reciprocal, explainable matching.** Recommends people likely to be interested _in each other_, explains why, and spreads attention fairly. The algorithm is [published](docs/MATCHING.md).
+- 💌 **"Likes You" is free.** See everyone who liked you, and like a specific photo or prompt with a comment.
+- 🤖 **AI that respects you.** Matching runs on the instance's own server by default (offline or with a local Ollama model); cloud AI is opt-in only.
 - ♿ **Accessible and bilingual.** Hebrew (RTL) and English, screen-reader labels, keyboard navigation, and a button for every gesture.
 
 ## Status
@@ -41,20 +43,31 @@ Dateos is in active development. Here is what works today and what comes next. T
 | Photo upload with malware scan (ClamAV), EXIF/GPS stripping, re-encoding       | ✅ Available      |
 | Account deletion (all data and files)                                          | ✅ Available      |
 | iOS / Android / web app: onboarding, profile, settings (Hebrew + English, RTL) | ✅ Available      |
-| Discovery, reciprocal AI matching, Daily Picks, "why we matched"               | 🛠️ Next (phase 2) |
-| Real-time chat, AI icebreakers, harassment filter                              | 🗓️ Phase 3–5      |
-| Block / report, moderation dashboard, selfie verification                      | 🗓️ Phase 4        |
+| Approximate location (~1 km grid, bucketed distances)                          | ✅ Available      |
+| Discovery, reciprocal AI matching, Daily Picks, "why you might click"          | ✅ Available      |
+| Like / pass / like a photo or prompt with a comment, Likes You, matches        | ✅ Available      |
+| Unmatch and block                                                              | ✅ Available      |
+| Real-time chat, AI icebreakers, harassment filter                              | 🛠️ Next (phase 3) |
+| Report, moderation dashboard, selfie verification                              | 🗓️ Phase 4        |
 | Video dates, safety check-in, date planner                                     | 🗓️ Later          |
 
 ## Screenshots
 
-| Welcome                                                                         | Sign in                                                                        | Profile                                                                       | Photos                                                                     | Prompts                                                                              | Profile ready                                                                  | Settings                                                                                                    |
-| ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ | ----------------------------------------------------------------------------- | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------- |
-| <img src="docs/screenshots/en/01-welcome.png" width="140" alt="Welcome screen"> | <img src="docs/screenshots/en/02-sign-in.png" width="140" alt="Email sign-in"> | <img src="docs/screenshots/en/04-profile.png" width="140" alt="Profile form"> | <img src="docs/screenshots/en/06-photos.png" width="140" alt="Photo grid"> | <img src="docs/screenshots/en/07-prompts.png" width="140" alt="Personality prompts"> | <img src="docs/screenshots/en/08-home.png" width="140" alt="Finished profile"> | <img src="docs/screenshots/en/09-settings.png" width="140" alt="Settings with privacy choices and support"> |
+**Discovery and matching**
+
+| Discover                                                                                     | Like a prompt                                                                                        | It's a match                                                                 | Today's picks                                                                   | Likes you                                                                           | Matches                                                                       |
+| -------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| <img src="docs/screenshots/en/09-discover.png" width="130" alt="Discover card with reasons"> | <img src="docs/screenshots/en/10-like-comment.png" width="130" alt="Liking a prompt with a comment"> | <img src="docs/screenshots/en/11-match.png" width="130" alt="Match overlay"> | <img src="docs/screenshots/en/12-picks.png" width="130" alt="Daily picks list"> | <img src="docs/screenshots/en/13-likes.png" width="130" alt="People who liked you"> | <img src="docs/screenshots/en/14-matches.png" width="130" alt="Matches list"> |
+
+**Onboarding**
+
+<img src="docs/screenshots/showcase-onboarding-en.png" alt="Welcome, profile form, photo upload, prompts and the approximate-location step" width="100%">
 
 **Full right-to-left support (Hebrew):**
 
-<img src="docs/screenshots/showcase-he.png" alt="The same screens in Hebrew with right-to-left layout" width="100%">
+<img src="docs/screenshots/showcase-he.png" alt="The discovery screens in Hebrew with right-to-left layout" width="100%">
+
+<sub>All 32 screens (English and Hebrew) are in <a href="docs/screenshots">docs/screenshots</a>. Demo members are fictional and their pictures are illustrations.</sub>
 
 ## Quick start
 
@@ -67,6 +80,7 @@ pnpm infra:up                # PostgreSQL (PostGIS + pgvector), Redis, SeaweedFS
 docker compose -f infra/docker-compose.yml --env-file .env --profile full --profile dev up -d
                              # + ClamAV malware scanning, + Mailpit (catches sign-in emails)
 pnpm dev                     # API on :4000 and worker (migrations run automatically)
+pnpm --filter @dateos/e2e seed     # optional: fictional demo members around Tel Aviv
 pnpm --filter @dateos/mobile web   # app in the browser on :8081
 ```
 
@@ -82,6 +96,8 @@ For iOS/Android, run `pnpm --filter @dateos/mobile start` and open the project i
 | `pnpm check`                                 | Format check, lint, typecheck and unit tests                                              |
 | `pnpm --filter @dateos/api test:integration` | API tests against real Postgres, Redis and S3 (IDOR, underage, deletion…)                 |
 | `pnpm --filter @dateos/e2e screenshots`      | Walks the whole app in a browser, regenerates screenshots and runs an axe-core WCAG audit |
+| `pnpm --filter @dateos/e2e seed -- --reset`  | Recreates the fictional demo members (refuses to run against non-local databases)         |
+| `pnpm --filter @dateos/worker reembed`       | Re-computes every profile embedding (after switching the embedding model)                 |
 | `./install.sh --force --reset-data`          | Regenerates secrets **and deletes all local data**                                        |
 
 </details>
@@ -95,20 +111,22 @@ flowchart LR
   api --> pg[("PostgreSQL<br/>PostGIS + pgvector")]
   api --> redis[("Redis")]
   api -- quarantine --> s3[("Object storage<br/>SeaweedFS / any S3")]
-  redis -- jobs --> worker["Worker<br/>ClamAV scan + sharp"]
+  redis -- jobs --> worker["Worker<br/>ClamAV scan, sharp,<br/>embeddings"]
   worker --> s3
   worker --> pg
   worker --> clam["ClamAV"]
+  worker -. optional .-> ollama["Ollama<br/>local AI"]
 ```
 
 | Path               | Description                                                          |
 | ------------------ | -------------------------------------------------------------------- |
-| `apps/api`         | Fastify API: auth, profiles, photos, security headers, rate limiting |
+| `apps/api`         | Fastify API: auth, profiles, photos, discovery, matching, security   |
 | `apps/worker`      | Background jobs: malware scanning, image processing, storage cleanup |
 | `apps/mobile`      | Expo Router app for iOS, Android and web (Hebrew/English, RTL)       |
 | `packages/shared`  | Zod schemas and types shared by server and clients                   |
 | `packages/db`      | Drizzle schema and SQL migrations                                    |
 | `packages/storage` | S3 helpers                                                           |
+| `packages/ai`      | Embeddings (offline hashing, Ollama) and reciprocal scoring          |
 | `infra/`           | Docker Compose and the Postgres image                                |
 | `e2e/`             | Browser flow, screenshots and accessibility audit                    |
 
@@ -118,6 +136,8 @@ flowchart LR
 - Every endpoint checks ownership on the server. Integration tests verify that one user cannot read, delete or reorder another user's photos.
 - Uploads are type-checked by magic bytes, size-limited and held in a quarantine bucket until ClamAV has scanned them. They are then re-encoded with all EXIF/GPS metadata removed.
 - Photos are served only through the API with an access check, never from public bucket URLs.
+- Location is snapped to a ~1 km grid before it is stored, and distances are only returned as buckets, which limits trilateration attacks to cell precision.
+- One visibility rule (mutual preferences, blocks, unmatches) gates discovery, profiles, photos and likes. Anything else returns "not found".
 - Strict security headers, CORS allowlist, request size limits, log redaction of tokens, emails and phone numbers, and no stack traces in responses.
 - CI runs lint, typecheck, unit and integration tests, a dependency audit, CodeQL, Gitleaks and Docker builds. Actions are pinned to commit SHAs.
 

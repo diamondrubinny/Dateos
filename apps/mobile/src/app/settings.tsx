@@ -11,7 +11,13 @@ import { LanguageSwitch } from '../components/LanguageSwitch';
 import { RequireSession } from '../components/RequireSession';
 import { Screen } from '../components/Screen';
 import { authClient } from '../lib/auth-client';
-import { useDeleteAccount, useInstance, useMe, useSetConsents } from '../lib/queries';
+import {
+  useClearLocation,
+  useDeleteAccount,
+  useInstance,
+  useMe,
+  useSetConsents,
+} from '../lib/queries';
 import { radius, spacing, useColors } from '../lib/theme';
 
 function SettingsContent() {
@@ -21,6 +27,8 @@ function SettingsContent() {
   const instance = useInstance();
   const consents = useSetConsents();
   const deleteAccount = useDeleteAccount();
+  const clearLocation = useClearLocation();
+  const [locationRemoved, setLocationRemoved] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [error, setError] = useState<string>();
 
@@ -51,7 +59,13 @@ function SettingsContent() {
   return (
     <Screen back title={t('settings.title')}>
       {error ? <Banner tone="error" message={error} /> : null}
+      {locationRemoved ? <Banner tone="info" message={t('settings.locationRemoved')} /> : null}
       <LanguageSwitch />
+      <Button
+        variant="secondary"
+        label={t('settings.preferences')}
+        onPress={() => router.push('/preferences')}
+      />
 
       <AppText variant="heading">{t('settings.privacy')}</AppText>
       <Checkbox
@@ -93,6 +107,17 @@ function SettingsContent() {
         </Link>
       </View>
 
+      <Button
+        variant="ghost"
+        label={t('settings.removeLocation')}
+        loading={clearLocation.isPending}
+        onPress={() =>
+          clearLocation.mutate(undefined, {
+            onSuccess: () => setLocationRemoved(true),
+            onError: () => setError(t('common.genericError')),
+          })
+        }
+      />
       <Button variant="ghost" label={t('settings.signOut')} onPress={() => void signOut()} />
 
       {confirming ? (

@@ -37,7 +37,7 @@ export default function PromptsStep() {
     setError(undefined);
     try {
       await save.mutateAsync(items);
-      router.replace('/home');
+      router.replace('/');
     } catch {
       setError(t('common.genericError'));
     }

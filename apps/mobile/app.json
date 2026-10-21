@@ -56,6 +56,12 @@
           "photosPermission": "Choose photos for your dating profile.",
           "cameraPermission": false
         }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Dateos uses your approximate location (about 1 km) to show people nearby."
+        }
       ]
     ],
     "experiments": {

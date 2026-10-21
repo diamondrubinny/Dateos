@@ -351,18 +351,18 @@ Dateos/
 
 ## 15. תוכנית עבודה בשלבים
 
-| שלב                          | תוכן                                                                                                                      | תוצר                         | בדיקות                                        |
-| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------- | ---------------------------- | --------------------------------------------- |
-| **0 – יסודות** ✅            | Monorepo, Docker Compose, CI (lint/typecheck/test/audit/gitleaks/CodeQL), README, .env.example, SECURITY.md, `install.sh` | `pnpm dev` מרים הכל          | CI ירוק                                       |
-| **1 – Auth + פרופיל**        | OTP/OAuth, sessions, פרופיל, העדפות, העלאת תמונות מלאה (quarantine→scan→sharp→clean), onboarding במובייל, i18n+RTL        | הרשמה עד פרופיל מלא          | IDOR tests, upload tests, e2e (Maestro)       |
-| **2 – Discovery + Matching** | מיקום מעוגל, candidates, embeddings, ציון הדדי, Daily Picks, interactions, matches                                        | Discover + Picks + Likes You | בדיקות דירוג דטרמיניסטיות, trilateration test |
-| **3 – Chat**                 | WebSocket, הודעות, מדיה, push, read receipts, offline queue                                                               | צ'אט מלא                     | עומס בסיסי, הרשאות שיחה                       |
-| **1.5 – Instance**           | Setup Wizard, מיתוג (שם/לוגו/צבעים/שפה), instance-settings, Web/PWA build                                                 | מפעיל מקים אתר ממותג         | בדיקת נעילת setup                             |
-| **4 – Safety**               | Block/Report, moderation מקומי, "Are you sure?", NSFW, selfie verification, Admin + MFA + audit                           | לוח מודרציה                  | תרחישי abuse                                  |
-| **5 – AI**                   | Icebreakers, "למה התאמנו", Profile Coach, scam detection, provider switch                                                 | פיצ'רי AI                    | evals ל-prompts, injection tests              |
-| **6 – Privacy & Compliance** | ייצוא/מחיקה, consents, retention jobs, טיוטות מסמכים משפטיים, הצהרת נגישות                                                | DSAR עובד                    | בדיקת מחיקה מקצה לקצה                         |
-| **7 – Hardening & Release**  | Pen-test, ביצועים, a11y audit ידני, App Store/Play review, Checklist פרודקשן                                              | בטא סגורה                    | Checklist מלא                                 |
-| **8 – v0.3+**                | Video dates, Safety check-in, Date planner, Anti-ghosting, אירועים                                                        |                              |                                               |
+| שלב                             | תוכן                                                                                                                      | תוצר                         | בדיקות                                        |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------- | ---------------------------- | --------------------------------------------- |
+| **0 – יסודות** ✅               | Monorepo, Docker Compose, CI (lint/typecheck/test/audit/gitleaks/CodeQL), README, .env.example, SECURITY.md, `install.sh` | `pnpm dev` מרים הכל          | CI ירוק                                       |
+| **1 – Auth + פרופיל** ✅        | OTP/OAuth, sessions, פרופיל, העדפות, העלאת תמונות מלאה (quarantine→scan→sharp→clean), onboarding במובייל, i18n+RTL        | הרשמה עד פרופיל מלא          | IDOR tests, upload tests, e2e (Maestro)       |
+| **2 – Discovery + Matching** ✅ | מיקום מעוגל, candidates, embeddings, ציון הדדי, Daily Picks, interactions, matches                                        | Discover + Picks + Likes You | בדיקות דירוג דטרמיניסטיות, trilateration test |
+| **3 – Chat**                    | WebSocket, הודעות, מדיה, push, read receipts, offline queue                                                               | צ'אט מלא                     | עומס בסיסי, הרשאות שיחה                       |
+| **1.5 – Instance**              | Setup Wizard, מיתוג (שם/לוגו/צבעים/שפה), instance-settings, Web/PWA build                                                 | מפעיל מקים אתר ממותג         | בדיקת נעילת setup                             |
+| **4 – Safety**                  | Block/Report, moderation מקומי, "Are you sure?", NSFW, selfie verification, Admin + MFA + audit                           | לוח מודרציה                  | תרחישי abuse                                  |
+| **5 – AI**                      | Icebreakers, "למה התאמנו", Profile Coach, scam detection, provider switch                                                 | פיצ'רי AI                    | evals ל-prompts, injection tests              |
+| **6 – Privacy & Compliance**    | ייצוא/מחיקה, consents, retention jobs, טיוטות מסמכים משפטיים, הצהרת נגישות                                                | DSAR עובד                    | בדיקת מחיקה מקצה לקצה                         |
+| **7 – Hardening & Release**     | Pen-test, ביצועים, a11y audit ידני, App Store/Play review, Checklist פרודקשן                                              | בטא סגורה                    | Checklist מלא                                 |
+| **8 – v0.3+**                   | Video dates, Safety check-in, Date planner, Anti-ghosting, אירועים                                                        |                              |                                               |
 
 כל שלב = PR נפרד עם קוד מלא, הוראות הרצה ובדיקות. **מעבר בין שלבים רק באישורך.**
 

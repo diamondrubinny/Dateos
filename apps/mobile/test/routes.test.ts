@@ -11,7 +11,7 @@ describe('routeFor', () => {
     expect(routeFor(me(['photos', 'prompts']))).toBe('/onboarding/photos');
   });
 
-  it('sends onboarded users home', () => {
-    expect(routeFor(me([]))).toBe('/home');
+  it('sends onboarded users to discovery', () => {
+    expect(routeFor(me([]))).toBe('/discover');
   });
 });

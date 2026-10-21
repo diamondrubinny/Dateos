@@ -1,6 +1,11 @@
 import type {
   ConsentInput,
   InstanceInfo,
+  InteractionInput,
+  LikeReceived,
+  LocationInput,
+  MatchSummary,
+  PublicProfile,
   MeResponse,
   Photo,
   Preferences,
@@ -39,7 +44,9 @@ function useMeMutation<TInput>(request: (input: TInput) => Promise<unknown>) {
   const client = useQueryClient();
   return useMutation({
     mutationFn: request,
-    onSuccess: () => client.invalidateQueries({ queryKey: keys.me }),
+    // Refetch even when no screen is currently observing /v1/me, so the next screen's redirect
+    // logic never acts on stale onboarding state.
+    onSuccess: () => client.invalidateQueries({ queryKey: keys.me, refetchType: 'all' }),
   });
 }
 
@@ -91,3 +98,86 @@ export const useUploadPhoto = () =>
     }
     return apiFetch<Photo>('/v1/me/photos', { method: 'POST', body: form });
   });
+
+// ---------------------------------------------------------------- discovery
+
+export const discoveryKeys = {
+  discover: ['discover'] as const,
+  picks: ['picks'] as const,
+  likes: ['likes'] as const,
+  matches: ['matches'] as const,
+  profile: (id: string) => ['profile', id] as const,
+};
+
+export function useDiscover() {
+  return useQuery({
+    queryKey: discoveryKeys.discover,
+    queryFn: async () =>
+      (await apiFetch<{ profiles: PublicProfile[] }>('/v1/discover?limit=10')).profiles,
+  });
+}
+
+export function usePicks() {
+  return useQuery({
+    queryKey: discoveryKeys.picks,
+    queryFn: async () =>
+      (await apiFetch<{ profiles: PublicProfile[] }>('/v1/picks/today')).profiles,
+  });
+}
+
+export function useLikes() {
+  return useQuery({
+    queryKey: discoveryKeys.likes,
+    queryFn: async () => (await apiFetch<{ likes: LikeReceived[] }>('/v1/likes')).likes,
+  });
+}
+
+export function useMatches() {
+  return useQuery({
+    queryKey: discoveryKeys.matches,
+    queryFn: async () => (await apiFetch<{ matches: MatchSummary[] }>('/v1/matches')).matches,
+  });
+}
+
+export function useProfile(id: string) {
+  return useQuery({
+    queryKey: discoveryKeys.profile(id),
+    queryFn: () => apiFetch<PublicProfile>(`/v1/profiles/${id}`),
+  });
+}
+
+function useDiscoveryMutation<TInput, TResult>(request: (input: TInput) => Promise<TResult>) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: request,
+    onSuccess: () =>
+      Promise.all(
+        [discoveryKeys.picks, discoveryKeys.likes, discoveryKeys.matches].map((queryKey) =>
+          client.invalidateQueries({ queryKey }),
+        ),
+      ),
+  });
+}
+
+export const useInteract = () =>
+  useDiscoveryMutation((input: InteractionInput) =>
+    apiFetch<{ matched: boolean; matchId: string | null }>('/v1/interactions', {
+      method: 'POST',
+      body: json(input),
+    }),
+  );
+export const useBlock = () =>
+  useDiscoveryMutation((userId: string) =>
+    apiFetch('/v1/blocks', { method: 'POST', body: json({ userId }) }),
+  );
+export const useUnmatch = () =>
+  useDiscoveryMutation((matchId: string) =>
+    apiFetch(`/v1/matches/${matchId}`, { method: 'DELETE' }),
+  );
+
+export const useSetLocation = () =>
+  useMeMutation((input: LocationInput) =>
+    apiFetch('/v1/me/location', { method: 'PUT', body: json(input) }),
+  );
+export const useClearLocation = () =>
+  useMeMutation(() => apiFetch('/v1/me/location', { method: 'DELETE' }));

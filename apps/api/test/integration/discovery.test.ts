@@ -108,6 +108,7 @@ describe.skipIf(!integrationEnabled)('discovery & matching (integration)', () =>
       comment: 'Same here!',
       itemType: 'prompt',
       itemId: noa.promptId,
+      promptKey: 'green_flag',
       profile: { id: dan.id },
     });
 
@@ -300,4 +301,29 @@ describe.skipIf(!integrationEnabled)('discovery & matching (integration)', () =>
     );
     expect(rows[0]).toEqual({ loc: 0, inter: 0, picks: 0, imp: 0 });
   });
+});
+
+describe.skipIf(!integrationEnabled)('profile embedding queue (integration)', () => {
+  it('re-embeds after every edit, not only the first (completed jobs must not block new ones)', async () => {
+    const { Worker } = await import('bullmq');
+    const { Redis } = await import('ioredis');
+    const { createProfileQueue } = await import('../../src/lib/queue.js');
+    const { existsSync } = await import('node:fs');
+    const envFile = new URL('../../../../.env', import.meta.url);
+    if (existsSync(envFile)) process.loadEnvFile(envFile);
+    const redisUrl = process.env.REDIS_URL!;
+    const name = `embed-test-${Date.now()}`;
+    const connection = new Redis(redisUrl, { maxRetriesPerRequest: null });
+    let runs = 0;
+    const worker = new Worker(name, async () => void (runs += 1), { connection });
+    const queue = createProfileQueue(redisUrl, name);
+    for (let edit = 0; edit < 2; edit += 1) {
+      await queue.embedProfile('u1');
+      await new Promise((r) => setTimeout(r, 3_000)); // 2 s debounce + processing
+    }
+    expect(runs).toBe(2);
+    await worker.close();
+    await queue.close();
+    connection.disconnect();
+  }, 15_000);
 });
