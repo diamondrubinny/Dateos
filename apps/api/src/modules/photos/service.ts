@@ -32,7 +32,7 @@ export class PhotoService {
   async upload(
     userId: string,
     buffer: Buffer,
-    purpose: 'profile' | 'chat' | 'verification' = 'profile',
+    purpose: 'profile' | 'chat' | 'verification' | 'branding' = 'profile',
   ): Promise<Photo> {
     const mime = await sniffImageType(buffer);
     if (!mime) {
@@ -98,8 +98,9 @@ export class PhotoService {
       .from(photos)
       .where(and(eq(photos.id, photoId), eq(photos.status, 'clean')));
     if (!row?.mediaKey) throw notFound();
-    // Verification selfies are only ever shown to staff, through the audited admin API.
-    if (row.purpose === 'verification') throw notFound();
+    // Verification selfies are only shown to staff (audited admin API); the logo has its own
+    // public route.
+    if (row.purpose === 'verification' || row.purpose === 'branding') throw notFound();
     const allowed =
       row.purpose === 'chat'
         ? await this.canViewChatImage(viewerId, photoId)

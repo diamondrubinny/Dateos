@@ -123,7 +123,12 @@ export const rateLimit = pgTable('rate_limit', {
 export const gender = pgEnum('gender', genders);
 export const intention = pgEnum('intention', intentions);
 export const photoStatus = pgEnum('photo_status', photoStatuses);
-export const photoPurpose = pgEnum('photo_purpose', ['profile', 'chat', 'verification']);
+export const photoPurpose = pgEnum('photo_purpose', [
+  'profile',
+  'chat',
+  'verification',
+  'branding',
+]);
 export const consentKind = pgEnum('consent_kind', consentKinds);
 export const promptKey = pgEnum('prompt_key', promptKeys);
 
@@ -536,4 +541,28 @@ export const verifications = pgTable(
     index('verifications_user_idx').on(t.userId, t.createdAt),
     index('verifications_status_idx').on(t.status, t.createdAt),
   ],
+);
+
+// ---------------------------------------------------------------------------
+// Instance (phase 1.5)
+// ---------------------------------------------------------------------------
+
+/** Single row (id = 1). Public branding only: every value here is shown to visitors. */
+export const instanceSettings = pgTable(
+  'instance_settings',
+  {
+    id: smallint('id').primaryKey().default(1),
+    name: varchar('name', { length: 40 }),
+    tagline: varchar('tagline', { length: 120 }),
+    primaryColor: varchar('primary_color', { length: 7 }),
+    defaultLocale: varchar('default_locale', { length: 5 }),
+    operatorName: varchar('operator_name', { length: 100 }),
+    contactEmail: varchar('contact_email', { length: 254 }),
+    sponsorUrl: varchar('sponsor_url', { length: 300 }),
+    logoPhotoId: uuid('logo_photo_id').references(() => photos.id, { onDelete: 'set null' }),
+    setupCompletedAt: timestamp('setup_completed_at', { withTimezone: true }),
+    updatedBy: text('updated_by').references(() => user.id, { onDelete: 'set null' }),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [check('instance_settings_single_row', sql`${t.id} = 1`)],
 );

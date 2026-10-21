@@ -10,7 +10,8 @@
     "screenshots": "tsx screenshots.ts",
     "seed": "tsx seed-demo.ts",
     "chat": "tsx chat.ts",
-    "safety": "tsx safety.ts"
+    "safety": "tsx safety.ts",
+    "instance": "tsx instance.ts"
   },
   "dependencies": {
     "@axe-core/playwright": "4.14.0",

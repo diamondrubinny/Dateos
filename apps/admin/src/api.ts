@@ -1,5 +1,7 @@
 import type {
   AuditEntry,
+  InstanceInfo,
+  InstanceSettingsInput,
   ModerationAction,
   ReportDetail,
   ReportSummary,
@@ -47,7 +49,46 @@ export async function fetchImage(path: string): Promise<string> {
   return URL.createObjectURL(await res.blob());
 }
 
+export interface AdminInstanceSettings {
+  name: string;
+  tagline: string;
+  primaryColor: string;
+  defaultLocale: 'he' | 'en';
+  operatorName: string | null;
+  contactEmail: string | null;
+  sponsorUrl: string | null;
+  logoUrl: string | null;
+  setupCompleted: boolean;
+}
+
+async function upload(path: string, file: File): Promise<void> {
+  const form = new FormData();
+  form.append('file', file, file.name);
+  const res = await fetch(`${API_URL}${path}`, {
+    method: 'POST',
+    credentials: 'include',
+    body: form,
+  });
+  if (!res.ok) {
+    const payload = (await res.json().catch(() => null)) as {
+      error?: { code?: string; message?: string };
+    } | null;
+    throw new ApiError(
+      res.status,
+      payload?.error?.code ?? 'UNKNOWN',
+      payload?.error?.message ?? res.statusText,
+    );
+  }
+}
+
 export const api = {
+  instance: () => request<InstanceInfo>('GET', '/v1/instance'),
+  claim: (token: string) => request<{ ok: true }>('POST', '/v1/setup/claim', { token }),
+  settings: () => request<AdminInstanceSettings>('GET', '/v1/admin/instance'),
+  saveSettings: (input: InstanceSettingsInput) =>
+    request<AdminInstanceSettings>('PATCH', '/v1/admin/instance', input),
+  uploadLogo: (file: File) => upload('/v1/admin/instance/logo', file),
+  removeLogo: () => request<{ ok: true }>('DELETE', '/v1/admin/instance/logo'),
   me: () => request<StaffMe>('GET', '/v1/admin/me'),
   requestLink: (email: string, callbackURL: string) =>
     request<unknown>('POST', '/v1/auth/sign-in/magic-link', { email, callbackURL }),

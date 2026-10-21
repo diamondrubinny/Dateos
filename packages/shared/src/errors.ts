@@ -8,6 +8,7 @@ export const ErrorCode = {
   Forbidden: 'FORBIDDEN',
   NotFound: 'NOT_FOUND',
   Conflict: 'CONFLICT',
+  Gone: 'GONE',
   PayloadTooLarge: 'PAYLOAD_TOO_LARGE',
   RateLimited: 'RATE_LIMITED',
   Underage: 'UNDERAGE',

@@ -1,5 +1,8 @@
+import multipart from '@fastify/multipart';
 import {
   auditEntrySchema,
+  instanceSettingsInputSchema,
+  MAX_PHOTO_BYTES,
   auditQuerySchema,
   decideVerificationSchema,
   ErrorCode,
@@ -20,6 +23,8 @@ import type { Auth } from '../../auth/auth.js';
 import { currentUser, requireUser } from '../../auth/session.js';
 import { HttpError } from '../../plugins/error-handler.js';
 import { perUserLimit } from '../../plugins/security.js';
+import { adminSettingsSchema } from '../instance/routes.js';
+import type { InstanceService } from '../instance/service.js';
 import type { PhotoService } from '../photos/service.js';
 import type { VerificationService } from '../safety/verification.js';
 import { isStaffRole, type StaffMfaService } from './mfa.js';
@@ -42,7 +47,11 @@ export const adminRoutes: FastifyPluginAsyncZod<{
   moderation: ModerationService;
   verification: VerificationService;
   photos: PhotoService;
-}> = async (app, { auth, mfa, moderation, verification, photos }) => {
+  instance: InstanceService;
+}> = async (app, { auth, mfa, moderation, verification, photos, instance }) => {
+  await app.register(multipart, {
+    limits: { fileSize: MAX_PHOTO_BYTES, files: 1, fields: 0, parts: 1 },
+  });
   app.addHook('preHandler', requireUser(auth));
   app.addHook('preHandler', async (request) => {
     // Roles are read from the database on every request, so revoking a role is immediate.
@@ -180,4 +189,38 @@ export const adminRoutes: FastifyPluginAsyncZod<{
       return { entries: await moderation.auditLog(request.query.before, request.query.limit) };
     },
   );
+
+  // ---------------------------------------------------------------- instance branding (admins)
+
+  app.get('/v1/admin/instance', { schema: { response: { 200: adminSettingsSchema } } }, async () =>
+    instance.adminSettings(),
+  );
+
+  app.patch(
+    '/v1/admin/instance',
+    {
+      schema: {
+        body: instanceSettingsInputSchema.strict(),
+        response: { 200: adminSettingsSchema },
+      },
+    },
+    async (request) => instance.update(currentUser(request), request.body),
+  );
+
+  app.post(
+    '/v1/admin/instance/logo',
+    { schema: { response: { 202: ok } }, config: perUserLimit(20, 60 * 60 * 1000) },
+    async (request, reply) => {
+      adminOnly(currentUser(request).role);
+      const file = await request.file();
+      if (!file) throw new HttpError(400, ErrorCode.BadRequest, 'Attach one image file.');
+      await instance.setLogo(currentUser(request), await file.toBuffer());
+      return reply.status(202).send({ ok: true as const });
+    },
+  );
+
+  app.delete('/v1/admin/instance/logo', { schema: { response: { 200: ok } } }, async (request) => {
+    await instance.removeLogo(currentUser(request));
+    return { ok: true as const };
+  });
 };

@@ -490,3 +490,79 @@ legend {
     animation: none !important;
   }
 }
+
+select {
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+}
+input[type='url'],
+input[type='password'] {
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+}
+.help {
+  color: var(--muted);
+  font-size: 0.9rem;
+  margin: 0.25rem 0;
+}
+.contrast-ok {
+  color: var(--ok-text);
+  background: var(--ok-bg);
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+}
+.color-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+.color-row input[type='color'] {
+  width: 3rem;
+  height: 2.75rem;
+  padding: 0.2rem;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  background: var(--bg);
+}
+.brand-preview {
+  display: grid;
+  gap: 0.5rem;
+  justify-items: start;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  background: #ffffff;
+  color: #1c1830;
+  border: 1px solid var(--border);
+}
+.brand-preview .muted {
+  color: #5b566e;
+  margin: 0;
+}
+.brand-name {
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin: 0;
+  color: var(--brand);
+}
+.brand-button {
+  display: inline-block;
+  background: var(--brand);
+  color: #ffffff;
+  padding: 0.6rem 1.25rem;
+  border-radius: 999px;
+  font-weight: 600;
+}
+.brand-link {
+  color: var(--brand);
+  text-decoration: underline;
+}

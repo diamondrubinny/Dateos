@@ -153,5 +153,16 @@ export const instanceSchema = z.object({
   auth: z.object({ magicLink: z.boolean(), google: z.boolean(), apple: z.boolean() }),
   sponsorUrl: z.string().nullable(),
   legal: z.object({ termsVersion: z.string(), privacyVersion: z.string() }),
+  /** Contrast-checked brand colors for light and dark mode. */
+  brand: z.object({
+    light: z.object({ primary: z.string(), primarySoft: z.string() }),
+    dark: z.object({ primary: z.string(), primarySoft: z.string() }),
+  }),
+  logoUrl: z.string().nullable(),
+  /** Who runs this instance (shown in the legal pages and accessibility statement). */
+  operatorName: z.string().nullable(),
+  contactEmail: z.string().nullable(),
+  /** True until someone claims the instance with the setup token. */
+  setupRequired: z.boolean(),
 });
 export type InstanceInfo = z.infer<typeof instanceSchema>;

@@ -21,6 +21,7 @@ import { createEmailHasher } from './lib/banned.js';
 import { StaffMfaService } from './modules/admin/mfa.js';
 import { ModerationService } from './modules/admin/moderation.js';
 import { ReportService } from './modules/safety/reports.js';
+import { InstanceService } from './modules/instance/service.js';
 import { VerificationService } from './modules/safety/verification.js';
 
 export interface Services {
@@ -39,6 +40,7 @@ export interface Services {
   verification: VerificationService;
   staffMfa: StaffMfaService;
   moderation: ModerationService;
+  instance: InstanceService;
   /** Health checks and shutdown hooks for the resources above. */
   dependencies: Dependency[];
 }
@@ -115,6 +117,7 @@ export function createServices(
       overrides.now,
     ),
     moderation: new ModerationService(dbHandle.db, discovery, hashEmail, today),
+    instance: new InstanceService(dbHandle.db, env, photos),
     dependencies: [
       {
         name: 'postgres',

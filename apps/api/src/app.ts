@@ -13,7 +13,7 @@ import { registerErrorHandling } from './plugins/error-handler.js';
 import { registerSecurity } from './plugins/security.js';
 import { healthRoutes } from './routes/health.js';
 import { authRoutes } from './auth/routes.js';
-import { instanceRoutes } from './modules/instance/routes.js';
+import { instanceRoutes, setupRoutes } from './modules/instance/routes.js';
 import websocket from '@fastify/websocket';
 import { chatRoutes } from './modules/chat/routes.js';
 import { discoveryRoutes } from './modules/discovery/routes.js';
@@ -57,7 +57,10 @@ export async function buildApp(env: Env, deps: AppDependencies): Promise<Fastify
   await registerSecurity(app, { env, ...(deps.redis ? { redis: deps.redis } : {}) });
   const typed = app.withTypeProvider<ZodTypeProvider>();
   await typed.register(healthRoutes, { dependencies: deps.dependencies });
-  await typed.register(instanceRoutes, { env });
+  await typed.register(instanceRoutes, {
+    env,
+    ...(deps.services ? { instance: deps.services.instance } : {}),
+  });
 
   const { services } = deps;
   if (services) {
@@ -76,7 +79,9 @@ export async function buildApp(env: Env, deps: AppDependencies): Promise<Fastify
       moderation: services.moderation,
       verification: services.verification,
       photos: services.photos,
+      instance: services.instance,
     });
+    await typed.register(setupRoutes, { auth: services.auth, instance: services.instance });
     await app.register(websocket, { options: { maxPayload: 4096 } });
     await typed.register(chatRoutes, {
       auth: services.auth,

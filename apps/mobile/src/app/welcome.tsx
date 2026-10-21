@@ -4,7 +4,9 @@ import { StyleSheet, View } from 'react-native';
 import { AppText } from '../components/AppText';
 import { Button } from '../components/Button';
 import { LanguageSwitch } from '../components/LanguageSwitch';
+import { RemoteImage } from '../components/RemoteImage';
 import { Screen } from '../components/Screen';
+import { DEFAULT_TAGLINE } from '@dateos/shared';
 import { useInstance } from '../lib/queries';
 import { radius, spacing, useColors } from '../lib/theme';
 
@@ -18,9 +20,17 @@ export default function Welcome() {
   return (
     <Screen footer={<Button label={t('welcome.start')} onPress={() => router.push('/sign-in')} />}>
       <View style={[styles.hero, { backgroundColor: colors.primary }]}>
-        <AppText variant="display" tone="onPrimary" center accessibilityRole="header">
+        {instance.data?.logoUrl ? (
+          <RemoteImage path={instance.data.logoUrl} label="" style={styles.logo} />
+        ) : null}
+        <AppText variant="display" tone="onPrimary" center accessibilityRole="header" userContent>
           {instance.data?.name ?? 'Dateos'}
         </AppText>
+        {instance.data && instance.data.tagline !== DEFAULT_TAGLINE ? (
+          <AppText variant="body" tone="onPrimary" center userContent>
+            {instance.data.tagline}
+          </AppText>
+        ) : null}
         <AppText variant="heading" tone="onPrimary" center>
           {t('welcome.title')}
         </AppText>
@@ -71,6 +81,13 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xl,
     paddingHorizontal: spacing.lg,
     gap: spacing.sm,
+  },
+  logo: {
+    width: 88,
+    height: 88,
+    borderRadius: radius.lg,
+    alignSelf: 'center',
+    backgroundColor: '#FFFFFF',
   },
   list: { gap: spacing.sm },
   item: {

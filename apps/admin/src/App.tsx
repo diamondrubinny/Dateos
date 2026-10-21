@@ -4,6 +4,8 @@ import { useAsync, useRoute } from './hooks';
 import { LocaleContext, messages, useLocale, type Locale } from './i18n';
 import { ErrorBox, Loading } from './components/ui';
 import { Audit } from './pages/Audit';
+import { Branding } from './pages/Branding';
+import { ClaimInstance } from './pages/Setup';
 import { MfaSetup, MfaVerify } from './pages/Mfa';
 import { ReportDetail } from './pages/ReportDetail';
 import { Reports } from './pages/Reports';
@@ -25,19 +27,21 @@ function initialLocale(): Locale {
 function Shell({
   children,
   signedIn,
+  isAdmin,
   onSignOut,
 }: {
   children: ReactNode;
   signedIn: boolean;
+  isAdmin: boolean;
   onSignOut: () => void;
 }) {
   const { t, toggle, locale } = useLocale();
   const route = useRoute();
   const current = route[0] ?? 'reports';
-  const link = (key: 'reports' | 'verifications' | 'audit') => (
+  const link = (key: 'reports' | 'verifications' | 'audit' | 'branding') => (
     <li>
       <a href={`#/${key}`} aria-current={current === key ? 'page' : undefined}>
-        {t.nav[key]}
+        {key === 'branding' ? t.branding.nav : t.nav[key]}
       </a>
     </li>
   );
@@ -54,6 +58,7 @@ function Shell({
               {link('reports')}
               {link('verifications')}
               {link('audit')}
+              {isAdmin ? link('branding') : null}
             </ul>
           </nav>
         ) : null}
@@ -85,7 +90,30 @@ function Routes({ staff }: { staff: NonNullable<Awaited<ReturnType<typeof api.me
   if (route[0] === 'reports' && route[1]) return <ReportDetail id={route[1]} staff={staff} />;
   if (route[0] === 'verifications') return <Verifications />;
   if (route[0] === 'audit') return <Audit />;
+  if (route[0] === 'branding' && staff.role === 'admin') return <Branding wizard={false} />;
   return <Reports />;
+}
+
+/** Admins finish the setup wizard (branding) before anything else. */
+function AdminGate({ staff }: { staff: NonNullable<Awaited<ReturnType<typeof api.me>>> }) {
+  const settings = useAsync(
+    () => (staff.role === 'admin' ? api.settings() : Promise.resolve(null)),
+    [staff.role],
+  );
+  const [finished, setFinished] = useState(false);
+  if (settings.loading && settings.data === undefined) return <Loading />;
+  if (settings.data && !settings.data.setupCompleted && !finished) {
+    return <Branding wizard onFinish={() => setFinished(true)} />;
+  }
+  return <Routes staff={staff} />;
+}
+
+/** Signed in but not staff: offer the first-run claim while the instance has no admin. */
+function NotStaff({ onClaimed }: { onClaimed: () => void }) {
+  const instance = useAsync(() => api.instance(), []);
+  if (instance.loading && !instance.data) return <Loading />;
+  if (instance.data?.setupRequired) return <ClaimInstance onClaimed={onClaimed} />;
+  return <NoAccess />;
 }
 
 export function App() {
@@ -131,16 +159,17 @@ export function App() {
   const err = me.error;
   if (me.loading && !me.data && !err) content = <Loading />;
   else if (err instanceof ApiError && err.status === 401) content = <SignIn />;
-  else if (err instanceof ApiError && err.status === 403) content = <NoAccess />;
+  else if (err instanceof ApiError && err.status === 403)
+    content = <NotStaff onClaimed={me.reload} />;
   else if (err) content = <ErrorBox error={err} onRetry={me.reload} />;
   else if (me.data && !me.data.mfaEnabled) content = <MfaSetup onVerified={me.reload} />;
   else if (me.data && !me.data.mfaVerified) content = <MfaVerify onVerified={me.reload} />;
-  else if (me.data) content = <Routes staff={me.data} />;
+  else if (me.data) content = <AdminGate staff={me.data} />;
 
   const signedIn = Boolean(me.data?.mfaVerified);
   return (
     <LocaleContext.Provider value={value}>
-      <Shell signedIn={signedIn} onSignOut={signOut}>
+      <Shell signedIn={signedIn} isAdmin={me.data?.role === 'admin'} onSignOut={signOut}>
         {content}
         {err instanceof ApiError && err.status === 403 ? (
           <button type="button" className="button" onClick={signOut}>

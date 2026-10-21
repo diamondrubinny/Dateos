@@ -1,4 +1,5 @@
 import { useColorScheme } from 'react-native';
+import { useInstance } from './queries';
 
 /** Contrast-checked tokens: text on background and on primary meet WCAG AA (≥ 4.5:1). */
 const light = {
@@ -40,6 +41,13 @@ export const radius = { sm: 8, md: 12, lg: 20, pill: 999 } as const;
 /** Minimum touch target (WCAG 2.5.5 / platform guidelines). */
 export const MIN_TOUCH = 48;
 
+/**
+ * Theme colors with the instance's brand color. The server only accepts brand colors with AA
+ * contrast and derives a dark-mode variant, so text and buttons stay readable.
+ */
 export function useColors(): Colors {
-  return useColorScheme() === 'dark' ? dark : light;
+  const scheme = useColorScheme() === 'dark' ? 'dark' : 'light';
+  const brand = useInstance().data?.brand[scheme];
+  const base = scheme === 'dark' ? dark : light;
+  return brand ? { ...base, primary: brand.primary, primarySoft: brand.primarySoft } : base;
 }

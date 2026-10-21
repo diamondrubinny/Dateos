@@ -2,18 +2,25 @@ import '../i18n';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { LocaleProvider as RouterLocaleProvider, Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { Platform } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ApiRequestError } from '../lib/api';
 import { authClient } from '../lib/auth-client';
 import { LocaleProvider, useLocale } from '../lib/locale';
 import { RealtimeProvider } from '../lib/realtime';
+import { useInstance } from '../lib/queries';
 import { useColors } from '../lib/theme';
 
 function Navigator() {
   const { direction } = useLocale();
   const colors = useColors();
   const session = authClient.useSession();
+  const name = useInstance().data?.name;
+  useEffect(() => {
+    // Browser tab and bookmarks show the community's own name.
+    if (Platform.OS === 'web' && name) document.title = name;
+  }, [name]);
   return (
     <RouterLocaleProvider direction={direction}>
       <RealtimeProvider enabled={Boolean(session.data)}>

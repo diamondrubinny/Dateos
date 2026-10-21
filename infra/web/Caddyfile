@@ -1,0 +1,63 @@
+# Dateos public site. Set DOMAIN (e.g. example.org) in .env; DNS for DOMAIN, admin.DOMAIN and
+# api.DOMAIN must point at this server. Caddy obtains and renews the certificates itself.
+# To receive certificate notices, add a global block at the top:  { email you@example.org }
+
+(security) {
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Cross-Origin-Opener-Policy "same-origin"
+		-Server
+	}
+}
+
+(spa) {
+	encode zstd gzip
+	try_files {path} /index.html
+	file_server
+	@html path / /index.html
+	header @html Cache-Control "no-store"
+	@assets path /_expo/* /assets/*
+	header @assets Cache-Control "public, max-age=31536000, immutable"
+}
+
+# The member app (web/PWA). react-native-web injects its styles at runtime, hence
+# 'unsafe-inline' for styles only; scripts stay restricted to this origin.
+{$DOMAIN} {
+	import security
+	root * /srv/app
+	import spa
+	header {
+		Content-Security-Policy "default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data: https://api.{$DOMAIN}; connect-src 'self' https://api.{$DOMAIN} wss://api.{$DOMAIN}; font-src 'self' data:; manifest-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'"
+		X-Frame-Options "DENY"
+		Permissions-Policy "camera=(self), geolocation=(self), microphone=()"
+	}
+}
+
+# Moderation dashboard. Consider restricting it further (VPN or the allowlist below).
+admin.{$DOMAIN} {
+	import security
+	# @outside not remote_ip 203.0.113.0/24
+	# respond @outside 403
+	root * /srv/admin
+	encode zstd gzip
+	try_files {path} /index.html
+	file_server
+	header {
+		Content-Security-Policy "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' blob: data:; connect-src 'self' https://api.{$DOMAIN}; font-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'"
+		X-Frame-Options "DENY"
+		X-Robots-Tag "noindex, nofollow"
+		Permissions-Policy "camera=(), geolocation=(), microphone=()"
+		Cache-Control "no-store"
+	}
+}
+
+# API (REST + WebSocket). The API trusts the X-Forwarded-For set here (TRUST_PROXY=true).
+api.{$DOMAIN} {
+	import security
+	request_body {
+		max_size 12MB
+	}
+	reverse_proxy api:4000
+}

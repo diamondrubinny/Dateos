@@ -1,3 +1,4 @@
+import { DEFAULT_TAGLINE } from '@dateos/shared';
 import { z } from 'zod';
 
 const booleanString = z.enum(['true', 'false']).transform((value) => value === 'true');
@@ -69,10 +70,7 @@ export const envSchema = z.object({
   OLLAMA_CHAT_MODEL: z.string().default('qwen2.5:1.5b'),
 
   INSTANCE_NAME: z.string().max(40).default('Dateos'),
-  INSTANCE_TAGLINE: z
-    .string()
-    .max(120)
-    .default('Free, open-source dating. Built for real connections.'),
+  INSTANCE_TAGLINE: z.string().max(120).default(DEFAULT_TAGLINE),
   INSTANCE_PRIMARY_COLOR: z
     .string()
     .regex(/^#[0-9a-fA-F]{6}$/)
@@ -81,6 +79,15 @@ export const envSchema = z.object({
   INSTANCE_DEFAULT_LOCALE: z.enum(['he', 'en']).default('he'),
   SPONSOR_URL: z
     .url()
+    .optional()
+    .or(z.literal('').transform(() => undefined)),
+  /**
+   * One-time token to claim a fresh instance from the dashboard (install.sh generates it).
+   * Leave empty to allow only the server-side staff command.
+   */
+  SETUP_TOKEN: z
+    .string()
+    .min(24)
     .optional()
     .or(z.literal('').transform(() => undefined)),
   TERMS_VERSION: z.string().max(32).default('2026-10'),

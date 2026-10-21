@@ -37,23 +37,24 @@ Dateos is built the other way around:
 
 Dateos is in active development. Here is what works today and what comes next. The full plan is in [`docs/PLAN.md`](docs/PLAN.md).
 
-| Area                                                                           | Status             |
-| ------------------------------------------------------------------------------ | ------------------ |
-| Passwordless email sign-in (magic link), sessions, rate limits                 | ✅ Available       |
-| Profile, preferences, prompts, versioned consents                              | ✅ Available       |
-| Photo upload with malware scan (ClamAV), EXIF/GPS stripping, re-encoding       | ✅ Available       |
-| Account deletion (all data and files)                                          | ✅ Available       |
-| iOS / Android / web app: onboarding, profile, settings (Hebrew + English, RTL) | ✅ Available       |
-| Approximate location (~1 km grid, bucketed distances)                          | ✅ Available       |
-| Discovery, reciprocal AI matching, Daily Picks, "why you might click"          | ✅ Available       |
-| Like / pass / like a photo or prompt with a comment, Likes You, matches        | ✅ Available       |
-| Unmatch and block                                                              | ✅ Available       |
-| Real-time chat (WebSocket), read receipts, typing, icebreakers                 | ✅ Available       |
-| "Are you sure?", hidden offensive messages, scam warnings, blurred photos      | ✅ Available       |
-| Voice messages, push notifications                                             | 🛠️ Next (phase 3b) |
-| Report (with chat evidence), moderation dashboard with mandatory TOTP, audit   | ✅ Available       |
-| Photo verification (live selfie, human review, no face recognition), badge     | ✅ Available       |
-| Video dates, safety check-in, date planner                                     | 🗓️ Later           |
+| Area                                                                            | Status             |
+| ------------------------------------------------------------------------------- | ------------------ |
+| Passwordless email sign-in (magic link), sessions, rate limits                  | ✅ Available       |
+| Profile, preferences, prompts, versioned consents                               | ✅ Available       |
+| Photo upload with malware scan (ClamAV), EXIF/GPS stripping, re-encoding        | ✅ Available       |
+| Account deletion (all data and files)                                           | ✅ Available       |
+| iOS / Android / web app: onboarding, profile, settings (Hebrew + English, RTL)  | ✅ Available       |
+| Approximate location (~1 km grid, bucketed distances)                           | ✅ Available       |
+| Discovery, reciprocal AI matching, Daily Picks, "why you might click"           | ✅ Available       |
+| Like / pass / like a photo or prompt with a comment, Likes You, matches         | ✅ Available       |
+| Unmatch and block                                                               | ✅ Available       |
+| Real-time chat (WebSocket), read receipts, typing, icebreakers                  | ✅ Available       |
+| "Are you sure?", hidden offensive messages, scam warnings, blurred photos       | ✅ Available       |
+| Voice messages, push notifications                                              | 🛠️ Next (phase 3b) |
+| Report (with chat evidence), moderation dashboard with mandatory TOTP, audit    | ✅ Available       |
+| Photo verification (live selfie, human review, no face recognition), badge      | ✅ Available       |
+| Your own instance: setup token claim, branding wizard, HTTPS web server (Caddy) | ✅ Available       |
+| Video dates, safety check-in, date planner                                      | 🗓️ Later           |
 
 ## Screenshots
 
@@ -192,6 +193,16 @@ What each tier includes, and what sponsorship will **never** buy (user data, mod
 Thank you to everyone in [SUPPORTERS.md](SUPPORTERS.md).
 
 ## Running a public instance
+
+**Run your own community in three commands** on any server with Docker (guide: [`docs/SELF_HOSTING.md`](docs/SELF_HOSTING.md)):
+
+```bash
+./install.sh --domain example.org          # secrets, production settings, one-time setup token
+docker compose -f infra/docker-compose.yml --env-file .env --profile app --profile full up -d --build
+# open https://admin.example.org, sign in, enter the setup token, set up 2FA, brand it
+```
+
+<img src="docs/screenshots/showcase-instance-en.png" alt="A community's own branded instance: welcome screen in light and dark mode, and the accessibility statement with the operator's contact" width="100%">
 
 Moderation is part of running an instance: see [`docs/ADMIN.md`](docs/ADMIN.md) for granting staff roles, two-factor setup and serving the dashboard.
 

@@ -21,6 +21,7 @@ const statusToCode: Record<number, ErrorCode> = {
   403: ErrorCode.Forbidden,
   404: ErrorCode.NotFound,
   409: ErrorCode.Conflict,
+  410: ErrorCode.Gone,
   413: ErrorCode.PayloadTooLarge,
   415: ErrorCode.BadRequest,
   429: ErrorCode.RateLimited,

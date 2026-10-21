@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # Dateos installer: creates .env with strong random secrets and the object-storage credentials file.
 # Usage:
-#   ./install.sh                          first-time setup
+#   ./install.sh                          first-time setup (local development)
+#   ./install.sh --domain example.org     production: app on example.org, dashboard on
+#                                         admin.example.org, API on api.example.org
 #   ./install.sh --force                  regenerate secrets (only when no data exists yet)
 #   ./install.sh --force --reset-data     regenerate secrets AND delete all local data volumes
 set -euo pipefail
@@ -10,13 +12,23 @@ cd "$(dirname "$0")"
 
 FORCE=false
 RESET_DATA=false
-for arg in "$@"; do
-  case "$arg" in
+DOMAIN=""
+while [[ $# -gt 0 ]]; do
+  case "$1" in
     --force) FORCE=true ;;
     --reset-data) RESET_DATA=true ;;
-    *) printf 'Unknown option: %s\n' "$arg" >&2; exit 2 ;;
+    --domain)
+      [[ $# -ge 2 ]] || { printf 'Missing value for --domain\n' >&2; exit 2; }
+      DOMAIN="$2"; shift ;;
+    *) printf 'Unknown option: %s\n' "$1" >&2; exit 2 ;;
   esac
+  shift
 done
+# A plain host name only: it ends up in URLs, CORS rules and the web server configuration.
+if [[ -n "$DOMAIN" && ! "$DOMAIN" =~ ^([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$ ]]; then
+  printf 'Invalid --domain: use a host name like example.org (lowercase, no scheme or path).\n' >&2
+  exit 2
+fi
 
 fail() { printf 'Error: %s\n' "$1" >&2; exit 1; }
 need() { command -v "$1" >/dev/null 2>&1 || fail "'$1' is required but not installed."; }
@@ -50,6 +62,7 @@ REDIS_PASSWORD="$(secret 40)"
 S3_ACCESS_KEY_ID="$(secret 20)"
 S3_SECRET_ACCESS_KEY="$(secret 40)"
 AUTH_SECRET="$(secret 64)"
+SETUP_TOKEN="$(secret 32)"
 
 umask 077
 # Write to a temp file first so a failed run never leaves a half-configured .env behind.
@@ -63,7 +76,20 @@ sed \
   -e "s|^S3_ACCESS_KEY_ID=.*|S3_ACCESS_KEY_ID=${S3_ACCESS_KEY_ID}|" \
   -e "s|^S3_SECRET_ACCESS_KEY=.*|S3_SECRET_ACCESS_KEY=${S3_SECRET_ACCESS_KEY}|" \
   -e "s|^AUTH_SECRET=.*|AUTH_SECRET=${AUTH_SECRET}|" \
+  -e "s|^SETUP_TOKEN=.*|SETUP_TOKEN=${SETUP_TOKEN}|" \
   .env.example > "$TMP_ENV"
+
+if [[ -n "$DOMAIN" ]]; then
+  sed -i.bak \
+    -e "s|^NODE_ENV=.*|NODE_ENV=production|" \
+    -e "s|^TRUST_PROXY=.*|TRUST_PROXY=true|" \
+    -e "s|^DOMAIN=.*|DOMAIN=${DOMAIN}|" \
+    -e "s|^PUBLIC_API_URL=.*|PUBLIC_API_URL=https://api.${DOMAIN}|" \
+    -e "s|^CORS_ORIGINS=.*|CORS_ORIGINS=https://${DOMAIN},https://admin.${DOMAIN}|" \
+    -e "s|^SMTP_FROM=.*|SMTP_FROM=\"${DOMAIN} <no-reply@${DOMAIN}>\"|" \
+    "$TMP_ENV"
+  rm -f "$TMP_ENV.bak"
+fi
 
 if grep -qE '^[A-Z0-9_]+=.*CHANGE_ME' "$TMP_ENV"; then
   fail "internal error: generated .env still contains CHANGE_ME placeholders."
@@ -90,6 +116,17 @@ chmod 644 infra/data/seaweedfs/s3.json
 printf '\nDateos is configured.\n'
 printf '  Secrets written to .env and infra/data/seaweedfs/s3.json (owner-only, git-ignored).\n\n'
 printf 'Next steps:\n'
-printf '  pnpm install\n'
-printf '  pnpm infra:up        # postgres, redis, object storage\n'
-printf '  pnpm dev             # API on http://localhost:4000 (try /health and /ready)\n'
+if [[ -n "$DOMAIN" ]]; then
+  printf '  1. Point DNS for %s, admin.%s and api.%s at this server (ports 80 and 443 open).\n' "$DOMAIN" "$DOMAIN" "$DOMAIN"
+  printf '  2. Set SMTP_HOST / SMTP_USER / SMTP_PASSWORD in .env (sign-in links are sent by email).\n'
+  printf '  3. docker compose -f infra/docker-compose.yml --env-file .env --profile app --profile full up -d --build\n'
+  printf '  4. Open https://admin.%s, sign in, and claim the instance with the token below.\n' "$DOMAIN"
+  printf '  Full guide: docs/SELF_HOSTING.md\n'
+else
+  printf '  pnpm install\n'
+  printf '  pnpm infra:up        # postgres, redis, object storage\n'
+  printf '  pnpm dev             # API on http://localhost:4000 (try /health and /ready)\n'
+fi
+printf '\nClaim your instance: sign in to the moderation dashboard and enter this one-time setup token:\n'
+printf '  %s\n' "$SETUP_TOKEN"
+printf '(It is also in .env as SETUP_TOKEN. It stops working once the first admin exists.)\n'

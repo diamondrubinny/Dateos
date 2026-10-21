@@ -150,6 +150,11 @@ export const en = {
     credit: 'Dateos is free, open-source software created by Diamond Rubinny (MIT license).',
   },
   legal: {
+    operatorTitle: 'Who runs this community',
+    operator:
+      'Operator of {{instance}}: {{name}}. The operator is responsible for your data on this server.',
+    noOperator: 'The operator of this instance has not published their details yet.',
+    contactLabel: 'Email the operator at {{email}}',
     accessibilityTitle: 'Accessibility statement',
     accessibilityBody:
       'We aim for WCAG 2.1 level AA and the Israeli standard IS 5568. The app supports screen readers (VoiceOver, TalkBack), keyboard navigation on the web, text scaling up to 200%, right-to-left layout, reduced motion and buttons for every swipe action. Known limitations will be listed here. To report an accessibility problem, contact the community operator; we aim to respond within 5 business days.',

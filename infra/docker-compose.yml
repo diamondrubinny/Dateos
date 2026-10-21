@@ -100,6 +100,7 @@ services:
       S3_ENDPOINT: http://seaweedfs:8333
       # Inside Docker "localhost" is the container itself; set SMTP_HOST_DOCKER (e.g. mailpit) if needed.
       SMTP_HOST: ${SMTP_HOST_DOCKER:-${SMTP_HOST}}
+      OLLAMA_URL: http://ollama:11434
     depends_on:
       postgres:
         condition: service_healthy
@@ -121,13 +122,37 @@ services:
       REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
       S3_ENDPOINT: http://seaweedfs:8333
       CLAMAV_HOST: clamav
+      OLLAMA_URL: http://ollama:11434
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
 
+  # Public site: web app, moderation dashboard and API behind one domain with automatic HTTPS.
+  web:
+    build:
+      context: ..
+      dockerfile: infra/web/Dockerfile
+      args:
+        API_URL: https://api.${DOMAIN:-localhost}
+    profiles: [app]
+    restart: unless-stopped
+    environment:
+      DOMAIN: ${DOMAIN:-localhost}
+    ports:
+      - '80:80'
+      - '443:443'
+      - '443:443/udp'
+    volumes:
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - api
+
 volumes:
+  caddy-data:
+  caddy-config:
   postgres-data:
   redis-data:
   seaweedfs-data:

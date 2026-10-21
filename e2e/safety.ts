@@ -149,6 +149,10 @@ async function run(locale: 'en' | 'he', browser: Browser) {
   const staffEmail = `safety-admin-${locale}-${stamp}@example.test`;
   await signInHttp(staffEmail); // creates the account the operator then promotes
   await db.update(schema.user).set({ role: 'admin' }).where(eq(schema.user.email, staffEmail));
+  // This instance's branding is already done (see e2e/instance.ts for the first-run wizard).
+  await pool.query(
+    'INSERT INTO instance_settings (id, setup_completed_at) VALUES (1, now()) ON CONFLICT (id) DO UPDATE SET setup_completed_at = COALESCE(instance_settings.setup_completed_at, now())',
+  );
 
   const L = locale === 'he' ? 'he-IL' : 'en-US';
   const A = await browserFor(browser, L, reporter.session);

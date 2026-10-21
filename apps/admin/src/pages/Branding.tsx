@@ -1,0 +1,253 @@
+import { contrastRatio, isAccessiblePrimary, type InstanceSettingsInput } from '@dateos/shared';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { api, type AdminInstanceSettings } from '../api';
+import { useAsync } from '../hooks';
+import { format, useLocale } from '../i18n';
+import { ErrorBox, Loading, ProtectedImage } from '../components/ui';
+
+type Form = {
+  name: string;
+  tagline: string;
+  primaryColor: string;
+  defaultLocale: 'he' | 'en';
+  operatorName: string;
+  contactEmail: string;
+  sponsorUrl: string;
+};
+
+const toForm = (s: AdminInstanceSettings): Form => ({
+  name: s.name,
+  tagline: s.tagline,
+  primaryColor: s.primaryColor.toUpperCase(),
+  defaultLocale: s.defaultLocale,
+  operatorName: s.operatorName ?? '',
+  contactEmail: s.contactEmail ?? '',
+  sponsorUrl: s.sponsorUrl ?? '',
+});
+
+const orNull = (v: string) => (v.trim() ? v.trim() : null);
+
+export function Branding({ wizard, onFinish }: { wizard: boolean; onFinish?: () => void }) {
+  const { t } = useLocale();
+  const settings = useAsync(() => api.settings(), []);
+  const [form, setForm] = useState<Form>();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<Error>();
+  const [notice, setNotice] = useState<string>();
+  const [logoKey, setLogoKey] = useState(0);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const statusRef = useRef<HTMLParagraphElement>(null);
+
+  useEffect(() => {
+    if (settings.data && !form) setForm(toForm(settings.data));
+  }, [settings.data, form]);
+
+  if (settings.loading && !settings.data) return <Loading />;
+  if (settings.error) return <ErrorBox error={settings.error} onRetry={settings.reload} />;
+  if (!form || !settings.data) return null;
+
+  const validHex = /^#[0-9A-F]{6}$/i.test(form.primaryColor);
+  const ratio = validHex ? contrastRatio(form.primaryColor, '#FFFFFF') : 0;
+  const readable = validHex && isAccessiblePrimary(form.primaryColor);
+  const set = (key: keyof Form) => (value: string) => setForm({ ...form, [key]: value } as Form);
+
+  async function save(event: FormEvent) {
+    event.preventDefault();
+    if (busy || !readable || !form) return;
+    setBusy(true);
+    setError(undefined);
+    try {
+      const input: InstanceSettingsInput = {
+        name: form.name.trim(),
+        tagline: form.tagline.trim(),
+        primaryColor: form.primaryColor.toUpperCase(),
+        defaultLocale: form.defaultLocale,
+        operatorName: orNull(form.operatorName),
+        contactEmail: orNull(form.contactEmail),
+        sponsorUrl: orNull(form.sponsorUrl),
+      };
+      await api.saveSettings(input);
+      setNotice(wizard ? t.branding.done : t.branding.saved);
+      settings.reload();
+      statusRef.current?.focus();
+    } catch (err) {
+      setError(err as Error);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function onLogo(file: File | undefined) {
+    if (!file) return;
+    setError(undefined);
+    try {
+      await api.uploadLogo(file);
+      setNotice(t.branding.logoPending);
+      setTimeout(() => {
+        settings.reload();
+        setLogoKey((k) => k + 1);
+      }, 3000);
+    } catch (err) {
+      setError(err as Error);
+    } finally {
+      if (fileRef.current) fileRef.current.value = '';
+    }
+  }
+
+  async function removeLogo() {
+    try {
+      await api.removeLogo();
+      settings.reload();
+    } catch (err) {
+      setError(err as Error);
+    }
+  }
+
+  const field = (key: keyof Form, label: string, props: Record<string, unknown> = {}) => (
+    <>
+      <label htmlFor={`brand-${key}`}>{label}</label>
+      <input
+        id={`brand-${key}`}
+        value={form[key]}
+        onChange={(e) => set(key)(e.target.value)}
+        {...props}
+      />
+    </>
+  );
+
+  return (
+    <section aria-labelledby="branding-title">
+      <h1 id="branding-title">{wizard ? t.branding.wizardTitle : t.branding.title}</h1>
+      {wizard ? <p>{t.branding.wizardIntro}</p> : null}
+      <p
+        ref={statusRef}
+        tabIndex={-1}
+        role="status"
+        className={notice ? 'alert alert-ok' : 'visually-hidden'}
+      >
+        {notice ?? ''}
+      </p>
+      {error ? <ErrorBox error={error} /> : null}
+      {wizard && settings.data.setupCompleted && onFinish ? (
+        <button type="button" className="button primary" onClick={onFinish}>
+          {t.branding.continue}
+        </button>
+      ) : null}
+
+      <div className="grid">
+        <form className="card" onSubmit={save}>
+          {field('name', t.branding.name, { required: true, maxLength: 40 })}
+          {field('tagline', t.branding.tagline, { required: true, maxLength: 120 })}
+
+          <label htmlFor="brand-color">{t.branding.color}</label>
+          <div className="color-row">
+            <input
+              type="color"
+              aria-label={t.branding.colorPicker}
+              value={validHex ? form.primaryColor.toLowerCase() : '#000000'}
+              onChange={(e) => set('primaryColor')(e.target.value.toUpperCase())}
+            />
+            <input
+              id="brand-color"
+              dir="ltr"
+              maxLength={7}
+              value={form.primaryColor}
+              aria-describedby="brand-color-hint brand-color-status"
+              aria-invalid={!readable}
+              onChange={(e) => set('primaryColor')(e.target.value.toUpperCase())}
+            />
+          </div>
+          <p id="brand-color-hint" className="help">
+            {t.branding.colorHint}
+          </p>
+          <p
+            id="brand-color-status"
+            className={readable ? 'contrast-ok' : 'field-error'}
+            aria-live="polite"
+          >
+            {validHex ? format(t.branding.contrast, { ratio: ratio.toFixed(2) }) : '—'} ·{' '}
+            {readable ? `✓ ${t.branding.contrastOk}` : `✗ ${t.branding.contrastBad}`}
+          </p>
+
+          <label htmlFor="brand-locale">{t.branding.locale}</label>
+          <select
+            id="brand-locale"
+            value={form.defaultLocale}
+            onChange={(e) => set('defaultLocale')(e.target.value)}
+          >
+            <option value="he">עברית</option>
+            <option value="en">English</option>
+          </select>
+
+          {field('operatorName', t.branding.operator, {
+            maxLength: 100,
+            autoComplete: 'organization',
+          })}
+          {field('contactEmail', t.branding.contact, {
+            type: 'email',
+            dir: 'ltr',
+            maxLength: 254,
+            autoComplete: 'email',
+          })}
+          {field('sponsorUrl', `${t.branding.sponsor}`, {
+            type: 'url',
+            dir: 'ltr',
+            maxLength: 300,
+            placeholder: 'https://',
+          })}
+
+          <button type="submit" className="button primary" disabled={busy || !readable}>
+            {t.branding.save}
+          </button>
+        </form>
+
+        <div>
+          <section className="card" aria-labelledby="preview-title">
+            <h2 id="preview-title">{t.branding.preview}</h2>
+            <div
+              className="brand-preview"
+              style={{ ['--brand' as string]: validHex ? form.primaryColor : '#000000' }}
+            >
+              <p className="brand-name">{form.name || '—'}</p>
+              <p className="muted">{form.tagline}</p>
+              <span className="brand-button">{t.branding.previewButton}</span>
+              <span className="brand-link">{t.branding.previewLink}</span>
+            </div>
+          </section>
+
+          <section className="card" aria-labelledby="logo-title">
+            <h2 id="logo-title">{t.branding.logo}</h2>
+            <p className="help">{t.branding.logoHint}</p>
+            {settings.data.logoUrl ? (
+              <ProtectedImage
+                key={logoKey}
+                path={settings.data.logoUrl}
+                alt={t.branding.logoAlt}
+                className="photo"
+              />
+            ) : (
+              <p className="muted">{t.branding.noLogo}</p>
+            )}
+            <div className="actions">
+              <button type="button" className="button" onClick={() => fileRef.current?.click()}>
+                {t.branding.upload}
+              </button>
+              <input
+                ref={fileRef}
+                hidden
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                onChange={(e) => void onLogo(e.target.files?.[0])}
+              />
+              {settings.data.logoUrl ? (
+                <button type="button" className="button" onClick={() => void removeLogo()}>
+                  {t.branding.remove}
+                </button>
+              ) : null}
+            </div>
+          </section>
+        </div>
+      </div>
+    </section>
+  );
+}

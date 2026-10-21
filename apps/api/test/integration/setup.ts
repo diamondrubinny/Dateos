@@ -101,7 +101,7 @@ export async function setupIntegration(): Promise<TestContext> {
 
 export async function resetState(ctx: TestContext): Promise<void> {
   await ctx.services.dbHandle.pool.query(
-    'TRUNCATE "user", verification, rate_limit, audit_logs, banned_emails RESTART IDENTITY CASCADE',
+    'TRUNCATE "user", verification, rate_limit, audit_logs, banned_emails, instance_settings RESTART IDENTITY CASCADE',
   );
   const { storage } = ctx.services;
   for (const bucket of Object.values(storage.buckets)) {
@@ -109,6 +109,7 @@ export async function resetState(ctx: TestContext): Promise<void> {
   }
   const keys = await ctx.redis.keys('dateos:*');
   if (keys.length > 0) await ctx.redis.del(...keys);
+  ctx.services.instance.invalidate();
   ctx.mail.length = 0;
   ctx.jobs.process.length = 0;
   ctx.jobs.delete.length = 0;

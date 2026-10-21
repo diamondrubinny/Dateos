@@ -43,6 +43,13 @@
       "when": 1792593748749,
       "tag": "0005_safety",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792596071768,
+      "tag": "0006_instance",
+      "breakpoints": true
     }
   ]
 }
