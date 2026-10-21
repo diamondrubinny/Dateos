@@ -5,6 +5,7 @@ import {
   ErrorCode,
   type InstanceInfo,
   type InstanceSettingsInput,
+  type Locale,
 } from '@dateos/shared';
 import type { StoredObject } from '@dateos/storage';
 import { and, eq, sql } from 'drizzle-orm';
@@ -25,7 +26,7 @@ export interface AdminInstanceSettings {
   name: string;
   tagline: string;
   primaryColor: string;
-  defaultLocale: 'he' | 'en';
+  defaultLocale: Locale;
   operatorName: string | null;
   contactEmail: string | null;
   sponsorUrl: string | null;
@@ -109,7 +110,7 @@ export class InstanceService {
       name: info.name,
       tagline: info.tagline,
       primaryColor: info.primaryColor,
-      defaultLocale: info.defaultLocale as 'he' | 'en',
+      defaultLocale: info.defaultLocale as Locale,
       operatorName: info.operatorName,
       contactEmail: info.contactEmail,
       sponsorUrl: info.sponsorUrl,

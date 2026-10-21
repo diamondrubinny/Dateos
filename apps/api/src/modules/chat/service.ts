@@ -1,14 +1,15 @@
 import { checkHarm, detectScamSignals, type IcebreakerProvider } from '@dateos/ai';
 import { schema, type Database } from '@dateos/db';
 import {
+  type Conversation,
   ErrorCode,
   harmCategories,
+  type Locale,
   MESSAGES_BEFORE_IMAGES,
-  scamSignals,
-  type Conversation,
   type MessagesPage,
   type MessageView,
   type PromptKey,
+  scamSignals,
 } from '@dateos/shared';
 import { randomUUID } from 'node:crypto';
 import { and, asc, desc, eq, isNull, lt, or, sql } from 'drizzle-orm';
@@ -366,11 +367,7 @@ export class ChatService {
     return out.sort((a, b) => activity(b).localeCompare(activity(a)));
   }
 
-  async suggestIcebreakers(
-    matchId: string,
-    viewerId: string,
-    locale: 'he' | 'en',
-  ): Promise<string[]> {
+  async suggestIcebreakers(matchId: string, viewerId: string, locale: Locale): Promise<string[]> {
     const { otherId } = await this.participant(matchId, viewerId);
     const [profile] = await this.db
       .select({ name: profiles.displayName, bio: profiles.bio })

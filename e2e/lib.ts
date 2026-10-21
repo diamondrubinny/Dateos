@@ -5,6 +5,15 @@ import type { Page } from 'playwright';
 import sharp from 'sharp';
 
 export const WEB = process.env.WEB_URL ?? 'http://localhost:8081';
+
+/** Browser locale per app language (Arabic and Hebrew are right-to-left). */
+export const LOCALE_TAGS = { en: 'en-US', he: 'he-IL', ar: 'ar', ru: 'ru-RU' } as const;
+export type E2eLocale = keyof typeof LOCALE_TAGS;
+/** Languages to run (`LOCALES=en,he,ar,ru`); each script has its own default. */
+export function locales<T extends E2eLocale>(fallback: readonly T[]): T[] {
+  const wanted = process.env.LOCALES?.split(',').map((l) => l.trim());
+  return (wanted ? fallback.filter((l) => wanted.includes(l)) : [...fallback]) as T[];
+}
 export const API = process.env.API_URL ?? 'http://localhost:4000';
 export const MAILPIT = process.env.MAILPIT_URL ?? 'http://localhost:8025';
 export const OUT = new URL('../docs/screenshots/', import.meta.url).pathname;

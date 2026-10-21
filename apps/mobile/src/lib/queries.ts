@@ -1,3 +1,4 @@
+import type { Locale } from '@dateos/shared';
 import type {
   CoachResponse,
   ConsentInput,
@@ -193,7 +194,7 @@ export function useCoach() {
 
 export function useBioIdeas() {
   return useMutation({
-    mutationFn: (locale: 'he' | 'en') =>
+    mutationFn: (locale: Locale) =>
       apiFetch<{ ideas: string[] }>('/v1/me/coach/bio-ideas', {
         method: 'POST',
         body: json({ locale }),

@@ -4,6 +4,7 @@ import {
   conversationSchema,
   ErrorCode,
   icebreakersSchema,
+  localeSchema,
   MAX_AUDIO_BYTES,
   MAX_PHOTO_BYTES,
   messageCheckResultSchema,
@@ -170,7 +171,7 @@ export const chatRoutes: FastifyPluginAsyncZod<ChatRouteOptions> = async (
       config: perUserLimit(60, 24 * 60 * 60_000),
       schema: {
         params: matchParams,
-        querystring: z.object({ locale: z.enum(['he', 'en']).default('en') }),
+        querystring: z.object({ locale: localeSchema.default('en') }),
         response: { 200: icebreakersSchema },
       },
     },

@@ -97,7 +97,7 @@ async function run(locale: 'en' | 'he', browser: Browser) {
     if (gotDraft) await draft.click();
     else
       await page
-        .getByLabel(t.editBio.label)
+        .getByRole('textbox', { name: t.editBio.label, exact: true })
         .fill(
           locale === 'he'
             ? 'שוחה בזריחה בחוף גורדון כמעט כל בוקר, אחר כך מאפים וספר טוב. מחפשת מישהו שאוהב בקרים.'

@@ -14,7 +14,7 @@ export const he: Translations = {
     offline: 'נראה שאין חיבור לאינטרנט.',
     draftNotice: 'טיוטה: המסמך מחייב בדיקה משפטית לפני פרסום.',
   },
-  language: { label: 'שפה', he: 'עברית', en: 'English' },
+  language: { label: 'שפה', he: 'עברית', en: 'English', ar: 'العربية', ru: 'Русский' },
   welcome: {
     title: 'היכרויות שמכבדות אותך',
     subtitle: 'חינם לתמיד. קוד פתוח. בלי פרסומות, בלי מנויים ובלי מכירת מידע.',

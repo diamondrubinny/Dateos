@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { localeSchema } from './common.js';
 
 /** WCAG 2.x relative luminance of a #RRGGBB color. */
 export function luminance(hex: string): number {
@@ -79,7 +80,7 @@ export const instanceSettingsInputSchema = z
       isAccessiblePrimary,
       'Too light: white text on this color would be hard to read (needs 4.5:1 contrast).',
     ),
-    defaultLocale: z.enum(['he', 'en']),
+    defaultLocale: localeSchema,
     operatorName: plainText(100).nullable(),
     contactEmail: z.email().max(254).nullable(),
     sponsorUrl: z

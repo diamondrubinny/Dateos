@@ -6,9 +6,21 @@ import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { chromium, type BrowserContext, type Page } from 'playwright';
 import { en } from '../apps/mobile/src/i18n/en.ts';
+import { ar } from '../apps/mobile/src/i18n/ar.ts';
 import { he } from '../apps/mobile/src/i18n/he.ts';
+import { ru } from '../apps/mobile/src/i18n/ru.ts';
 import { demoPhoto } from './demo-images.ts';
-import { apiClient, OUT, reportA11y, shot, showcase, signInHttp, WEB } from './lib.ts';
+import {
+  apiClient,
+  LOCALE_TAGS,
+  locales,
+  OUT,
+  reportA11y,
+  shot,
+  showcase,
+  signInHttp,
+  WEB,
+} from './lib.ts';
 
 const LEGAL = { terms: '2026-10', privacy: '2026-10' };
 
@@ -35,6 +47,7 @@ const scripts = {
     mine: ['Beach, always 🌊', 'I know a great café in Jaffa', 'Thursday works for me'],
     harmful: 'you are an idiot',
     scam: 'Can you send me money for my flight ticket?',
+    bio: 'Into the sea, coffee and good conversations.',
   },
   he: {
     t: he,
@@ -54,6 +67,55 @@ const scripts = {
     mine: ['ים, תמיד 🌊', 'אני מכיר בית קפה מעולה ביפו', 'יום חמישי מתאים לי'],
     harmful: 'את פשוט מטומטמת',
     scam: 'תעבירי לי כסף בביט לכרטיס טיסה?',
+    bio: 'אוהב/ת ים, קפה ושיחות טובות.',
+  },
+  ar: {
+    t: ar,
+    a: {
+      name: 'ليلى',
+      gender: 'woman',
+      interestedIn: ['man'],
+      prompt: ['first_date_idea', 'حمّص على الشاطئ ثم نزهة وقت الغروب.'],
+    },
+    b: {
+      name: 'كريم',
+      gender: 'man',
+      interestedIn: ['woman'],
+      prompt: ['perfect_sunday', 'ركض طويل على البحر ثم فطائر مع الأصدقاء.'],
+    },
+    replies: [
+      'هههه نعم! الفطائر ضرورية 🥞',
+      'وأنتِ، البحر أم الجبال؟',
+      'وأنا أيضًا! قهوة هذا الأسبوع؟',
+    ],
+    mine: ['البحر دائمًا 🌊', 'أعرف مقهى رائعًا في يافا', 'يوم الخميس يناسبني'],
+    harmful: 'انتِ غبية فعلًا',
+    scam: 'ارسلي لي المال لتذكرة الطيران من فضلك',
+    bio: 'أحب البحر والقهوة والأحاديث الجميلة.',
+  },
+  ru: {
+    t: ru,
+    a: {
+      name: 'Анна',
+      gender: 'woman',
+      interestedIn: ['man'],
+      prompt: ['first_date_idea', 'Хумус на пляже, а потом прогулка на закате.'],
+    },
+    b: {
+      name: 'Илья',
+      gender: 'man',
+      interestedIn: ['woman'],
+      prompt: ['perfect_sunday', 'Долгая пробежка у моря, а потом блины с друзьями.'],
+    },
+    replies: [
+      'Ха-ха, да! Без блинов никак 🥞',
+      'А вы — море или горы?',
+      'Я тоже! Кофе на этой неделе?',
+    ],
+    mine: ['Море, всегда 🌊', 'Знаю отличное кафе в Яффо', 'Четверг мне подходит'],
+    harmful: 'Ты просто идиотка',
+    scam: 'Переведи деньги на билет, пожалуйста',
+    bio: 'Люблю море, кофе и хорошие разговоры.',
   },
 } as const;
 
@@ -76,10 +138,7 @@ async function createAccount(email: string, p: Person, locale: string) {
     gender: p.gender,
     interestedIn: p.interestedIn,
     intention: 'long_term',
-    bio:
-      locale === 'he'
-        ? 'אוהב/ת ים, קפה ושיחות טובות.'
-        : 'Into the sea, coffee and good conversations.',
+    bio: scripts[locale as keyof typeof scripts].bio,
     languages: ['he', 'en'],
   });
   await call('PUT', '/v1/me/location', { lat: 32.0809, lng: 34.7806 });
@@ -154,8 +213,8 @@ async function run(
   });
   assert(matchId, 'mutual like creates a match');
 
-  const A = await openAs(browser, a.session, locale === 'he' ? 'he-IL' : 'en-US');
-  const B = await openAs(browser, b.session, locale === 'he' ? 'he-IL' : 'en-US');
+  const A = await openAs(browser, a.session, LOCALE_TAGS[locale]);
+  const B = await openAs(browser, b.session, LOCALE_TAGS[locale]);
   try {
     await scenario(locale, matchId, A.page, B.page);
   } catch (error) {
@@ -246,7 +305,7 @@ const browser = await chromium.launch(
   process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {},
 );
 try {
-  for (const locale of ['en', 'he'] as const) {
+  for (const locale of locales(['en', 'he', 'ar', 'ru'] as const)) {
     process.stdout.write(`${locale}:\n`);
     await run(locale, browser);
     await showcase(

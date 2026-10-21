@@ -1,6 +1,6 @@
 import { bioIdeas, coachTips } from '@dateos/ai';
 import { schema, type Database } from '@dateos/db';
-import { bioIdeasSchema, coachResponseSchema, ErrorCode } from '@dateos/shared';
+import { bioIdeasSchema, coachResponseSchema, ErrorCode, localeSchema } from '@dateos/shared';
 import { and, asc, eq } from 'drizzle-orm';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';
@@ -61,7 +61,7 @@ export const coachRoutes: FastifyPluginAsyncZod<{ auth: Auth; db: Database; ai: 
     '/v1/me/coach/bio-ideas',
     {
       schema: {
-        body: z.object({ locale: z.enum(['he', 'en']) }),
+        body: z.object({ locale: localeSchema }),
         response: { 200: bioIdeasSchema },
       },
       config: perUserLimit(10, 24 * 60 * 60 * 1000),

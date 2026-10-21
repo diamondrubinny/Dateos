@@ -9,7 +9,7 @@ type Form = {
   name: string;
   tagline: string;
   primaryColor: string;
-  defaultLocale: 'he' | 'en';
+  defaultLocale: 'he' | 'en' | 'ar' | 'ru';
   operatorName: string;
   contactEmail: string;
   sponsorUrl: string;
@@ -177,6 +177,8 @@ export function Branding({ wizard, onFinish }: { wizard: boolean; onFinish?: () 
           >
             <option value="he">עברית</option>
             <option value="en">English</option>
+            <option value="ar">العربية</option>
+            <option value="ru">Русский</option>
           </select>
 
           {field('operatorName', t.branding.operator, {

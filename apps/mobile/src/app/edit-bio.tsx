@@ -48,7 +48,7 @@ function EditBio() {
   };
 
   const askIdeas = () =>
-    ideas.mutate(locale === 'he' ? 'he' : 'en', {
+    ideas.mutate(locale, {
       onError: (e) =>
         setError(
           e instanceof ApiRequestError && e.status === 429

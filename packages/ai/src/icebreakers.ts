@@ -1,8 +1,16 @@
 import { ollamaModel, type TextModel } from './llm.js';
-import type { PromptKey } from '@dateos/shared';
+import type { Locale, PromptKey } from '@dateos/shared';
 import { containsContactOrLink, looksLikeInstructions } from './moderation.js';
 
-export type IcebreakerLocale = 'he' | 'en';
+export type IcebreakerLocale = Locale;
+
+/** Language names for model prompts. */
+export const LANGUAGE_NAMES: Record<Locale, string> = {
+  en: 'English',
+  he: 'Hebrew',
+  ar: 'Arabic (Modern Standard)',
+  ru: 'Russian',
+};
 
 export interface IcebreakerInput {
   locale: IcebreakerLocale;
@@ -81,6 +89,57 @@ const TEMPLATES: Record<
     looking_for: () => 'איך מרגישה בעיניך שיחה ראשונה טובה?',
     generic: () => 'היי! מה היה הרגע הכי טוב שלך השבוע?',
   },
+  ar: {
+    perfect_sunday: (s) =>
+      s
+        ? `«${s}» يبدو يوم عطلة رائعًا. ما الجزء الذي لا يمكن الاستغناء عنه؟`
+        : 'كيف يبدو يوم العطلة المثالي بالنسبة لك، من البداية إلى النهاية؟',
+    green_flag: (s) =>
+      s
+        ? `أعجبتني علامتك الخضراء: «${s}». لماذا هي مهمة لك إلى هذا الحد؟`
+        : 'ما آخر علامة خضراء لاحظتها في شخص ما؟',
+    two_truths_one_lie: () => 'سأحاول تخمين الكذبة… لكن هل من تلميح أولًا؟',
+    geek_out_about: (s) =>
+      s ? `شغفك بـ«${s}» لافت. كيف بدأت القصة؟` : 'ما الموضوع الذي يمكنك الحديث عنه لساعات؟',
+    best_travel_story: (s) => (s ? `«${s}»: أريد سماع القصة كاملة!` : 'ما أجمل رحلة قمت بها؟'),
+    first_date_idea: (s) =>
+      s
+        ? `«${s}» كموعد أول؟ فكرة رائعة. هل لديك مكان مفضل؟`
+        : 'كيف يبدو الموعد الأول المثالي في رأيك؟',
+    simple_pleasures: (s) =>
+      s
+        ? `«${s}» متعة بسيطة جميلة. ما الذي يُسعد يومك أيضًا؟`
+        : 'ما الشيء الصغير الذي يجعل يومك أفضل دائمًا؟',
+    looking_for: () => 'كيف تبدو المحادثة الأولى الجيدة بالنسبة لك؟',
+    generic: () => 'مرحبًا! ما أجمل لحظة مرّت عليك هذا الأسبوع؟',
+  },
+  ru: {
+    perfect_sunday: (s) =>
+      s
+        ? `«${s}» звучит как идеальный выходной. А без чего он точно не обходится?`
+        : 'Как выглядит ваш идеальный выходной, от утра до вечера?',
+    green_flag: (s) =>
+      s
+        ? `Классный зелёный флаг: «${s}». Почему это так важно для вас?`
+        : 'Какой зелёный флаг вы недавно заметили в ком-то?',
+    two_truths_one_lie: () => 'Попробую угадать, где неправда… но сначала подсказку?',
+    geek_out_about: (s) =>
+      s
+        ? `Увлечение «${s}» — это интересно. С чего всё началось?`
+        : 'О чём вы можете говорить часами?',
+    best_travel_story: (s) =>
+      s ? `«${s}» — хочу услышать всю историю!` : 'Какое путешествие было лучшим в вашей жизни?',
+    first_date_idea: (s) =>
+      s
+        ? `«${s}» для первого свидания? Отличная идея. Есть любимое место?`
+        : 'Каким должно быть идеальное первое свидание?',
+    simple_pleasures: (s) =>
+      s
+        ? `«${s}» — прекрасная мелочь. Что ещё делает ваш день лучше?`
+        : 'Какая мелочь всегда поднимает вам настроение?',
+    looking_for: () => 'Каким, по-вашему, должен быть хороший первый разговор?',
+    generic: () => 'Привет! Какой момент этой недели был самым лучшим?',
+  },
 };
 
 /** Deterministic, offline suggestions built from the other person's prompts. */
@@ -102,12 +161,20 @@ export const templateIcebreakers: IcebreakerProvider = {
 export function matchesLocaleScript(line: string, locale: IcebreakerLocale): boolean {
   const letters = line.match(/\p{L}/gu) ?? [];
   if (letters.length === 0) return false;
-  const expected = locale === 'he' ? /\p{Script=Hebrew}/u : /\p{Script=Latin}/u;
-  const inScript = letters.filter((c) => expected.test(c)).length;
-  // Hebrew lines may contain a Latin name; any third script (Arabic, Cyrillic…) is rejected.
-  const foreign = letters.some((c) => !/\p{Script=Hebrew}|\p{Script=Latin}/u.test(c));
-  return !foreign && inScript / letters.length >= (locale === 'he' ? 0.9 : 0.95);
+  const { own, threshold } = SCRIPTS[locale];
+  const inScript = letters.filter((c) => own.test(c)).length;
+  // A Latin name inside another language is fine; any third script is rejected.
+  const foreign = letters.some((c) => !own.test(c) && !/\p{Script=Latin}/u.test(c));
+  return !foreign && inScript / letters.length >= threshold;
 }
+
+const SCRIPTS: Record<IcebreakerLocale, { own: RegExp; threshold: number }> = {
+  en: { own: /\p{Script=Latin}/u, threshold: 0.95 },
+  he: { own: /\p{Script=Hebrew}/u, threshold: 0.9 },
+  // A Latin first name in a short Arabic or Russian line is common.
+  ar: { own: /\p{Script=Arabic}/u, threshold: 0.8 },
+  ru: { own: /\p{Script=Cyrillic}/u, threshold: 0.8 },
+};
 
 /** Validates model output: plain short lines in the right language, no links/contacts. */
 export function sanitizeSuggestions(lines: string[], locale: IcebreakerLocale = 'en'): string[] {
@@ -115,7 +182,7 @@ export function sanitizeSuggestions(lines: string[], locale: IcebreakerLocale = 
     .map((l) =>
       l
         .replace(/^\s*(?:[-*•]|\d+[.)])\s*/, '')
-        .replace(/^["“”״']+|["“”״']+$/g, '')
+        .replace(/^["“”״'«»]+|["“”״'«»]+$/g, '')
         .trim(),
     )
     .filter(
@@ -139,7 +206,7 @@ export function llmIcebreakers(model: TextModel): IcebreakerProvider {
     name: model.name,
     async suggest(input) {
       const fallback = () => templateIcebreakers.suggest(input);
-      const language = input.locale === 'he' ? 'Hebrew' : 'English';
+      const language = LANGUAGE_NAMES[input.locale];
       const profile = JSON.stringify({
         prompts: input.prompts.map((p) => ({
           question: p.promptKey,

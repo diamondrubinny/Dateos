@@ -8,9 +8,12 @@ import AxeBuilder from '@axe-core/playwright';
 import { chromium, type Page } from 'playwright';
 import sharp from 'sharp';
 import { en } from '../apps/mobile/src/i18n/en.ts';
+import { ar } from '../apps/mobile/src/i18n/ar.ts';
 import { he } from '../apps/mobile/src/i18n/he.ts';
+import { ru } from '../apps/mobile/src/i18n/ru.ts';
 import { demoPhoto, demoScenes } from './demo-images.ts';
 import { demoLikes, seedDemo } from './seed-demo.ts';
+import { LOCALE_TAGS, locales } from './lib.ts';
 
 const WEB = process.env.WEB_URL ?? 'http://localhost:8081';
 const MAILPIT = process.env.MAILPIT_URL ?? 'http://localhost:8025';
@@ -37,6 +40,28 @@ const people = {
     prompts: {
       first_date_idea: 'חומוס על החוף ואז הליכה בטיילת בשקיעה.',
       green_flag: 'אדיבות למלצרים וסקרנות לגבי הכול.',
+    },
+  },
+  ar: {
+    t: ar,
+    name: 'ليلى',
+    email: 'layla@example.com',
+    birth: ['14', '03', '1996'],
+    bio: 'مهندسة معمارية في النهار وخبّازة هاوية في الليل. أحب المشي الطويل على البحر والنكات السيئة.',
+    prompts: {
+      first_date_idea: 'حمّص على الشاطئ ثم نزهة على الكورنيش وقت الغروب.',
+      green_flag: 'اللطف مع النُّدُل والفضول تجاه كل شيء.',
+    },
+  },
+  ru: {
+    t: ru,
+    name: 'Анна',
+    email: 'anna@example.com',
+    birth: ['14', '03', '1996'],
+    bio: 'Днём архитектор, вечером пеку хлеб. Люблю долгие прогулки у моря и ужасные каламбуры.',
+    prompts: {
+      first_date_idea: 'Хумус на пляже, а потом прогулка по набережной на закате.',
+      green_flag: 'Вежливость с официантами и любопытство ко всему.',
     },
   },
 } as const;
@@ -122,10 +147,36 @@ const likers = {
     { name: 'Omer' },
     { name: 'Noam' },
   ],
+  ar: [
+    {
+      name: 'Itai',
+      comment: 'فكرتك للموعد الأول رائعة. أعرف أفضل مطعم حمّص!',
+      onPrompt: true,
+    },
+    { name: 'Daniel', comment: 'أنا أيضًا من عشّاق البحر 🌊' },
+    { name: 'Yoav' },
+    { name: 'Amit' },
+    { name: 'Omer' },
+    { name: 'Noam' },
+  ],
+  ru: [
+    {
+      name: 'Itai',
+      comment: 'Отличная идея для первого свидания. Знаю лучший хумус в городе!',
+      onPrompt: true,
+    },
+    { name: 'Daniel', comment: 'Я тоже обожаю море 🌊' },
+    { name: 'Yoav' },
+    { name: 'Amit' },
+    { name: 'Omer' },
+    { name: 'Noam' },
+  ],
 };
 const comments = {
   en: 'Kindness to strangers is the best green flag 💜',
   he: 'אדיבות לזרים זה הדגל הירוק הכי טוב 💜',
+  ar: 'اللطف مع الغرباء أجمل علامة خضراء 💜',
+  ru: 'Доброта к незнакомцам — лучший зелёный флаг 💜',
 };
 
 async function shot(page: Page, locale: string, name: string) {
@@ -152,7 +203,7 @@ async function run(locale: keyof typeof people) {
   const context = await browser.newContext({
     viewport: { width: 390, height: 844 },
     deviceScaleFactor: 2,
-    locale: locale === 'he' ? 'he-IL' : 'en-US',
+    locale: LOCALE_TAGS[locale],
     geolocation: { latitude: 32.0809, longitude: 34.7806 }, // Tel Aviv
     permissions: ['geolocation'],
   });
@@ -328,7 +379,7 @@ async function showcase(file: string, locale: string, names: string[]) {
 }
 
 await seedDemo({ reset: true });
-for (const locale of ['en', 'he'] as const) {
+for (const locale of locales(['en', 'he', 'ar', 'ru'] as const)) {
   process.stdout.write(`${locale}:\n`);
   await run(locale);
   await showcase(`${locale}`, locale, [

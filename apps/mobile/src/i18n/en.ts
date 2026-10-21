@@ -12,7 +12,7 @@ export const en = {
     offline: 'You seem to be offline.',
     draftNotice: 'Draft: this document requires legal review before publication.',
   },
-  language: { label: 'Language', he: 'עברית', en: 'English' },
+  language: { label: 'Language', he: 'עברית', en: 'English', ar: 'العربية', ru: 'Русский' },
   welcome: {
     title: 'Dating that respects you',
     subtitle: 'Free forever. Open source. No ads, no paywalls, no selling your data.',

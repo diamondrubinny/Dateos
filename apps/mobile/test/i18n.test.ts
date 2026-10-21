@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { en } from '../src/i18n/en';
+import { ar } from '../src/i18n/ar';
 import { he } from '../src/i18n/he';
+import { ru } from '../src/i18n/ru';
 
 type Tree = { [key: string]: string | Tree };
 
@@ -15,23 +17,39 @@ function flatten(tree: Tree, prefix = ''): Record<string, string> {
 
 const placeholders = (text: string) => [...text.matchAll(/\{\{(\w+)\}\}/g)].map((m) => m[1]).sort();
 
+const languages = { he, ar, ru } as const;
+const scripts = { he: /\p{Script=Hebrew}/u, ar: /\p{Script=Arabic}/u, ru: /\p{Script=Cyrillic}/u };
+
 describe('translations', () => {
   const english = flatten(en as Tree);
-  const hebrew = flatten(he as Tree);
 
-  it('have the same keys in every language', () => {
-    expect(Object.keys(hebrew).sort()).toEqual(Object.keys(english).sort());
-  });
+  for (const [code, tree] of Object.entries(languages) as [keyof typeof languages, Tree][]) {
+    const other = flatten(tree);
 
-  it('have no empty strings', () => {
-    for (const [key, value] of [...Object.entries(english), ...Object.entries(hebrew)]) {
-      expect(value.trim(), key).not.toBe('');
-    }
-  });
+    it(`${code}: same keys as English`, () => {
+      expect(Object.keys(other).sort()).toEqual(Object.keys(english).sort());
+    });
 
-  it('use the same {{placeholders}} in every language', () => {
-    for (const [key, value] of Object.entries(english)) {
-      expect(placeholders(hebrew[key]!), key).toEqual(placeholders(value));
-    }
+    it(`${code}: no empty strings`, () => {
+      for (const [key, value] of Object.entries(other)) expect(value.trim(), key).not.toBe('');
+    });
+
+    it(`${code}: same {{placeholders}}`, () => {
+      for (const [key, value] of Object.entries(english)) {
+        expect(placeholders(other[key]!), key).toEqual(placeholders(value));
+      }
+    });
+
+    it(`${code}: every text is actually translated`, () => {
+      // Language names are shown in their own language everywhere.
+      const untranslated = Object.entries(other).filter(
+        ([key, value]) => !key.startsWith('language.') && !scripts[code].test(value),
+      );
+      expect(untranslated.map(([key]) => key)).toEqual([]);
+    });
+  }
+
+  it('English has no empty strings', () => {
+    for (const [key, value] of Object.entries(english)) expect(value.trim(), key).not.toBe('');
   });
 });

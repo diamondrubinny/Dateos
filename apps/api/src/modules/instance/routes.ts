@@ -1,4 +1,10 @@
-import { deriveBrand, instanceSchema, setupClaimSchema, type InstanceInfo } from '@dateos/shared';
+import {
+  deriveBrand,
+  type InstanceInfo,
+  instanceSchema,
+  localeSchema,
+  setupClaimSchema,
+} from '@dateos/shared';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import type { Auth } from '../../auth/auth.js';
@@ -82,7 +88,7 @@ export const adminSettingsSchema = z.object({
   name: z.string(),
   tagline: z.string(),
   primaryColor: z.string(),
-  defaultLocale: z.enum(['he', 'en']),
+  defaultLocale: localeSchema,
   operatorName: z.string().nullable(),
   contactEmail: z.string().nullable(),
   sponsorUrl: z.string().nullable(),

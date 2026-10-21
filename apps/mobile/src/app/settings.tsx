@@ -49,7 +49,7 @@ function SettingsContent() {
       await disablePush();
       return setPush(false);
     }
-    const result = await enablePush(locale === 'he' ? 'he' : 'en').catch(() => 'error' as const);
+    const result = await enablePush(locale).catch(() => 'error' as const);
     if (result === 'enabled') return setPush(true);
     setPushNote(t(`push.${result}`));
   };

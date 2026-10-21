@@ -1,4 +1,4 @@
-import { DEFAULT_TAGLINE } from '@dateos/shared';
+import { DEFAULT_TAGLINE, localeSchema } from '@dateos/shared';
 import { z } from 'zod';
 
 const booleanString = z.enum(['true', 'false']).transform((value) => value === 'true');
@@ -102,8 +102,8 @@ export const envSchema = z.object({
     .string()
     .regex(/^#[0-9a-fA-F]{6}$/)
     .default('#7C3AED'),
-  INSTANCE_LOCALES: csvList.default(['he', 'en']),
-  INSTANCE_DEFAULT_LOCALE: z.enum(['he', 'en']).default('he'),
+  INSTANCE_LOCALES: csvList.default(['he', 'en', 'ar', 'ru']),
+  INSTANCE_DEFAULT_LOCALE: localeSchema.default('he'),
   SPONSOR_URL: z
     .url()
     .optional()

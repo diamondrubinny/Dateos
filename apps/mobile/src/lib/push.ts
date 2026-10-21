@@ -1,3 +1,4 @@
+import type { Locale } from '@dateos/shared';
 import Constants from 'expo-constants';
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
@@ -12,7 +13,7 @@ export type PushSetupResult = 'enabled' | 'denied' | 'unsupported' | 'not-config
  * Opt-in push notifications. The token goes to this community's server only; notifications never
  * contain names or message text. 📘 Expo push notifications setup (EAS project id required).
  */
-export async function enablePush(locale: 'he' | 'en'): Promise<PushSetupResult> {
+export async function enablePush(locale: Locale): Promise<PushSetupResult> {
   if (Platform.OS === 'web') return 'unsupported';
   const projectId = Constants.expoConfig?.extra?.eas?.projectId as string | undefined;
   if (!projectId) return 'not-configured';

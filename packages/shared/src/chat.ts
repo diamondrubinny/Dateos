@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { publicProfileSchema } from './discovery.js';
+import { localeSchema } from './common.js';
 
 export const MAX_MESSAGE_LENGTH = 2000;
 /** Each person must send this many text messages before images unlock in a chat. */
@@ -109,5 +110,5 @@ export const pushTokenInputSchema = z.object({
     .max(200)
     .regex(/^Expo(nent)?PushToken\[[A-Za-z0-9_-]{10,}\]$/),
   platform: z.enum(['ios', 'android']),
-  locale: z.enum(['he', 'en']).default('en'),
+  locale: localeSchema.default('en'),
 });

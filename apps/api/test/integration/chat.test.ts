@@ -191,6 +191,22 @@ describe.skipIf(!integrationEnabled)('chat (integration)', () => {
     expect(res.suggestions[0]).toContain('Dan likes kindness');
   });
 
+  it('icebreakers come in Arabic and Russian too (offline templates)', async () => {
+    for (const [locale, script] of [
+      ['ar', /\p{Script=Arabic}/u],
+      ['ru', /\p{Script=Cyrillic}/u],
+    ] as const) {
+      const res = await api(ctx, noa, 'GET', `/v1/matches/${matchId}/icebreakers?locale=${locale}`);
+      expect(res.statusCode).toBe(200);
+      const lines: string[] = res.json().suggestions;
+      expect(lines).toHaveLength(3);
+      for (const line of lines) expect(line, locale).toMatch(script);
+    }
+    expect(
+      (await api(ctx, noa, 'GET', `/v1/matches/${matchId}/icebreakers?locale=fr`)).statusCode,
+    ).toBe(400);
+  });
+
   it('deletes messages when an account is deleted', async () => {
     await send(noa, 'hello');
     await send(dan, 'hi');

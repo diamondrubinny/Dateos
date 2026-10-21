@@ -8,10 +8,22 @@ import { readFileSync } from 'node:fs';
 import { strFromU8, unzipSync } from 'fflate';
 import { chromium, type Browser } from 'playwright';
 import { en } from '../apps/mobile/src/i18n/en.ts';
+import { ar } from '../apps/mobile/src/i18n/ar.ts';
 import { he } from '../apps/mobile/src/i18n/he.ts';
+import { ru } from '../apps/mobile/src/i18n/ru.ts';
 import { storageInventory } from '../apps/mobile/src/lib/storage-inventory.ts';
 import { demoPhoto } from './demo-images.ts';
-import { API, apiClient, magicLink, reportA11y, shot, showcase, WEB } from './lib.ts';
+import {
+  API,
+  apiClient,
+  LOCALE_TAGS,
+  locales,
+  magicLink,
+  reportA11y,
+  shot,
+  showcase,
+  WEB,
+} from './lib.ts';
 
 const LEGAL = { terms: '2026-10', privacy: '2026-10' };
 const problems: string[] = [];
@@ -20,13 +32,22 @@ const check = (ok: boolean, message: string) => {
   process.stdout.write(`  ${ok ? '✓' : '✗'} ${message}\n`);
 };
 
-async function run(locale: 'en' | 'he', browser: Browser) {
-  const t = locale === 'he' ? he : en;
+const T = { en, he, ar, ru } as const;
+const NAMES = { en: 'Maya', he: 'מאיה', ar: 'ليلى', ru: 'Анна' } as const;
+const BIOS = {
+  en: 'Coffee, the sea and live music',
+  he: 'קפה, ים ומוזיקה חיה',
+  ar: 'القهوة والبحر والموسيقى الحية',
+  ru: 'Кофе, море и живая музыка',
+} as const;
+
+async function run(locale: keyof typeof T, browser: Browser) {
+  const t = T[locale];
   const email = `privacy-${locale}-${Date.now()}@example.test`;
   const context = await browser.newContext({
     viewport: { width: 390, height: 844 },
     deviceScaleFactor: 2,
-    locale: locale === 'he' ? 'he-IL' : 'en-US',
+    locale: LOCALE_TAGS[locale],
     acceptDownloads: true,
   });
   await context.addInitScript((l) => {
@@ -64,12 +85,12 @@ async function run(locale: 'en' | 'he', browser: Browser) {
       ],
     });
     await call('POST', '/v1/me/profile', {
-      displayName: locale === 'he' ? 'מאיה' : 'Maya',
+      displayName: NAMES[locale],
       birthDate: '1993-05-05',
       gender: 'woman',
       interestedIn: ['man'],
       intention: 'long_term',
-      bio: locale === 'he' ? 'קפה, ים ומוזיקה חיה' : 'Coffee, the sea and live music',
+      bio: BIOS[locale],
       languages: ['he', 'en'],
     });
     await call('PUT', '/v1/me/location', { lat: 32.08, lng: 34.78 });
@@ -140,7 +161,7 @@ const browser = await chromium.launch(
   process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {},
 );
 try {
-  for (const locale of ['en', 'he'] as const) {
+  for (const locale of locales(['en', 'he', 'ar', 'ru'] as const)) {
     process.stdout.write(`${locale}:\n`);
     await run(locale, browser);
     await showcase(

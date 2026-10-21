@@ -23,6 +23,8 @@ export interface PushContext {
 const texts = {
   en: { message: 'You have a new message', match: "It's a match! Say hello" },
   he: { message: 'יש לך הודעה חדשה', match: 'יש התאמה! כדאי להגיד שלום' },
+  ar: { message: 'لديك رسالة جديدة', match: 'هناك توافق! قل مرحبًا' },
+  ru: { message: 'У вас новое сообщение', match: 'Это взаимно! Напишите привет' },
 } as const;
 
 /**
@@ -30,7 +32,7 @@ const texts = {
  * or photos: only the community name and a generic sentence.
  */
 export function pushContent(kind: PushJob['kind'], locale: string, instanceName: string) {
-  const lang = locale === 'he' ? 'he' : 'en';
+  const lang = Object.hasOwn(texts, locale) ? (locale as keyof typeof texts) : 'en';
   return { title: instanceName, body: texts[lang][kind] };
 }
 

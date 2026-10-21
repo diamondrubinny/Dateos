@@ -5,6 +5,8 @@
 **The free, open-source dating platform anyone can run.**
 Native iOS & Android plus web from one codebase, privacy by design, and safety built in from day one.
 
+**[English](docs/marketing/en.md) · [עברית](docs/marketing/he.md) · [العربية](docs/marketing/ar.md) · [Русский](docs/marketing/ru.md)**
+
 [![CI](https://github.com/diamondrubinny/Dateos/actions/workflows/ci.yml/badge.svg)](https://github.com/diamondrubinny/Dateos/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-7C3AED.svg)](LICENSE)
 [![WCAG 2.1 AA target](https://img.shields.io/badge/accessibility-WCAG%202.1%20AA%20target-067647.svg)](#accessibility)
@@ -31,31 +33,32 @@ Dateos is built the other way around:
 - 💌 **"Likes You" is free.** See everyone who liked you, and like a specific photo or prompt with a comment.
 - 💬 **Real-time chat with built-in kindness.** An "Are you sure?" check before hurtful messages, offensive messages hidden for the receiver, scam warnings, and photos that stay blurred until you choose to look.
 - 🤖 **AI that respects you.** Matching runs on the instance's own server by default (offline or with a local Ollama model); cloud AI is opt-in only.
-- ♿ **Accessible and bilingual.** Hebrew (RTL) and English, screen-reader labels, keyboard navigation, and a button for every gesture.
+- 🌍 **Four languages, accessible.** English, Hebrew, Arabic and Russian (full right-to-left support), screen-reader labels, keyboard navigation, and a button for every gesture.
 
 ## Status
 
 Dateos is in active development. Here is what works today and what comes next. The full plan is in [`docs/PLAN.md`](docs/PLAN.md).
 
-| Area                                                                            | Status       |
-| ------------------------------------------------------------------------------- | ------------ |
-| Passwordless email sign-in (magic link), sessions, rate limits                  | ✅ Available |
-| Profile, preferences, prompts, versioned consents                               | ✅ Available |
-| Photo upload with malware scan (ClamAV), EXIF/GPS stripping, re-encoding        | ✅ Available |
-| Account deletion (all data and files)                                           | ✅ Available |
-| iOS / Android / web app: onboarding, profile, settings (Hebrew + English, RTL)  | ✅ Available |
-| Approximate location (~1 km grid, bucketed distances)                           | ✅ Available |
-| Discovery, reciprocal AI matching, Daily Picks, "why you might click"           | ✅ Available |
-| Like / pass / like a photo or prompt with a comment, Likes You, matches         | ✅ Available |
-| Unmatch and block                                                               | ✅ Available |
-| Real-time chat (WebSocket), read receipts, typing, icebreakers                  | ✅ Available |
-| "Are you sure?", hidden offensive messages, scam warnings, blurred photos       | ✅ Available |
-| Voice messages, push notifications                                              | ✅ Available |
-| Report (with chat evidence), moderation dashboard with mandatory TOTP, audit    | ✅ Available |
-| Photo verification (live selfie, human review, no face recognition), badge      | ✅ Available |
-| Your own instance: setup token claim, branding wizard, HTTPS web server (Caddy) | ✅ Available |
-| Download my data, retention jobs, explicit consent for sensitive data           | ✅ Available |
-| Video dates, safety check-in, date planner                                      | 🗓️ Later     |
+| Area                                                                                   | Status       |
+| -------------------------------------------------------------------------------------- | ------------ |
+| Passwordless email sign-in (magic link), sessions, rate limits                         | ✅ Available |
+| Profile, preferences, prompts, versioned consents                                      | ✅ Available |
+| Photo upload with malware scan (ClamAV), EXIF/GPS stripping, re-encoding               | ✅ Available |
+| Account deletion (all data and files)                                                  | ✅ Available |
+| iOS / Android / web app: onboarding, profile, settings (Hebrew + English, RTL)         | ✅ Available |
+| Approximate location (~1 km grid, bucketed distances)                                  | ✅ Available |
+| Discovery, reciprocal AI matching, Daily Picks, "why you might click"                  | ✅ Available |
+| Like / pass / like a photo or prompt with a comment, Likes You, matches                | ✅ Available |
+| Unmatch and block                                                                      | ✅ Available |
+| Real-time chat (WebSocket), read receipts, typing, icebreakers                         | ✅ Available |
+| "Are you sure?", hidden offensive messages, scam warnings, blurred photos              | ✅ Available |
+| Voice messages, push notifications                                                     | ✅ Available |
+| Report (with chat evidence), moderation dashboard with mandatory TOTP, audit           | ✅ Available |
+| Photo verification (live selfie, human review, no face recognition), badge             | ✅ Available |
+| Your own instance: setup token claim, branding wizard, HTTPS web server (Caddy)        | ✅ Available |
+| Download my data, retention jobs, explicit consent for sensitive data                  | ✅ Available |
+| Four languages: English, Hebrew, Arabic, Russian (right-to-left for Hebrew and Arabic) | ✅ Available |
+| Video dates, safety check-in, date planner                                             | 🗓️ Later     |
 
 ## Screenshots
 
@@ -92,6 +95,13 @@ Dateos is in active development. Here is what works today and what comes next. T
 **Full right-to-left support (Hebrew):**
 
 <img src="docs/screenshots/showcase-he.png" alt="The discovery screens in Hebrew with right-to-left layout" width="100%">
+
+**Arabic and Russian:**
+
+<img src="docs/screenshots/showcase-ar.png" alt="The discovery screens in Arabic with right-to-left layout" width="100%">
+<img src="docs/screenshots/showcase-ru.png" alt="The discovery screens in Russian" width="100%">
+
+More in each language: [English](docs/marketing/en.md) · [עברית](docs/marketing/he.md) · [العربية](docs/marketing/ar.md) · [Русский](docs/marketing/ru.md)
 
 <sub>All 74 screens (37 in English, 37 in Hebrew) are in <a href="docs/screenshots">docs/screenshots</a>. Demo members are fictional and their pictures are illustrations.
 Chat screenshots come from two real accounts chatting live in two browsers (<a href="e2e/chat.ts">e2e/chat.ts</a>); the safety screens from a reporter, a reported member and a moderator in three browsers (<a href="e2e/safety.ts">e2e/safety.ts</a>).</sub>

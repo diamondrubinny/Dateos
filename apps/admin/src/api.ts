@@ -53,7 +53,7 @@ export interface AdminInstanceSettings {
   name: string;
   tagline: string;
   primaryColor: string;
-  defaultLocale: 'he' | 'en';
+  defaultLocale: 'he' | 'en' | 'ar' | 'ru';
   operatorName: string | null;
   contactEmail: string | null;
   sponsorUrl: string | null;

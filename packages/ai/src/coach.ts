@@ -1,5 +1,5 @@
-import type { CoachTipId, PromptKey } from '@dateos/shared';
-import { matchesLocaleScript } from './icebreakers.js';
+import type { CoachTipId, Locale, PromptKey } from '@dateos/shared';
+import { LANGUAGE_NAMES, matchesLocaleScript } from './icebreakers.js';
 import type { TextModel } from './llm.js';
 import {
   checkHarm,
@@ -107,7 +107,7 @@ export function isGrounded(idea: string, source: string): boolean {
 /** Validates model output for a bio: right language, plain text, safe, grounded, and new. */
 export function sanitizeBioIdeas(
   raw: string,
-  locale: 'he' | 'en',
+  locale: Locale,
   current: string | null,
   source: string = current ?? '',
 ): string[] {
@@ -150,12 +150,12 @@ export function sanitizeBioIdeas(
 export async function bioIdeas(
   model: TextModel,
   input: {
-    locale: 'he' | 'en';
+    locale: Locale;
     bio: string | null;
     prompts: { promptKey: PromptKey; answer: string }[];
   },
 ): Promise<string[]> {
-  const language = input.locale === 'he' ? 'Hebrew' : 'English';
+  const language = LANGUAGE_NAMES[input.locale];
   const data = JSON.stringify({
     bio: (input.bio ?? '').slice(0, MAX_BIO_LENGTH),
     prompts: input.prompts.map((p) => ({ question: p.promptKey, answer: p.answer.slice(0, 300) })),

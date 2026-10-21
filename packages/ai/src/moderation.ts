@@ -1,5 +1,5 @@
 /**
- * Local, explainable message checks (English + Hebrew). Lexicon and pattern based on purpose:
+ * Local, explainable message checks (English, Hebrew, and a smaller Arabic and Russian list). Lexicon and pattern based on purpose:
  * no message text leaves the server, results are predictable, and every rule can be reviewed.
  * This is a safety net, not a guarantee; human moderation (phase 4) handles what it misses.
  */
@@ -25,12 +25,18 @@ const LEET: Record<string, string> = {
 
 /** Lowercase, drop diacritics and Hebrew niqqud, undo leetspeak, squeeze repeats ("fuuuck" → "fuck"). */
 function prepare(text: string): string {
-  return text
-    .toLowerCase()
-    .normalize('NFKD')
-    .replace(/[\u0591-\u05C7\u0300-\u036F]/g, '')
-    .replace(/[013457@$]/g, (c) => LEET[c] ?? c)
-    .replace(/(\p{L})\1{2,}/gu, '$1');
+  return (
+    text
+      .toLowerCase()
+      .normalize('NFKD')
+      .replace(/[\u0591-\u05C7\u0300-\u036F]/g, '')
+      // Arabic: drop short vowels and tatweel, unify alef and final ya forms.
+      .replace(/[\u064B-\u065F\u0670\u0640]/g, '')
+      .replace(/[\u0622\u0623\u0625]/g, '\u0627')
+      .replace(/\u0649/g, '\u064A')
+      .replace(/[013457@$]/g, (c) => LEET[c] ?? c)
+      .replace(/(\p{L})\1{2,}/gu, '$1')
+  );
 }
 
 function finish(text: string): string {
@@ -50,14 +56,25 @@ const HE_PREFIX = '(?:[והשבלמכ]{0,2})';
 /** Every word that appears in a harm phrase: candidates for undoing masks like "f*ck". */
 const HARM_WORDS = new Set<string>();
 
-function lexicon(en: string[], he: string[], collect = false): RegExp {
+/** Arabic words can carry the article and one-letter prefixes (و/ف/ب/ل/ك + ال). */
+const AR_PREFIX = '(?:[وفبلك]?(?:ال)?)';
+
+function lexicon(
+  en: string[],
+  he: string[],
+  collect = false,
+  ar: string[] = [],
+  ru: string[] = [],
+): RegExp {
   if (collect) {
-    for (const phrase of [...en, ...he])
+    for (const phrase of [...en, ...he, ...ar, ...ru])
       for (const word of phrase.split(' ')) if (word.length >= 3) HARM_WORDS.add(word);
   }
-  const enPart = en.map((w) => w.replace(/ /g, '\\s+')).join('|');
-  const hePart = he.map((w) => w.replace(/ /g, '\\s+')).join('|');
-  return new RegExp(`(?<![\\p{L}])(?:(?:${enPart})|${HE_PREFIX}(?:${hePart}))(?![\\p{L}])`, 'u');
+  const part = (words: string[]) => words.map((w) => w.replace(/ /g, '\\s+')).join('|');
+  const alternatives = [`(?:${part(en)})`, `${HE_PREFIX}(?:${part(he)})`];
+  if (ar.length) alternatives.push(`${AR_PREFIX}(?:${part(ar)})`);
+  if (ru.length) alternatives.push(`(?:${part(ru)})`);
+  return new RegExp(`(?<![\\p{L}])(?:${alternatives.join('|')})(?![\\p{L}])`, 'u');
 }
 
 const RULES: Record<HarmCategory, RegExp> = {
@@ -97,6 +114,44 @@ const RULES: Record<HarmCategory, RegExp> = {
       'בהמה',
     ],
     true,
+    [
+      'غبي',
+      'غبيه',
+      'غبية',
+      'حقير',
+      'حقيرة',
+      'قحبة',
+      'شرموطة',
+      'عاهرة',
+      'منيوك',
+      'يلعن ابوك',
+      'يلعن امك',
+      'اخرس',
+      'اخرسي',
+      'يا قبيح',
+      'يا قبيحة',
+      'يا حيوان',
+      'يا حمار',
+    ],
+    [
+      'идиот',
+      'идиотка',
+      'дура',
+      'дурак',
+      'тупая',
+      'тупой',
+      'шлюха',
+      'сука',
+      'мразь',
+      'урод',
+      'уродина',
+      'тварь',
+      'шалава',
+      'пошел на хуй',
+      'пошла на хуй',
+      'иди на хуй',
+      'заткнись',
+    ],
   ),
   sexual: lexicon(
     [
@@ -125,6 +180,28 @@ const RULES: Record<HarmCategory, RegExp> = {
       'חרמנית',
     ],
     true,
+    [
+      'ارسلي صور عارية',
+      'صور عارية',
+      'صورك عارية',
+      'ابعتيلي صورك',
+      'بدي انيكك',
+      'انيكك',
+      'نيك',
+      'زبي',
+      'بزازك',
+    ],
+    [
+      'пришли нюдсы',
+      'нюдсы',
+      'скинь голые фото',
+      'голые фото',
+      'хочу тебя трахнуть',
+      'трахнуть тебя',
+      'покажи сиськи',
+      'сиськи',
+      'отсоси',
+    ],
   ),
   threat: lexicon(
     [
@@ -150,6 +227,27 @@ const RULES: Record<HarmCategory, RegExp> = {
       'תיזהרי ממני',
     ],
     true,
+    [
+      'ساقتلك',
+      'راح اقتلك',
+      'رح اقتلك',
+      'بقتلك',
+      'اعرف وين ساكنة',
+      'اعرف وين ساكن',
+      'اعرف اين تسكنين',
+      'ستندمين',
+      'ستندم',
+      'رح تندم',
+      'راح تندمي',
+    ],
+    [
+      'я тебя убью',
+      'убью тебя',
+      'я знаю где ты живешь',
+      'я тебя найду',
+      'ты пожалеешь',
+      'тебе конец',
+    ],
   ),
 };
 
@@ -222,6 +320,25 @@ const SCAM_RULES: Record<Exclude<ScamSignal, 'off_platform' | 'link'>, RegExp> =
       'בפייבוקס',
       'תשלח לי בביט',
     ],
+    false,
+    [
+      'ارسل لي المال',
+      'ارسلي لي المال',
+      'حوالة بنكية',
+      'حول لي',
+      'اقرضني',
+      'احتاج مال',
+      'ويسترن يونيون',
+    ],
+    [
+      'переведи деньги',
+      'переведите деньги',
+      'скинь деньги',
+      'одолжи денег',
+      'нужны деньги',
+      'банковский перевод',
+      'займи',
+    ],
   ),
   crypto: lexicon(
     [
@@ -236,10 +353,24 @@ const SCAM_RULES: Record<Exclude<ScamSignal, 'off_platform' | 'link'>, RegExp> =
       'forex',
     ],
     ['ביטקוין', 'קריפטו', 'פלטפורמת השקעות', 'רווח מובטח', 'מסחר במטבעות', 'פורקס'],
+    false,
+    ['بيتكوين', 'عملات رقمية', 'عملة رقمية', 'منصة استثمار', 'ربح مضمون', 'فوركس'],
+    [
+      'биткоин',
+      'биткоина',
+      'криптовалюта',
+      'криптовалюту',
+      'инвестиционная платформа',
+      'гарантированный доход',
+      'форекс',
+    ],
   ),
   gift_card: lexicon(
     ['gift card', 'itunes card', 'google play card', 'steam card', 'amazon card'],
     ['כרטיס מתנה', 'גיפט קארד', 'תו קנייה'],
+    false,
+    ['بطاقة هدايا', 'بطاقة ايتونز', 'بطاقة جوجل بلاي'],
+    ['подарочная карта', 'подарочную карту', 'карта стим'],
   ),
 };
 
@@ -256,6 +387,9 @@ const OFF_PLATFORM = lexicon(
     'add me on',
   ],
   ['וואטסאפ', 'ווטסאפ', 'וטסאפ', 'טלגרם', 'סנאפ', 'תתקשרי אליי', 'המספר שלי'],
+  false,
+  ['واتساب', 'واتس اب', 'تيليجرام', 'تلغرام', 'سناب', 'رقمي هو', 'كلميني على'],
+  ['ватсап', 'вотсап', 'телеграм', 'телеграмм', 'мой номер', 'напиши мне в'],
 );
 const PHONE = /(?:\+?\d[\d\s-]{7,}\d)/;
 const LINK = /\b(?:https?:\/\/|www\.)\S+|\b[\w-]+\.(?:com|net|org|io|me|co|ly|xyz|il)\b/i;
@@ -280,7 +414,7 @@ export function detectScamSignals(text: string, messagesSoFar: number): ScamSign
 /** "@handle" style usernames and the apps people use to move a chat elsewhere. */
 const HANDLE = /(?<![\p{L}\p{N}._])@[\p{L}\p{N}_.]{2,}/u;
 const CONTACT_APPS =
-  /\b(?:instagram|insta|ig|telegram|whatsapp|snapchat|snap|tiktok|facebook|messenger|signal|wechat|kik|onlyfans)\b|אינסטגרם|אינסטה|טלגרם|וואטסאפ|ווטסאפ|סנאפ|טיקטוק|פייסבוק/iu;
+  /\b(?:instagram|insta|ig|telegram|whatsapp|snapchat|snap|tiktok|facebook|messenger|signal|wechat|kik|onlyfans)\b|אינסטגרם|אינסטה|טלגרם|וואטסאפ|ווטסאפ|סנאפ|טיקטוק|פייסבוק|واتساب|واتس|تيليجرام|تلغرام|انستغرام|انستقرام|سناب|تيك توك|فيسبوك|телеграм|ватсап|вотсап|инстаграм|инста|тикток|фейсбук|вконтакте/iu;
 
 /** Links, emails, phone numbers, handles or messaging apps: never allowed in generated text. */
 export function containsContactOrLink(text: string): boolean {

@@ -10,11 +10,12 @@ export const paginationQuerySchema = z.object({
 
 export type PaginationQuery = z.infer<typeof paginationQuerySchema>;
 
-export const supportedLocales = ['he', 'en'] as const;
+/** Languages of the member app. Arabic and Hebrew are right-to-left. */
+export const supportedLocales = ['he', 'en', 'ar', 'ru'] as const;
 export const localeSchema = z.enum(supportedLocales);
 export type Locale = z.infer<typeof localeSchema>;
 
-export const rtlLocales: ReadonlySet<Locale> = new Set(['he']);
+export const rtlLocales: ReadonlySet<Locale> = new Set(['he', 'ar']);
 
 export function isRtl(locale: Locale): boolean {
   return rtlLocales.has(locale);

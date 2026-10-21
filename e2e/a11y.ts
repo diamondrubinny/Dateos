@@ -9,8 +9,14 @@
  */
 import { chromium, type Browser, type Page } from 'playwright';
 import { en } from '../apps/mobile/src/i18n/en.ts';
+import { ar } from '../apps/mobile/src/i18n/ar.ts';
 import { he } from '../apps/mobile/src/i18n/he.ts';
-import { WEB } from './lib.ts';
+import { ru } from '../apps/mobile/src/i18n/ru.ts';
+import { locales, WEB } from './lib.ts';
+
+const T = { en, he, ar, ru } as const;
+type L = keyof typeof T;
+const RTL = new Set<L>(['he', 'ar']);
 
 const PUBLIC_SCREENS = ['/welcome', '/sign-in', '/privacy', '/terms', '/accessibility', '/cookies'];
 const problems: string[] = [];
@@ -54,8 +60,8 @@ async function focusVisible(page: Page): Promise<{ visible: boolean; label: stri
   return { visible: focused !== blurred, label };
 }
 
-async function keyboardFlow(browser: Browser, locale: 'en' | 'he') {
-  const t = locale === 'he' ? he : en;
+async function keyboardFlow(browser: Browser, locale: L) {
+  const t = T[locale];
   const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
   await context.addInitScript((l) => localStorage.setItem('dateos.locale', l), locale);
   const page = await context.newPage();
@@ -67,7 +73,7 @@ async function keyboardFlow(browser: Browser, locale: 'en' | 'he') {
       dir: document.documentElement.dir,
     }));
     check(
-      lang.lang === locale && lang.dir === (locale === 'he' ? 'rtl' : 'ltr'),
+      lang.lang === locale && lang.dir === (RTL.has(locale) ? 'rtl' : 'ltr'),
       `lang="${lang.lang}" dir="${lang.dir}"`,
     );
 
@@ -116,7 +122,7 @@ async function keyboardFlow(browser: Browser, locale: 'en' | 'he') {
   }
 }
 
-async function layoutChecks(browser: Browser, locale: 'en' | 'he') {
+async function layoutChecks(browser: Browser, locale: L) {
   for (const mode of ['reflow-320', 'text-200'] as const) {
     const context = await browser.newContext({
       viewport: mode === 'reflow-320' ? { width: 320, height: 640 } : { width: 390, height: 844 },
@@ -165,7 +171,7 @@ const browser = await chromium.launch(
   process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {},
 );
 try {
-  for (const locale of ['en', 'he'] as const) {
+  for (const locale of locales(['en', 'he', 'ar', 'ru'] as const)) {
     process.stdout.write(`${locale}:\n`);
     await keyboardFlow(browser, locale);
     await layoutChecks(browser, locale);
