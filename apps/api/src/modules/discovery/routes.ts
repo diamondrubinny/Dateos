@@ -9,6 +9,7 @@ import {
   publicProfileSchema,
 } from '@dateos/shared';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
+import { perUserLimit } from '../../plugins/security.js';
 import { z } from 'zod';
 import type { Auth } from '../../auth/auth.js';
 import { currentUser, requireUser } from '../../auth/session.js';
@@ -27,7 +28,7 @@ export const discoveryRoutes: FastifyPluginAsyncZod<{
     // Coordinates must not end up in logs, so the body is never logged (see logger redaction too).
     {
       schema: { body: locationInputSchema, response: { 200: ok } },
-      config: { rateLimit: { max: 30, timeWindow: 60_000 } },
+      config: perUserLimit(30, 60_000),
     },
     async (request) => {
       await discovery.setLocation(currentUser(request).id, request.body);
@@ -74,7 +75,7 @@ export const discoveryRoutes: FastifyPluginAsyncZod<{
     '/v1/interactions',
     {
       schema: { body: interactionInputSchema, response: { 200: interactionResultSchema } },
-      config: { rateLimit: { max: 60, timeWindow: 60_000 } },
+      config: perUserLimit(60, 60_000),
     },
     async (request) => discovery.interact(currentUser(request).id, request.body),
   );

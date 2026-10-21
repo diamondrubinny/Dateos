@@ -1,7 +1,7 @@
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import rateLimit, { normalizeIP } from '@fastify/rate-limit';
-import type { FastifyInstance } from 'fastify';
+import type { FastifyInstance, FastifyRequest } from 'fastify';
 import type { Redis } from 'ioredis';
 import type { Env } from '../config/env.js';
 
@@ -43,4 +43,21 @@ export async function registerSecurity(app: FastifyInstance, { env, redis }: Sec
     // crashing the default key generator.
     keyGenerator: (request) => (request.ip ? normalizeIP(request.ip, 64) : 'no-ip'),
   });
+}
+
+/**
+ * Route limit counted per signed-in user rather than per IP: many people share one public IP
+ * (carrier-grade NAT on mobile networks), so per-IP limits on uploads or messages would block
+ * innocent users. Runs as a preHandler, after authentication, so the key is a verified user id.
+ */
+export function perUserLimit(max: number, timeWindow: number) {
+  return {
+    rateLimit: {
+      max,
+      timeWindow,
+      hook: 'preHandler' as const,
+      keyGenerator: (request: FastifyRequest) =>
+        `user:${request.authUser?.id ?? request.ip ?? 'anonymous'}`,
+    },
+  };
 }

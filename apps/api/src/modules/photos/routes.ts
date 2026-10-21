@@ -1,6 +1,7 @@
 import multipart from '@fastify/multipart';
 import { ErrorCode, MAX_PHOTO_BYTES, photoOrderSchema, photoSchema } from '@dateos/shared';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
+import { perUserLimit } from '../../plugins/security.js';
 import { z } from 'zod';
 import type { Auth } from '../../auth/auth.js';
 import { currentUser, requireUser } from '../../auth/session.js';
@@ -22,7 +23,7 @@ export const photoRoutes: FastifyPluginAsyncZod<{ auth: Auth; photos: PhotoServi
     '/v1/me/photos',
     {
       schema: { response: { 202: photoSchema } },
-      config: { rateLimit: { max: 30, timeWindow: 60 * 60 * 1000 } },
+      config: perUserLimit(30, 60 * 60 * 1000),
     },
     async (request, reply) => {
       const file = await request.file();

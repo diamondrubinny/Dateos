@@ -29,6 +29,7 @@ Dateos is built the other way around:
 - 🔒 **Privacy by design.** Passwordless sign-in, minimal data, versioned consent, and full account deletion from inside the app.
 - 💞 **Reciprocal, explainable matching.** Recommends people likely to be interested _in each other_, explains why, and spreads attention fairly. The algorithm is [published](docs/MATCHING.md).
 - 💌 **"Likes You" is free.** See everyone who liked you, and like a specific photo or prompt with a comment.
+- 💬 **Real-time chat with built-in kindness.** An "Are you sure?" check before hurtful messages, offensive messages hidden for the receiver, scam warnings, and photos that stay blurred until you choose to look.
 - 🤖 **AI that respects you.** Matching runs on the instance's own server by default (offline or with a local Ollama model); cloud AI is opt-in only.
 - ♿ **Accessible and bilingual.** Hebrew (RTL) and English, screen-reader labels, keyboard navigation, and a button for every gesture.
 
@@ -36,20 +37,22 @@ Dateos is built the other way around:
 
 Dateos is in active development. Here is what works today and what comes next. The full plan is in [`docs/PLAN.md`](docs/PLAN.md).
 
-| Area                                                                           | Status            |
-| ------------------------------------------------------------------------------ | ----------------- |
-| Passwordless email sign-in (magic link), sessions, rate limits                 | ✅ Available      |
-| Profile, preferences, prompts, versioned consents                              | ✅ Available      |
-| Photo upload with malware scan (ClamAV), EXIF/GPS stripping, re-encoding       | ✅ Available      |
-| Account deletion (all data and files)                                          | ✅ Available      |
-| iOS / Android / web app: onboarding, profile, settings (Hebrew + English, RTL) | ✅ Available      |
-| Approximate location (~1 km grid, bucketed distances)                          | ✅ Available      |
-| Discovery, reciprocal AI matching, Daily Picks, "why you might click"          | ✅ Available      |
-| Like / pass / like a photo or prompt with a comment, Likes You, matches        | ✅ Available      |
-| Unmatch and block                                                              | ✅ Available      |
-| Real-time chat, AI icebreakers, harassment filter                              | 🛠️ Next (phase 3) |
-| Report, moderation dashboard, selfie verification                              | 🗓️ Phase 4        |
-| Video dates, safety check-in, date planner                                     | 🗓️ Later          |
+| Area                                                                           | Status             |
+| ------------------------------------------------------------------------------ | ------------------ |
+| Passwordless email sign-in (magic link), sessions, rate limits                 | ✅ Available       |
+| Profile, preferences, prompts, versioned consents                              | ✅ Available       |
+| Photo upload with malware scan (ClamAV), EXIF/GPS stripping, re-encoding       | ✅ Available       |
+| Account deletion (all data and files)                                          | ✅ Available       |
+| iOS / Android / web app: onboarding, profile, settings (Hebrew + English, RTL) | ✅ Available       |
+| Approximate location (~1 km grid, bucketed distances)                          | ✅ Available       |
+| Discovery, reciprocal AI matching, Daily Picks, "why you might click"          | ✅ Available       |
+| Like / pass / like a photo or prompt with a comment, Likes You, matches        | ✅ Available       |
+| Unmatch and block                                                              | ✅ Available       |
+| Real-time chat (WebSocket), read receipts, typing, icebreakers                 | ✅ Available       |
+| "Are you sure?", hidden offensive messages, scam warnings, blurred photos      | ✅ Available       |
+| Voice messages, push notifications                                             | 🛠️ Next (phase 3b) |
+| Report, moderation dashboard, selfie verification                              | 🗓️ Phase 4         |
+| Video dates, safety check-in, date planner                                     | 🗓️ Later           |
 
 ## Screenshots
 
@@ -59,6 +62,10 @@ Dateos is in active development. Here is what works today and what comes next. T
 | -------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
 | <img src="docs/screenshots/en/09-discover.png" width="130" alt="Discover card with reasons"> | <img src="docs/screenshots/en/10-like-comment.png" width="130" alt="Liking a prompt with a comment"> | <img src="docs/screenshots/en/11-match.png" width="130" alt="Match overlay"> | <img src="docs/screenshots/en/12-picks.png" width="130" alt="Daily picks list"> | <img src="docs/screenshots/en/13-likes.png" width="130" alt="People who liked you"> | <img src="docs/screenshots/en/14-matches.png" width="130" alt="Matches list"> |
 
+**Chat with safety built in**
+
+<img src="docs/screenshots/showcase-chat-en.png" alt="Chat screens: icebreaker suggestions, a live conversation with read receipts, the Are-you-sure prompt, a hidden offensive message with a scam warning, and a blurred photo" width="100%">
+
 **Onboarding**
 
 <img src="docs/screenshots/showcase-onboarding-en.png" alt="Welcome, profile form, photo upload, prompts and the approximate-location step" width="100%">
@@ -67,7 +74,8 @@ Dateos is in active development. Here is what works today and what comes next. T
 
 <img src="docs/screenshots/showcase-he.png" alt="The discovery screens in Hebrew with right-to-left layout" width="100%">
 
-<sub>All 32 screens (English and Hebrew) are in <a href="docs/screenshots">docs/screenshots</a>. Demo members are fictional and their pictures are illustrations.</sub>
+<sub>All 46 screens (English and Hebrew) are in <a href="docs/screenshots">docs/screenshots</a>. Demo members are fictional and their pictures are illustrations.
+Chat screenshots come from two real accounts chatting live in two browsers (<a href="e2e/chat.ts">e2e/chat.ts</a>).</sub>
 
 ## Quick start
 
@@ -91,14 +99,15 @@ For iOS/Android, run `pnpm --filter @dateos/mobile start` and open the project i
 <details>
 <summary>More commands</summary>
 
-| Command                                      | What it does                                                                              |
-| -------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| `pnpm check`                                 | Format check, lint, typecheck and unit tests                                              |
-| `pnpm --filter @dateos/api test:integration` | API tests against real Postgres, Redis and S3 (IDOR, underage, deletion…)                 |
-| `pnpm --filter @dateos/e2e screenshots`      | Walks the whole app in a browser, regenerates screenshots and runs an axe-core WCAG audit |
-| `pnpm --filter @dateos/e2e seed -- --reset`  | Recreates the fictional demo members (refuses to run against non-local databases)         |
-| `pnpm --filter @dateos/worker reembed`       | Re-computes every profile embedding (after switching the embedding model)                 |
-| `./install.sh --force --reset-data`          | Regenerates secrets **and deletes all local data**                                        |
+| Command                                      | What it does                                                                                       |
+| -------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `pnpm check`                                 | Format check, lint, typecheck and unit tests                                                       |
+| `pnpm --filter @dateos/api test:integration` | API tests against real Postgres, Redis and S3 (IDOR, chat, WebSocket…), on isolated test resources |
+| `pnpm --filter @dateos/e2e screenshots`      | Walks the whole app in a browser, regenerates screenshots and runs an axe-core WCAG audit          |
+| `pnpm --filter @dateos/e2e chat`             | Two browsers chat live: verifies real-time delivery and every chat safety feature                  |
+| `pnpm --filter @dateos/e2e seed -- --reset`  | Recreates the fictional demo members (refuses to run against non-local databases)                  |
+| `pnpm --filter @dateos/worker reembed`       | Re-computes every profile embedding (after switching the embedding model)                          |
+| `./install.sh --force --reset-data`          | Regenerates secrets **and deletes all local data**                                                 |
 
 </details>
 
@@ -138,6 +147,8 @@ flowchart LR
 - Photos are served only through the API with an access check, never from public bucket URLs.
 - Location is snapped to a ~1 km grid before it is stored, and distances are only returned as buckets, which limits trilateration attacks to cell precision.
 - One visibility rule (mutual preferences, blocks, unmatches) gates discovery, profiles, photos and likes. Anything else returns "not found".
+- Chat: only the two participants can read, write or load images. The WebSocket requires a session and an allowed Origin. Message text is never logged. Chats are encrypted in transit; end-to-end encryption is a planned opt-in.
+- Limits on uploads, likes and messages count per user, not per IP, so people behind a shared mobile-network IP don't block each other.
 - Strict security headers, CORS allowlist, request size limits, log redaction of tokens, emails and phone numbers, and no stack traces in responses.
 - CI runs lint, typecheck, unit and integration tests, a dependency audit, CodeQL, Gitleaks and Docker builds. Actions are pinned to commit SHAs.
 

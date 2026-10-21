@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  matchesLocaleScript,
   MAX_ICEBREAKER_LENGTH,
   ollamaIcebreakers,
   sanitizeSuggestions,
@@ -46,6 +47,17 @@ describe('sanitizeSuggestions', () => {
         '• What is your go-to café?',
       ]),
     ).toEqual(['Hey there, love your surf story!', 'What is your go-to café?']);
+  });
+});
+
+describe('matchesLocaleScript', () => {
+  it('accepts clean Hebrew and English, rejects mixed-language output from small models', () => {
+    expect(matchesLocaleScript('איך נראית השבת המושלמת שלך?', 'he')).toBe(true);
+    expect(matchesLocaleScript('What does your perfect Sunday look like?', 'en')).toBe(true);
+    // Real output of a 1.5B model, seen while building this feature:
+    expect(matchesLocaleScript('זה מפתיע שהكשה שלי מתרגלת את ה Hebrew שisco.', 'he')).toBe(false);
+    expect(matchesLocaleScript('אני tracks את הרגליים ב trail running.', 'he')).toBe(false);
+    expect(matchesLocaleScript('Привет, how are you?', 'en')).toBe(false);
   });
 });
 

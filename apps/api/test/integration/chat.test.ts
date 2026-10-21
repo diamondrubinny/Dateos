@@ -176,6 +176,15 @@ describe.skipIf(!integrationEnabled)('chat (integration)', () => {
     expect((await api(ctx, noa, 'GET', '/v1/conversations')).json().conversations).toHaveLength(0);
   });
 
+  it('rate-limits sending per user, not per shared IP (carrier NAT)', async () => {
+    // Both test users come from the same IP. Exhausting Dan's quota must not block Noa.
+    const codes: number[] = [];
+    for (let i = 0; i < 31; i += 1) codes.push((await send(dan, `msg ${i}`)).statusCode);
+    expect(codes.slice(0, 30).every((c) => c === 200)).toBe(true);
+    expect(codes[30]).toBe(429);
+    expect((await send(noa, 'still allowed')).statusCode).toBe(200);
+  });
+
   it('suggests icebreakers based on the other person’s prompts', async () => {
     const res = (await api(ctx, noa, 'GET', `/v1/matches/${matchId}/icebreakers?locale=en`)).json();
     expect(res.suggestions).toHaveLength(3);

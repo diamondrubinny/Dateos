@@ -14,6 +14,7 @@ import {
 } from '@dateos/shared';
 import { checkHarm } from '@dateos/ai';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
+import { perUserLimit } from '../../plugins/security.js';
 import { z } from 'zod';
 import type { Auth } from '../../auth/auth.js';
 import { currentUser, requireUser } from '../../auth/session.js';
@@ -78,7 +79,7 @@ export const chatRoutes: FastifyPluginAsyncZod<ChatRouteOptions> = async (
         body: sendMessageSchema,
         response: { 200: messageViewSchema },
       },
-      config: { rateLimit: { max: 30, timeWindow: 60_000 } },
+      config: perUserLimit(30, 60_000),
     },
     async (request) =>
       chat.send(
@@ -93,7 +94,7 @@ export const chatRoutes: FastifyPluginAsyncZod<ChatRouteOptions> = async (
     '/v1/matches/:id/images',
     {
       schema: { params: matchParams, response: { 200: messageViewSchema } },
-      config: { rateLimit: { max: 10, timeWindow: 60 * 60_000 } },
+      config: perUserLimit(10, 60 * 60_000),
     },
     async (request) => {
       const file = await request.file();
@@ -116,7 +117,7 @@ export const chatRoutes: FastifyPluginAsyncZod<ChatRouteOptions> = async (
     '/v1/messages/check',
     {
       schema: { body: messageCheckSchema, response: { 200: messageCheckResultSchema } },
-      config: { rateLimit: { max: 60, timeWindow: 60_000 } },
+      config: perUserLimit(60, 60_000),
     },
     async (request) => checkHarm(request.body.text),
   );

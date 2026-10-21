@@ -94,8 +94,22 @@ export const templateIcebreakers: IcebreakerProvider = {
   },
 };
 
-/** Validates model output: plain short lines, no links/contacts, nothing empty. */
-export function sanitizeSuggestions(lines: string[]): string[] {
+/**
+ * True when a line is written in the expected script. Small models often mix languages or
+ * scripts (e.g. English words or Arabic letters inside Hebrew), which reads as gibberish.
+ */
+export function matchesLocaleScript(line: string, locale: IcebreakerLocale): boolean {
+  const letters = line.match(/\p{L}/gu) ?? [];
+  if (letters.length === 0) return false;
+  const expected = locale === 'he' ? /\p{Script=Hebrew}/u : /\p{Script=Latin}/u;
+  const inScript = letters.filter((c) => expected.test(c)).length;
+  // Hebrew lines may contain a Latin name; any third script (Arabic, Cyrillic…) is rejected.
+  const foreign = letters.some((c) => !/\p{Script=Hebrew}|\p{Script=Latin}/u.test(c));
+  return !foreign && inScript / letters.length >= (locale === 'he' ? 0.9 : 0.95);
+}
+
+/** Validates model output: plain short lines in the right language, no links/contacts. */
+export function sanitizeSuggestions(lines: string[], locale: IcebreakerLocale = 'en'): string[] {
   return lines
     .map((l) =>
       l
@@ -103,7 +117,13 @@ export function sanitizeSuggestions(lines: string[]): string[] {
         .replace(/^["“”״']+|["“”״']+$/g, '')
         .trim(),
     )
-    .filter((l) => l.length >= 8 && l.length <= MAX_ICEBREAKER_LENGTH && !containsContactOrLink(l))
+    .filter(
+      (l) =>
+        l.length >= 8 &&
+        l.length <= MAX_ICEBREAKER_LENGTH &&
+        !containsContactOrLink(l) &&
+        matchesLocaleScript(l, locale),
+    )
     .slice(0, 3);
 }
 
@@ -153,7 +173,7 @@ export function ollamaIcebreakers(
         });
         if (!res.ok) return fallback();
         const body = (await res.json()) as { message?: { content?: string } };
-        const lines = sanitizeSuggestions((body.message?.content ?? '').split('\n'));
+        const lines = sanitizeSuggestions((body.message?.content ?? '').split('\n'), input.locale);
         return lines.length === 3 ? lines : fallback();
       } catch {
         return fallback();

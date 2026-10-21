@@ -311,7 +311,9 @@ describe.skipIf(!integrationEnabled)('profile embedding queue (integration)', ()
     const { existsSync } = await import('node:fs');
     const envFile = new URL('../../../../.env', import.meta.url);
     if (existsSync(envFile)) process.loadEnvFile(envFile);
-    const redisUrl = process.env.REDIS_URL!;
+    const isolated = new URL(process.env.REDIS_URL!);
+    isolated.pathname = '/15'; // never the developer's Redis database
+    const redisUrl = isolated.toString();
     const name = `embed-test-${Date.now()}`;
     const connection = new Redis(redisUrl, { maxRetriesPerRequest: null });
     let runs = 0;

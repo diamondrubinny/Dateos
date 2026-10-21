@@ -5,18 +5,26 @@ import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ApiRequestError } from '../lib/api';
+import { authClient } from '../lib/auth-client';
 import { LocaleProvider, useLocale } from '../lib/locale';
+import { RealtimeProvider } from '../lib/realtime';
 import { useColors } from '../lib/theme';
 
 function Navigator() {
   const { direction } = useLocale();
   const colors = useColors();
+  const session = authClient.useSession();
   return (
     <RouterLocaleProvider direction={direction}>
-      <StatusBar style="auto" />
-      <Stack
-        screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}
-      />
+      <RealtimeProvider enabled={Boolean(session.data)}>
+        <StatusBar style="auto" />
+        <Stack
+          screenOptions={{
+            headerShown: false,
+            contentStyle: { backgroundColor: colors.background },
+          }}
+        />
+      </RealtimeProvider>
     </RouterLocaleProvider>
   );
 }

@@ -3,6 +3,7 @@ import { runMigrations } from '@dateos/db';
 import type { DeleteObjectsJob, ProcessPhotoJob } from '@dateos/shared';
 import type { FastifyInstance, LightMyRequestResponse } from 'fastify';
 import { Redis } from 'ioredis';
+import pg from 'pg';
 import { buildApp } from '../../src/app.js';
 import { loadEnv, type Env } from '../../src/config/env.js';
 import type { MailMessage, Mailer } from '../../src/lib/mailer.js';
@@ -21,16 +22,44 @@ export interface TestContext {
   today: { value: string };
 }
 
+/**
+ * Tests wipe data between cases, so they must never touch the developer's own data: they use a
+ * separate database (`<name>_test`, created on demand), Redis database 15 and separate buckets.
+ */
+async function isolatedResources(databaseUrl: string, redisUrl: string) {
+  const db = new URL(databaseUrl);
+  const testName = `${db.pathname.slice(1)}_test`;
+  const admin = new pg.Client({ connectionString: databaseUrl });
+  await admin.connect();
+  try {
+    const exists = await admin.query('SELECT 1 FROM pg_database WHERE datname = $1', [testName]);
+    if (exists.rowCount === 0) await admin.query(`CREATE DATABASE "${testName.replace(/"/g, '')}"`);
+  } finally {
+    await admin.end();
+  }
+  db.pathname = `/${testName}`;
+  const redis = new URL(redisUrl);
+  redis.pathname = '/15';
+  return { DATABASE_URL: db.toString(), REDIS_URL: redis.toString() };
+}
+
 export async function setupIntegration(): Promise<TestContext> {
   const envFile = new URL('../../../../.env', import.meta.url);
   if (existsSync(envFile)) process.loadEnvFile(envFile);
+  const isolated = await isolatedResources(
+    process.env.DATABASE_URL ?? '',
+    process.env.REDIS_URL ?? '',
+  );
   const env = loadEnv({
     ...process.env,
+    ...isolated,
     NODE_ENV: 'test',
     LOG_LEVEL: 'silent',
     CORS_ORIGINS: 'http://localhost:8081',
     PUBLIC_API_URL: 'http://localhost:4000',
     S3_ENDPOINT: process.env.S3_ENDPOINT ?? 'http://localhost:8333',
+    S3_BUCKET_QUARANTINE: 'dateos-test-quarantine',
+    S3_BUCKET_MEDIA: 'dateos-test-media',
   });
   await runMigrations(env.DATABASE_URL);
 

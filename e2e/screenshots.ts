@@ -103,6 +103,12 @@ const likers = {
       onPrompt: true,
     },
     { name: 'Daniel', comment: 'Fellow beach person here 🌊' },
+    // Everyone else nearby also liked the demo account, so the first like always matches
+    // (ranking ties change with the date and must not decide what the screenshots show).
+    { name: 'Yoav' },
+    { name: 'Amit' },
+    { name: 'Omer' },
+    { name: 'Noam' },
   ],
   he: [
     {
@@ -111,6 +117,10 @@ const likers = {
       onPrompt: true,
     },
     { name: 'Daniel', comment: 'גם אני חי על החוף 🌊' },
+    { name: 'Yoav' },
+    { name: 'Amit' },
+    { name: 'Omer' },
+    { name: 'Noam' },
   ],
 };
 const comments = {

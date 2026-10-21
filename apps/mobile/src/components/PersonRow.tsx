@@ -11,11 +11,14 @@ export function PersonRow({
   profile,
   detail,
   quote,
+  plainQuote,
   onPress,
 }: {
   profile: PublicProfile;
-  detail?: string;
+  detail?: string | undefined;
   quote?: string | null;
+  /** Show the quote without quotation marks (e.g. a message preview). */
+  plainQuote?: boolean;
   onPress: () => void;
 }) {
   const { t } = useTranslation();
@@ -58,7 +61,7 @@ export function PersonRow({
         ) : null}
         {quote ? (
           <AppText variant="body" userContent numberOfLines={2}>
-            “{quote}”
+            {plainQuote ? quote : `“${quote}”`}
           </AppText>
         ) : null}
       </View>

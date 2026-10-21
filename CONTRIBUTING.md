@@ -19,6 +19,9 @@ pnpm infra:up         # postgres + postgis + pgvector, redis, object storage
 pnpm dev
 ```
 
+Integration tests (`pnpm --filter @dateos/api test:integration`) run against isolated resources (database
+`<name>_test`, Redis DB 15, `dateos-test-*` buckets), so they never touch your local data.
+
 Before opening a PR, run the same checks as CI:
 
 ```bash

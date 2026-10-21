@@ -36,7 +36,9 @@
   },
   "devDependencies": {
     "@types/nodemailer": "8.0.2",
+    "@types/pg": "8.23.1",
     "@types/ws": "8.18.2",
+    "pg": "8.23.1",
     "pino-pretty": "13.2.0",
     "sharp": "0.35.5",
     "tsx": "4.23.15",

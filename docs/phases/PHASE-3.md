@@ -1,6 +1,6 @@
 # Phase 3: Real-time chat, safety filters, AI icebreakers
 
-> Status: in progress. 📘 = verify against official docs, ⚖️ = needs legal review.
+> Status: ✅ done (2026-10-22) for chat. Voice messages and push notifications move to phase 3b. 📘 = verify against official docs, ⚖️ = needs legal review.
 
 ## Scope
 
@@ -58,3 +58,32 @@ Note: chats are **encrypted in transit (TLS) and at rest (disk/volume encryption
 - Unit: toxicity and scam detectors (EN/HE, true and false positives), icebreaker validation.
 - Integration: participants only, pagination, idempotency, read receipts, image gate, flags, unmatch/block closes the chat, WebSocket auth and delivery, deletion cascade.
 - E2E: two browsers chatting live, screenshots, axe-core.
+
+## Results
+
+| Check                                                           | Result                                                                                                                                                                                                                                                                                          |
+| --------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Unit tests                                                      | ai 31 (harm/scam detectors with false-positive cases, icebreakers, locale checks), shared 17, api 22, worker 9, mobile 5                                                                                                                                                                        |
+| Integration tests (isolated test DB, Redis DB 15, test buckets) | 51 passed. New for chat: participants only, idempotency, pagination, hidden harmful messages, scam signals, image gate, chat-image access, read receipts, inbox, unmatch/block closes chat, icebreakers, deletion, WebSocket auth (401), Origin check (403), live delivery, per-user rate limit |
+| Two-browser e2e (he + en)                                       | Live delivery without reloads, read receipts, "Are you sure?", hidden message, receiver-only scam banner, image unlock + blur                                                                                                                                                                   |
+| axe-core WCAG 2.1 A/AA (46 screens)                             | 2 issues found (button role overridden by list item, unfocusable scroll region) → fixed → **0**                                                                                                                                                                                                 |
+| Ollama icebreakers                                              | Injection attempt blocked (template fallback). `qwen2.5:1.5b` Hebrew output failed quality checks 6/6, so templates were used: a stronger multilingual model is needed for LLM icebreakers in Hebrew                                                                                            |
+| Closed-chat purge                                               | Manual run: messages and chat images (row and file) of a 31-day-old unmatch deleted, active chat untouched                                                                                                                                                                                      |
+
+## Bugs found and fixed during this phase
+
+1. **Integration tests wiped the developer's data.** They ran `TRUNCATE` on the dev database. They now use `<db>_test`, Redis DB 15 and separate buckets, and leave dev data untouched (verified: 14 users before and after).
+2. **SeaweedFS ran out of volume slots** when buckets were added (`-volume.max=0` default). Set explicitly in compose.
+3. **Rate limits on uploads/messages were per IP.** With carrier-grade NAT this blocks innocent users. They are now per user after authentication; a mutation test proves the difference.
+4. **The rate limiter answered 500 when a request had no peer IP.** It now uses a shared fallback key.
+5. **Images stayed "locked" after the 3+3 messages** until reload. The app now applies the rule live.
+6. **Icebreaker buttons were announced as list items** (`role` overrode the button role).
+7. **The chat list wasn't keyboard-scrollable.** Fixed by making it focusable and labeled.
+8. **Small LLMs produced mixed-language Hebrew.** A script check rejects it and falls back to templates.
+9. **The match screenshot depended on the date** (ranking tie-break). Demo likes are now deterministic.
+
+## Known limitations
+
+- Harm detection is lexicon-based: masked words ("f*ck") and context are missed. Human moderation and reports come in phase 4.
+- Not end-to-end encrypted (see PLAN §16).
+- Voice messages and push notifications: phase 3b.

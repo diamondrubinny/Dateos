@@ -8,10 +8,12 @@ export function RemoteImage({
   path,
   label,
   style,
+  blurRadius,
 }: {
   path: string;
   label: string;
   style: StyleProp<ImageStyle>;
+  blurRadius?: number;
 }) {
   const cookie = useSessionCookie();
   return (
@@ -22,6 +24,7 @@ export function RemoteImage({
       }}
       style={style}
       contentFit="cover"
+      {...(blurRadius ? { blurRadius } : {})}
       accessibilityLabel={label}
       accessibilityIgnoresInvertColors
     />
