@@ -62,6 +62,14 @@ type Person = (typeof scripts)[keyof typeof scripts]['a' | 'b'];
 async function createAccount(email: string, p: Person, locale: string) {
   const session = await signInHttp(email);
   const call = apiClient(session.header);
+  await call('PUT', '/v1/me/consents', {
+    consents: [
+      { kind: 'terms', granted: true, version: LEGAL.terms },
+      { kind: 'privacy', granted: true, version: LEGAL.privacy },
+      { kind: 'sensitive', granted: true, version: '1' },
+      { kind: 'location', granted: true, version: '1' },
+    ],
+  });
   await call('POST', '/v1/me/profile', {
     displayName: p.name,
     birthDate: '1995-05-05',
@@ -73,13 +81,6 @@ async function createAccount(email: string, p: Person, locale: string) {
         ? 'אוהב/ת ים, קפה ושיחות טובות.'
         : 'Into the sea, coffee and good conversations.',
     languages: ['he', 'en'],
-  });
-  await call('PUT', '/v1/me/consents', {
-    consents: [
-      { kind: 'terms', granted: true, version: LEGAL.terms },
-      { kind: 'privacy', granted: true, version: LEGAL.privacy },
-      { kind: 'location', granted: true, version: '1' },
-    ],
   });
   await call('PUT', '/v1/me/location', { lat: 32.0809, lng: 34.7806 });
   await call('PUT', '/v1/me/prompts', {

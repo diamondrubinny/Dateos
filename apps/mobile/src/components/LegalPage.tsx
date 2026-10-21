@@ -6,7 +6,7 @@ import { AppText } from './AppText';
 import { Banner } from './Banner';
 import { Screen } from './Screen';
 
-export const LEGAL_UPDATED = '2026-10-20';
+export const LEGAL_UPDATED = '2026-10-21';
 
 export function LegalPage({ title, body }: { title: string; body: string }) {
   const { t } = useTranslation();

@@ -73,11 +73,10 @@ export default function ProfileStep() {
         ...(bio.trim() ? { bio: bio.trim() } : {}),
         languages: [],
       });
-      router.replace('/onboarding/consents');
+      router.replace('/onboarding/photos');
     } catch (error) {
       if (error instanceof ApiRequestError && error.code === 'UNDERAGE') return router.replace('/');
-      if (error instanceof ApiRequestError && error.status === 409)
-        return router.replace('/onboarding/consents');
+      if (error instanceof ApiRequestError && error.status === 409) return router.replace('/');
       setFormError(t('common.genericError'));
     }
   };
@@ -87,7 +86,7 @@ export default function ProfileStep() {
   return (
     <Screen
       title={t('onboarding.profile.title')}
-      step={{ current: 1, total: ONBOARDING_TOTAL }}
+      step={{ current: 2, total: ONBOARDING_TOTAL }}
       footer={
         <Button
           label={t('common.continue')}

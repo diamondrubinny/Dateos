@@ -18,6 +18,8 @@ import websocket from '@fastify/websocket';
 import { chatRoutes } from './modules/chat/routes.js';
 import { discoveryRoutes } from './modules/discovery/routes.js';
 import { meRoutes } from './modules/me/routes.js';
+import { exportMemberData } from './modules/privacy/export.js';
+import { audit } from './lib/audit.js';
 import { photoRoutes } from './modules/photos/routes.js';
 import { adminRoutes } from './modules/admin/routes.js';
 import { safetyRoutes } from './modules/safety/routes.js';
@@ -67,7 +69,20 @@ export async function buildApp(env: Env, deps: AppDependencies): Promise<Fastify
   const { services } = deps;
   if (services) {
     await app.register(authRoutes, { auth: services.auth, origin: env.PUBLIC_API_URL });
-    await typed.register(meRoutes, { auth: services.auth, me: services.me });
+    await typed.register(meRoutes, {
+      auth: services.auth,
+      me: services.me,
+      exportData: async (userId) => {
+        const zip = await exportMemberData(services.dbHandle.db, services.storage, userId);
+        await audit(services.dbHandle.db, {
+          actorId: userId,
+          action: 'account.exported',
+          targetType: 'user',
+          targetId: userId,
+        });
+        return zip;
+      },
+    });
     await typed.register(photoRoutes, { auth: services.auth, photos: services.photos });
     await typed.register(discoveryRoutes, { auth: services.auth, discovery: services.discovery });
     await typed.register(safetyRoutes, {

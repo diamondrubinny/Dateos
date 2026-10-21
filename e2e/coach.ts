@@ -27,6 +27,14 @@ async function run(locale: 'en' | 'he', browser: Browser) {
   const c = content[locale];
   const session = await signInHttp(`coach-${locale}-${Date.now()}@example.test`);
   const call = apiClient(session.header);
+  await call('PUT', '/v1/me/consents', {
+    consents: [
+      { kind: 'terms', granted: true, version: LEGAL.terms },
+      { kind: 'privacy', granted: true, version: LEGAL.privacy },
+      { kind: 'sensitive', granted: true, version: '1' },
+      { kind: 'location', granted: true, version: '1' },
+    ],
+  });
   await call('POST', '/v1/me/profile', {
     displayName: c.name,
     birthDate: '1994-02-02',
@@ -35,13 +43,6 @@ async function run(locale: 'en' | 'he', browser: Browser) {
     intention: 'long_term',
     bio: c.bio,
     languages: ['he', 'en'],
-  });
-  await call('PUT', '/v1/me/consents', {
-    consents: [
-      { kind: 'terms', granted: true, version: LEGAL.terms },
-      { kind: 'privacy', granted: true, version: LEGAL.privacy },
-      { kind: 'location', granted: true, version: '1' },
-    ],
   });
   await call('PUT', '/v1/me/location', { lat: 32.08, lng: 34.78 });
   await call('PUT', '/v1/me/prompts', {

@@ -1,7 +1,13 @@
 import type { TextModel } from '@dateos/ai';
 import { existsSync } from 'node:fs';
 import { runMigrations } from '@dateos/db';
-import type { DeleteObjectsJob, ProcessAudioJob, ProcessPhotoJob, PushJob } from '@dateos/shared';
+import {
+  SENSITIVE_CONSENT_VERSION,
+  type DeleteObjectsJob,
+  type ProcessAudioJob,
+  type ProcessPhotoJob,
+  type PushJob,
+} from '@dateos/shared';
 import type { FastifyInstance, LightMyRequestResponse } from 'fastify';
 import { Redis } from 'ioredis';
 import pg from 'pg';
@@ -168,6 +174,23 @@ export async function signIn(ctx: TestContext, email: string): Promise<string> {
   const cookie = cookieHeader(verify);
   if (!cookie.includes('session_token')) throw new Error('no session cookie set');
   return cookie;
+}
+
+/** The consents onboarding requires before a profile can be saved (terms, privacy, sensitive data). */
+export async function acceptConsents(ctx: TestContext, cookie: string): Promise<void> {
+  const res = await ctx.app.inject({
+    method: 'PUT',
+    url: '/v1/me/consents',
+    headers: { cookie },
+    payload: {
+      consents: [
+        { kind: 'terms', granted: true, version: ctx.env.TERMS_VERSION },
+        { kind: 'privacy', granted: true, version: ctx.env.PRIVACY_VERSION },
+        { kind: 'sensitive', granted: true, version: SENSITIVE_CONSENT_VERSION },
+      ],
+    },
+  });
+  if (res.statusCode !== 200) throw new Error(`consents: ${res.body}`);
 }
 
 export const validProfile = {

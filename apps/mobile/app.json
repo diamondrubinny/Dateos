@@ -69,7 +69,8 @@
           "microphonePermission": "Dateos uses the microphone only while you record a voice message."
         }
       ],
-      ["expo-notifications", {}]
+      ["expo-notifications", {}],
+      "expo-sharing"
     ],
     "experiments": {
       "typedRoutes": true

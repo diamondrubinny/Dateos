@@ -28,6 +28,24 @@ export const workerEnvSchema = z.object({
     .string()
     .optional()
     .transform((v) => (v ? v : undefined)),
+  /** Months without sign-in before an account is warned and then deleted. 0 = never (default). ⚖️ */
+  INACTIVE_ACCOUNT_DELETE_MONTHS: z.coerce.number().int().min(0).max(120).default(0),
+  INSTANCE_NAME: z.string().max(40).default('Dateos'),
+  SMTP_HOST: z.string().default('localhost'),
+  SMTP_PORT: z.coerce.number().int().default(1025),
+  SMTP_SECURE: z
+    .enum(['true', 'false'])
+    .default('false')
+    .transform((v) => v === 'true'),
+  SMTP_USER: z
+    .string()
+    .optional()
+    .transform((v) => (v ? v : undefined)),
+  SMTP_PASSWORD: z
+    .string()
+    .optional()
+    .transform((v) => (v ? v : undefined)),
+  SMTP_FROM: z.string().default('Dateos <no-reply@localhost>'),
   WORKER_CONCURRENCY: z.coerce.number().int().min(1).max(16).default(2),
 });
 

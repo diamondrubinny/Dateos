@@ -212,3 +212,8 @@ export const auditQuerySchema = z.object({
 export const RESOLVED_REPORT_RETENTION_DAYS = 365;
 export const MODERATION_LOG_RETENTION_DAYS = 730;
 export const VERIFICATION_RECORD_RETENTION_DAYS = 730;
+
+/** Security audit trail retention (see docs/PRIVACY.md). ⚖️ */
+export const AUDIT_LOG_RETENTION_DAYS = 730;
+/** Warning period before an inactive account is deleted (when the operator enables it). */
+export const INACTIVITY_NOTICE_DAYS = 30;

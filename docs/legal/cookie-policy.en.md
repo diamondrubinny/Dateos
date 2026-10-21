@@ -1,0 +1,31 @@
+# Cookies and storage: [COMMUNITY]
+
+> ⚖️ Draft for legal review. Effective [EFFECTIVE_DATE]. Keep this list in sync with
+> `apps/mobile/src/lib/storage-inventory.ts` (the privacy e2e test checks the browser against it).
+
+We use **only what the service needs to work**, or what remembers a choice you made. There are no
+analytics, advertising or third-party cookies, so we don't ask you to accept cookies. [If you add
+analytics: it may run only after the member opts in to "anonymous usage statistics", and this page and
+the inventory must list it.]
+
+## Web app
+
+| Name                                                               | Type                                   | Purpose                          | Duration                                                          |
+| ------------------------------------------------------------------ | -------------------------------------- | -------------------------------- | ----------------------------------------------------------------- |
+| `dateos.session_token` (on HTTPS: `__Secure-dateos.session_token`) | Cookie: HttpOnly, Secure, SameSite=Lax | Keeps you signed in              | 30 days, renewed while you use the app; removed when you sign out |
+| `dateos.locale`                                                    | Browser storage                        | Remembers the language you chose | Until you change it                                               |
+| `dateos-admin-locale` (moderation dashboard only)                  | Browser storage                        | Language of the dashboard        | Until changed                                                     |
+
+## iPhone and Android apps
+
+| Name                  | Where                       | Purpose                                         | Duration                            |
+| --------------------- | --------------------------- | ----------------------------------------------- | ----------------------------------- |
+| `dateos_cookie`       | Device keychain (encrypted) | Keeps you signed in                             | 30 days, renewed while used         |
+| `dateos_session_data` | Device keychain             | A copy of your session so the app opens quickly | Until you sign out                  |
+| `dateos.locale`       | Device keychain             | Your language                                   | Until changed                       |
+| `dateos.pushToken`    | Device keychain             | Only if you turn on notifications               | Until you sign out or turn them off |
+
+## Your control
+
+Signing out removes the session items. You can also delete them in your browser or device settings
+(you'll then need to sign in again). The page "Privacy & cookies" in the app shows this list.

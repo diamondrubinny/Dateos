@@ -17,6 +17,14 @@ function assert(condition: unknown, message: string): asserts condition {
 async function account(email: string, name: string, gender: 'woman' | 'man') {
   const session = await signInHttp(email);
   const call = apiClient(session.header);
+  await call('PUT', '/v1/me/consents', {
+    consents: [
+      { kind: 'terms', granted: true, version: LEGAL.terms },
+      { kind: 'privacy', granted: true, version: LEGAL.privacy },
+      { kind: 'sensitive', granted: true, version: '1' },
+      { kind: 'location', granted: true, version: '1' },
+    ],
+  });
   await call('POST', '/v1/me/profile', {
     displayName: name,
     birthDate: '1993-06-06',
@@ -25,13 +33,6 @@ async function account(email: string, name: string, gender: 'woman' | 'man') {
     intention: 'long_term',
     bio: 'Music, sea and long talks.',
     languages: ['he', 'en'],
-  });
-  await call('PUT', '/v1/me/consents', {
-    consents: [
-      { kind: 'terms', granted: true, version: LEGAL.terms },
-      { kind: 'privacy', granted: true, version: LEGAL.privacy },
-      { kind: 'location', granted: true, version: '1' },
-    ],
   });
   await call('PUT', '/v1/me/location', { lat: 32.0809, lng: 34.7806 });
   await call('PUT', '/v1/me/prompts', {

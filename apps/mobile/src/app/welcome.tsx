@@ -69,6 +69,9 @@ export default function Welcome() {
           <Link href="/accessibility" style={[styles.link, { color: colors.primary }]}>
             {t('settings.accessibility')}
           </Link>
+          <Link href="/cookies" style={[styles.link, { color: colors.primary }]}>
+            {t('settings.cookies')}
+          </Link>
         </View>
       </View>
     </Screen>

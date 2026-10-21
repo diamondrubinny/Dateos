@@ -66,6 +66,9 @@ export const en = {
         'Required items are needed to run the service. Optional items are off unless you turn them on.',
       terms: 'I agree to the Terms of Use',
       privacy: 'I have read the Privacy Policy',
+      sensitive: 'I agree that my gender and who I’m interested in are used to match me',
+      sensitiveHint:
+        'This can reveal your sexual orientation, which is sensitive information. It is used only for matching, never shown as a label, never sold or used for ads. You can withdraw in Settings (your profile is then hidden).',
       aiCloud: 'Allow AI features that use an external provider',
       aiCloudHint:
         'Off by default. Profile text may be sent to the provider configured by this community.',
@@ -132,6 +135,14 @@ export const en = {
     age: '{{age}} years old',
   },
   settings: {
+    sensitiveLabel: 'Use my gender and interests for matching',
+    sensitiveHint: 'Turning this off hides your profile until you turn it on again.',
+    download: 'Download my data',
+    downloadHint:
+      'A ZIP file with your profile, photos, voice messages and messages you sent, your choices and history. Up to 3 times a day.',
+    downloadDone: 'Your data was downloaded.',
+    downloadLimited: 'You can download your data 3 times a day. Please try again tomorrow.',
+    cookies: 'Privacy & cookies',
     notifications: 'Notifications and chat',
     title: 'Settings',
     preferences: 'Discovery preferences',
@@ -153,6 +164,36 @@ export const en = {
     deleted: 'Your account was deleted.',
     credit: 'Dateos is free, open-source software created by Diamond Rubinny (MIT license).',
   },
+  cookies: {
+    title: 'Privacy & cookies',
+    summary: 'No tracking, no ads, no analytics cookies. Only what the app needs to work.',
+    intro:
+      'This is everything the app stores in your browser or on your device. Each item keeps the service you asked for working, or remembers a choice you made, so we don’t ask you to accept cookies.',
+    web: 'In the web app',
+    native: 'In the iPhone and Android apps',
+    necessary: 'Necessary',
+    kind: {
+      cookie: 'Cookie (HttpOnly, scripts can’t read it)',
+      localStorage: 'Browser storage',
+      secureStore: 'Device keychain (encrypted)',
+    },
+    purpose: {
+      session: 'Keeps you signed in.',
+      sessionCache: 'A copy of your session, so the app opens quickly.',
+      language: 'Remembers the language you chose.',
+      pushToken: 'Lets this device receive the notifications you turned on.',
+    },
+    duration: {
+      days30: '30 days, renewed while you use the app',
+      untilChanged: 'Until you change it',
+      untilSignOut: 'Until you sign out',
+    },
+    thirdPartyTitle: 'Other companies',
+    thirdParty:
+      'No third-party cookies or trackers: the app loads nothing from other companies’ servers. If you turn on notifications in the phone app, a device token goes to Expo and Apple or Google to deliver them, without names or message text.',
+    control:
+      'Signing out removes the session items. You can also clear them in your browser or device settings. Your privacy choices (AI, analytics) are in Settings.',
+  },
   legal: {
     operatorTitle: 'Who runs this community',
     operator:
@@ -168,7 +209,7 @@ export const en = {
       'You must be 18 or older. Be respectful: harassment, hate, scams, impersonation and sharing others’ private information are not allowed and lead to removal. Report and block are available on every profile and chat.',
     privacyTitle: 'Privacy Policy',
     privacyBody:
-      'We collect only what is needed to run the service: your email, profile, photos and your choices. Photos are stripped of location data. We never sell data or show ads. You can delete your account and all data at any time from Settings.',
+      'We collect only what is needed to run the service: your email, profile, photos and your choices. Your gender and who you’re interested in are used only for matching, with your explicit consent. Photos are stripped of location data. We never sell data or show ads. You can download a copy of your data or delete your account and all data at any time from Settings. Closed chats are deleted after 30 days. No tracking cookies are used (see Privacy & cookies).',
   },
   location: {
     title: 'Show people near you',

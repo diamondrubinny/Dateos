@@ -21,6 +21,8 @@ import { createClamavScanner, noopScanner } from './clamav.js';
 import { loadWorkerEnv } from './env.js';
 import { deleteObjects, processAudio, processPhoto, type JobContext } from './jobs.js';
 import { sendPush } from './push.js';
+import { cleanupPrivacy, handleInactiveAccounts } from './privacy-jobs.js';
+import nodemailer from 'nodemailer';
 import {
   cleanupDiscovery,
   cleanupModeration,
@@ -62,6 +64,15 @@ async function main(): Promise<void> {
     },
   };
 
+  const mailer = nodemailer.createTransport({
+    host: env.SMTP_HOST,
+    port: env.SMTP_PORT,
+    secure: env.SMTP_SECURE,
+    ...(env.SMTP_USER && env.SMTP_PASSWORD
+      ? { auth: { user: env.SMTP_USER, pass: env.SMTP_PASSWORD } }
+      : {}),
+  });
+
   const connection = new Redis(env.REDIS_URL, { maxRetriesPerRequest: null });
   const worker = new Worker(
     MEDIA_QUEUE,
@@ -101,6 +112,16 @@ async function main(): Promise<void> {
             ...(await cleanupDiscovery(db)),
             ...(await purgeClosedChats(db, storage)),
             ...(await cleanupModeration(db, storage)),
+            ...(await cleanupPrivacy(db)),
+            ...(await handleInactiveAccounts({
+              db,
+              storage,
+              months: env.INACTIVE_ACCOUNT_DELETE_MONTHS,
+              instanceName: env.INSTANCE_NAME,
+              sendMail: async (to, subject, text) => {
+                await mailer.sendMail({ from: env.SMTP_FROM, to, subject, text });
+              },
+            })),
           };
         default:
           throw new Error(`Unknown job: ${job.name}`);

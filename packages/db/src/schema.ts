@@ -57,6 +57,10 @@ export const user = pgTable('user', {
   role: userRole('role').notNull().default('user'),
   status: userStatus('status').notNull().default('active'),
   suspendedReason: varchar('suspended_reason', { length: 32 }),
+  /** Inactivity deletion (optional, off by default): when the 30-day warning was emailed. */
+  inactivityNoticeAt: timestamp('inactivity_notice_at', { withTimezone: true }),
+  /** Last sign-in or session refresh (at most daily); used only for the optional inactivity rule. */
+  lastSeenAt: timestamp('last_seen_at', { withTimezone: true }).notNull().defaultNow(),
   ...timestamps,
 });
 

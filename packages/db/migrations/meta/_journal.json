@@ -64,6 +64,27 @@
       "when": 1792601951597,
       "tag": "0008_audio_opus",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1792605847992,
+      "tag": "0009_inactivity",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1792606489988,
+      "tag": "0010_sensitive_consent",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1792607554060,
+      "tag": "0011_pause_without_sensitive_consent",
+      "breakpoints": true
     }
   ]
 }

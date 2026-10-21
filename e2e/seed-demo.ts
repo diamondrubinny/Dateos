@@ -286,11 +286,11 @@ export async function seedDemo({ reset = false } = {}): Promise<string[]> {
         })),
       );
       await db.insert(schema.consents).values(
-        (['terms', 'privacy', 'location'] as const).map((kind) => ({
+        (['terms', 'privacy', 'sensitive', 'location'] as const).map((kind) => ({
           userId: id,
           kind,
           granted: true,
-          version: kind === 'location' ? '1' : '2026-10',
+          version: kind === 'terms' || kind === 'privacy' ? '2026-10' : '1',
         })),
       );
       // Spread members over ~12 km around the centre (stored as snapped cells only).

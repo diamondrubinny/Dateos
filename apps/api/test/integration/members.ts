@@ -1,7 +1,7 @@
 import { mediaKey } from '@dateos/storage';
 import sharp from 'sharp';
 import type { TestContext } from './setup.js';
-import { signIn } from './setup.js';
+import { acceptConsents, signIn } from './setup.js';
 
 export const places = {
   telAviv: { lat: 32.0853, lng: 34.7818 },
@@ -37,6 +37,7 @@ export async function createMember(ctx: TestContext, o: MemberOptions): Promise<
   const send = (method: 'POST' | 'PUT', url: string, payload: unknown) =>
     ctx.app.inject({ method, url, headers: { cookie }, payload: payload as object });
 
+  await acceptConsents(ctx, cookie);
   const profile = await send('POST', '/v1/me/profile', {
     displayName: o.name,
     birthDate: o.birthDate ?? '1995-01-01',
@@ -58,11 +59,7 @@ export async function createMember(ctx: TestContext, o: MemberOptions): Promise<
     });
   }
   await send('PUT', '/v1/me/consents', {
-    consents: [
-      { kind: 'terms', granted: true, version: ctx.env.TERMS_VERSION },
-      { kind: 'privacy', granted: true, version: ctx.env.PRIVACY_VERSION },
-      { kind: 'location', granted: true, version: '1' },
-    ],
+    consents: [{ kind: 'location', granted: true, version: '1' }],
   });
   const at = o.at ?? places.telAviv;
   const loc = await send('PUT', '/v1/me/location', at);
@@ -93,7 +90,7 @@ export async function createMember(ctx: TestContext, o: MemberOptions): Promise<
 export async function api(
   ctx: TestContext,
   member: Member,
-  method: 'GET' | 'POST' | 'PUT' | 'DELETE',
+  method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE',
   url: string,
   payload?: unknown,
 ) {

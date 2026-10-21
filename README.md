@@ -37,24 +37,25 @@ Dateos is built the other way around:
 
 Dateos is in active development. Here is what works today and what comes next. The full plan is in [`docs/PLAN.md`](docs/PLAN.md).
 
-| Area                                                                            | Status             |
-| ------------------------------------------------------------------------------- | ------------------ |
-| Passwordless email sign-in (magic link), sessions, rate limits                  | ✅ Available       |
-| Profile, preferences, prompts, versioned consents                               | ✅ Available       |
-| Photo upload with malware scan (ClamAV), EXIF/GPS stripping, re-encoding        | ✅ Available       |
-| Account deletion (all data and files)                                           | ✅ Available       |
-| iOS / Android / web app: onboarding, profile, settings (Hebrew + English, RTL)  | ✅ Available       |
-| Approximate location (~1 km grid, bucketed distances)                           | ✅ Available       |
-| Discovery, reciprocal AI matching, Daily Picks, "why you might click"           | ✅ Available       |
-| Like / pass / like a photo or prompt with a comment, Likes You, matches         | ✅ Available       |
-| Unmatch and block                                                               | ✅ Available       |
-| Real-time chat (WebSocket), read receipts, typing, icebreakers                  | ✅ Available       |
-| "Are you sure?", hidden offensive messages, scam warnings, blurred photos       | ✅ Available       |
-| Voice messages, push notifications                                              | 🛠️ Next (phase 3b) |
-| Report (with chat evidence), moderation dashboard with mandatory TOTP, audit    | ✅ Available       |
-| Photo verification (live selfie, human review, no face recognition), badge      | ✅ Available       |
-| Your own instance: setup token claim, branding wizard, HTTPS web server (Caddy) | ✅ Available       |
-| Video dates, safety check-in, date planner                                      | 🗓️ Later           |
+| Area                                                                            | Status       |
+| ------------------------------------------------------------------------------- | ------------ |
+| Passwordless email sign-in (magic link), sessions, rate limits                  | ✅ Available |
+| Profile, preferences, prompts, versioned consents                               | ✅ Available |
+| Photo upload with malware scan (ClamAV), EXIF/GPS stripping, re-encoding        | ✅ Available |
+| Account deletion (all data and files)                                           | ✅ Available |
+| iOS / Android / web app: onboarding, profile, settings (Hebrew + English, RTL)  | ✅ Available |
+| Approximate location (~1 km grid, bucketed distances)                           | ✅ Available |
+| Discovery, reciprocal AI matching, Daily Picks, "why you might click"           | ✅ Available |
+| Like / pass / like a photo or prompt with a comment, Likes You, matches         | ✅ Available |
+| Unmatch and block                                                               | ✅ Available |
+| Real-time chat (WebSocket), read receipts, typing, icebreakers                  | ✅ Available |
+| "Are you sure?", hidden offensive messages, scam warnings, blurred photos       | ✅ Available |
+| Voice messages, push notifications                                              | ✅ Available |
+| Report (with chat evidence), moderation dashboard with mandatory TOTP, audit    | ✅ Available |
+| Photo verification (live selfie, human review, no face recognition), badge      | ✅ Available |
+| Your own instance: setup token claim, branding wizard, HTTPS web server (Caddy) | ✅ Available |
+| Download my data, retention jobs, explicit consent for sensitive data           | ✅ Available |
+| Video dates, safety check-in, date planner                                      | 🗓️ Later     |
 
 ## Screenshots
 
@@ -80,9 +81,13 @@ Dateos is in active development. Here is what works today and what comes next. T
 
 <img src="docs/screenshots/showcase-voice-en.png" alt="Recording a voice message with a timer, confirming before sending, playing it, and the setting to turn voice messages off" width="100%">
 
+**Privacy**
+
+<img src="docs/screenshots/showcase-privacy-en.png" alt="The Privacy and cookies page listing every stored item, and Settings with Download my data" width="60%">
+
 **Onboarding**
 
-<img src="docs/screenshots/showcase-onboarding-en.png" alt="Welcome, profile form, photo upload, prompts and the approximate-location step" width="100%">
+<img src="docs/screenshots/showcase-onboarding-en.png" alt="Welcome, consents (including the explicit consent for sensitive data), profile form, photo upload, prompts and the approximate-location step" width="100%">
 
 **Full right-to-left support (Hebrew):**
 
@@ -168,6 +173,9 @@ All AI features are optional, run on the community's own server by default, and 
 - Chat: only the two participants can read, write or load images. The WebSocket requires a session and an allowed Origin. Message text is never logged. Chats are encrypted in transit; end-to-end encryption is a planned opt-in.
 - Limits on uploads, likes and messages count per user, not per IP, so people behind a shared mobile-network IP don't block each other.
 - Strict security headers, CORS allowlist, request size limits, log redaction of tokens, emails and phone numbers, and no stack traces in responses.
+- Gender and "interested in" can reveal sexual orientation, so they need their own explicit consent, asked before the profile is created. Withdrawing it hides the profile at once.
+- "Download my data" gives a ZIP of everything the member provided (without other people's messages). Daily jobs enforce retention periods, and sessions don't store IP addresses or browser strings.
+- No tracking, analytics or third-party requests. The privacy e2e test compares the browser's cookies and storage with the published list and fails on any request to another host. See [`docs/PRIVACY.md`](docs/PRIVACY.md).
 - CI runs lint, typecheck, unit and integration tests, a dependency audit, CodeQL, Gitleaks and Docker builds. Actions are pinned to commit SHAs.
 
 Found a vulnerability? Please report it privately; see [SECURITY.md](SECURITY.md).
@@ -216,7 +224,9 @@ Moderation is part of running an instance: see [`docs/ADMIN.md`](docs/ADMIN.md) 
 
 Whoever deploys an instance is the operator, and legal controller, of its users' data. Before going public you need, at minimum,
 a reviewed privacy policy, terms of use, an accessibility statement and a moderation process.
-Draft texts ship with the app but **require review by a qualified lawyer** for your jurisdiction.
+Draft texts in English and Hebrew are in [`docs/legal/`](docs/legal/) and **require review by a qualified lawyer** for your jurisdiction.
+[`docs/PRIVACY.md`](docs/PRIVACY.md) lists every piece of data, its purpose, suggested legal basis and retention period, plus
+a DPIA screening and notes on GDPR and Israel's Privacy Protection Law (Amendment 13).
 
 ## Contributing
 

@@ -5,13 +5,17 @@ import { StyleSheet, View } from 'react-native';
 import { AppText } from '../components/AppText';
 import { Banner } from '../components/Banner';
 import { Button } from '../components/Button';
+import { DownloadData } from '../components/DownloadData';
 import { RequireSession } from '../components/RequireSession';
 import { Screen } from '../components/Screen';
 import { authClient } from '../lib/auth-client';
 import { useDeleteAccount } from '../lib/queries';
 import { radius, spacing, useColors } from '../lib/theme';
 
-/** Suspended members can read why and delete their account (right to erasure), nothing else. */
+/**
+ * Suspended members can read why, download their data (right of access) and delete their account
+ * (right to erasure), nothing else.
+ */
 function SuspendedScreen() {
   const { t } = useTranslation();
   const colors = useColors();
@@ -37,7 +41,8 @@ function SuspendedScreen() {
       {error ? <Banner tone="error" message={error} /> : null}
       <AppText variant="body">{t('account.suspendedBody')}</AppText>
       <AppText variant="body">{t('account.suspendedAppeal')}</AppText>
-      <Button variant="secondary" label={t('settings.signOut')} onPress={() => void signOut()} />
+      <DownloadData />
+      <Button variant="ghost" label={t('settings.signOut')} onPress={() => void signOut()} />
       {confirming ? (
         <View
           style={[styles.card, { backgroundColor: colors.dangerSoft }]}

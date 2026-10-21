@@ -1,9 +1,10 @@
-import { apiErrorSchema } from '@dateos/shared';
+import { apiErrorSchema, SENSITIVE_CONSENT_VERSION } from '@dateos/shared';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import {
   integrationEnabled,
   resetState,
   setupIntegration,
+  acceptConsents,
   signIn,
   teardown,
   validProfile,
@@ -35,7 +36,7 @@ describe.skipIf(!integrationEnabled)('auth + profile (integration)', () => {
     expect(res.json().user.email).toBe('noa@example.test');
     expect(res.json().onboarding).toEqual({
       complete: false,
-      missing: ['profile', 'consents', 'photos', 'prompts', 'location'],
+      missing: ['consents', 'profile', 'photos', 'prompts', 'location'],
     });
   });
 
@@ -76,6 +77,7 @@ describe.skipIf(!integrationEnabled)('auth + profile (integration)', () => {
 
   it('creates a profile with default preferences; birth date is final', async () => {
     const cookie = await signIn(ctx, 'noa@example.test');
+    await acceptConsents(ctx, cookie);
     const created = await ctx.app.inject({
       method: 'POST',
       url: '/v1/me/profile',
@@ -120,6 +122,7 @@ describe.skipIf(!integrationEnabled)('auth + profile (integration)', () => {
 
   it('suspends underage accounts and revokes their sessions', async () => {
     const cookie = await signIn(ctx, 'teen@example.test');
+    await acceptConsents(ctx, cookie);
     const res = await ctx.app.inject({
       method: 'POST',
       url: '/v1/me/profile',
@@ -169,6 +172,7 @@ describe.skipIf(!integrationEnabled)('auth + profile (integration)', () => {
 
   it('accepts users on their 18th birthday', async () => {
     const cookie = await signIn(ctx, 'adult@example.test');
+    await acceptConsents(ctx, cookie);
     const res = await ctx.app.inject({
       method: 'POST',
       url: '/v1/me/profile',
@@ -196,8 +200,12 @@ describe.skipIf(!integrationEnabled)('auth + profile (integration)', () => {
       { kind: 'ai_cloud', granted: false, version: '1' },
     ]);
     expect(ok.statusCode).toBe(200);
+    // Terms and privacy alone are not enough: sensitive data needs its own explicit consent.
+    expect((await me(cookie)).json().onboarding.missing).toContain('consents');
+    expect((await put([{ kind: 'sensitive', granted: true, version: '0' }])).statusCode).toBe(409);
+    await put([{ kind: 'sensitive', granted: true, version: SENSITIVE_CONSENT_VERSION }]);
     const body = (await me(cookie)).json();
-    expect(body.consents).toEqual({ terms: true, privacy: true, ai_cloud: false });
+    expect(body.consents).toEqual({ terms: true, privacy: true, sensitive: true, ai_cloud: false });
     expect(body.onboarding.missing).not.toContain('consents');
 
     await put([{ kind: 'ai_cloud', granted: true, version: '1' }]);
@@ -252,6 +260,7 @@ describe.skipIf(!integrationEnabled)('auth + profile (integration)', () => {
 
   it('deletes the account and everything it owns', async () => {
     const cookie = await signIn(ctx, 'bye@example.test');
+    await acceptConsents(ctx, cookie);
     await ctx.app.inject({
       method: 'POST',
       url: '/v1/me/profile',

@@ -10,6 +10,7 @@ import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { ErrorCode } from '@dateos/shared';
 import { z } from 'zod';
 import { HttpError } from '../../plugins/error-handler.js';
+import { perUserLimit } from '../../plugins/security.js';
 import type { Auth } from '../../auth/auth.js';
 import { currentUser, requireUser } from '../../auth/session.js';
 import type { MeService } from './service.js';
@@ -17,12 +18,14 @@ import type { MeService } from './service.js';
 const ok = z.object({ ok: z.literal(true) });
 
 /** What a suspended member can still do: see why, and delete the account (right to erasure). */
-const allowedWhileSuspended = new Set(['GET /v1/me', 'DELETE /v1/me']);
+const allowedWhileSuspended = new Set(['GET /v1/me', 'DELETE /v1/me', 'GET /v1/me/export']);
 
-export const meRoutes: FastifyPluginAsyncZod<{ auth: Auth; me: MeService }> = async (
-  app,
-  { auth, me },
-) => {
+export const meRoutes: FastifyPluginAsyncZod<{
+  auth: Auth;
+  me: MeService;
+  /** Builds the member's data archive (ZIP). */
+  exportData?: (userId: string) => Promise<Uint8Array>;
+}> = async (app, { auth, me, exportData }) => {
   app.addHook('preHandler', requireUser(auth, { allowSuspended: true }));
   app.addHook('preHandler', async (request) => {
     const route = `${request.method} ${request.routeOptions.url ?? ''}`;
@@ -88,6 +91,25 @@ export const meRoutes: FastifyPluginAsyncZod<{ auth: Auth; me: MeService }> = as
       return { ok: true as const };
     },
   );
+
+  if (exportData) {
+    app.get(
+      '/v1/me/export',
+      { config: perUserLimit(3, 24 * 60 * 60 * 1000) },
+      async (request, reply) => {
+        const userId = currentUser(request).id;
+        const zip = await exportData(userId);
+        return reply
+          .type('application/zip')
+          .header(
+            'content-disposition',
+            `attachment; filename="my-data-${new Date().toISOString().slice(0, 10)}.zip"`,
+          )
+          .header('cache-control', 'no-store')
+          .send(Buffer.from(zip));
+      },
+    );
+  }
 
   app.delete('/v1/me', { schema: { response: { 200: ok } } }, async (request) => {
     await me.deleteAccount(currentUser(request).id);

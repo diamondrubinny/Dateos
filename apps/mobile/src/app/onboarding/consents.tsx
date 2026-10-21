@@ -1,3 +1,4 @@
+import { SENSITIVE_CONSENT_VERSION } from '@dateos/shared';
 import { Link, router } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -20,23 +21,25 @@ export default function ConsentsStep() {
   const save = useSetConsents();
   const [terms, setTerms] = useState(false);
   const [privacy, setPrivacy] = useState(false);
+  const [sensitive, setSensitive] = useState(false);
   // Optional consents are never pre-selected.
   const [aiCloud, setAiCloud] = useState(false);
   const [analytics, setAnalytics] = useState(false);
   const [error, setError] = useState<string>();
 
   const submit = async () => {
-    if (!terms || !privacy) return setError(t('onboarding.consents.mustAccept'));
+    if (!terms || !privacy || !sensitive) return setError(t('onboarding.consents.mustAccept'));
     if (!instance.data) return setError(t('common.genericError'));
     setError(undefined);
     try {
       await save.mutateAsync([
         { kind: 'terms', granted: true, version: instance.data.legal.termsVersion },
         { kind: 'privacy', granted: true, version: instance.data.legal.privacyVersion },
+        { kind: 'sensitive', granted: true, version: SENSITIVE_CONSENT_VERSION },
         { kind: 'ai_cloud', granted: aiCloud, version: OPTIONAL_CONSENT_VERSION },
         { kind: 'analytics', granted: analytics, version: OPTIONAL_CONSENT_VERSION },
       ]);
-      router.replace('/onboarding/photos');
+      router.replace('/'); // next missing step (the profile, or back to where they were)
     } catch {
       setError(t('common.genericError'));
     }
@@ -47,7 +50,7 @@ export default function ConsentsStep() {
     <Screen
       title={t('onboarding.consents.title')}
       subtitle={t('onboarding.consents.subtitle')}
-      step={{ current: 2, total: ONBOARDING_TOTAL }}
+      step={{ current: 1, total: ONBOARDING_TOTAL }}
       footer={
         <Button
           label={t('common.continue')}
@@ -79,6 +82,13 @@ export default function ConsentsStep() {
           {t('onboarding.consents.readPrivacy')}
         </Link>
       </View>
+      <Checkbox
+        label={t('onboarding.consents.sensitive')}
+        hint={t('onboarding.consents.sensitiveHint')}
+        badge={required}
+        checked={sensitive}
+        onChange={setSensitive}
+      />
       <Checkbox
         label={t('onboarding.consents.aiCloud')}
         hint={t('onboarding.consents.aiCloudHint')}

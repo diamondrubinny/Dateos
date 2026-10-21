@@ -58,6 +58,8 @@ export function candidateSql(q: CandidateQuery): SQL {
              pr.age_min, pr.age_max, pr.max_distance_km, pr.intentions AS wants,
              l.geo, e.embedding, e.model
       FROM profiles p
+      -- A paused viewer (sensitive-data consent withdrawn) is not matched either way.
+      JOIN "user" mu ON mu.id = p.user_id AND mu.status = 'active'
       JOIN preferences pr ON pr.user_id = p.user_id
       JOIN locations l ON l.user_id = p.user_id
       LEFT JOIN profile_embeddings e ON e.user_id = p.user_id

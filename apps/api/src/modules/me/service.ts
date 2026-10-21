@@ -5,6 +5,7 @@ import {
   MIN_AGE,
   MIN_PHOTOS,
   requiredConsents,
+  SENSITIVE_CONSENT_VERSION,
   type ConsentInput,
   type MeResponse,
   type OnboardingStep,
@@ -80,8 +81,8 @@ export class MeService {
     const consentState = await this.currentConsents(userId);
 
     const missing: OnboardingStep[] = [];
-    if (!profile) missing.push('profile');
     if (!this.hasRequiredConsents(consentState)) missing.push('consents');
+    if (!profile) missing.push('profile');
     if (photoRows.length < MIN_PHOTOS) missing.push('photos');
     if (promptRows.length === 0) missing.push('prompts');
     const [location] = await this.db
@@ -153,6 +154,7 @@ export class MeService {
 
   /** Creates the profile. Birth date is final: an underage date suspends the account. */
   async createProfile(userId: string, input: ProfileInput): Promise<void> {
+    await this.assertConsented(userId);
     const [existing] = await this.db
       .select({ userId: profiles.userId })
       .from(profiles)
@@ -212,6 +214,9 @@ export class MeService {
       Object.entries(input).filter(([, value]) => value !== undefined),
     ) as ProfileUpdate;
     if (Object.keys(values).length === 0) return;
+    if (values.gender !== undefined || values.interestedIn !== undefined) {
+      await this.assertConsented(userId);
+    }
     const updated = await this.db
       .update(profiles)
       .set({ ...values, ...(values.bio !== undefined ? { bio: values.bio || null } : {}) })
@@ -247,10 +252,7 @@ export class MeService {
   }
 
   async recordConsents(userId: string, items: ConsentInput[]): Promise<void> {
-    const expected: Partial<Record<string, string>> = {
-      terms: this.legal.termsVersion,
-      privacy: this.legal.privacyVersion,
-    };
+    const expected = this.consentVersions();
     for (const item of items) {
       const version = expected[item.kind];
       if (item.granted && version && item.version !== version) {
@@ -261,7 +263,35 @@ export class MeService {
         );
       }
     }
-    await this.db.insert(consents).values(items.map((item) => ({ userId, ...item })));
+    const sensitive = items.find((item) => item.kind === 'sensitive');
+    await this.db.transaction(async (tx) => {
+      await tx.insert(consents).values(items.map((item) => ({ userId, ...item })));
+      // Withdrawing consent for sensitive data stops matching on it: the profile is hidden from
+      // discovery ('paused') until the person agrees again. Suspensions are never lifted here.
+      if (sensitive) {
+        await tx
+          .update(user)
+          .set({ status: sensitive.granted ? 'active' : 'paused' })
+          .where(
+            and(eq(user.id, userId), eq(user.status, sensitive.granted ? 'paused' : 'active')),
+          );
+      }
+    });
+  }
+
+  /** Profile data (gender, interests) may only be stored once the required consents exist. */
+  private async assertConsented(userId: string): Promise<void> {
+    if (!this.hasRequiredConsents(await this.currentConsents(userId))) {
+      throw new HttpError(403, ErrorCode.Forbidden, 'Please accept the required consents first.');
+    }
+  }
+
+  private consentVersions(): Partial<Record<string, string>> {
+    return {
+      terms: this.legal.termsVersion,
+      privacy: this.legal.privacyVersion,
+      sensitive: SENSITIVE_CONSENT_VERSION,
+    };
   }
 
   async currentConsents(
@@ -280,10 +310,7 @@ export class MeService {
   private hasRequiredConsents(
     state: Record<string, { granted: boolean; version: string }>,
   ): boolean {
-    const versions: Record<string, string> = {
-      terms: this.legal.termsVersion,
-      privacy: this.legal.privacyVersion,
-    };
+    const versions = this.consentVersions();
     return requiredConsents.every(
       (kind) => state[kind]?.granted === true && state[kind]?.version === versions[kind],
     );

@@ -30,11 +30,24 @@ export const promptKeys = [
 export const promptKeySchema = z.enum(promptKeys);
 export type PromptKey = z.infer<typeof promptKeySchema>;
 
-export const consentKinds = ['terms', 'privacy', 'location', 'ai_cloud', 'analytics'] as const;
+/**
+ * `sensitive`: explicit consent to process gender and who someone is interested in, which can reveal
+ * sexual orientation (GDPR Art. 9(2)(a); a "sensitive" type under Israel's Privacy Protection Law) ⚖️.
+ */
+export const consentKinds = [
+  'terms',
+  'privacy',
+  'sensitive',
+  'location',
+  'ai_cloud',
+  'analytics',
+] as const;
 export const consentKindSchema = z.enum(consentKinds);
 export type ConsentKind = z.infer<typeof consentKindSchema>;
 /** Consents the app cannot work without; the rest are optional and off by default. */
-export const requiredConsents: readonly ConsentKind[] = ['terms', 'privacy'];
+export const requiredConsents: readonly ConsentKind[] = ['terms', 'privacy', 'sensitive'];
+/** Version of the in-app text for the `sensitive` consent; bump it when the wording changes. */
+export const SENSITIVE_CONSENT_VERSION = '1';
 
 export const photoStatuses = ['quarantine', 'processing', 'clean', 'rejected'] as const;
 export type PhotoStatus = (typeof photoStatuses)[number];
@@ -119,7 +132,8 @@ export const photoSchema = z.object({
 });
 export type Photo = z.infer<typeof photoSchema>;
 
-export const onboardingSteps = ['profile', 'consents', 'photos', 'prompts', 'location'] as const;
+// Consents come first: nothing sensitive is stored before the person has agreed to it.
+export const onboardingSteps = ['consents', 'profile', 'photos', 'prompts', 'location'] as const;
 export type OnboardingStep = (typeof onboardingSteps)[number];
 
 export const meResponseSchema = z.object({

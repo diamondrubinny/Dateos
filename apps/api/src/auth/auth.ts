@@ -3,6 +3,7 @@ import { expo } from '@better-auth/expo';
 import { schema, type Database } from '@dateos/db';
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
+import { eq } from 'drizzle-orm';
 import { magicLink } from 'better-auth/plugins/magic-link';
 import type { Redis } from 'ioredis';
 import type { Env } from '../config/env.js';
@@ -34,6 +35,12 @@ async function allowEmail(redis: Redis, email: string): Promise<boolean> {
 }
 
 export function createAuth({ env, secret, db, redis, mailer, onMailError }: AuthDeps) {
+  const touchLastSeen = async (userId: string): Promise<void> => {
+    await db
+      .update(schema.user)
+      .set({ lastSeenAt: new Date(), inactivityNoticeAt: null })
+      .where(eq(schema.user.id, userId));
+  };
   const socialProviders = {
     ...(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET
       ? { google: { clientId: env.GOOGLE_CLIENT_ID, clientSecret: env.GOOGLE_CLIENT_SECRET } }
@@ -76,6 +83,17 @@ export function createAuth({ env, secret, db, redis, mailer, onMailError }: Auth
           // only sees a generic sign-in failure.
           before: async (data) => ((await isBanned(db, hashEmail, data.email)) ? false : undefined),
         },
+      },
+      // Sign-in activity for the optional inactivity rule. Sessions refresh at most daily (updateAge),
+      // so this is a coarse "last seen" and never a tracking signal.
+      session: {
+        create: {
+          // Data minimisation: the product never uses a session's IP address or browser string, so
+          // they are not stored (rate limiting reads the request's IP and keeps it only briefly).
+          before: async (s) => ({ data: { ...s, ipAddress: null, userAgent: null } }),
+          after: async (s) => touchLastSeen(s.userId),
+        },
+        update: { after: async (s) => (s.userId ? touchLastSeen(s.userId) : undefined) },
       },
     },
     session: {

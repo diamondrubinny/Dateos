@@ -172,6 +172,17 @@ async function run(locale: keyof typeof people) {
   await shot(page, locale, '03-check-email');
 
   await page.goto(await magicLink(email)); // API verifies the link, sets the cookie, redirects back
+  // Consents come first: nothing sensitive is stored before the person agrees.
+  await page.getByRole('checkbox', { name: new RegExp(`^${t.onboarding.consents.terms}`) }).click();
+  await page
+    .getByRole('checkbox', { name: new RegExp(`^${t.onboarding.consents.privacy}`) })
+    .click();
+  await page
+    .getByRole('checkbox', { name: new RegExp(`^${t.onboarding.consents.sensitive}`) })
+    .click();
+  await shot(page, locale, '04-consents');
+  await page.getByRole('button', { name: t.common.continue }).click();
+
   await page.getByLabel(p.name, { exact: true }).waitFor();
   await page.getByLabel(p.name, { exact: true }).fill(name);
   await page.getByLabel(p.day, { exact: true }).fill(birth[0]);
@@ -182,14 +193,7 @@ async function run(locale: keyof typeof people) {
   await page.getByRole('radio', { name: t.intention.long_term, exact: true }).click();
   await page.getByLabel(new RegExp(`^${p.bio}`)).fill(bio);
   await page.getByLabel(p.name, { exact: true }).scrollIntoViewIfNeeded();
-  await shot(page, locale, '04-profile');
-  await page.getByRole('button', { name: t.common.continue }).click();
-
-  await page.getByRole('checkbox', { name: new RegExp(`^${t.onboarding.consents.terms}`) }).click();
-  await page
-    .getByRole('checkbox', { name: new RegExp(`^${t.onboarding.consents.privacy}`) })
-    .click();
-  await shot(page, locale, '05-consents');
+  await shot(page, locale, '05-profile');
   await page.getByRole('button', { name: t.common.continue }).click();
 
   const add = page.getByRole('button', { name: t.onboarding.photos.add, exact: true });
@@ -336,7 +340,8 @@ for (const locale of ['en', 'he'] as const) {
   ]);
   await showcase(`onboarding-${locale}`, locale, [
     '01-welcome',
-    '04-profile',
+    '04-consents',
+    '05-profile',
     '06-photos',
     '07-prompts',
     '08-location',

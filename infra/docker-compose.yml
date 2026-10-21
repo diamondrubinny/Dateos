@@ -6,6 +6,14 @@
 # All ports bind to 127.0.0.1 only; expose services publicly through the reverse proxy, never directly.
 name: dateos
 
+# Logs contain IP addresses (personal data): keep them small and short-lived. With these limits each
+# service keeps at most ~50 MB of logs; ship them elsewhere only with a retention policy (docs/PRIVACY.md).
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: '10m'
+    max-file: '5'
+
 services:
   postgres:
     build: ./postgres
@@ -87,6 +95,7 @@ services:
       - '127.0.0.1:8025:8025'
 
   api:
+    logging: *logging
     build:
       context: ..
       dockerfile: apps/api/Dockerfile
@@ -110,6 +119,7 @@ services:
       - '127.0.0.1:4000:4000'
 
   worker:
+    logging: *logging
     build:
       context: ..
       dockerfile: apps/worker/Dockerfile
@@ -123,6 +133,7 @@ services:
       S3_ENDPOINT: http://seaweedfs:8333
       CLAMAV_HOST: clamav
       OLLAMA_URL: http://ollama:11434
+      SMTP_HOST: ${SMTP_HOST_DOCKER:-${SMTP_HOST}}
     depends_on:
       postgres:
         condition: service_healthy
@@ -131,6 +142,7 @@ services:
 
   # Public site: web app, moderation dashboard and API behind one domain with automatic HTTPS.
   web:
+    logging: *logging
     build:
       context: ..
       dockerfile: infra/web/Dockerfile

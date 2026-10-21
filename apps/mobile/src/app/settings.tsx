@@ -1,3 +1,4 @@
+import { SENSITIVE_CONSENT_VERSION } from '@dateos/shared';
 import { Link, router } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useEffect, useState } from 'react';
@@ -7,6 +8,7 @@ import { AppText } from '../components/AppText';
 import { Banner } from '../components/Banner';
 import { Button } from '../components/Button';
 import { Checkbox } from '../components/Choice';
+import { DownloadData } from '../components/DownloadData';
 import { LanguageSwitch } from '../components/LanguageSwitch';
 import { RequireSession } from '../components/RequireSession';
 import { Screen } from '../components/Screen';
@@ -54,10 +56,13 @@ function SettingsContent() {
   const [confirming, setConfirming] = useState(false);
   const [error, setError] = useState<string>();
 
-  const toggle = (kind: 'ai_cloud' | 'analytics', granted: boolean) =>
-    consents.mutate([{ kind, granted, version: '1' }], {
-      onError: () => setError(t('common.genericError')),
-    });
+  const toggle = (kind: 'ai_cloud' | 'analytics' | 'sensitive', granted: boolean) =>
+    consents.mutate(
+      [{ kind, granted, version: kind === 'sensitive' ? SENSITIVE_CONSENT_VERSION : '1' }],
+      {
+        onError: () => setError(t('common.genericError')),
+      },
+    );
 
   const signOut = async () => {
     await disablePush(); // this device should stop receiving this account's notifications
@@ -120,6 +125,12 @@ function SettingsContent() {
 
       <AppText variant="heading">{t('settings.privacy')}</AppText>
       <Checkbox
+        label={t('settings.sensitiveLabel')}
+        hint={t('settings.sensitiveHint')}
+        checked={me.data?.consents.sensitive ?? false}
+        onChange={(v) => toggle('sensitive', v)}
+      />
+      <Checkbox
         label={t('onboarding.consents.aiCloud')}
         hint={t('onboarding.consents.aiCloudHint')}
         checked={me.data?.consents.ai_cloud ?? false}
@@ -131,6 +142,7 @@ function SettingsContent() {
         checked={me.data?.consents.analytics ?? false}
         onChange={(v) => toggle('analytics', v)}
       />
+      <DownloadData />
 
       {sponsorUrl ? (
         <View style={[styles.card, { backgroundColor: colors.primarySoft }]}>
@@ -155,6 +167,9 @@ function SettingsContent() {
         </Link>
         <Link href="/privacy" style={linkStyle}>
           {t('settings.privacyPolicy')}
+        </Link>
+        <Link href="/cookies" style={linkStyle}>
+          {t('settings.cookies')}
         </Link>
       </View>
 
