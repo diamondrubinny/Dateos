@@ -1,4 +1,11 @@
-import { MEDIA_QUEUE, MediaJob, type DeleteObjectsJob, type ProcessPhotoJob } from '@dateos/shared';
+import {
+  MEDIA_QUEUE,
+  MediaJob,
+  PROFILE_QUEUE,
+  ProfileJob,
+  type DeleteObjectsJob,
+  type ProcessPhotoJob,
+} from '@dateos/shared';
 import { Queue } from 'bullmq';
 import { Redis } from 'ioredis';
 
@@ -14,6 +21,32 @@ const defaultJobOptions = {
   removeOnComplete: 1_000,
   removeOnFail: 5_000,
 };
+
+export interface ProfileQueue {
+  /** Recompute the profile embedding after the bio or prompts change. */
+  embedProfile(userId: string): Promise<void>;
+  close(): Promise<void>;
+}
+
+export function createProfileQueue(redisUrl: string): ProfileQueue {
+  const connection = new Redis(redisUrl, { maxRetriesPerRequest: null });
+  connection.on('error', () => undefined);
+  const queue = new Queue(PROFILE_QUEUE, { connection, defaultJobOptions });
+  return {
+    async embedProfile(userId) {
+      // Debounced per user: rapid edits collapse into one job.
+      await queue.add(
+        ProfileJob.EmbedProfile,
+        { userId },
+        { jobId: `embed-${userId}`, delay: 2_000 },
+      );
+    },
+    async close() {
+      await queue.close();
+      connection.disconnect();
+    },
+  };
+}
 
 export function createMediaQueue(redisUrl: string): MediaQueue {
   const connection = new Redis(redisUrl, { maxRetriesPerRequest: null });

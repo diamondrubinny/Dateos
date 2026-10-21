@@ -1,12 +1,22 @@
 import { createDb } from '@dateos/db';
-import { MEDIA_QUEUE, MediaJob, type DeleteObjectsJob, type ProcessPhotoJob } from '@dateos/shared';
+import { hashingProvider, ollamaProvider } from '@dateos/ai';
+import {
+  MEDIA_QUEUE,
+  MediaJob,
+  PROFILE_QUEUE,
+  ProfileJob,
+  type DeleteObjectsJob,
+  type EmbedProfileJob,
+  type ProcessPhotoJob,
+} from '@dateos/shared';
 import { createStorage } from '@dateos/storage';
-import { Worker } from 'bullmq';
+import { Queue, Worker } from 'bullmq';
 import { Redis } from 'ioredis';
 import { pino } from 'pino';
 import { createClamavScanner, noopScanner } from './clamav.js';
 import { loadWorkerEnv } from './env.js';
 import { deleteObjects, processPhoto, type JobContext } from './jobs.js';
+import { cleanupDiscovery, embedProfile } from './profile-jobs.js';
 
 async function main(): Promise<void> {
   const env = loadWorkerEnv();
@@ -56,11 +66,45 @@ async function main(): Promise<void> {
   worker.on('failed', (job, error) =>
     log.error({ job: job?.name, id: job?.id, err: error }, 'job failed'),
   );
-  log.info({ scanningEnabled }, 'worker started');
+
+  const embeddings =
+    env.EMBEDDINGS_PROVIDER === 'ollama'
+      ? ollamaProvider(env.OLLAMA_URL, env.OLLAMA_EMBED_MODEL)
+      : hashingProvider;
+  const profileWorker = new Worker(
+    PROFILE_QUEUE,
+    async (job) => {
+      switch (job.name) {
+        case ProfileJob.EmbedProfile:
+          return embedProfile(db, embeddings, job.data as EmbedProfileJob);
+        case 'cleanup-discovery':
+          return cleanupDiscovery(db);
+        default:
+          throw new Error(`Unknown job: ${job.name}`);
+      }
+    },
+    { connection, concurrency: env.WORKER_CONCURRENCY },
+  );
+  profileWorker.on('completed', (job, result) => log.info({ job: job.name, result }, 'job done'));
+  profileWorker.on('failed', (job, error) =>
+    log.error({ job: job?.name, err: error }, 'job failed'),
+  );
+
+  // Daily retention sweep (idempotent scheduler: safe with several workers).
+  const scheduler = new Queue(PROFILE_QUEUE, { connection });
+  await scheduler.upsertJobScheduler(
+    'cleanup-discovery',
+    { pattern: '17 3 * * *' },
+    { name: 'cleanup-discovery' },
+  );
+
+  log.info({ scanningEnabled, embeddings: embeddings.model }, 'worker started');
 
   const shutdown = async () => {
     log.info('shutting down');
     await worker.close();
+    await profileWorker.close();
+    await scheduler.close();
     connection.disconnect();
     storage.close();
     await pool.end();

@@ -13,6 +13,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@dateos/ai": "workspace:*",
     "@dateos/db": "workspace:*",
     "@dateos/shared": "workspace:*",
     "@dateos/storage": "workspace:*",

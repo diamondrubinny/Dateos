@@ -22,6 +22,11 @@ export class PhotoService {
     private readonly db: Database,
     private readonly storage: Storage,
     private readonly mediaQueue: MediaQueue,
+    /** Visibility rule shared with discovery; defaults to owner-only. */
+    private readonly canView: (viewerId: string, ownerId: string) => Promise<boolean> = async (
+      v,
+      o,
+    ) => v === o,
   ) {}
 
   async upload(userId: string, buffer: Buffer): Promise<Photo> {
@@ -75,13 +80,13 @@ export class PhotoService {
     };
   }
 
-  /** Phase 1: only the owner may view a photo. Matching phases widen this rule. */
+  /** Owners, and people allowed to see the owner's profile, may view a clean photo. */
   async open(viewerId: string, photoId: string): Promise<StoredObject> {
     const [row] = await this.db
-      .select({ mediaKey: photos.mediaKey })
+      .select({ mediaKey: photos.mediaKey, userId: photos.userId })
       .from(photos)
-      .where(and(eq(photos.id, photoId), eq(photos.userId, viewerId), eq(photos.status, 'clean')));
-    if (!row?.mediaKey) throw notFound();
+      .where(and(eq(photos.id, photoId), eq(photos.status, 'clean')));
+    if (!row?.mediaKey || !(await this.canView(viewerId, row.userId))) throw notFound();
     return this.storage.get(this.storage.buckets.media, row.mediaKey);
   }
 

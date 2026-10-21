@@ -118,7 +118,7 @@ export const photoSchema = z.object({
 });
 export type Photo = z.infer<typeof photoSchema>;
 
-export const onboardingSteps = ['profile', 'consents', 'photos', 'prompts'] as const;
+export const onboardingSteps = ['profile', 'consents', 'photos', 'prompts', 'location'] as const;
 export type OnboardingStep = (typeof onboardingSteps)[number];
 
 export const meResponseSchema = z.object({

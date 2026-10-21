@@ -13,6 +13,8 @@ export const redactPaths = [
   '*.code',
   '*.email',
   '*.phone',
+  '*.lat',
+  '*.lng',
 ];
 
 export function buildLoggerOptions(

@@ -14,6 +14,7 @@ import { registerSecurity } from './plugins/security.js';
 import { healthRoutes } from './routes/health.js';
 import { authRoutes } from './auth/routes.js';
 import { instanceRoutes } from './modules/instance/routes.js';
+import { discoveryRoutes } from './modules/discovery/routes.js';
 import { meRoutes } from './modules/me/routes.js';
 import { photoRoutes } from './modules/photos/routes.js';
 import type { Services } from './services.js';
@@ -59,6 +60,7 @@ export async function buildApp(env: Env, deps: AppDependencies): Promise<Fastify
     await app.register(authRoutes, { auth: services.auth, origin: env.PUBLIC_API_URL });
     await typed.register(meRoutes, { auth: services.auth, me: services.me });
     await typed.register(photoRoutes, { auth: services.auth, photos: services.photos });
+    await typed.register(discoveryRoutes, { auth: services.auth, discovery: services.discovery });
   }
 
   app.addHook('onClose', async () => {

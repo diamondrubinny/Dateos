@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@better-auth/expo": "1.7.12",
+    "@dateos/ai": "workspace:*",
     "@dateos/db": "workspace:*",
     "@dateos/shared": "workspace:*",
     "@dateos/storage": "workspace:*",

@@ -15,10 +15,10 @@ import {
 } from '@dateos/shared';
 import { and, asc, desc, eq, ne } from 'drizzle-orm';
 import { HttpError } from '../../plugins/error-handler.js';
-import type { MediaQueue } from '../../lib/queue.js';
+import type { MediaQueue, ProfileQueue } from '../../lib/queue.js';
 import { audit } from '../../lib/audit.js';
 
-const { profiles, preferences, prompts, photos, consents, user, session } = schema;
+const { profiles, preferences, prompts, photos, consents, user, session, locations } = schema;
 
 export interface LegalVersions {
   termsVersion: string;
@@ -39,6 +39,7 @@ export class MeService {
     private readonly mediaQueue: MediaQueue,
     private readonly legal: LegalVersions,
     private readonly today: () => string = todayUtc,
+    private readonly profileQueue?: ProfileQueue,
   ) {}
 
   async getMe(userId: string): Promise<MeResponse> {
@@ -67,6 +68,11 @@ export class MeService {
     if (!this.hasRequiredConsents(consentState)) missing.push('consents');
     if (photoRows.length < MIN_PHOTOS) missing.push('photos');
     if (promptRows.length === 0) missing.push('prompts');
+    const [location] = await this.db
+      .select({ userId: locations.userId })
+      .from(locations)
+      .where(eq(locations.userId, userId));
+    if (!location) missing.push('location');
 
     return {
       user: account,
@@ -159,6 +165,7 @@ export class MeService {
         .onConflictDoNothing();
       await tx.update(user).set({ name: input.displayName }).where(eq(user.id, userId));
     });
+    await this.profileQueue?.embedProfile(userId);
   }
 
   async updateProfile(userId: string, input: ProfileUpdate): Promise<void> {
@@ -175,6 +182,9 @@ export class MeService {
       throw new HttpError(404, ErrorCode.NotFound, 'Create your profile first.');
     if (values.displayName) {
       await this.db.update(user).set({ name: values.displayName }).where(eq(user.id, userId));
+    }
+    if (values.bio !== undefined || values.intention !== undefined) {
+      await this.profileQueue?.embedProfile(userId);
     }
   }
 
@@ -194,6 +204,7 @@ export class MeService {
           .values(items.map((item, position) => ({ userId, position, ...item })));
       }
     });
+    await this.profileQueue?.embedProfile(userId);
   }
 
   async recordConsents(userId: string, items: ConsentInput[]): Promise<void> {

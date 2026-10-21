@@ -15,6 +15,10 @@ export const workerEnvSchema = z.object({
   MALWARE_SCAN: z.enum(['clamav', 'disabled']).default('clamav'),
   CLAMAV_HOST: z.string().default('localhost'),
   CLAMAV_PORT: z.coerce.number().int().default(3310),
+  /** `hashing` works offline with no model; `ollama` uses a local semantic model. */
+  EMBEDDINGS_PROVIDER: z.enum(['hashing', 'ollama']).default('hashing'),
+  OLLAMA_URL: z.url().default('http://localhost:11434'),
+  OLLAMA_EMBED_MODEL: z.string().default('paraphrase-multilingual'),
   WORKER_CONCURRENCY: z.coerce.number().int().min(1).max(16).default(2),
 });
 

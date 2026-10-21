@@ -35,7 +35,7 @@ describe.skipIf(!integrationEnabled)('auth + profile (integration)', () => {
     expect(res.json().user.email).toBe('noa@example.test');
     expect(res.json().onboarding).toEqual({
       complete: false,
-      missing: ['profile', 'consents', 'photos', 'prompts'],
+      missing: ['profile', 'consents', 'photos', 'prompts', 'location'],
     });
   });
 

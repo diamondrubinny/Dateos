@@ -14,3 +14,13 @@ export interface DeleteObjectsJob {
   quarantineKeys: string[];
   mediaKeys: string[];
 }
+
+export const PROFILE_QUEUE = 'profile';
+
+export const ProfileJob = {
+  EmbedProfile: 'embed-profile',
+} as const;
+
+export interface EmbedProfileJob {
+  userId: string;
+}

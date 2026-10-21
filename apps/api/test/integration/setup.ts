@@ -6,7 +6,7 @@ import { Redis } from 'ioredis';
 import { buildApp } from '../../src/app.js';
 import { loadEnv, type Env } from '../../src/config/env.js';
 import type { MailMessage, Mailer } from '../../src/lib/mailer.js';
-import type { MediaQueue } from '../../src/lib/queue.js';
+import type { MediaQueue, ProfileQueue } from '../../src/lib/queue.js';
 import { createServices, type Services } from '../../src/services.js';
 
 export const integrationEnabled = process.env.INTEGRATION === '1';
@@ -17,7 +17,7 @@ export interface TestContext {
   services: Services;
   redis: Redis;
   mail: MailMessage[];
-  jobs: { process: ProcessPhotoJob[]; delete: DeleteObjectsJob[] };
+  jobs: { process: ProcessPhotoJob[]; delete: DeleteObjectsJob[]; embed: string[] };
   today: { value: string };
 }
 
@@ -36,7 +36,11 @@ export async function setupIntegration(): Promise<TestContext> {
 
   const mail: MailMessage[] = [];
   const mailer: Mailer = { send: async (m) => void mail.push(m), close: () => undefined };
-  const jobs: TestContext['jobs'] = { process: [], delete: [] };
+  const jobs: TestContext['jobs'] = { process: [], delete: [], embed: [] };
+  const profileQueue: ProfileQueue = {
+    embedProfile: async (userId) => void jobs.embed.push(userId),
+    close: async () => undefined,
+  };
   const mediaQueue: MediaQueue = {
     processPhoto: async (job) => void jobs.process.push(job),
     deleteObjects: async (job) => void jobs.delete.push(job),
@@ -53,6 +57,7 @@ export async function setupIntegration(): Promise<TestContext> {
     {
       mailer,
       mediaQueue,
+      profileQueue,
       today: () => today.value,
     },
   );
@@ -74,6 +79,7 @@ export async function resetState(ctx: TestContext): Promise<void> {
   ctx.mail.length = 0;
   ctx.jobs.process.length = 0;
   ctx.jobs.delete.length = 0;
+  ctx.jobs.embed.length = 0;
   ctx.today.value = '2026-10-20';
 }
 

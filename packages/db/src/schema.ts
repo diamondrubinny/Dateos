@@ -3,6 +3,7 @@ import {
   bigint,
   boolean,
   check,
+  customType,
   date,
   index,
   integer,
@@ -15,8 +16,17 @@ import {
   uniqueIndex,
   uuid,
   varchar,
+  vector,
 } from 'drizzle-orm/pg-core';
-import { consentKinds, genders, intentions, photoStatuses, promptKeys } from '@dateos/shared';
+import {
+  consentKinds,
+  EMBEDDING_DIM,
+  genders,
+  intentions,
+  interactionKinds,
+  photoStatuses,
+  promptKeys,
+} from '@dateos/shared';
 
 const timestamps = {
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
@@ -207,4 +217,131 @@ export const auditLogs = pgTable(
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index('audit_logs_created_at_idx').on(t.createdAt)],
+);
+
+// ---------------------------------------------------------------------------
+// Discovery & matching (phase 2)
+// ---------------------------------------------------------------------------
+
+/** PostGIS geography point. Written only through SQL (ST_MakePoint) and never selected raw. */
+const geographyPoint = customType<{ data: string; driverData: string }>({
+  dataType: () => 'geography(Point, 4326)',
+});
+
+/** Only the snapped ~1 km grid cell is stored; raw device coordinates never reach the database. */
+export const locations = pgTable(
+  'locations',
+  {
+    userId: ownerId().primaryKey(),
+    geo: geographyPoint('geo').notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index('locations_geo_gist').using('gist', t.geo)],
+);
+
+export const profileEmbeddings = pgTable('profile_embeddings', {
+  userId: ownerId().primaryKey(),
+  embedding: vector('embedding', { dimensions: EMBEDDING_DIM }).notNull(),
+  model: varchar('model', { length: 64 }).notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const interactionKind = pgEnum('interaction_kind', interactionKinds);
+export const interactionItemType = pgEnum('interaction_item_type', ['photo', 'prompt']);
+
+export const interactions = pgTable(
+  'interactions',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    actorId: text('actor_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    targetId: text('target_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    kind: interactionKind('kind').notNull(),
+    itemType: interactionItemType('item_type'),
+    itemId: uuid('item_id'),
+    comment: varchar('comment', { length: 300 }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex('interactions_actor_target_uq').on(t.actorId, t.targetId),
+    index('interactions_target_kind_idx').on(t.targetId, t.kind),
+    index('interactions_actor_created_idx').on(t.actorId, t.createdAt),
+  ],
+);
+
+/** One row per pair, stored with user_a < user_b so each pair is unique. */
+export const matches = pgTable(
+  'matches',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userA: text('user_a')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    userB: text('user_b')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    unmatchedAt: timestamp('unmatched_at', { withTimezone: true }),
+    unmatchedBy: text('unmatched_by').references(() => user.id, { onDelete: 'set null' }),
+  },
+  (t) => [
+    uniqueIndex('matches_pair_uq').on(t.userA, t.userB),
+    index('matches_user_b_idx').on(t.userB),
+    // Byte order (COLLATE "C") matches JavaScript string comparison used to order the pair.
+    check('matches_ordered_pair', sql`${t.userA} COLLATE "C" < ${t.userB} COLLATE "C"`),
+  ],
+);
+
+export const blocks = pgTable(
+  'blocks',
+  {
+    blockerId: text('blocker_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    blockedId: text('blocked_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex('blocks_pair_uq').on(t.blockerId, t.blockedId),
+    index('blocks_blocked_idx').on(t.blockedId),
+  ],
+);
+
+export const dailyPicks = pgTable(
+  'daily_picks',
+  {
+    userId: ownerId(),
+    candidateId: text('candidate_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    servedOn: date('served_on').notNull(),
+    score: integer('score').notNull(),
+    reasons: text('reasons').array().notNull(),
+    position: smallint('position').notNull(),
+  },
+  (t) => [uniqueIndex('daily_picks_uq').on(t.userId, t.servedOn, t.candidateId)],
+);
+
+export const impressionSurface = pgEnum('impression_surface', ['discover', 'picks']);
+
+/** Fairness counters: how often each person was shown. Kept 30 days. */
+export const impressions = pgTable(
+  'impressions',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    viewerId: text('viewer_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    candidateId: text('candidate_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    surface: impressionSurface('surface').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index('impressions_candidate_created_idx').on(t.candidateId, t.createdAt)],
 );

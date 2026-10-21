@@ -15,6 +15,20 @@
       "when": 1792522009528,
       "tag": "0001_init",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792555551227,
+      "tag": "0002_discovery",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1792556065236,
+      "tag": "0003_match_pair_collation",
+      "breakpoints": true
     }
   ]
 }

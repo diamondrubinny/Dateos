@@ -5,8 +5,14 @@ import { createAuth, type Auth } from './auth/auth.js';
 import { requireServiceEnv, type Env } from './config/env.js';
 import type { Dependency } from './lib/dependencies.js';
 import { createMailer, type Mailer } from './lib/mailer.js';
-import { createMediaQueue, type MediaQueue } from './lib/queue.js';
-import { MeService } from './modules/me/service.js';
+import {
+  createMediaQueue,
+  createProfileQueue,
+  type MediaQueue,
+  type ProfileQueue,
+} from './lib/queue.js';
+import { DiscoveryService } from './modules/discovery/service.js';
+import { MeService, todayUtc } from './modules/me/service.js';
 import { PhotoService } from './modules/photos/service.js';
 
 export interface Services {
@@ -14,6 +20,8 @@ export interface Services {
   auth: Auth;
   storage: Storage;
   mediaQueue: MediaQueue;
+  profileQueue: ProfileQueue;
+  discovery: DiscoveryService;
   mailer: Mailer;
   me: MeService;
   photos: PhotoService;
@@ -24,6 +32,7 @@ export interface Services {
 export interface ServiceOverrides {
   mailer?: Mailer;
   mediaQueue?: MediaQueue;
+  profileQueue?: ProfileQueue;
   today?: () => string;
 }
 
@@ -45,6 +54,9 @@ export function createServices(
   });
   const mailer = overrides.mailer ?? createMailer(env);
   const mediaQueue = overrides.mediaQueue ?? createMediaQueue(env.REDIS_URL);
+  const profileQueue = overrides.profileQueue ?? createProfileQueue(env.REDIS_URL);
+  const today = overrides.today ?? todayUtc;
+  const discovery = new DiscoveryService(dbHandle.db, today);
   const auth = createAuth({
     env,
     secret: secrets.authSecret,
@@ -60,9 +72,13 @@ export function createServices(
     auth,
     storage,
     mediaQueue,
+    profileQueue,
+    discovery,
     mailer,
-    me: new MeService(dbHandle.db, mediaQueue, legal, overrides.today),
-    photos: new PhotoService(dbHandle.db, storage, mediaQueue),
+    me: new MeService(dbHandle.db, mediaQueue, legal, today, profileQueue),
+    photos: new PhotoService(dbHandle.db, storage, mediaQueue, (viewer, owner) =>
+      discovery.canView(viewer, owner),
+    ),
     dependencies: [
       {
         name: 'postgres',
@@ -78,6 +94,7 @@ export function createServices(
       },
       { name: 'storage', isHealthy: () => storage.isHealthy(), close: async () => storage.close() },
       { name: 'queue', isHealthy: async () => true, close: () => mediaQueue.close() },
+      { name: 'profile-queue', isHealthy: async () => true, close: () => profileQueue.close() },
       { name: 'mailer', isHealthy: async () => true, close: async () => mailer.close() },
     ],
   };

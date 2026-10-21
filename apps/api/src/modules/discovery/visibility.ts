@@ -1,0 +1,111 @@
+import { sql, type SQL } from 'drizzle-orm';
+
+/**
+ * The single source of truth for "may these two people see each other".
+ * Both directions must hold: each person fits the other's gender, age, distance and
+ * intention preferences. Blocks (either way) and past unmatches always hide.
+ * Used by discovery, picks, profile views, photo access and interactions.
+ */
+export interface CandidateQuery {
+  viewerId: string;
+  today: string;
+  /** Restrict to one user (visibility check for a specific profile). */
+  targetId?: string;
+  /** Hide people the viewer already liked or passed (feeds). */
+  excludeDecided?: boolean;
+  /** Hide these ids (e.g. today's picks in the discover feed). */
+  excludeIds?: string[];
+  limit?: number;
+}
+
+export interface CandidateRow {
+  id: string;
+  km: number;
+  vibe: number | null;
+  model: string | null;
+  viewer_intention: string;
+  candidate_intention: string;
+  viewer_languages: string[];
+  candidate_languages: string[];
+  max_km: number;
+  last_active_days: number | null;
+  account_age_days: number;
+  likes_30d: number;
+  decisions_30d: number;
+  liked_viewer: boolean;
+  impressions_24h: number;
+}
+
+/** Both users are active and not separated by a block or an unmatch. */
+export function notSeparated(a: SQL, b: SQL): SQL {
+  return sql`NOT EXISTS (
+      SELECT 1 FROM blocks bl
+      WHERE (bl.blocker_id = ${a} AND bl.blocked_id = ${b}) OR (bl.blocker_id = ${b} AND bl.blocked_id = ${a})
+    )
+    AND NOT EXISTS (
+      SELECT 1 FROM matches m
+      WHERE m.unmatched_at IS NOT NULL
+        AND ((m.user_a = ${a} AND m.user_b = ${b}) OR (m.user_a = ${b} AND m.user_b = ${a}))
+    )`;
+}
+
+export function candidateSql(q: CandidateQuery): SQL {
+  const today = sql`${q.today}::date`;
+  return sql`
+    WITH me AS (
+      SELECT p.user_id, p.gender, p.interested_in, p.intention, p.languages,
+             date_part('year', age(${today}, p.birth_date))::int AS age,
+             pr.age_min, pr.age_max, pr.max_distance_km, pr.intentions AS wants,
+             l.geo, e.embedding, e.model
+      FROM profiles p
+      JOIN preferences pr ON pr.user_id = p.user_id
+      JOIN locations l ON l.user_id = p.user_id
+      LEFT JOIN profile_embeddings e ON e.user_id = p.user_id
+      WHERE p.user_id = ${q.viewerId}
+    )
+    SELECT
+      c.user_id AS id,
+      ST_Distance(me.geo, cl.geo) / 1000.0 AS km,
+      CASE WHEN me.embedding IS NOT NULL AND ce.embedding IS NOT NULL AND me.model = ce.model
+           THEN 1 - (me.embedding <=> ce.embedding) END AS vibe,
+      ce.model,
+      me.intention::text AS viewer_intention,
+      c.intention::text AS candidate_intention,
+      me.languages AS viewer_languages,
+      c.languages AS candidate_languages,
+      LEAST(me.max_distance_km, cpr.max_distance_km) AS max_km,
+      (SELECT EXTRACT(EPOCH FROM (now() - max(s.updated_at))) / 86400 FROM session s WHERE s.user_id = c.user_id) AS last_active_days,
+      EXTRACT(EPOCH FROM (now() - u.created_at)) / 86400 AS account_age_days,
+      (SELECT count(*) FILTER (WHERE i.kind = 'like') FROM interactions i
+        WHERE i.actor_id = c.user_id AND i.created_at > now() - interval '30 days')::int AS likes_30d,
+      (SELECT count(*) FROM interactions i
+        WHERE i.actor_id = c.user_id AND i.created_at > now() - interval '30 days')::int AS decisions_30d,
+      EXISTS (SELECT 1 FROM interactions i WHERE i.actor_id = c.user_id AND i.target_id = me.user_id AND i.kind = 'like') AS liked_viewer,
+      (SELECT count(*) FROM impressions im WHERE im.candidate_id = c.user_id AND im.created_at > now() - interval '24 hours')::int AS impressions_24h
+    FROM me
+    JOIN profiles c ON c.user_id <> me.user_id
+    JOIN "user" u ON u.id = c.user_id AND u.status = 'active'
+    JOIN preferences cpr ON cpr.user_id = c.user_id
+    JOIN locations cl ON cl.user_id = c.user_id
+    LEFT JOIN profile_embeddings ce ON ce.user_id = c.user_id
+    WHERE c.gender = ANY(me.interested_in)
+      AND me.gender = ANY(c.interested_in)
+      AND date_part('year', age(${today}, c.birth_date)) BETWEEN me.age_min AND me.age_max
+      AND me.age BETWEEN cpr.age_min AND cpr.age_max
+      AND ST_DWithin(me.geo, cl.geo, LEAST(me.max_distance_km, cpr.max_distance_km) * 1000.0)
+      AND (cardinality(me.wants) = 0 OR c.intention = ANY(me.wants))
+      AND (cardinality(cpr.intentions) = 0 OR me.intention = ANY(cpr.intentions))
+      AND EXISTS (SELECT 1 FROM photos ph WHERE ph.user_id = c.user_id AND ph.status = 'clean')
+      AND ${notSeparated(sql`me.user_id`, sql`c.user_id`)}
+      ${q.targetId ? sql`AND c.user_id = ${q.targetId}` : sql``}
+      ${q.excludeDecided ? sql`AND NOT EXISTS (SELECT 1 FROM interactions i WHERE i.actor_id = me.user_id AND i.target_id = c.user_id)` : sql``}
+      ${
+        q.excludeIds && q.excludeIds.length > 0
+          ? sql`AND c.user_id NOT IN (${sql.join(
+              q.excludeIds.map((id) => sql`${id}`),
+              sql`, `,
+            )})`
+          : sql``
+      }
+    LIMIT ${q.limit ?? 300}`;
+}
