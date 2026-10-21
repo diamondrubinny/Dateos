@@ -7,15 +7,15 @@ screenshots in all four, and a marketing description of the project in all four 
 
 ## Scope
 
-| # | Deliverable |
-| --- | --- |
-| 1 | `packages/shared`: one list of supported locales (`he`, `en`, `ar`, `ru`) and the right-to-left set (`he`, `ar`), used by every schema instead of hard-coded `['he', 'en']` |
-| 2 | App: full Arabic and Russian translations (every key, same placeholders, gender-inclusive wording like the Hebrew), Arabic RTL, language switch with four options |
-| 3 | Server texts in the four languages: icebreaker templates, push notification text, AI language checks (Arabic and Cyrillic script), AI prompts |
-| 4 | Harm detection: a small, conservative Arabic and Russian word list (insults, threats, scam phrases), documented as limited ⚖️ |
-| 5 | Admin: default language choice for the instance includes Arabic and Russian (dashboard itself stays Hebrew/English) |
-| 6 | Screenshots in all four languages (onboarding, discovery, chat, safety, privacy) and showcase strips |
-| 7 | `docs/marketing/` in English, Russian, Arabic and Hebrew: what Dateos is, who it is for, advantages, screenshots, how to start; linked from the README |
+| #   | Deliverable                                                                                                                                                                 |
+| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | `packages/shared`: one list of supported locales (`he`, `en`, `ar`, `ru`) and the right-to-left set (`he`, `ar`), used by every schema instead of hard-coded `['he', 'en']` |
+| 2   | App: full Arabic and Russian translations (every key, same placeholders, gender-inclusive wording like the Hebrew), Arabic RTL, language switch with four options           |
+| 3   | Server texts in the four languages: icebreaker templates, push notification text, AI language checks (Arabic and Cyrillic script), AI prompts                               |
+| 4   | Harm detection: a small, conservative Arabic and Russian word list (insults, threats, scam phrases), documented as limited ⚖️                                               |
+| 5   | Admin: default language choice for the instance includes Arabic and Russian (dashboard itself stays Hebrew/English)                                                         |
+| 6   | Screenshots in all four languages (onboarding, discovery, chat, safety, privacy) and showcase strips                                                                        |
+| 7   | `docs/marketing/` in English, Russian, Arabic and Hebrew: what Dateos is, who it is for, advantages, screenshots, how to start; linked from the README                      |
 
 ## Non-goals
 
