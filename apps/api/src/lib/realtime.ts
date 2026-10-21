@@ -11,12 +11,20 @@ export interface Realtime {
   publish(userId: string, event: RealtimeEvent): Promise<void>;
   /** Tracks a connection; returns an unregister function. */
   register(userId: string, socket: RealtimeSocket): () => void;
+  /**
+   * Marks a person as online (any open connection on any API instance) for `ttlSeconds`.
+   * The worker skips push notifications for people who are online.
+   */
+  touchPresence(userId: string, ttlSeconds?: number): Promise<void>;
+  clearPresence(userId: string): Promise<void>;
   /** Open connections on this instance (for tests and metrics). */
   connections(userId: string): number;
   close(): Promise<void>;
 }
 
 const PREFIX = realtimeChannel('');
+
+export const presenceKey = (userId: string) => `dateos:presence:${userId}`;
 
 export function createRealtime(
   redisUrl: string,
@@ -52,6 +60,13 @@ export function createRealtime(
         set.delete(socket);
         if (set.size === 0) sockets.delete(userId);
       };
+    },
+    async touchPresence(userId, ttlSeconds = 75) {
+      await pub.set(presenceKey(userId), '1', 'EX', ttlSeconds);
+    },
+    async clearPresence(userId) {
+      // Another API instance may still hold a connection; its next heartbeat sets the key again.
+      if (!sockets.has(userId)) await pub.del(presenceKey(userId));
     },
     connections: (userId) => sockets.get(userId)?.size ?? 0,
     async close() {

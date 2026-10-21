@@ -52,6 +52,8 @@ export class DiscoveryService {
     private readonly today: () => string,
     /** Real-time notifications (new match, closed chat). Optional for tests. */
     private readonly realtime?: Pick<Realtime, 'publish'>,
+    /** Push notification for the person who was liked back (content-free). */
+    private readonly onMatch?: (userId: string, matchId: string) => Promise<void>,
   ) {}
 
   private notify(userIds: string[], event: RealtimeEvent) {
@@ -319,8 +321,10 @@ export class DiscoveryService {
         .where(and(eq(matches.userA, a), eq(matches.userB, b)));
       return { matched: true, matchId: match!.id };
     });
-    if (result.matchId)
+    if (result.matchId) {
       this.notify([input.targetId], { type: 'match.new', matchId: result.matchId });
+      this.onMatch?.(input.targetId, result.matchId).catch(() => undefined);
+    }
     return result;
   }
 

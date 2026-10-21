@@ -76,6 +76,10 @@ Dateos is in active development. Here is what works today and what comes next. T
 | ---------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
 | <img src="docs/screenshots/en/admin-03-reports.png" width="220" alt="Moderation dashboard: report queue sorted by priority"> | <img src="docs/screenshots/en/admin-04-report-detail.png" width="220" alt="Report detail with copied chat messages, profile and history"> | <img src="docs/screenshots/en/admin-06-verification.png" width="220" alt="Selfie next to the profile photos with approve and reject"> | <img src="docs/screenshots/en/admin-02-mfa-setup.png" width="220" alt="Authenticator QR code for staff two-factor setup"> |
 
+**Voice messages**
+
+<img src="docs/screenshots/showcase-voice-en.png" alt="Recording a voice message with a timer, confirming before sending, playing it, and the setting to turn voice messages off" width="100%">
+
 **Onboarding**
 
 <img src="docs/screenshots/showcase-onboarding-en.png" alt="Welcome, profile form, photo upload, prompts and the approximate-location step" width="100%">

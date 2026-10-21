@@ -7,10 +7,13 @@ import type { Dependency } from './lib/dependencies.js';
 import { createMailer, type Mailer } from './lib/mailer.js';
 import {
   createMediaQueue,
+  createNotifyQueue,
   createProfileQueue,
   type MediaQueue,
+  type NotifyQueue,
   type ProfileQueue,
 } from './lib/queue.js';
+import { AudioService } from './modules/chat/audio.js';
 import { ollamaIcebreakers, templateIcebreakers } from '@dateos/ai';
 import { createRealtime, type Realtime } from './lib/realtime.js';
 import { ChatService } from './modules/chat/service.js';
@@ -30,6 +33,8 @@ export interface Services {
   storage: Storage;
   mediaQueue: MediaQueue;
   profileQueue: ProfileQueue;
+  notifyQueue: NotifyQueue;
+  audio: AudioService;
   discovery: DiscoveryService;
   realtime: Realtime;
   chat: ChatService;
@@ -49,6 +54,7 @@ export interface ServiceOverrides {
   mailer?: Mailer;
   mediaQueue?: MediaQueue;
   profileQueue?: ProfileQueue;
+  notifyQueue?: NotifyQueue;
   today?: () => string;
   /** Clock for TOTP checks (tests). */
   now?: () => number;
@@ -74,8 +80,11 @@ export function createServices(
   const mediaQueue = overrides.mediaQueue ?? createMediaQueue(env.REDIS_URL);
   const profileQueue = overrides.profileQueue ?? createProfileQueue(env.REDIS_URL);
   const today = overrides.today ?? todayUtc;
+  const notifyQueue = overrides.notifyQueue ?? createNotifyQueue(env.REDIS_URL);
   const realtime = createRealtime(env.REDIS_URL);
-  const discovery = new DiscoveryService(dbHandle.db, today, realtime);
+  const discovery = new DiscoveryService(dbHandle.db, today, realtime, (userId, matchId) =>
+    notifyQueue.push({ userId, kind: 'match', matchId }),
+  );
   const auth = createAuth({
     env,
     secret: secrets.authSecret,
@@ -94,6 +103,7 @@ export function createServices(
       : templateIcebreakers;
 
   const verification = new VerificationService(dbHandle.db, photos);
+  const audio = new AudioService(dbHandle.db, storage, mediaQueue);
   const hashEmail = createEmailHasher(secrets.authSecret);
 
   return {
@@ -102,13 +112,24 @@ export function createServices(
     storage,
     mediaQueue,
     profileQueue,
+    notifyQueue,
+    audio,
     discovery,
     mailer,
     me: new MeService(dbHandle.db, mediaQueue, legal, today, profileQueue),
     photos,
     realtime,
-    chat: new ChatService(dbHandle.db, realtime, discovery, photos, icebreakers),
-    reports: new ReportService(dbHandle.db, discovery, mailer, env.INSTANCE_NAME, onMailError),
+    chat: new ChatService(dbHandle.db, realtime, discovery, photos, icebreakers, audio, {
+      messageReceived: (userId, matchId) => notifyQueue.push({ userId, kind: 'message', matchId }),
+    }),
+    reports: new ReportService(
+      dbHandle.db,
+      discovery,
+      mailer,
+      env.INSTANCE_NAME,
+      onMailError,
+      storage,
+    ),
     verification,
     staffMfa: new StaffMfaService(
       dbHandle.db,
@@ -135,6 +156,7 @@ export function createServices(
       { name: 'queue', isHealthy: async () => true, close: () => mediaQueue.close() },
       { name: 'realtime', isHealthy: async () => true, close: () => realtime.close() },
       { name: 'profile-queue', isHealthy: async () => true, close: () => profileQueue.close() },
+      { name: 'notify-queue', isHealthy: async () => true, close: () => notifyQueue.close() },
       { name: 'mailer', isHealthy: async () => true, close: async () => mailer.close() },
     ],
   };

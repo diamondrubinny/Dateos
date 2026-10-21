@@ -3,7 +3,14 @@ import { useId, useRef, useState, type FormEvent } from 'react';
 import { api } from '../api';
 import { useAsync } from '../hooks';
 import { format, useLocale } from '../i18n';
-import { Badge, ErrorBox, formatDate, Loading, ProtectedImage } from '../components/ui';
+import {
+  Badge,
+  ErrorBox,
+  formatDate,
+  Loading,
+  ProtectedAudio,
+  ProtectedImage,
+} from '../components/ui';
 
 export function ReportDetail({ id, staff }: { id: string; staff: StaffMe }) {
   const { t, locale } = useLocale();
@@ -108,8 +115,11 @@ export function ReportDetail({ id, staff }: { id: string; staff: StaffMe }) {
             <p className="muted">{t.detail.noEvidence}</p>
           ) : (
             <ol className="evidence">
-              {report.evidence.map((m, i) => (
-                <li key={i} className={m.from === 'reported' ? 'from-reported' : 'from-reporter'}>
+              {report.evidence.map((m) => (
+                <li
+                  key={m.id}
+                  className={m.from === 'reported' ? 'from-reported' : 'from-reporter'}
+                >
                   <p className="evidence-meta">
                     <strong>
                       {m.from === 'reported' ? t.detail.fromReported : t.detail.fromReporter}
@@ -124,9 +134,18 @@ export function ReportDetail({ id, staff }: { id: string; staff: StaffMe }) {
                       </>
                     ) : null}
                   </p>
-                  <p className="user-text" dir="auto">
-                    {m.body}
-                  </p>
+                  {m.kind === 'voice' ? (
+                    <ProtectedAudio
+                      path={`/v1/admin/reports/${id}/evidence/${m.id}/audio`}
+                      label={format(t.detail.voice, {
+                        seconds: Math.round((m.durationMs ?? 0) / 1000),
+                      })}
+                    />
+                  ) : (
+                    <p className="user-text" dir="auto">
+                      {m.body}
+                    </p>
+                  )}
                 </li>
               ))}
             </ol>

@@ -19,4 +19,12 @@ export const prefs = {
       // Preference is lost; the app falls back to defaults.
     }
   },
+  async remove(key: string): Promise<void> {
+    try {
+      if (Platform.OS === 'web') globalThis.localStorage?.removeItem(key);
+      else await SecureStore.deleteItemAsync(key);
+    } catch {
+      // Nothing stored.
+    }
+  },
 };

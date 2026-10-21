@@ -62,7 +62,14 @@
         {
           "locationWhenInUsePermission": "Dateos uses your approximate location (about 1 km) to show people nearby."
         }
-      ]
+      ],
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Dateos uses the microphone only while you record a voice message."
+        }
+      ],
+      ["expo-notifications", {}]
     ],
     "experiments": {
       "typedRoutes": true

@@ -129,6 +129,7 @@ export const en = {
     age: '{{age}} years old',
   },
   settings: {
+    notifications: 'Notifications and chat',
     title: 'Settings',
     preferences: 'Discovery preferences',
     removeLocation: 'Remove my location',
@@ -365,6 +366,33 @@ export const en = {
     warningBody:
       'A report about you was reviewed and found to break our guidelines: {{category}}. Repeated violations lead to suspension.',
     warningAck: 'I understand',
+  },
+  voice: {
+    record: 'Record a voice message',
+    intro: 'Voice messages can be up to {{max}} seconds.',
+    start: 'Start recording',
+    stop: 'Stop recording',
+    recording: 'Recording… {{time}} of {{max}}',
+    ready: 'Recorded {{time}}. Send it?',
+    send: 'Send voice message',
+    again: 'Record again',
+    play: 'Play voice message, {{duration}}',
+    pause: 'Pause',
+    processing: 'Checking voice message…',
+    rejected: 'This voice message could not be sent.',
+    permission: 'Allow microphone access to record a voice message.',
+    notAccepted: '{{name}} does not accept voice messages. Please write instead.',
+    acceptLabel: 'Accept voice messages',
+    acceptHint: 'Turn this off if you prefer text (for example if you cannot hear them).',
+  },
+  push: {
+    label: 'Notifications on this device',
+    hint: 'New matches and messages. Notifications never show names or message text.',
+    denied: 'Notifications are blocked. You can allow them in your phone settings.',
+    unsupported: 'Notifications are available in the mobile app.',
+    'not-configured':
+      'This app build has no notification service configured. Ask the community operator.',
+    error: 'Notifications could not be turned on. Please try again.',
   },
   notFound: { title: 'Page not found', home: 'Go to the home screen' },
 };

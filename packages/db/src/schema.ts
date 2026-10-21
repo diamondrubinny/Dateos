@@ -165,6 +165,8 @@ export const preferences = pgTable(
       .array()
       .notNull()
       .default(sql`'{}'::intention[]`),
+    /** Receiver control: people can turn voice messages off (e.g. if they cannot hear them). */
+    acceptVoice: boolean('accept_voice').notNull().default(true),
     ...timestamps,
   },
   (t) => [check('preferences_age_range', sql`${t.ageMin} >= 18 AND ${t.ageMin} <= ${t.ageMax}`)],
@@ -365,7 +367,26 @@ export const impressions = pgTable(
 // Chat (phase 3)
 // ---------------------------------------------------------------------------
 
-export const messageKind = pgEnum('message_kind', ['text', 'image']);
+export const messageKind = pgEnum('message_kind', ['text', 'image', 'voice']);
+
+/** Voice messages. Same lifecycle as photos: quarantine → scan → re-encode → clean. */
+export const audioClips = pgTable(
+  'audio_clips',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: ownerId(),
+    status: photoStatus('status').notNull().default('quarantine'),
+    quarantineKey: text('quarantine_key'),
+    /** AAC/M4A: iOS, Android, Safari, Chrome, Edge. */
+    mediaKey: text('media_key'),
+    /** Opus/WebM: browsers without AAC (e.g. some Linux Chromium builds). */
+    opusKey: text('opus_key'),
+    durationMs: integer('duration_ms'),
+    rejectReason: varchar('reject_reason', { length: 32 }),
+    ...timestamps,
+  },
+  (t) => [index('audio_clips_user_idx').on(t.userId)],
+);
 
 export const messages = pgTable(
   'messages',
@@ -382,6 +403,7 @@ export const messages = pgTable(
     kind: messageKind('kind').notNull(),
     body: varchar('body', { length: 2000 }),
     photoId: uuid('photo_id').references(() => photos.id, { onDelete: 'set null' }),
+    audioId: uuid('audio_id').references(() => audioClips.id, { onDelete: 'set null' }),
     /** Safety labels, e.g. harm:insult, scam:money. Receivers see harmful messages hidden. */
     flags: text('flags')
       .array()
@@ -460,7 +482,11 @@ export const reportEvidence = pgTable(
       .notNull()
       .references(() => reports.id, { onDelete: 'cascade' }),
     fromReported: boolean('from_reported').notNull(),
-    body: varchar('body', { length: 2000 }).notNull(),
+    kind: messageKind('kind').notNull().default('text'),
+    body: varchar('body', { length: 2000 }),
+    /** Copy of a voice message in the media bucket (evidence/...), kept with the report. */
+    mediaKey: text('media_key'),
+    durationMs: integer('duration_ms'),
     flags: text('flags')
       .array()
       .notNull()
@@ -565,4 +591,25 @@ export const instanceSettings = pgTable(
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [check('instance_settings_single_row', sql`${t.id} = 1`)],
+);
+
+// ---------------------------------------------------------------------------
+// Push notifications (phase 3b)
+// ---------------------------------------------------------------------------
+
+export const pushPlatform = pgEnum('push_platform', ['ios', 'android']);
+
+/** Opt-in device tokens. A token belongs to whoever registered it last. */
+export const pushTokens = pgTable(
+  'push_tokens',
+  {
+    token: varchar('token', { length: 200 }).primaryKey(),
+    userId: ownerId(),
+    platform: pushPlatform('platform').notNull(),
+    /** Language of the (content-free) notification text. */
+    locale: varchar('locale', { length: 5 }).notNull().default('en'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    lastUsedAt: timestamp('last_used_at', { withTimezone: true }),
+  },
+  (t) => [index('push_tokens_user_idx').on(t.userId)],
 );

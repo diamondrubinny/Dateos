@@ -1,12 +1,18 @@
 import { schema, type Database } from '@dateos/db';
-import type { DeleteObjectsJob, ProcessPhotoJob, RealtimeEvent } from '@dateos/shared';
-import { mediaKey, type Storage } from '@dateos/storage';
+import type {
+  DeleteObjectsJob,
+  ProcessAudioJob,
+  ProcessPhotoJob,
+  RealtimeEvent,
+} from '@dateos/shared';
+import { audioMediaKey, mediaKey, type Storage } from '@dateos/storage';
 import { and, eq, sql } from 'drizzle-orm';
 import type { Logger } from 'pino';
 import type { Scanner } from './clamav.js';
+import { InvalidAudioError, transcodeVoice } from './audio.js';
 import { InvalidImageError, processImage } from './image.js';
 
-const { photos, auditLogs } = schema;
+const { photos, audioClips, auditLogs } = schema;
 
 export interface JobContext {
   db: Database;
@@ -14,12 +20,19 @@ export interface JobContext {
   scanner: Scanner;
   scanningEnabled: boolean;
   log: Logger;
+  /** ffmpeg/ffprobe binaries for voice messages (default: from PATH). */
+  ffmpegPath?: string;
+  ffprobePath?: string;
   /** Publishes a realtime event to a user (chat images: tell both people the scan finished). */
   publish?: (userId: string, event: RealtimeEvent) => Promise<void>;
 }
 
-/** For chat images, tell both participants that the message changed (now visible or rejected). */
+/** For chat media, tell both participants that the message changed (now visible or rejected). */
 async function notifyChatImage(ctx: JobContext, photoId: string): Promise<void> {
+  return notifyChatMedia(ctx, sql`m.photo_id = ${photoId}`);
+}
+
+async function notifyChatMedia(ctx: JobContext, where: ReturnType<typeof sql>): Promise<void> {
   if (!ctx.publish) return;
   const rows = await ctx.db.execute<{
     message_id: string;
@@ -29,7 +42,7 @@ async function notifyChatImage(ctx: JobContext, photoId: string): Promise<void> 
   }>(sql`
     SELECT m.id AS message_id, m.match_id, ma.user_a, ma.user_b
     FROM messages m JOIN matches ma ON ma.id = m.match_id
-    WHERE m.photo_id = ${photoId}`);
+    WHERE ${where}`);
   for (const r of rows.rows) {
     for (const userId of [r.user_a, r.user_b]) {
       await ctx.publish(userId, {
@@ -119,4 +132,75 @@ export async function processPhoto(ctx: JobContext, { photoId }: ProcessPhotoJob
 export async function deleteObjects(ctx: JobContext, job: DeleteObjectsJob): Promise<void> {
   await ctx.storage.delete(ctx.storage.buckets.quarantine, job.quarantineKeys);
   await ctx.storage.delete(ctx.storage.buckets.media, job.mediaKeys);
+}
+
+/** Voice messages: quarantine → malware scan → re-encode to clean AAC/M4A → visible. */
+export async function processAudio(ctx: JobContext, { audioId }: ProcessAudioJob): Promise<string> {
+  const [row] = await ctx.db.select().from(audioClips).where(eq(audioClips.id, audioId));
+  if (!row || !row.quarantineKey || (row.status !== 'quarantine' && row.status !== 'processing')) {
+    return 'skipped';
+  }
+  await ctx.db.update(audioClips).set({ status: 'processing' }).where(eq(audioClips.id, audioId));
+  const original = await ctx.storage.getBuffer(ctx.storage.buckets.quarantine, row.quarantineKey);
+  const notify = () => notifyChatMedia(ctx, sql`m.audio_id = ${audioId}`);
+  const rejectAudio = async (reason: string) => {
+    await ctx.db
+      .update(audioClips)
+      .set({ status: 'rejected', rejectReason: reason, quarantineKey: null })
+      .where(eq(audioClips.id, audioId));
+    await ctx.db.insert(auditLogs).values({
+      actorId: null,
+      action: 'audio.rejected',
+      targetType: 'audio',
+      targetId: audioId,
+      meta: { reason, owner: row.userId },
+    });
+    await ctx.storage.delete(ctx.storage.buckets.quarantine, [row.quarantineKey!]);
+    await notify();
+    return 'rejected';
+  };
+
+  if (ctx.scanningEnabled) {
+    const result = await ctx.scanner.scan(original);
+    if (!result.clean) {
+      ctx.log.warn(
+        { audioId, signature: result.signature },
+        'malware detected; voice message rejected',
+      );
+      return rejectAudio('malware');
+    }
+  } else {
+    ctx.log.warn({ audioId }, 'MALWARE_SCAN=disabled: voice message was not scanned');
+  }
+
+  let processed;
+  try {
+    processed = await transcodeVoice(original, {
+      ffmpeg: ctx.ffmpegPath,
+      ffprobe: ctx.ffprobePath,
+    });
+  } catch (error) {
+    if (!(error instanceof InvalidAudioError)) throw error;
+    return rejectAudio(error.message);
+  }
+
+  const key = audioMediaKey(row.userId, audioId, 'm4a');
+  const opusKey = audioMediaKey(row.userId, audioId, 'webm');
+  await ctx.storage.put(ctx.storage.buckets.media, key, processed.data, 'audio/mp4');
+  await ctx.storage.put(ctx.storage.buckets.media, opusKey, processed.opus, 'audio/webm');
+  const updated = await ctx.db
+    .update(audioClips)
+    .set({
+      status: 'clean',
+      mediaKey: key,
+      opusKey,
+      quarantineKey: null,
+      durationMs: processed.durationMs,
+    })
+    .where(and(eq(audioClips.id, audioId), eq(audioClips.userId, row.userId)))
+    .returning({ id: audioClips.id });
+  if (updated.length === 0) await ctx.storage.delete(ctx.storage.buckets.media, [key, opusKey]);
+  await ctx.storage.delete(ctx.storage.buckets.quarantine, [row.quarantineKey]);
+  if (updated.length > 0) await notify();
+  return updated.length === 0 ? 'orphaned' : 'clean';
 }

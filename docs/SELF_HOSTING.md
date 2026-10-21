@@ -49,12 +49,12 @@ the database, Redis, storage and ClamAV listen only on `127.0.0.1`.
 docker compose -f infra/docker-compose.yml --env-file .env --profile app --profile full up -d --build
 ```
 
-| Profile  | Starts                                                                                                                              |
-| -------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| (always) | PostgreSQL + PostGIS + pgvector, Redis, SeaweedFS (S3)                                                                              |
-| `full`   | ClamAV malware scanning. Required with the default `MALWARE_SCAN=clamav`; switching it off (`MALWARE_SCAN=off`) is for testing only |
-| `app`    | API, worker, and the web server (Caddy): the member app, the dashboard and the API over HTTPS                                       |
-| `ai`     | Optional local AI (Ollama) for semantic matching and icebreakers                                                                    |
+| Profile  | Starts                                                                                                                                   |
+| -------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| (always) | PostgreSQL + PostGIS + pgvector, Redis, SeaweedFS (S3)                                                                                   |
+| `full`   | ClamAV malware scanning. Required with the default `MALWARE_SCAN=clamav`; switching it off (`MALWARE_SCAN=disabled`) is for testing only |
+| `app`    | API, worker, and the web server (Caddy): the member app, the dashboard and the API over HTTPS                                            |
+| `ai`     | Optional local AI (Ollama) for semantic matching and icebreakers                                                                         |
 
 Caddy requests certificates from Let's Encrypt automatically once DNS points at the server. The first
 start takes a few minutes (image builds, ClamAV signature download).
@@ -107,6 +107,14 @@ docker compose -f infra/docker-compose.yml --env-file .env --profile app --profi
 
 Database migrations run automatically when the API starts (`MIGRATE_ON_START=true`). If you run
 several API replicas, set it to `false` and run `pnpm --filter @dateos/db db:migrate` once instead.
+
+## Push notifications (optional)
+
+Notifications are off by default. To enable them: build the app with your own Expo (EAS) project
+(`extra.eas.projectId` in `apps/mobile/app.json`), set `PUSH_PROVIDER=expo` (and optionally
+`EXPO_ACCESS_TOKEN`) in `.env`, and restart the worker. Members turn them on per device in Settings.
+Notifications never contain names or message text, only "You have a new message" or "It's a match",
+but they still pass through Expo, Apple and Google: mention this in your privacy policy ⚖️.
 
 ## Mobile apps
 

@@ -1,6 +1,6 @@
 import { Link, router } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Platform, StyleSheet, View } from 'react-native';
 import { AppText } from '../components/AppText';
@@ -11,6 +11,9 @@ import { LanguageSwitch } from '../components/LanguageSwitch';
 import { RequireSession } from '../components/RequireSession';
 import { Screen } from '../components/Screen';
 import { authClient } from '../lib/auth-client';
+import { useChatSettings, useSetAcceptVoice } from '../lib/chat-queries';
+import { useLocale } from '../lib/locale';
+import { disablePush, enablePush, pushEnabledOnThisDevice } from '../lib/push';
 import {
   useClearLocation,
   useDeleteAccount,
@@ -29,6 +32,25 @@ function SettingsContent() {
   const deleteAccount = useDeleteAccount();
   const clearLocation = useClearLocation();
   const [locationRemoved, setLocationRemoved] = useState(false);
+  const chatSettings = useChatSettings();
+  const setAcceptVoice = useSetAcceptVoice();
+  const { locale } = useLocale();
+  const [push, setPush] = useState(false);
+  const [pushNote, setPushNote] = useState<string>();
+  useEffect(() => {
+    void pushEnabledOnThisDevice().then(setPush);
+  }, []);
+
+  const togglePush = async (on: boolean) => {
+    setPushNote(undefined);
+    if (!on) {
+      await disablePush();
+      return setPush(false);
+    }
+    const result = await enablePush(locale === 'he' ? 'he' : 'en').catch(() => 'error' as const);
+    if (result === 'enabled') return setPush(true);
+    setPushNote(t(`push.${result}`));
+  };
   const [confirming, setConfirming] = useState(false);
   const [error, setError] = useState<string>();
 
@@ -38,6 +60,7 @@ function SettingsContent() {
     });
 
   const signOut = async () => {
+    await disablePush(); // this device should stop receiving this account's notifications
     await authClient.signOut();
     router.replace('/welcome');
   };
@@ -70,6 +93,29 @@ function SettingsContent() {
         variant="secondary"
         label={me.data?.verified ? `✓ ${t('verify.approved')}` : t('verify.entry')}
         onPress={() => router.push('/verify')}
+      />
+
+      <AppText variant="heading">{t('settings.notifications')}</AppText>
+      {Platform.OS === 'web' ? (
+        <AppText variant="body" tone="muted">
+          {t('push.unsupported')}
+        </AppText>
+      ) : (
+        <Checkbox
+          label={t('push.label')}
+          hint={t('push.hint')}
+          checked={push}
+          onChange={(v) => void togglePush(v)}
+        />
+      )}
+      {pushNote ? <Banner tone="info" message={pushNote} /> : null}
+      <Checkbox
+        label={t('voice.acceptLabel')}
+        hint={t('voice.acceptHint')}
+        checked={chatSettings.data?.acceptVoice ?? true}
+        onChange={(v) =>
+          setAcceptVoice.mutate(v, { onError: () => setError(t('common.genericError')) })
+        }
       />
 
       <AppText variant="heading">{t('settings.privacy')}</AppText>

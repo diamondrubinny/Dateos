@@ -24,6 +24,8 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: pnpm
+      # Voice messages are re-encoded with ffmpeg (worker unit tests and the integration suite).
+      - run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg
       - run: pnpm install --frozen-lockfile
       - run: pnpm format:check
       - run: pnpm lint
@@ -54,6 +56,8 @@ jobs:
             sleep 2
           done
           exit 1
+      # Voice messages are re-encoded with ffmpeg (worker unit tests and the integration suite).
+      - run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
       - run: pnpm --filter @dateos/api test:integration

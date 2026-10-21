@@ -1,6 +1,6 @@
 import { existsSync } from 'node:fs';
 import { runMigrations } from '@dateos/db';
-import type { DeleteObjectsJob, ProcessPhotoJob } from '@dateos/shared';
+import type { DeleteObjectsJob, ProcessAudioJob, ProcessPhotoJob, PushJob } from '@dateos/shared';
 import type { FastifyInstance, LightMyRequestResponse } from 'fastify';
 import { Redis } from 'ioredis';
 import pg from 'pg';
@@ -18,7 +18,13 @@ export interface TestContext {
   services: Services;
   redis: Redis;
   mail: MailMessage[];
-  jobs: { process: ProcessPhotoJob[]; delete: DeleteObjectsJob[]; embed: string[] };
+  jobs: {
+    process: ProcessPhotoJob[];
+    audio: ProcessAudioJob[];
+    delete: DeleteObjectsJob[];
+    embed: string[];
+    push: PushJob[];
+  };
   today: { value: string };
   /** Clock used for TOTP checks; advance it by 30 s to get a fresh code. */
   clock: { value: number };
@@ -67,13 +73,14 @@ export async function setupIntegration(): Promise<TestContext> {
 
   const mail: MailMessage[] = [];
   const mailer: Mailer = { send: async (m) => void mail.push(m), close: () => undefined };
-  const jobs: TestContext['jobs'] = { process: [], delete: [], embed: [] };
+  const jobs: TestContext['jobs'] = { process: [], audio: [], delete: [], embed: [], push: [] };
   const profileQueue: ProfileQueue = {
     embedProfile: async (userId) => void jobs.embed.push(userId),
     close: async () => undefined,
   };
   const mediaQueue: MediaQueue = {
     processPhoto: async (job) => void jobs.process.push(job),
+    processAudio: async (job) => void jobs.audio.push(job),
     deleteObjects: async (job) => void jobs.delete.push(job),
     close: async () => undefined,
   };
@@ -90,6 +97,7 @@ export async function setupIntegration(): Promise<TestContext> {
       mailer,
       mediaQueue,
       profileQueue,
+      notifyQueue: { push: async (job) => void jobs.push.push(job), close: async () => undefined },
       today: () => today.value,
       now: () => clock.value,
     },
@@ -105,7 +113,9 @@ export async function resetState(ctx: TestContext): Promise<void> {
   );
   const { storage } = ctx.services;
   for (const bucket of Object.values(storage.buckets)) {
-    await storage.delete(bucket, await storage.listKeys(bucket, 'photos/'));
+    for (const prefix of ['photos/', 'audio/', 'evidence/']) {
+      await storage.delete(bucket, await storage.listKeys(bucket, prefix));
+    }
   }
   const keys = await ctx.redis.keys('dateos:*');
   if (keys.length > 0) await ctx.redis.del(...keys);
@@ -114,6 +124,8 @@ export async function resetState(ctx: TestContext): Promise<void> {
   ctx.jobs.process.length = 0;
   ctx.jobs.delete.length = 0;
   ctx.jobs.embed.length = 0;
+  ctx.jobs.audio.length = 0;
+  ctx.jobs.push.length = 0;
   ctx.today.value = '2026-10-20';
   ctx.clock.value = Date.parse('2026-10-20T10:00:00Z');
 }

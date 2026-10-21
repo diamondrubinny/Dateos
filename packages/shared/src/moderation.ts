@@ -139,8 +139,12 @@ export const reportSummarySchema = z.object({
 export type ReportSummary = z.infer<typeof reportSummarySchema>;
 
 export const evidenceMessageSchema = z.object({
+  id: z.uuid(),
   from: z.enum(['reporter', 'reported']),
-  body: z.string(),
+  kind: z.enum(['text', 'voice']),
+  /** Text, or null for a voice message (listen through the audited audio route). */
+  body: z.string().nullable(),
+  durationMs: z.number().int().nullable(),
   flags: z.array(z.string()),
   sentAt: z.string(),
 });

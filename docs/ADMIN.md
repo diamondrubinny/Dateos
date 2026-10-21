@@ -65,7 +65,7 @@ admin.example.org {
   try_files {path} /index.html
   file_server
   header {
-    Content-Security-Policy "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' blob: data:; connect-src 'self' https://api.example.org; font-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'"
+    Content-Security-Policy "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' blob: data:; media-src blob:; connect-src 'self' https://api.example.org; font-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'"
     X-Frame-Options "DENY"
     X-Content-Type-Options "nosniff"
     Referrer-Policy "no-referrer"
@@ -82,7 +82,7 @@ Consider restricting the dashboard to a VPN or an IP allowlist as well.
 ## 4. Reports
 
 Members report from a profile or a chat. They choose a category, can add a description and attach
-the last 20 messages of the chat. **The server copies those messages itself**, so evidence cannot
+the last 20 messages of the chat, including voice messages (staff can play them; every play is audited). **The server copies those messages itself**, so evidence cannot
 be faked by the client and survives the 30-day purge of closed chats. Reporting also blocks by default.
 
 | Priority  | Categories                                      |

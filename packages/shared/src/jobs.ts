@@ -3,8 +3,13 @@ export const MEDIA_QUEUE = 'media';
 
 export const MediaJob = {
   ProcessPhoto: 'process-photo',
+  ProcessAudio: 'process-audio',
   DeleteObjects: 'delete-objects',
 } as const;
+
+export interface ProcessAudioJob {
+  audioId: string;
+}
 
 export interface ProcessPhotoJob {
   photoId: string;
@@ -23,4 +28,17 @@ export const ProfileJob = {
 
 export interface EmbedProfileJob {
   userId: string;
+}
+
+export const NOTIFY_QUEUE = 'notify';
+
+export const NotifyJob = {
+  Push: 'push',
+} as const;
+
+/** Pushes carry no names or message text: they pass through Expo, Apple and Google. */
+export interface PushJob {
+  userId: string;
+  kind: 'message' | 'match';
+  matchId: string;
 }

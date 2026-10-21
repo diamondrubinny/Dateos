@@ -4,6 +4,7 @@ import {
   conversationSchema,
   ErrorCode,
   icebreakersSchema,
+  MAX_AUDIO_BYTES,
   MAX_PHOTO_BYTES,
   messageCheckResultSchema,
   messageCheckSchema,
@@ -104,6 +105,45 @@ export const chatRoutes: FastifyPluginAsyncZod<ChatRouteOptions> = async (
   );
 
   app.post(
+    '/v1/matches/:id/voice',
+    {
+      schema: { params: matchParams, response: { 200: messageViewSchema } },
+      config: perUserLimit(30, 60 * 60_000),
+    },
+    async (request) => {
+      const file = await request.file();
+      if (!file) throw new HttpError(400, ErrorCode.BadRequest, 'Attach one audio file.');
+      const buffer = await file.toBuffer();
+      if (buffer.length > MAX_AUDIO_BYTES) {
+        throw new HttpError(
+          413,
+          ErrorCode.PayloadTooLarge,
+          'Voice messages can be up to 60 seconds.',
+        );
+      }
+      return chat.sendVoice(request.params.id, currentUser(request).id, buffer);
+    },
+  );
+
+  app.get(
+    '/v1/audio/:id',
+    {
+      schema: {
+        params: matchParams,
+        querystring: z.object({ format: z.enum(['aac', 'opus']).default('aac') }),
+      },
+    },
+    async (request, reply) => {
+      const { format } = request.query;
+      const object = await chat.openAudio(currentUser(request).id, request.params.id, format);
+      return reply
+        .type(format === 'opus' ? 'audio/webm' : 'audio/mp4')
+        .header('cache-control', 'private, max-age=300')
+        .send(object.body);
+    },
+  );
+
+  app.post(
     '/v1/matches/:id/read',
     { schema: { params: matchParams, response: { 200: ok } } },
     async (request) => {
@@ -154,6 +194,8 @@ export const chatRoutes: FastifyPluginAsyncZod<ChatRouteOptions> = async (
     (socket, request) => {
       const userId = currentUser(request).id;
       const unregister = realtime.register(userId, socket);
+      const online = () => realtime.touchPresence(userId).catch(() => undefined);
+      void online();
       let typingBudget = TYPING_BURST;
       let alive = true;
       const refill = setInterval(() => (typingBudget = TYPING_BURST), 10_000);
@@ -161,6 +203,7 @@ export const chatRoutes: FastifyPluginAsyncZod<ChatRouteOptions> = async (
         if (!alive) return socket.terminate();
         alive = false;
         socket.ping();
+        void online();
       }, HEARTBEAT_MS);
       socket.on('pong', () => (alive = true));
       socket.on('message', (raw: Buffer) => {
@@ -179,6 +222,7 @@ export const chatRoutes: FastifyPluginAsyncZod<ChatRouteOptions> = async (
         clearInterval(refill);
         clearInterval(heartbeat);
         unregister();
+        realtime.clearPresence(userId).catch(() => undefined);
       });
     },
   );

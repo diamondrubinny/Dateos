@@ -304,6 +304,20 @@ export class MeService {
       .select({ quarantineKey: photos.quarantineKey, mediaKey: photos.mediaKey })
       .from(photos)
       .where(eq(photos.userId, userId));
+    const clips = await this.db
+      .select({
+        quarantineKey: schema.audioClips.quarantineKey,
+        mediaKey: schema.audioClips.mediaKey,
+        opusKey: schema.audioClips.opusKey,
+      })
+      .from(schema.audioClips)
+      .where(eq(schema.audioClips.userId, userId));
+    keys.push(
+      ...clips.flatMap((c) => [
+        { quarantineKey: c.quarantineKey, mediaKey: c.mediaKey },
+        { quarantineKey: null, mediaKey: c.opusKey },
+      ]),
+    );
     await this.db.transaction(async (tx) => {
       await tx.delete(user).where(eq(user.id, userId));
       await audit(tx, {

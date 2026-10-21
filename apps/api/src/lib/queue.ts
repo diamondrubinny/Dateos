@@ -1,16 +1,21 @@
 import {
   MEDIA_QUEUE,
   MediaJob,
+  NOTIFY_QUEUE,
+  NotifyJob,
   PROFILE_QUEUE,
   ProfileJob,
   type DeleteObjectsJob,
+  type ProcessAudioJob,
   type ProcessPhotoJob,
+  type PushJob,
 } from '@dateos/shared';
 import { Queue } from 'bullmq';
 import { Redis } from 'ioredis';
 
 export interface MediaQueue {
   processPhoto(job: ProcessPhotoJob): Promise<void>;
+  processAudio(job: ProcessAudioJob): Promise<void>;
   deleteObjects(job: DeleteObjectsJob): Promise<void>;
   close(): Promise<void>;
 }
@@ -59,9 +64,40 @@ export function createMediaQueue(redisUrl: string): MediaQueue {
       // jobId = photoId makes retries of the same upload idempotent.
       await queue.add(MediaJob.ProcessPhoto, job, { jobId: `photo-${job.photoId}` });
     },
+    async processAudio(job) {
+      await queue.add(MediaJob.ProcessAudio, job, { jobId: `audio-${job.audioId}` });
+    },
     async deleteObjects(job) {
       if (job.quarantineKeys.length === 0 && job.mediaKeys.length === 0) return;
       await queue.add(MediaJob.DeleteObjects, job);
+    },
+    async close() {
+      await queue.close();
+      connection.disconnect();
+    },
+  };
+}
+
+export interface NotifyQueue {
+  push(job: PushJob): Promise<void>;
+  close(): Promise<void>;
+}
+
+export function createNotifyQueue(redisUrl: string, name: string = NOTIFY_QUEUE): NotifyQueue {
+  const connection = new Redis(redisUrl, { maxRetriesPerRequest: null });
+  connection.on('error', () => undefined);
+  const queue = new Queue(name, {
+    connection,
+    defaultJobOptions: {
+      attempts: 3,
+      backoff: { type: 'exponential', delay: 5_000 },
+      removeOnComplete: true,
+      removeOnFail: 1_000,
+    },
+  });
+  return {
+    async push(job) {
+      await queue.add(NotifyJob.Push, job);
     },
     async close() {
       await queue.close();

@@ -17,10 +17,36 @@ import { HttpError } from '../../plugins/error-handler.js';
 import type { DiscoveryService } from '../discovery/service.js';
 import { photoUrl } from '../me/service.js';
 import type { PhotoService } from '../photos/service.js';
+import type { AudioService } from './audio.js';
 
-const { messages, matches, matchReads, photos, profiles, prompts } = schema;
+const { messages, matches, matchReads, photos, profiles, prompts, audioClips, preferences } =
+  schema;
 
-type MessageRow = typeof messages.$inferSelect & { photoStatus: string | null };
+type MessageRow = typeof messages.$inferSelect & {
+  photoStatus: string | null;
+  audioStatus: string | null;
+  audioDurationMs: number | null;
+};
+
+/** A receiver sees media only after it passed scanning; senders see their own uploads. */
+const visibleTo = (viewerId: string) =>
+  sql`(${messages.kind} = 'text' OR ${messages.senderId} = ${viewerId} OR ${photos.status} = 'clean' OR ${audioClips.status} = 'clean')`;
+
+const mediaStatus = (status: string | null) =>
+  status === 'clean'
+    ? ('clean' as const)
+    : status === 'rejected'
+      ? ('rejected' as const)
+      : ('pending' as const);
+
+export function audioUrl(audioId: string): string {
+  return `/v1/audio/${audioId}`;
+}
+
+export interface ChatNotifier {
+  /** Push notification to a person who received a message (no content is sent). */
+  messageReceived(userId: string, matchId: string): Promise<void>;
+}
 
 const notFound = () => new HttpError(404, ErrorCode.NotFound, 'Resource not found.');
 
@@ -37,8 +63,8 @@ export function toView(row: MessageRow, viewerId: string): MessageView {
   const mine = row.senderId === viewerId;
   const harm = harmCategories.filter((c) => row.flags.includes(`harm:${c}`));
   const scam = scamSignals.filter((s) => row.flags.includes(`scam:${s}`));
-  const status =
-    row.photoStatus === 'clean' ? 'clean' : row.photoStatus === 'rejected' ? 'rejected' : 'pending';
+  const status = mediaStatus(row.photoStatus);
+  const voiceStatus = mediaStatus(row.audioStatus);
   return {
     id: row.id,
     matchId: row.matchId,
@@ -48,6 +74,14 @@ export function toView(row: MessageRow, viewerId: string): MessageView {
     image:
       row.kind === 'image'
         ? { url: status === 'clean' && row.photoId ? photoUrl(row.photoId) : null, status }
+        : null,
+    voice:
+      row.kind === 'voice'
+        ? {
+            url: voiceStatus === 'clean' && row.audioId ? audioUrl(row.audioId) : null,
+            status: voiceStatus,
+            durationMs: row.audioDurationMs,
+          }
         : null,
     hidden: !mine && harm.length > 0,
     harm,
@@ -63,6 +97,8 @@ export class ChatService {
     private readonly discovery: DiscoveryService,
     private readonly photos: PhotoService,
     private readonly icebreakers: IcebreakerProvider,
+    private readonly audio?: AudioService,
+    private readonly notifier?: ChatNotifier,
   ) {}
 
   /** The active match and the other participant, or 404 for anyone else. */
@@ -93,12 +129,16 @@ export class ChatService {
         kind: messages.kind,
         body: messages.body,
         photoId: messages.photoId,
+        audioId: messages.audioId,
         flags: messages.flags,
         createdAt: messages.createdAt,
         photoStatus: photos.status,
+        audioStatus: audioClips.status,
+        audioDurationMs: audioClips.durationMs,
       })
       .from(messages)
       .leftJoin(photos, eq(photos.id, messages.photoId))
+      .leftJoin(audioClips, eq(audioClips.id, messages.audioId))
       .where(where);
   }
 
@@ -128,10 +168,7 @@ export class ChatService {
     const { otherId } = await this.participant(matchId, viewerId);
     const conditions = [eq(messages.matchId, matchId)];
     if (before) conditions.push(lt(messages.createdAt, new Date(before)));
-    // The receiver never sees an image before it passed scanning.
-    conditions.push(
-      sql`(${messages.kind} = 'text' OR ${messages.senderId} = ${viewerId} OR ${photos.status} = 'clean')`,
-    );
+    conditions.push(visibleTo(viewerId));
     const rows = await this.rows(and(...conditions))
       .orderBy(desc(messages.createdAt), desc(messages.id))
       .limit(limit + 1);
@@ -145,7 +182,53 @@ export class ChatService {
       before: rows.length > limit ? page[0]!.createdAt.toISOString() : null,
       otherReadAt: read?.at.toISOString() ?? null,
       imagesUnlocked: await this.imagesUnlocked(matchId, viewerId, otherId),
+      otherAcceptsVoice: await this.acceptsVoice(otherId),
     };
+  }
+
+  private async acceptsVoice(userId: string): Promise<boolean> {
+    const [row] = await this.db
+      .select({ accept: preferences.acceptVoice })
+      .from(preferences)
+      .where(eq(preferences.userId, userId));
+    return row?.accept ?? true;
+  }
+
+  /** Voice messages: same unlock rule as images, and only if the receiver accepts them. */
+  async sendVoice(matchId: string, senderId: string, buffer: Buffer): Promise<MessageView> {
+    if (!this.audio)
+      throw new HttpError(503, ErrorCode.ServiceUnavailable, 'Voice messages are unavailable.');
+    const { otherId } = await this.participant(matchId, senderId);
+    if (!(await this.imagesUnlocked(matchId, senderId, otherId))) {
+      throw new HttpError(
+        403,
+        ErrorCode.Forbidden,
+        `Voice messages unlock after you both sent ${MESSAGES_BEFORE_IMAGES} messages.`,
+      );
+    }
+    if (!(await this.acceptsVoice(otherId))) {
+      throw new HttpError(403, ErrorCode.Forbidden, 'This person does not accept voice messages.');
+    }
+    const clip = await this.audio.upload(senderId, buffer);
+    const clientId = `voice-${randomUUID()}`;
+    await this.db
+      .insert(messages)
+      .values({ matchId, senderId, clientId, kind: 'voice', audioId: clip.id });
+    const [row] = await this.rows(
+      and(eq(messages.senderId, senderId), eq(messages.clientId, clientId)),
+    );
+    // Like images: the receiver is told once the worker has scanned and re-encoded it.
+    await this.realtime.publish(senderId, {
+      type: 'message.new',
+      matchId,
+      message: toView(row!, senderId),
+    });
+    return toView(row!, senderId);
+  }
+
+  async openAudio(viewerId: string, audioId: string, format: 'aac' | 'opus' = 'aac') {
+    if (!this.audio) throw notFound();
+    return this.audio.open(viewerId, audioId, format);
   }
 
   /** Idempotent: re-sending the same clientId returns the original message. */
@@ -205,6 +288,7 @@ export class ChatService {
   }
 
   private async deliver(row: MessageRow, senderId: string, otherId: string) {
+    this.notifier?.messageReceived(otherId, row.matchId).catch(() => undefined);
     await Promise.all([
       this.realtime.publish(senderId, {
         type: 'message.new',
@@ -242,12 +326,7 @@ export class ChatService {
     const summaries = await this.discovery.matches(viewerId);
     const out: Conversation[] = [];
     for (const m of summaries) {
-      const [last] = await this.rows(
-        and(
-          eq(messages.matchId, m.id),
-          sql`(${messages.kind} = 'text' OR ${messages.senderId} = ${viewerId} OR ${photos.status} = 'clean')`,
-        ),
-      )
+      const [last] = await this.rows(and(eq(messages.matchId, m.id), visibleTo(viewerId)))
         .orderBy(desc(messages.createdAt))
         .limit(1);
       const [read] = await this.db

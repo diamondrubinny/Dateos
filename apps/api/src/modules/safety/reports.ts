@@ -1,14 +1,16 @@
 import { schema, type Database } from '@dateos/db';
 import type { reportInputSchema } from '@dateos/shared';
 import { ErrorCode, reportPriority } from '@dateos/shared';
-import { and, eq, inArray, isNotNull, or, sql } from 'drizzle-orm';
+import { evidenceKey, type Storage } from '@dateos/storage';
+import { randomUUID } from 'node:crypto';
+import { and, eq, inArray, or, sql } from 'drizzle-orm';
 import type { z } from 'zod';
 import { audit } from '../../lib/audit.js';
 import type { Mailer } from '../../lib/mailer.js';
 import { HttpError } from '../../plugins/error-handler.js';
 import type { DiscoveryService } from '../discovery/service.js';
 
-const { reports, reportEvidence, messages, matches, user } = schema;
+const { reports, reportEvidence, messages, matches, user, audioClips } = schema;
 
 type ReportInput = z.output<typeof reportInputSchema>;
 
@@ -21,6 +23,7 @@ export class ReportService {
     private readonly mailer: Mailer,
     private readonly instanceName: string,
     private readonly onMailError: (error: unknown) => void,
+    private readonly storage?: Storage,
   ) {}
 
   async create(reporterId: string, input: ReportInput): Promise<{ reportId: string }> {
@@ -40,17 +43,24 @@ export class ReportService {
         ? await this.db
             .select({
               senderId: messages.senderId,
+              kind: messages.kind,
               body: messages.body,
               flags: messages.flags,
               createdAt: messages.createdAt,
+              audioKey: audioClips.mediaKey,
+              opusKey: audioClips.opusKey,
+              durationMs: audioClips.durationMs,
             })
             .from(messages)
+            .leftJoin(
+              audioClips,
+              and(eq(audioClips.id, messages.audioId), eq(audioClips.status, 'clean')),
+            )
             .where(
               and(
                 eq(messages.matchId, match.id),
                 inArray(messages.id, input.messageIds),
-                eq(messages.kind, 'text'),
-                isNotNull(messages.body),
+                sql`((${messages.kind} = 'text' AND ${messages.body} IS NOT NULL) OR (${messages.kind} = 'voice' AND ${audioClips.mediaKey} IS NOT NULL))`,
               ),
             )
             .orderBy(messages.createdAt)
@@ -74,17 +84,39 @@ export class ReportService {
         throw new HttpError(409, ErrorCode.Conflict, 'You already reported this person.');
       }
       const id = inserted[0]!.id;
-      if (evidence.length > 0) {
-        await tx.insert(reportEvidence).values(
-          evidence.map((m) => ({
-            reportId: id,
-            fromReported: m.senderId === targetId,
-            body: m.body!,
-            flags: m.flags,
-            sentAt: m.createdAt,
-          })),
-        );
+      const rows = [];
+      for (const m of evidence) {
+        const evidenceId = randomUUID();
+        let mediaKey: string | null = null;
+        // Voice evidence is copied, so it survives the chat purge and the sender deleting it.
+        if (m.kind === 'voice' && m.audioKey && this.storage) {
+          mediaKey = evidenceKey(id, evidenceId, 'm4a');
+          const data = await this.storage.getBuffer(this.storage.buckets.media, m.audioKey);
+          await this.storage.put(this.storage.buckets.media, mediaKey, data, 'audio/mp4');
+          if (m.opusKey) {
+            const opus = await this.storage.getBuffer(this.storage.buckets.media, m.opusKey);
+            await this.storage.put(
+              this.storage.buckets.media,
+              evidenceKey(id, evidenceId, 'webm'),
+              opus,
+              'audio/webm',
+            );
+          }
+        }
+        if (m.kind === 'voice' && !mediaKey) continue;
+        rows.push({
+          id: evidenceId,
+          reportId: id,
+          fromReported: m.senderId === targetId,
+          kind: m.kind,
+          body: m.kind === 'text' ? m.body : null,
+          mediaKey,
+          durationMs: m.kind === 'voice' ? m.durationMs : null,
+          flags: m.flags,
+          sentAt: m.createdAt,
+        });
       }
+      if (rows.length > 0) await tx.insert(reportEvidence).values(rows);
       await audit(tx, {
         actorId: reporterId,
         action: 'report.created',

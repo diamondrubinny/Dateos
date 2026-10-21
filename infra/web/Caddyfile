@@ -29,9 +29,9 @@
 	root * /srv/app
 	import spa
 	header {
-		Content-Security-Policy "default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data: https://api.{$DOMAIN}; connect-src 'self' https://api.{$DOMAIN} wss://api.{$DOMAIN}; font-src 'self' data:; manifest-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'"
+		Content-Security-Policy "default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data: https://api.{$DOMAIN}; media-src 'self' blob: https://api.{$DOMAIN}; connect-src 'self' https://api.{$DOMAIN} wss://api.{$DOMAIN}; font-src 'self' data:; manifest-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'"
 		X-Frame-Options "DENY"
-		Permissions-Policy "camera=(self), geolocation=(self), microphone=()"
+		Permissions-Policy "camera=(self), geolocation=(self), microphone=(self)"
 	}
 }
 
@@ -45,7 +45,7 @@ admin.{$DOMAIN} {
 	try_files {path} /index.html
 	file_server
 	header {
-		Content-Security-Policy "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' blob: data:; connect-src 'self' https://api.{$DOMAIN}; font-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'"
+		Content-Security-Policy "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' blob: data:; media-src blob:; connect-src 'self' https://api.{$DOMAIN}; font-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'"
 		X-Frame-Options "DENY"
 		X-Robots-Tag "noindex, nofollow"
 		Permissions-Policy "camera=(), geolocation=(), microphone=()"

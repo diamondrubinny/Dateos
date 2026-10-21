@@ -4,6 +4,9 @@ import { publicProfileSchema } from './discovery.js';
 export const MAX_MESSAGE_LENGTH = 2000;
 /** Each person must send this many text messages before images unlock in a chat. */
 export const MESSAGES_BEFORE_IMAGES = 3;
+/** Voice messages: hard cut at 60 s, upload limit 2 MB (≈ 60 s of high-quality AAC/Opus). */
+export const MAX_VOICE_SECONDS = 60;
+export const MAX_AUDIO_BYTES = 2 * 1024 * 1024;
 /** Messages in unmatched chats are purged after this many days. */
 export const UNMATCHED_CHAT_RETENTION_DAYS = 30;
 
@@ -29,10 +32,17 @@ export const messageViewSchema = z.object({
   id: z.uuid(),
   matchId: z.uuid(),
   mine: z.boolean(),
-  kind: z.enum(['text', 'image']),
+  kind: z.enum(['text', 'image', 'voice']),
   body: z.string().nullable(),
   image: z
     .object({ url: z.string().nullable(), status: z.enum(['pending', 'clean', 'rejected']) })
+    .nullable(),
+  voice: z
+    .object({
+      url: z.string().nullable(),
+      status: z.enum(['pending', 'clean', 'rejected']),
+      durationMs: z.number().int().nullable(),
+    })
     .nullable(),
   /** Receiver-side safety: hidden until the person chooses to show it. */
   hidden: z.boolean(),
@@ -48,6 +58,8 @@ export const messagesPageSchema = z.object({
   before: z.string().nullable(),
   otherReadAt: z.string().nullable(),
   imagesUnlocked: z.boolean(),
+  /** False when the other person turned voice messages off. */
+  otherAcceptsVoice: z.boolean(),
 });
 export type MessagesPage = z.infer<typeof messagesPageSchema>;
 
@@ -87,3 +99,15 @@ export function realtimeChannel(userId: string): string {
   return `dateos:rt:user:${userId}`;
 }
 export const REALTIME_PATTERN = 'dateos:rt:user:*';
+
+export const chatSettingsSchema = z.object({ acceptVoice: z.boolean() });
+
+/** Expo push tokens look like ExponentPushToken[xxxxxxxx]. 📘 Expo push documentation. */
+export const pushTokenInputSchema = z.object({
+  token: z
+    .string()
+    .max(200)
+    .regex(/^Expo(nent)?PushToken\[[A-Za-z0-9_-]{10,}\]$/),
+  platform: z.enum(['ios', 'android']),
+  locale: z.enum(['he', 'en']).default('en'),
+});

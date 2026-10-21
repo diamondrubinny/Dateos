@@ -5,6 +5,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { radius, spacing, useColors } from '../lib/theme';
 import { AppText } from './AppText';
 import { RemoteImage } from './RemoteImage';
+import { VoicePlayer } from './VoicePlayer';
 
 export function ScamBanner() {
   const { t } = useTranslation();
@@ -81,6 +82,21 @@ export function MessageBubble({ message, seen }: { message: MessageView; seen: b
           ) : null}
         </Pressable>
       );
+  } else if (message.kind === 'voice') {
+    const voice = message.voice;
+    if (!voice || voice.status === 'pending')
+      content = (
+        <AppText variant="caption" tone={tone}>
+          {t('voice.processing')}
+        </AppText>
+      );
+    else if (voice.status === 'rejected' || !voice.url)
+      content = (
+        <AppText variant="caption" tone={tone}>
+          {t('voice.rejected')}
+        </AppText>
+      );
+    else content = <VoicePlayer path={voice.url} durationMs={voice.durationMs} onPrimary={mine} />;
   } else {
     content = (
       <AppText variant="body" tone={tone} userContent selectable>

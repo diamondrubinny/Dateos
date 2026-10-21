@@ -20,6 +20,7 @@ import { Loading } from '../../components/Loading';
 import { MessageBubble } from '../../components/MessageBubble';
 import { RemoteImage } from '../../components/RemoteImage';
 import { RequireSession } from '../../components/RequireSession';
+import { VoiceRecorder, type Recording } from '../../components/VoiceRecorder';
 import { ApiRequestError } from '../../lib/api';
 import {
   checkMessage,
@@ -30,6 +31,7 @@ import {
   useMessages,
   useSendImage,
   useSendMessage,
+  useSendVoice,
 } from '../../lib/chat-queries';
 import { useLocale } from '../../lib/locale';
 import { useRealtime } from '../../lib/realtime';
@@ -45,6 +47,8 @@ function ChatScreen() {
   const messages = useMessages(matchId);
   const send = useSendMessage(matchId);
   const sendImage = useSendImage(matchId);
+  const sendVoice = useSendVoice(matchId);
+  const [recording, setRecording] = useState(false);
   const realtime = useRealtime();
   const [text, setText] = useState('');
   const [confirming, setConfirming] = useState<{ text: string; clientId: string }>();
@@ -150,6 +154,16 @@ function ChatScreen() {
   const unlocked =
     (newest?.imagesUnlocked ?? false) ||
     (textCount(true) >= MESSAGES_BEFORE_IMAGES && textCount(false) >= MESSAGES_BEFORE_IMAGES);
+  const voiceAccepted = newest?.otherAcceptsVoice ?? true;
+
+  const sendRecording = (rec: Recording) =>
+    sendVoice.mutate(rec, {
+      onSuccess: () => setRecording(false),
+      onError: (e) =>
+        setError(
+          e instanceof ApiRequestError && e.status === 403 ? e.message : t('common.genericError'),
+        ),
+    });
 
   return (
     <SafeAreaView
@@ -316,7 +330,17 @@ function ChatScreen() {
           </View>
         ) : null}
 
-        {!closed ? (
+        {!closed && recording ? (
+          <View style={styles.pad}>
+            <VoiceRecorder
+              sending={sendVoice.isPending}
+              onSend={sendRecording}
+              onClose={() => setRecording(false)}
+            />
+          </View>
+        ) : null}
+
+        {!closed && !recording ? (
           <View style={[styles.composer, { borderTopColor: colors.border }]}>
             <Pressable
               onPress={() =>
@@ -332,6 +356,28 @@ function ChatScreen() {
             >
               <AppText variant="heading" tone="primary">
                 🖼
+              </AppText>
+            </Pressable>
+            <Pressable
+              onPress={() => {
+                if (!unlocked)
+                  return setError(t('chat.imagesLocked', { n: MESSAGES_BEFORE_IMAGES }));
+                if (!voiceAccepted) return setError(t('voice.notAccepted', { name }));
+                setError(undefined);
+                setRecording(true);
+              }}
+              accessibilityRole="button"
+              accessibilityLabel={t('voice.record')}
+              {...(!unlocked
+                ? { accessibilityHint: t('chat.imagesLocked', { n: MESSAGES_BEFORE_IMAGES }) }
+                : !voiceAccepted
+                  ? { accessibilityHint: t('voice.notAccepted', { name }) }
+                  : {})}
+              aria-disabled={!unlocked || !voiceAccepted}
+              style={[styles.iconBtn, { opacity: unlocked && voiceAccepted ? 1 : 0.45 }]}
+            >
+              <AppText variant="heading" tone="primary">
+                🎙
               </AppText>
             </Pressable>
             <TextInput

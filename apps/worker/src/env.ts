@@ -19,6 +19,15 @@ export const workerEnvSchema = z.object({
   EMBEDDINGS_PROVIDER: z.enum(['hashing', 'ollama']).default('hashing'),
   OLLAMA_URL: z.url().default('http://localhost:11434'),
   OLLAMA_EMBED_MODEL: z.string().default('paraphrase-multilingual'),
+  FFMPEG_PATH: z.string().default('ffmpeg'),
+  FFPROBE_PATH: z.string().default('ffprobe'),
+  /** Push notifications through Expo (opt-in per device). `disabled` sends nothing. */
+  PUSH_PROVIDER: z.enum(['disabled', 'expo']).default('disabled'),
+  EXPO_PUSH_URL: z.url().default('https://exp.host/--/api/v2/push/send'),
+  EXPO_ACCESS_TOKEN: z
+    .string()
+    .optional()
+    .transform((v) => (v ? v : undefined)),
   WORKER_CONCURRENCY: z.coerce.number().int().min(1).max(16).default(2),
 });
 

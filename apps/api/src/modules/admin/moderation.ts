@@ -145,8 +145,11 @@ export class ModerationService {
       details: report!.details,
       reporter: { id: report!.reporterId, displayName: reporterName },
       evidence: evidence.map((e) => ({
+        id: e.id,
         from: e.fromReported ? ('reported' as const) : ('reporter' as const),
+        kind: e.kind === 'voice' ? ('voice' as const) : ('text' as const),
         body: e.body,
+        durationMs: e.durationMs,
         flags: e.flags,
         sentAt: e.sentAt.toISOString(),
       })),
@@ -305,6 +308,22 @@ export class ModerationService {
       meta: r.meta,
       createdAt: r.createdAt.toISOString(),
     }));
+  }
+
+  /** Staff playback of reported voice evidence (audited). Returns the storage key. */
+  async evidenceAudio(staff: AuthUser, reportId: string, evidenceId: string): Promise<string> {
+    const [row] = await this.db
+      .select({ key: reportEvidence.mediaKey })
+      .from(reportEvidence)
+      .where(and(eq(reportEvidence.id, evidenceId), eq(reportEvidence.reportId, reportId)));
+    if (!row?.key) throw notFound();
+    await audit(this.db, {
+      actorId: staff.id,
+      action: 'staff.evidence_audio_played',
+      targetType: 'report',
+      targetId: reportId,
+    });
+    return row.key;
   }
 
   /** Staff view of a reported member's profile photo (audited). */

@@ -15,7 +15,7 @@ import {
   totpCodeSchema,
   verificationReviewSchema,
 } from '@dateos/shared';
-import type { StoredObject } from '@dateos/storage';
+import type { Storage, StoredObject } from '@dateos/storage';
 import type { FastifyReply } from 'fastify';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';
@@ -48,7 +48,8 @@ export const adminRoutes: FastifyPluginAsyncZod<{
   verification: VerificationService;
   photos: PhotoService;
   instance: InstanceService;
-}> = async (app, { auth, mfa, moderation, verification, photos, instance }) => {
+  storage: Storage;
+}> = async (app, { auth, mfa, moderation, verification, photos, instance, storage }) => {
   await app.register(multipart, {
     limits: { fileSize: MAX_PHOTO_BYTES, files: 1, fields: 0, parts: 1 },
   });
@@ -119,6 +120,32 @@ export const adminRoutes: FastifyPluginAsyncZod<{
         request.body.reason,
       );
       return { ok: true as const };
+    },
+  );
+
+  app.get(
+    '/v1/admin/reports/:id/evidence/:evidenceId/audio',
+    {
+      schema: {
+        params: z.object({ id: z.uuid(), evidenceId: z.uuid() }),
+        querystring: z.object({ format: z.enum(['aac', 'opus']).default('aac') }),
+      },
+    },
+    async (request, reply) => {
+      const key = await moderation.evidenceAudio(
+        currentUser(request),
+        request.params.id,
+        request.params.evidenceId,
+      );
+      const opus = request.query.format === 'opus';
+      const object = await storage.get(
+        storage.buckets.media,
+        opus ? key.replace(/\.m4a$/, '.webm') : key,
+      );
+      return reply
+        .type(opus ? 'audio/webm' : 'audio/mp4')
+        .header('cache-control', 'no-store')
+        .send(object.body);
     },
   );
 

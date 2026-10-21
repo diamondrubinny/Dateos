@@ -3,11 +3,14 @@ import { hashingProvider, ollamaProvider } from '@dateos/ai';
 import {
   MEDIA_QUEUE,
   MediaJob,
+  NOTIFY_QUEUE,
+  type PushJob,
   PROFILE_QUEUE,
   ProfileJob,
   realtimeChannel,
   type DeleteObjectsJob,
   type EmbedProfileJob,
+  type ProcessAudioJob,
   type ProcessPhotoJob,
 } from '@dateos/shared';
 import { createStorage } from '@dateos/storage';
@@ -16,7 +19,8 @@ import { Redis } from 'ioredis';
 import { pino } from 'pino';
 import { createClamavScanner, noopScanner } from './clamav.js';
 import { loadWorkerEnv } from './env.js';
-import { deleteObjects, processPhoto, type JobContext } from './jobs.js';
+import { deleteObjects, processAudio, processPhoto, type JobContext } from './jobs.js';
+import { sendPush } from './push.js';
 import {
   cleanupDiscovery,
   cleanupModeration,
@@ -50,6 +54,8 @@ async function main(): Promise<void> {
     storage,
     scanner: scanningEnabled ? createClamavScanner(env.CLAMAV_HOST, env.CLAMAV_PORT) : noopScanner,
     scanningEnabled,
+    ffmpegPath: env.FFMPEG_PATH,
+    ffprobePath: env.FFPROBE_PATH,
     log,
     publish: async (userId, event) => {
       await publisher.publish(realtimeChannel(userId), JSON.stringify(event));
@@ -63,6 +69,8 @@ async function main(): Promise<void> {
       switch (job.name) {
         case MediaJob.ProcessPhoto:
           return processPhoto(ctx, job.data as ProcessPhotoJob);
+        case MediaJob.ProcessAudio:
+          return processAudio(ctx, job.data as ProcessAudioJob);
         case MediaJob.DeleteObjects:
           return deleteObjects(ctx, job.data as DeleteObjectsJob);
         default:
@@ -92,7 +100,7 @@ async function main(): Promise<void> {
           return {
             ...(await cleanupDiscovery(db)),
             ...(await purgeClosedChats(db, storage)),
-            ...(await cleanupModeration(db)),
+            ...(await cleanupModeration(db, storage)),
           };
         default:
           throw new Error(`Unknown job: ${job.name}`);
@@ -105,6 +113,28 @@ async function main(): Promise<void> {
     log.error({ job: job?.name, err: error }, 'job failed'),
   );
 
+  const notifyWorker = new Worker(
+    NOTIFY_QUEUE,
+    async (job) =>
+      sendPush(
+        {
+          db,
+          redis: publisher,
+          log,
+          provider: env.PUSH_PROVIDER,
+          expoUrl: env.EXPO_PUSH_URL,
+          expoAccessToken: env.EXPO_ACCESS_TOKEN,
+        },
+        job.data as PushJob,
+      ),
+    { connection, concurrency: env.WORKER_CONCURRENCY },
+  );
+  // Only the outcome is logged: never tokens or user ids together with content.
+  notifyWorker.on('completed', (job, result) => log.info({ job: job.name, result }, 'job done'));
+  notifyWorker.on('failed', (job, error) =>
+    log.error({ job: job?.name, err: error }, 'job failed'),
+  );
+
   // Daily retention sweep (idempotent scheduler: safe with several workers).
   const scheduler = new Queue(PROFILE_QUEUE, { connection });
   await scheduler.upsertJobScheduler(
@@ -113,12 +143,16 @@ async function main(): Promise<void> {
     { name: 'cleanup-discovery' },
   );
 
-  log.info({ scanningEnabled, embeddings: embeddings.model }, 'worker started');
+  log.info(
+    { scanningEnabled, embeddings: embeddings.model, push: env.PUSH_PROVIDER },
+    'worker started',
+  );
 
   const shutdown = async () => {
     log.info('shutting down');
     await worker.close();
     await profileWorker.close();
+    await notifyWorker.close();
     await scheduler.close();
     connection.disconnect();
     publisher.disconnect();

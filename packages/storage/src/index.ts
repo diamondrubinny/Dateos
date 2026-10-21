@@ -126,3 +126,20 @@ export function quarantineKey(userId: string, photoId: string): string {
 export function mediaKey(userId: string, photoId: string): string {
   return `photos/${userId}/${photoId}.webp`;
 }
+
+export function audioQuarantineKey(userId: string, audioId: string): string {
+  return `audio/${userId}/${audioId}`;
+}
+
+export function audioMediaKey(
+  userId: string,
+  audioId: string,
+  format: 'm4a' | 'webm' = 'm4a',
+): string {
+  return `audio/${userId}/${audioId}.${format}`;
+}
+
+/** Copies of reported media, kept with the report instead of the chat. */
+export function evidenceKey(reportId: string, evidenceId: string, extension: string): string {
+  return `evidence/${reportId}/${evidenceId}.${extension}`;
+}

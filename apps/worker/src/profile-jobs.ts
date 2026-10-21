@@ -63,7 +63,7 @@ export async function cleanupDiscovery(
 export async function purgeClosedChats(
   db: Database,
   storage: Storage,
-): Promise<{ messages: number; images: number }> {
+): Promise<{ messages: number; images: number; voice: number }> {
   const days = sql.raw(String(UNMATCHED_CHAT_RETENTION_DAYS));
   const images = await db.execute<{
     id: string;
@@ -77,6 +77,20 @@ export async function purgeClosedChats(
     images.rows.flatMap((r) => (r[field] ? [r[field]!] : []));
   await storage.delete(storage.buckets.media, keys('media_key'));
   await storage.delete(storage.buckets.quarantine, keys('quarantine_key'));
+  // Voice messages in the same chats.
+  const clips = await db.execute<{
+    id: string;
+    media_key: string | null;
+    opus_key: string | null;
+    quarantine_key: string | null;
+  }>(sql`
+    SELECT a.id, a.media_key, a.opus_key, a.quarantine_key FROM audio_clips a
+    JOIN messages m ON m.audio_id = a.id JOIN matches ma ON ma.id = m.match_id
+    WHERE ma.unmatched_at < now() - interval '${days} days'`);
+  const clipKeys = (field: 'media_key' | 'opus_key' | 'quarantine_key') =>
+    clips.rows.flatMap((r) => (r[field] ? [r[field]!] : []));
+  await storage.delete(storage.buckets.media, [...clipKeys('media_key'), ...clipKeys('opus_key')]);
+  await storage.delete(storage.buckets.quarantine, clipKeys('quarantine_key'));
   const deleted = await db.execute(sql`
     DELETE FROM messages m USING matches ma
     WHERE ma.id = m.match_id AND ma.unmatched_at < now() - interval '${days} days'`);
@@ -87,13 +101,21 @@ export async function purgeClosedChats(
     );
     await db.execute(sql`DELETE FROM photos WHERE id IN (${ids})`);
   }
-  return { messages: deleted.rowCount ?? 0, images: images.rows.length };
+  if (clips.rows.length > 0) {
+    const ids = sql.join(
+      clips.rows.map((r) => sql`${r.id}::uuid`),
+      sql`, `,
+    );
+    await db.execute(sql`DELETE FROM audio_clips WHERE id IN (${ids})`);
+  }
+  return { messages: deleted.rowCount ?? 0, images: images.rows.length, voice: clips.rows.length };
 }
 
 /** Deletes moderation records past their retention period (evidence goes with its report). */
 export async function cleanupModeration(
   db: Database,
-): Promise<{ reports: number; actions: number; verifications: number }> {
+  storage?: Storage,
+): Promise<{ reports: number; actions: number; verifications: number; evidenceFiles: number }> {
   const days = (n: number) => sql.raw(String(n));
   const reports = await db.execute(sql`
     DELETE FROM reports WHERE status <> 'open'
@@ -109,9 +131,28 @@ export async function cleanupModeration(
   await db.execute(
     sql`DELETE FROM staff_sessions WHERE mfa_verified_at < now() - interval '1 day'`,
   );
+  // Voice evidence files whose report no longer exists (retention or account deletion).
+  let evidenceFiles = 0;
+  if (storage) {
+    const keys = await storage.listKeys(storage.buckets.media, 'evidence/');
+    const reportIds = [...new Set(keys.map((k) => k.split('/')[1]!).filter(Boolean))];
+    if (reportIds.length > 0) {
+      const existing = await db.execute<{ id: string }>(
+        sql`SELECT id::text FROM reports WHERE id::text IN (${sql.join(
+          reportIds.map((id) => sql`${id}`),
+          sql`, `,
+        )})`,
+      );
+      const kept = new Set(existing.rows.map((r) => r.id));
+      const orphaned = keys.filter((k) => !kept.has(k.split('/')[1]!));
+      await storage.delete(storage.buckets.media, orphaned);
+      evidenceFiles = orphaned.length;
+    }
+  }
   return {
     reports: reports.rowCount ?? 0,
     actions: actions.rowCount ?? 0,
     verifications: verifications.rowCount ?? 0,
+    evidenceFiles,
   };
 }

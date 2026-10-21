@@ -76,6 +76,30 @@ export function ProtectedImage({
   return <img src={url} alt={alt} className={className} />;
 }
 
+/** Private audio (voice evidence), loaded with the session cookie into a local object URL. */
+export function ProtectedAudio({ path, label }: { path: string; label: string }) {
+  const [url, setUrl] = useState<string>();
+  const [failed, setFailed] = useState(false);
+  const load = () => {
+    // Opus for browsers that cannot play AAC.
+    const aac = new Audio().canPlayType('audio/mp4; codecs="mp4a.40.2"') !== '';
+    fetchImage(aac ? path : `${path}?format=opus`)
+      .then(setUrl)
+      .catch(() => setFailed(true));
+  };
+  useEffect(() => () => void (url && URL.revokeObjectURL(url)), [url]);
+  if (failed) return <span className="muted">×</span>;
+  // Loaded on demand: each play is audited on the server.
+  if (!url) {
+    return (
+      <button type="button" className="button small" onClick={load}>
+        ▶ {label}
+      </button>
+    );
+  }
+  return <audio controls autoPlay src={url} aria-label={label} />;
+}
+
 export function Badge({
   tone,
   children,
