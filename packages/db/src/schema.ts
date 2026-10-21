@@ -118,6 +118,7 @@ export const rateLimit = pgTable('rate_limit', {
 export const gender = pgEnum('gender', genders);
 export const intention = pgEnum('intention', intentions);
 export const photoStatus = pgEnum('photo_status', photoStatuses);
+export const photoPurpose = pgEnum('photo_purpose', ['profile', 'chat']);
 export const consentKind = pgEnum('consent_kind', consentKinds);
 export const promptKey = pgEnum('prompt_key', promptKeys);
 
@@ -179,6 +180,8 @@ export const photos = pgTable(
     id: uuid('id').primaryKey().defaultRandom(),
     userId: ownerId(),
     status: photoStatus('status').notNull().default('quarantine'),
+    /** Chat images are never listed on profiles. */
+    purpose: photoPurpose('purpose').notNull().default('profile'),
     quarantineKey: text('quarantine_key'),
     mediaKey: text('media_key'),
     width: integer('width'),
@@ -344,4 +347,52 @@ export const impressions = pgTable(
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index('impressions_candidate_created_idx').on(t.candidateId, t.createdAt)],
+);
+
+// ---------------------------------------------------------------------------
+// Chat (phase 3)
+// ---------------------------------------------------------------------------
+
+export const messageKind = pgEnum('message_kind', ['text', 'image']);
+
+export const messages = pgTable(
+  'messages',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    matchId: uuid('match_id')
+      .notNull()
+      .references(() => matches.id, { onDelete: 'cascade' }),
+    senderId: text('sender_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    /** Client-generated id that makes retries idempotent. */
+    clientId: varchar('client_id', { length: 64 }).notNull(),
+    kind: messageKind('kind').notNull(),
+    body: varchar('body', { length: 2000 }),
+    photoId: uuid('photo_id').references(() => photos.id, { onDelete: 'set null' }),
+    /** Safety labels, e.g. harm:insult, scam:money. Receivers see harmful messages hidden. */
+    flags: text('flags')
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex('messages_sender_client_uq').on(t.senderId, t.clientId),
+    index('messages_match_created_idx').on(t.matchId, t.createdAt),
+  ],
+);
+
+export const matchReads = pgTable(
+  'match_reads',
+  {
+    matchId: uuid('match_id')
+      .notNull()
+      .references(() => matches.id, { onDelete: 'cascade' }),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    lastReadAt: timestamp('last_read_at', { withTimezone: true }).notNull(),
+  },
+  (t) => [uniqueIndex('match_reads_uq').on(t.matchId, t.userId)],
 );

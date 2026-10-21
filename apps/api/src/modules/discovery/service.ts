@@ -15,7 +15,9 @@ import {
   type PromptKey,
   type PublicProfile,
   type ReasonCode,
+  type RealtimeEvent,
 } from '@dateos/shared';
+import type { Realtime } from '../../lib/realtime.js';
 import { and, asc, desc, eq, inArray, isNull, or, sql } from 'drizzle-orm';
 import { audit } from '../../lib/audit.js';
 import { HttpError } from '../../plugins/error-handler.js';
@@ -48,7 +50,14 @@ export class DiscoveryService {
   constructor(
     private readonly db: Database,
     private readonly today: () => string,
+    /** Real-time notifications (new match, closed chat). Optional for tests. */
+    private readonly realtime?: Pick<Realtime, 'publish'>,
   ) {}
+
+  private notify(userIds: string[], event: RealtimeEvent) {
+    if (!this.realtime) return;
+    for (const id of userIds) this.realtime.publish(id, event).catch(() => undefined);
+  }
 
   // ---------------------------------------------------------------- location
 
@@ -258,7 +267,9 @@ export class DiscoveryService {
     if (input.itemType && input.itemId) {
       const table = input.itemType === 'photo' ? photos : prompts;
       const conditions = [eq(table.id, input.itemId), eq(table.userId, input.targetId)];
-      if (input.itemType === 'photo') conditions.push(eq(photos.status, 'clean'));
+      if (input.itemType === 'photo') {
+        conditions.push(eq(photos.status, 'clean'), eq(photos.purpose, 'profile'));
+      }
       const [item] = await this.db
         .select({ id: table.id })
         .from(table)
@@ -271,7 +282,7 @@ export class DiscoveryService {
         );
     }
 
-    return this.db.transaction(async (tx) => {
+    const result = await this.db.transaction(async (tx) => {
       const inserted = await tx
         .insert(interactions)
         .values({
@@ -308,6 +319,9 @@ export class DiscoveryService {
         .where(and(eq(matches.userA, a), eq(matches.userB, b)));
       return { matched: true, matchId: match!.id };
     });
+    if (result.matchId)
+      this.notify([input.targetId], { type: 'match.new', matchId: result.matchId });
+    return result;
   }
 
   /** Everyone who liked me and is still waiting for my answer. Free for every user. */
@@ -406,29 +420,34 @@ export class DiscoveryService {
           isNull(matches.unmatchedAt),
         ),
       )
-      .returning({ id: matches.id });
+      .returning({ id: matches.id, userA: matches.userA, userB: matches.userB });
     if (updated.length === 0) throw notFound();
+    this.notify([updated[0]!.userA, updated[0]!.userB], { type: 'match.closed', matchId });
   }
 
   /** Always succeeds for well-formed ids, so blocking cannot be used to probe which accounts exist. */
   async block(blockerId: string, blockedId: string): Promise<void> {
     if (blockerId === blockedId) return;
-    await this.db.transaction(async (tx) => {
+    const closed = await this.db.transaction(async (tx) => {
       const [target] = await tx.select({ id: user.id }).from(user).where(eq(user.id, blockedId));
-      if (!target) return;
+      if (!target) return [];
       await tx.insert(blocks).values({ blockerId, blockedId }).onConflictDoNothing();
       const [a, b] = [blockerId, blockedId].sort() as [string, string];
-      await tx
+      const ended = await tx
         .update(matches)
         .set({ unmatchedAt: new Date(), unmatchedBy: blockerId })
-        .where(and(eq(matches.userA, a), eq(matches.userB, b), isNull(matches.unmatchedAt)));
+        .where(and(eq(matches.userA, a), eq(matches.userB, b), isNull(matches.unmatchedAt)))
+        .returning({ id: matches.id });
       await audit(tx, {
         actorId: blockerId,
         action: 'user.blocked',
         targetType: 'user',
         targetId: blockedId,
       });
+      return ended;
     });
+    for (const m of closed)
+      this.notify([blockerId, blockedId], { type: 'match.closed', matchId: m.id });
   }
 
   // ---------------------------------------------------------------- presentation
@@ -451,7 +470,9 @@ export class DiscoveryService {
     const photoRows = await this.db
       .select({ id: photos.id, userId: photos.userId, width: photos.width, height: photos.height })
       .from(photos)
-      .where(and(inArray(photos.userId, ids), eq(photos.status, 'clean')))
+      .where(
+        and(inArray(photos.userId, ids), eq(photos.status, 'clean'), eq(photos.purpose, 'profile')),
+      )
       .orderBy(asc(photos.position), asc(photos.createdAt));
     const byId = new Map(profileRows.map((p) => [p.userId, p]));
 

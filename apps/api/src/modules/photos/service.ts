@@ -29,7 +29,11 @@ export class PhotoService {
     ) => v === o,
   ) {}
 
-  async upload(userId: string, buffer: Buffer): Promise<Photo> {
+  async upload(
+    userId: string,
+    buffer: Buffer,
+    purpose: 'profile' | 'chat' = 'profile',
+  ): Promise<Photo> {
     const mime = await sniffImageType(buffer);
     if (!mime) {
       throw new HttpError(
@@ -45,14 +49,21 @@ export class PhotoService {
       const existing = await tx
         .select({ position: photos.position })
         .from(photos)
-        .where(and(eq(photos.userId, userId), ne(photos.status, 'rejected')));
-      if (existing.length >= MAX_PHOTOS) {
+        .where(
+          and(
+            eq(photos.userId, userId),
+            ne(photos.status, 'rejected'),
+            eq(photos.purpose, 'profile'),
+          ),
+        );
+      if (purpose === 'profile' && existing.length >= MAX_PHOTOS) {
         throw new HttpError(409, ErrorCode.Conflict, `You can upload up to ${MAX_PHOTOS} photos.`);
       }
-      const position = existing.reduce((max, p) => Math.max(max, p.position + 1), 0);
+      const position =
+        purpose === 'chat' ? 0 : existing.reduce((max, p) => Math.max(max, p.position + 1), 0);
       const [inserted] = await tx
         .insert(photos)
-        .values({ userId, position, status: 'quarantine' })
+        .values({ userId, position, status: 'quarantine', purpose })
         .returning();
       const key = quarantineKey(userId, inserted!.id);
       await tx.update(photos).set({ quarantineKey: key }).where(eq(photos.id, inserted!.id));
@@ -83,11 +94,27 @@ export class PhotoService {
   /** Owners, and people allowed to see the owner's profile, may view a clean photo. */
   async open(viewerId: string, photoId: string): Promise<StoredObject> {
     const [row] = await this.db
-      .select({ mediaKey: photos.mediaKey, userId: photos.userId })
+      .select({ mediaKey: photos.mediaKey, userId: photos.userId, purpose: photos.purpose })
       .from(photos)
       .where(and(eq(photos.id, photoId), eq(photos.status, 'clean')));
-    if (!row?.mediaKey || !(await this.canView(viewerId, row.userId))) throw notFound();
+    if (!row?.mediaKey) throw notFound();
+    const allowed =
+      row.purpose === 'chat'
+        ? await this.canViewChatImage(viewerId, photoId)
+        : await this.canView(viewerId, row.userId);
+    if (!allowed) throw notFound();
     return this.storage.get(this.storage.buckets.media, row.mediaKey);
+  }
+
+  /** Chat images are visible only to the two people in an active match where it was sent. */
+  private async canViewChatImage(viewerId: string, photoId: string): Promise<boolean> {
+    const result = await this.db.execute<{ ok: boolean }>(sql`
+      SELECT EXISTS (
+        SELECT 1 FROM messages m JOIN matches ma ON ma.id = m.match_id
+        WHERE m.photo_id = ${photoId} AND ma.unmatched_at IS NULL
+          AND (ma.user_a = ${viewerId} OR ma.user_b = ${viewerId})
+      ) AS ok`);
+    return Boolean(result.rows[0]?.ok);
   }
 
   async remove(userId: string, photoId: string): Promise<void> {
@@ -108,7 +135,13 @@ export class PhotoService {
       const owned = await tx
         .select({ id: photos.id })
         .from(photos)
-        .where(and(eq(photos.userId, userId), ne(photos.status, 'rejected')))
+        .where(
+          and(
+            eq(photos.userId, userId),
+            ne(photos.status, 'rejected'),
+            eq(photos.purpose, 'profile'),
+          ),
+        )
         .orderBy(asc(photos.position));
       const ownedIds = new Set(owned.map((p) => p.id));
       const requested = new Set(photoIds);

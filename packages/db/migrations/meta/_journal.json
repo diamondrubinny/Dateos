@@ -29,6 +29,13 @@
       "when": 1792556065236,
       "tag": "0003_match_pair_collation",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1792589229999,
+      "tag": "0004_chat",
+      "breakpoints": true
     }
   ]
 }

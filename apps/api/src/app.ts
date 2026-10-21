@@ -14,6 +14,8 @@ import { registerSecurity } from './plugins/security.js';
 import { healthRoutes } from './routes/health.js';
 import { authRoutes } from './auth/routes.js';
 import { instanceRoutes } from './modules/instance/routes.js';
+import websocket from '@fastify/websocket';
+import { chatRoutes } from './modules/chat/routes.js';
 import { discoveryRoutes } from './modules/discovery/routes.js';
 import { meRoutes } from './modules/me/routes.js';
 import { photoRoutes } from './modules/photos/routes.js';
@@ -61,6 +63,13 @@ export async function buildApp(env: Env, deps: AppDependencies): Promise<Fastify
     await typed.register(meRoutes, { auth: services.auth, me: services.me });
     await typed.register(photoRoutes, { auth: services.auth, photos: services.photos });
     await typed.register(discoveryRoutes, { auth: services.auth, discovery: services.discovery });
+    await app.register(websocket, { options: { maxPayload: 4096 } });
+    await typed.register(chatRoutes, {
+      auth: services.auth,
+      chat: services.chat,
+      realtime: services.realtime,
+      allowedOrigins: env.CORS_ORIGINS,
+    });
   }
 
   app.addHook('onClose', async () => {

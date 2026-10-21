@@ -11,6 +11,9 @@ import {
   type MediaQueue,
   type ProfileQueue,
 } from './lib/queue.js';
+import { ollamaIcebreakers, templateIcebreakers } from '@dateos/ai';
+import { createRealtime, type Realtime } from './lib/realtime.js';
+import { ChatService } from './modules/chat/service.js';
 import { DiscoveryService } from './modules/discovery/service.js';
 import { MeService, todayUtc } from './modules/me/service.js';
 import { PhotoService } from './modules/photos/service.js';
@@ -22,6 +25,8 @@ export interface Services {
   mediaQueue: MediaQueue;
   profileQueue: ProfileQueue;
   discovery: DiscoveryService;
+  realtime: Realtime;
+  chat: ChatService;
   mailer: Mailer;
   me: MeService;
   photos: PhotoService;
@@ -56,7 +61,8 @@ export function createServices(
   const mediaQueue = overrides.mediaQueue ?? createMediaQueue(env.REDIS_URL);
   const profileQueue = overrides.profileQueue ?? createProfileQueue(env.REDIS_URL);
   const today = overrides.today ?? todayUtc;
-  const discovery = new DiscoveryService(dbHandle.db, today);
+  const realtime = createRealtime(env.REDIS_URL);
+  const discovery = new DiscoveryService(dbHandle.db, today, realtime);
   const auth = createAuth({
     env,
     secret: secrets.authSecret,
@@ -66,6 +72,13 @@ export function createServices(
     onMailError,
   });
   const legal = { termsVersion: env.TERMS_VERSION, privacyVersion: env.PRIVACY_VERSION };
+  const photos = new PhotoService(dbHandle.db, storage, mediaQueue, (viewer, owner) =>
+    discovery.canView(viewer, owner),
+  );
+  const icebreakers =
+    env.ICEBREAKERS_PROVIDER === 'ollama'
+      ? ollamaIcebreakers(env.OLLAMA_URL, env.OLLAMA_CHAT_MODEL)
+      : templateIcebreakers;
 
   return {
     dbHandle,
@@ -76,9 +89,9 @@ export function createServices(
     discovery,
     mailer,
     me: new MeService(dbHandle.db, mediaQueue, legal, today, profileQueue),
-    photos: new PhotoService(dbHandle.db, storage, mediaQueue, (viewer, owner) =>
-      discovery.canView(viewer, owner),
-    ),
+    photos,
+    realtime,
+    chat: new ChatService(dbHandle.db, realtime, discovery, photos, icebreakers),
     dependencies: [
       {
         name: 'postgres',
@@ -94,6 +107,7 @@ export function createServices(
       },
       { name: 'storage', isHealthy: () => storage.isHealthy(), close: async () => storage.close() },
       { name: 'queue', isHealthy: async () => true, close: () => mediaQueue.close() },
+      { name: 'realtime', isHealthy: async () => true, close: () => realtime.close() },
       { name: 'profile-queue', isHealthy: async () => true, close: () => profileQueue.close() },
       { name: 'mailer', isHealthy: async () => true, close: async () => mailer.close() },
     ],

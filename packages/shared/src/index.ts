@@ -4,3 +4,4 @@ export * from './health.js';
 export * from './profile.js';
 export * from './jobs.js';
 export * from './discovery.js';
+export * from './chat.js';

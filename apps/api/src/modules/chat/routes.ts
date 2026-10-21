@@ -1,0 +1,184 @@
+import multipart from '@fastify/multipart';
+import {
+  clientEventSchema,
+  conversationSchema,
+  ErrorCode,
+  icebreakersSchema,
+  MAX_PHOTO_BYTES,
+  messageCheckResultSchema,
+  messageCheckSchema,
+  messagesPageSchema,
+  messagesQuerySchema,
+  messageViewSchema,
+  sendMessageSchema,
+} from '@dateos/shared';
+import { checkHarm } from '@dateos/ai';
+import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
+import { z } from 'zod';
+import type { Auth } from '../../auth/auth.js';
+import { currentUser, requireUser } from '../../auth/session.js';
+import type { Realtime } from '../../lib/realtime.js';
+import { HttpError } from '../../plugins/error-handler.js';
+import type { ChatService } from './service.js';
+
+const matchParams = z.object({ id: z.uuid() });
+const ok = z.object({ ok: z.literal(true) });
+
+/** Typing events per connection per 10 s; anything above is dropped. */
+const TYPING_BURST = 20;
+const HEARTBEAT_MS = 30_000;
+
+export interface ChatRouteOptions {
+  auth: Auth;
+  chat: ChatService;
+  realtime: Realtime;
+  allowedOrigins: string[];
+}
+
+export const chatRoutes: FastifyPluginAsyncZod<ChatRouteOptions> = async (
+  app,
+  { auth, chat, realtime, allowedOrigins },
+) => {
+  await app.register(multipart, {
+    limits: { fileSize: MAX_PHOTO_BYTES, files: 1, fields: 0, parts: 1 },
+  });
+  app.addHook('preHandler', requireUser(auth));
+
+  app.get(
+    '/v1/conversations',
+    { schema: { response: { 200: z.object({ conversations: z.array(conversationSchema) }) } } },
+    async (request) => ({
+      conversations: await chat.inbox(currentUser(request).id),
+    }),
+  );
+
+  app.get(
+    '/v1/matches/:id/messages',
+    {
+      schema: {
+        params: matchParams,
+        querystring: messagesQuerySchema,
+        response: { 200: messagesPageSchema },
+      },
+    },
+    async (request) =>
+      chat.list(
+        request.params.id,
+        currentUser(request).id,
+        request.query.before,
+        request.query.limit,
+      ),
+  );
+
+  app.post(
+    '/v1/matches/:id/messages',
+    {
+      schema: {
+        params: matchParams,
+        body: sendMessageSchema,
+        response: { 200: messageViewSchema },
+      },
+      config: { rateLimit: { max: 30, timeWindow: 60_000 } },
+    },
+    async (request) =>
+      chat.send(
+        request.params.id,
+        currentUser(request).id,
+        request.body.text,
+        request.body.clientId,
+      ),
+  );
+
+  app.post(
+    '/v1/matches/:id/images',
+    {
+      schema: { params: matchParams, response: { 200: messageViewSchema } },
+      config: { rateLimit: { max: 10, timeWindow: 60 * 60_000 } },
+    },
+    async (request) => {
+      const file = await request.file();
+      if (!file) throw new HttpError(400, ErrorCode.BadRequest, 'Attach one image file.');
+      return chat.sendImage(request.params.id, currentUser(request).id, await file.toBuffer());
+    },
+  );
+
+  app.post(
+    '/v1/matches/:id/read',
+    { schema: { params: matchParams, response: { 200: ok } } },
+    async (request) => {
+      await chat.markRead(request.params.id, currentUser(request).id);
+      return { ok: true as const };
+    },
+  );
+
+  // "Are you sure?" pre-check. Nothing is stored; bodies are never logged.
+  app.post(
+    '/v1/messages/check',
+    {
+      schema: { body: messageCheckSchema, response: { 200: messageCheckResultSchema } },
+      config: { rateLimit: { max: 60, timeWindow: 60_000 } },
+    },
+    async (request) => checkHarm(request.body.text),
+  );
+
+  app.get(
+    '/v1/matches/:id/icebreakers',
+    {
+      schema: {
+        params: matchParams,
+        querystring: z.object({ locale: z.enum(['he', 'en']).default('en') }),
+        response: { 200: icebreakersSchema },
+      },
+    },
+    async (request) => ({
+      suggestions: await chat.suggestIcebreakers(
+        request.params.id,
+        currentUser(request).id,
+        request.query.locale,
+      ),
+    }),
+  );
+
+  app.get(
+    '/v1/ws',
+    {
+      websocket: true,
+      // Cross-site WebSocket hijacking: browsers always send Origin; it must be one of ours.
+      preHandler: async (request) => {
+        const origin = request.headers.origin;
+        if (origin && !allowedOrigins.includes(origin))
+          throw new HttpError(403, ErrorCode.Forbidden, 'Origin not allowed.');
+      },
+    },
+    (socket, request) => {
+      const userId = currentUser(request).id;
+      const unregister = realtime.register(userId, socket);
+      let typingBudget = TYPING_BURST;
+      let alive = true;
+      const refill = setInterval(() => (typingBudget = TYPING_BURST), 10_000);
+      const heartbeat = setInterval(() => {
+        if (!alive) return socket.terminate();
+        alive = false;
+        socket.ping();
+      }, HEARTBEAT_MS);
+      socket.on('pong', () => (alive = true));
+      socket.on('message', (raw: Buffer) => {
+        let event;
+        try {
+          event = clientEventSchema.parse(JSON.parse(raw.toString('utf8')));
+        } catch {
+          return; // ignore malformed input
+        }
+        if (event.type === 'ping') return socket.send(JSON.stringify({ type: 'pong' }));
+        if (typingBudget <= 0) return;
+        typingBudget -= 1;
+        chat.typing(event.matchId, userId).catch(() => undefined);
+      });
+      socket.on('close', () => {
+        clearInterval(refill);
+        clearInterval(heartbeat);
+        unregister();
+      });
+    },
+  );
+};

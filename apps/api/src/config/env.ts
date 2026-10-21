@@ -63,6 +63,11 @@ export const envSchema = z.object({
   APPLE_CLIENT_ID: optionalString,
   APPLE_CLIENT_SECRET: optionalString,
 
+  /** `template` works offline; `ollama` uses a local chat model (no data leaves the server). */
+  ICEBREAKERS_PROVIDER: z.enum(['template', 'ollama']).default('template'),
+  OLLAMA_URL: z.url().default('http://localhost:11434'),
+  OLLAMA_CHAT_MODEL: z.string().default('qwen2.5:1.5b'),
+
   INSTANCE_NAME: z.string().max(40).default('Dateos'),
   INSTANCE_TAGLINE: z
     .string()

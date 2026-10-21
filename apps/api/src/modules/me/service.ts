@@ -59,7 +59,13 @@ export class MeService {
     const photoRows = await this.db
       .select()
       .from(photos)
-      .where(and(eq(photos.userId, userId), ne(photos.status, 'rejected')))
+      .where(
+        and(
+          eq(photos.userId, userId),
+          ne(photos.status, 'rejected'),
+          eq(photos.purpose, 'profile'),
+        ),
+      )
       .orderBy(asc(photos.position), asc(photos.createdAt));
     const consentState = await this.currentConsents(userId);
 

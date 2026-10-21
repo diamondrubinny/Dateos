@@ -1,6 +1,6 @@
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
-import rateLimit from '@fastify/rate-limit';
+import rateLimit, { normalizeIP } from '@fastify/rate-limit';
 import type { FastifyInstance } from 'fastify';
 import type { Redis } from 'ioredis';
 import type { Env } from '../config/env.js';
@@ -39,5 +39,8 @@ export async function registerSecurity(app: FastifyInstance, { env, redis }: Sec
     // reports the outage). Sensitive routes such as auth override this to fail closed.
     skipOnError: true,
     allowList: (request) => request.url === '/health',
+    // Requests without a peer address (unix sockets, test sockets) share one bucket instead of
+    // crashing the default key generator.
+    keyGenerator: (request) => (request.ip ? normalizeIP(request.ip, 64) : 'no-ip'),
   });
 }

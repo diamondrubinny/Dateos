@@ -5,6 +5,7 @@ import {
   MediaJob,
   PROFILE_QUEUE,
   ProfileJob,
+  realtimeChannel,
   type DeleteObjectsJob,
   type EmbedProfileJob,
   type ProcessPhotoJob,
@@ -16,7 +17,7 @@ import { pino } from 'pino';
 import { createClamavScanner, noopScanner } from './clamav.js';
 import { loadWorkerEnv } from './env.js';
 import { deleteObjects, processPhoto, type JobContext } from './jobs.js';
-import { cleanupDiscovery, embedProfile } from './profile-jobs.js';
+import { cleanupDiscovery, embedProfile, purgeClosedChats } from './profile-jobs.js';
 
 async function main(): Promise<void> {
   const env = loadWorkerEnv();
@@ -35,6 +36,8 @@ async function main(): Promise<void> {
   });
   await storage.ensureBuckets();
 
+  const publisher = new Redis(env.REDIS_URL, { maxRetriesPerRequest: 2 });
+  publisher.on('error', (error) => log.error({ err: error }, 'redis publisher error'));
   const scanningEnabled = env.MALWARE_SCAN === 'clamav';
   if (!scanningEnabled) log.warn('Lite mode: MALWARE_SCAN=disabled, uploads are NOT scanned');
   const ctx: JobContext = {
@@ -43,6 +46,9 @@ async function main(): Promise<void> {
     scanner: scanningEnabled ? createClamavScanner(env.CLAMAV_HOST, env.CLAMAV_PORT) : noopScanner,
     scanningEnabled,
     log,
+    publish: async (userId, event) => {
+      await publisher.publish(realtimeChannel(userId), JSON.stringify(event));
+    },
   };
 
   const connection = new Redis(env.REDIS_URL, { maxRetriesPerRequest: null });
@@ -78,7 +84,7 @@ async function main(): Promise<void> {
         case ProfileJob.EmbedProfile:
           return embedProfile(db, embeddings, job.data as EmbedProfileJob);
         case 'cleanup-discovery':
-          return cleanupDiscovery(db);
+          return { ...(await cleanupDiscovery(db)), ...(await purgeClosedChats(db, storage)) };
         default:
           throw new Error(`Unknown job: ${job.name}`);
       }
@@ -106,6 +112,7 @@ async function main(): Promise<void> {
     await profileWorker.close();
     await scheduler.close();
     connection.disconnect();
+    publisher.disconnect();
     storage.close();
     await pool.end();
     process.exit(0);

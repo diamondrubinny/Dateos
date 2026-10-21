@@ -1,7 +1,7 @@
 import { schema, type Database } from '@dateos/db';
-import type { DeleteObjectsJob, ProcessPhotoJob } from '@dateos/shared';
+import type { DeleteObjectsJob, ProcessPhotoJob, RealtimeEvent } from '@dateos/shared';
 import { mediaKey, type Storage } from '@dateos/storage';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 import type { Logger } from 'pino';
 import type { Scanner } from './clamav.js';
 import { InvalidImageError, processImage } from './image.js';
@@ -14,6 +14,31 @@ export interface JobContext {
   scanner: Scanner;
   scanningEnabled: boolean;
   log: Logger;
+  /** Publishes a realtime event to a user (chat images: tell both people the scan finished). */
+  publish?: (userId: string, event: RealtimeEvent) => Promise<void>;
+}
+
+/** For chat images, tell both participants that the message changed (now visible or rejected). */
+async function notifyChatImage(ctx: JobContext, photoId: string): Promise<void> {
+  if (!ctx.publish) return;
+  const rows = await ctx.db.execute<{
+    message_id: string;
+    match_id: string;
+    user_a: string;
+    user_b: string;
+  }>(sql`
+    SELECT m.id AS message_id, m.match_id, ma.user_a, ma.user_b
+    FROM messages m JOIN matches ma ON ma.id = m.match_id
+    WHERE m.photo_id = ${photoId}`);
+  for (const r of rows.rows) {
+    for (const userId of [r.user_a, r.user_b]) {
+      await ctx.publish(userId, {
+        type: 'message.updated',
+        matchId: r.match_id,
+        messageId: r.message_id,
+      });
+    }
+  }
 }
 
 async function reject(
@@ -52,6 +77,7 @@ export async function processPhoto(ctx: JobContext, { photoId }: ProcessPhotoJob
     if (!result.clean) {
       ctx.log.warn({ photoId, signature: result.signature }, 'malware detected; upload rejected');
       await reject(ctx, photoId, row.userId, 'malware', row.quarantineKey);
+      await notifyChatImage(ctx, photoId);
       return 'rejected';
     }
   } else {
@@ -64,6 +90,7 @@ export async function processPhoto(ctx: JobContext, { photoId }: ProcessPhotoJob
   } catch (error) {
     if (!(error instanceof InvalidImageError)) throw error;
     await reject(ctx, photoId, row.userId, error.message, row.quarantineKey);
+    await notifyChatImage(ctx, photoId);
     return 'rejected';
   }
 
@@ -85,6 +112,7 @@ export async function processPhoto(ctx: JobContext, { photoId }: ProcessPhotoJob
     await ctx.storage.delete(ctx.storage.buckets.media, [key]);
   }
   await ctx.storage.delete(ctx.storage.buckets.quarantine, [row.quarantineKey]);
+  if (updated.length > 0) await notifyChatImage(ctx, photoId);
   return updated.length === 0 ? 'orphaned' : 'clean';
 }
 

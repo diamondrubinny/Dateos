@@ -95,7 +95,7 @@ export function candidateSql(q: CandidateQuery): SQL {
       AND ST_DWithin(me.geo, cl.geo, LEAST(me.max_distance_km, cpr.max_distance_km) * 1000.0)
       AND (cardinality(me.wants) = 0 OR c.intention = ANY(me.wants))
       AND (cardinality(cpr.intentions) = 0 OR me.intention = ANY(cpr.intentions))
-      AND EXISTS (SELECT 1 FROM photos ph WHERE ph.user_id = c.user_id AND ph.status = 'clean')
+      AND EXISTS (SELECT 1 FROM photos ph WHERE ph.user_id = c.user_id AND ph.status = 'clean' AND ph.purpose = 'profile')
       AND ${notSeparated(sql`me.user_id`, sql`c.user_id`)}
       ${q.targetId ? sql`AND c.user_id = ${q.targetId}` : sql``}
       ${q.excludeDecided ? sql`AND NOT EXISTS (SELECT 1 FROM interactions i WHERE i.actor_id = me.user_id AND i.target_id = c.user_id)` : sql``}
