@@ -145,6 +145,7 @@ export const he: Translations = {
     deleteConfirmBody: 'הפעולה תמחק לצמיתות את הפרופיל, התמונות והמידע שלך. אי אפשר לבטל אותה.',
     deleteConfirm: 'מחיקה לצמיתות',
     deleted: 'החשבון נמחק.',
+    credit: 'Dateos היא תוכנה חינמית בקוד פתוח שנוצרה על ידי Diamond Rubinny (רישיון MIT).',
   },
   legal: {
     accessibilityTitle: 'הצהרת נגישות',

@@ -1,5 +1,6 @@
 {
   "name": "@dateos/mobile",
+  "author": "Diamond Rubinny",
   "version": "0.0.0",
   "main": "expo-router/entry",
   "dependencies": {

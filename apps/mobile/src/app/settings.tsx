@@ -144,6 +144,9 @@ function SettingsContent() {
           onPress={() => setConfirming(true)}
         />
       )}
+      <AppText variant="caption" tone="muted" center>
+        {t('settings.credit')}
+      </AppText>
     </Screen>
   );
 }

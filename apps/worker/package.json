@@ -1,5 +1,6 @@
 {
   "name": "@dateos/worker",
+  "author": "Diamond Rubinny",
   "version": "0.0.0",
   "private": true,
   "license": "MIT",

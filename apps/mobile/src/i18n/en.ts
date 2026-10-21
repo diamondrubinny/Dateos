@@ -147,6 +147,7 @@ export const en = {
       'This permanently deletes your profile, photos and data. It cannot be undone.',
     deleteConfirm: 'Delete permanently',
     deleted: 'Your account was deleted.',
+    credit: 'Dateos is free, open-source software created by Diamond Rubinny (MIT license).',
   },
   legal: {
     accessibilityTitle: 'Accessibility statement',

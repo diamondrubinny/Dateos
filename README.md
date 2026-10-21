@@ -195,4 +195,6 @@ Security, privacy and accessibility are requirements, not extras.
 
 ## License
 
-[MIT](LICENSE) © 2026 diamondrubinny and contributors.
+[MIT](LICENSE) © 2026 Diamond Rubinny and contributors.
+
+Created and maintained by **Diamond Rubinny** ([@diamondrubinny](https://github.com/diamondrubinny)).
