@@ -120,6 +120,9 @@ export const en = {
     looking_for: 'I’m looking for someone who',
   },
   home: {
+    editBio: 'Edit bio',
+    editPhotos: 'Edit photos',
+    editPrompts: 'Edit prompts',
     greeting: 'Welcome, {{name}}',
     readyTitle: 'Your profile is ready',
     readyBody: 'Discovery and Daily Picks arrive in the next release. We’ll let you know.',
@@ -393,6 +396,68 @@ export const en = {
     'not-configured':
       'This app build has no notification service configured. Ask the community operator.',
     error: 'Notifications could not be turned on. Please try again.',
+  },
+  coach: {
+    open: 'Profile tips',
+    title: 'Profile tips',
+    intro: 'Small changes that help people get to know you.',
+    allGood: 'Your profile looks great. Nothing to improve right now.',
+    howItWorks:
+      'These tips come from simple, published rules that run on this community’s server. No AI is used for them.',
+    tips: {
+      add_photos: {
+        title: 'Add a few more photos',
+        body: 'Profiles with 3 or more photos (one clear face photo, one doing something you love) get more replies.',
+        action: 'Add photos',
+      },
+      bio_missing: {
+        title: 'Write a short bio',
+        body: 'Two or three sentences about what you enjoy give people something to reply to.',
+        action: 'Write a bio',
+      },
+      bio_short: {
+        title: 'Say a bit more',
+        body: 'Your bio is very short. Add one specific thing you love or are looking forward to.',
+        action: 'Edit bio',
+      },
+      bio_generic: {
+        title: 'Make it specific',
+        body: 'Phrases like “I love to travel” or “just ask” are on many profiles. Where to, or what about?',
+        action: 'Rewrite my bio',
+      },
+      add_prompts: {
+        title: 'Answer more prompts',
+        body: 'Prompts are the easiest way for someone to start a conversation with you.',
+        action: 'Add prompts',
+      },
+      prompt_short: {
+        title: 'Give an answer something to hold on to',
+        body: 'One-word answers are hard to reply to. Add a detail or a story.',
+        action: 'Edit prompts',
+      },
+      verify: {
+        title: 'Verify your photos',
+        body: 'A quick selfie, checked by a person, adds a badge that shows you are real.',
+        action: 'Verify',
+      },
+    },
+  },
+  editBio: {
+    title: 'Edit your bio',
+    label: 'Bio',
+    hint: 'Up to 500 characters. Please do not include phone numbers or social media handles.',
+    save: 'Save bio',
+    invalid: 'Please check your bio and try again.',
+    ideasTitle: 'Need ideas?',
+    ideasHint:
+      'An AI writes two drafts from your own bio and prompt answers. It can get things wrong: check every word before you use one.',
+    getIdeas: 'Suggest two drafts',
+    noIdeas: 'No good drafts this time. Try again, or write your own.',
+    ideaLabel: 'Draft {{n}}',
+    useIdea: 'Use draft {{n}}',
+    tooMany: 'You have used today’s drafts. Try again tomorrow.',
+    needsConsent:
+      'AI drafts are available if you allow the external AI option in Settings → Privacy.',
   },
   notFound: { title: 'Page not found', home: 'Go to the home screen' },
 };

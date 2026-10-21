@@ -70,6 +70,24 @@ function ProfileContent() {
           ))}
         </View>
       </View>
+      <Button label={`✨ ${t('coach.open')}`} onPress={() => router.push('/coach')} />
+      <View style={styles.editRow}>
+        <Button
+          variant="secondary"
+          label={t('home.editBio')}
+          onPress={() => router.push('/edit-bio')}
+        />
+        <Button
+          variant="secondary"
+          label={t('home.editPhotos')}
+          onPress={() => router.push('/onboarding/photos?edit=1')}
+        />
+        <Button
+          variant="secondary"
+          label={t('home.editPrompts')}
+          onPress={() => router.push('/onboarding/prompts?edit=1')}
+        />
+      </View>
       <Button
         variant="secondary"
         label={t('home.settings')}
@@ -89,4 +107,5 @@ const styles = StyleSheet.create({
   cover: { width: '100%', aspectRatio: 4 / 5 },
   cardBody: { padding: spacing.lg, gap: spacing.sm },
   prompt: { padding: spacing.md, borderRadius: radius.md, gap: spacing.xs },
+  editRow: { gap: spacing.sm },
 });

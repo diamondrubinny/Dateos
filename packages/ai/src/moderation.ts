@@ -24,22 +24,37 @@ const LEET: Record<string, string> = {
 };
 
 /** Lowercase, drop diacritics and Hebrew niqqud, undo leetspeak, squeeze repeats ("fuuuck" → "fuck"). */
-export function normalizeForModeration(text: string): string {
+function prepare(text: string): string {
   return text
     .toLowerCase()
     .normalize('NFKD')
-    .replace(/[֑-ׇ̀-ͯ]/g, '')
+    .replace(/[\u0591-\u05C7\u0300-\u036F]/g, '')
     .replace(/[013457@$]/g, (c) => LEET[c] ?? c)
-    .replace(/(\p{L})\1{2,}/gu, '$1')
+    .replace(/(\p{L})\1{2,}/gu, '$1');
+}
+
+function finish(text: string): string {
+  return text
     .replace(/[^\p{L}\p{N}\s']/gu, ' ')
     .replace(/\s+/g, ' ')
     .trim();
 }
 
+export function normalizeForModeration(text: string): string {
+  return finish(prepare(text));
+}
+
 /** Hebrew words can carry one-letter prefixes (ו/ה/ש/ב/ל/מ/כ), e.g. "והמטומטם". */
 const HE_PREFIX = '(?:[והשבלמכ]{0,2})';
 
-function lexicon(en: string[], he: string[]): RegExp {
+/** Every word that appears in a harm phrase: candidates for undoing masks like "f*ck". */
+const HARM_WORDS = new Set<string>();
+
+function lexicon(en: string[], he: string[], collect = false): RegExp {
+  if (collect) {
+    for (const phrase of [...en, ...he])
+      for (const word of phrase.split(' ')) if (word.length >= 3) HARM_WORDS.add(word);
+  }
   const enPart = en.map((w) => w.replace(/ /g, '\\s+')).join('|');
   const hePart = he.map((w) => w.replace(/ /g, '\\s+')).join('|');
   return new RegExp(`(?<![\\p{L}])(?:(?:${enPart})|${HE_PREFIX}(?:${hePart}))(?![\\p{L}])`, 'u');
@@ -81,6 +96,7 @@ const RULES: Record<HarmCategory, RegExp> = {
       'חתיכת חרא',
       'בהמה',
     ],
+    true,
   ),
   sexual: lexicon(
     [
@@ -108,6 +124,7 @@ const RULES: Record<HarmCategory, RegExp> = {
       'חרמן',
       'חרמנית',
     ],
+    true,
   ),
   threat: lexicon(
     [
@@ -132,11 +149,41 @@ const RULES: Record<HarmCategory, RegExp> = {
       'את תצטערי',
       'תיזהרי ממני',
     ],
+    true,
   ),
 };
 
+const MASK = /[*#•]/u;
+const SEPARATED = /^(?:\p{L}[.\-_·])+\p{L}[.\-_·]?$/u;
+
+/** "f*ck" → "fuck" when exactly one harm word fits; otherwise the token is left alone. */
+function unmaskToken(token: string): string {
+  const core = token.replace(/^[^\p{L}*#•]+|[^\p{L}*#•]+$/gu, '');
+  if (SEPARATED.test(core)) return core.replace(/[.\-_·]/g, ''); // i.d.i.o.t
+  if (!MASK.test(core) || !/^\p{L}/u.test(core)) return token;
+  const chars = [...core];
+  const letters = chars.filter((c) => /\p{L}/u.test(c)).length;
+  if (letters < 2 || letters < chars.length / 2) return token;
+  const fits = [...HARM_WORDS].filter((word) => {
+    const w = [...word];
+    return w.length === chars.length && chars.every((c, i) => MASK.test(c) || c === w[i]);
+  });
+  return fits.length === 1 ? fits[0]! : token;
+}
+
+/** Joins runs of 3+ single letters: "i d i o t" → "idiot", "ז ו נ ה" → "זונה". */
+function joinSpacedLetters(text: string): string {
+  return text.replace(/(?<!\p{L})\p{L}(?: \p{L}){2,}(?!\p{L})/gu, (run) => run.replace(/ /g, ''));
+}
+
+/** Text prepared for harm rules: masks and spaced-out letters undone. */
+export function revealMaskedWords(text: string): string {
+  const unmasked = prepare(text).split(/\s+/).map(unmaskToken).join(' ');
+  return joinSpacedLetters(finish(unmasked));
+}
+
 export function checkHarm(text: string): HarmResult {
-  const normalized = normalizeForModeration(text);
+  const normalized = revealMaskedWords(text);
   const categories = (Object.keys(RULES) as HarmCategory[]).filter((c) =>
     RULES[c].test(normalized),
   );
@@ -230,6 +277,41 @@ export function detectScamSignals(text: string, messagesSoFar: number): ScamSign
 }
 
 /** Removes things an AI suggestion must never contain. */
+/** "@handle" style usernames and the apps people use to move a chat elsewhere. */
+const HANDLE = /(?<![\p{L}\p{N}._])@[\p{L}\p{N}_.]{2,}/u;
+const CONTACT_APPS =
+  /\b(?:instagram|insta|ig|telegram|whatsapp|snapchat|snap|tiktok|facebook|messenger|signal|wechat|kik|onlyfans)\b|אינסטגרם|אינסטה|טלגרם|וואטסאפ|ווטסאפ|סנאפ|טיקטוק|פייסבוק/iu;
+
+/** Links, emails, phone numbers, handles or messaging apps: never allowed in generated text. */
 export function containsContactOrLink(text: string): boolean {
-  return LINK.test(text) || PHONE.test(text) || /\S+@\S+\.\S+/.test(text);
+  return (
+    LINK.test(text) ||
+    PHONE.test(text) ||
+    /\S+@\S+\.\S+/.test(text) ||
+    HANDLE.test(text) ||
+    CONTACT_APPS.test(text)
+  );
+}
+
+/**
+ * Text that reads like instructions to a model (prompt-injection residue). Generated text that
+ * echoes such phrases is discarded, even when it came from the person's own profile.
+ */
+const INSTRUCTION = new RegExp(
+  [
+    '\\bignore\\s+(?:(?:all|any|the|your|my)\\s+)*(?:(?:previous|prior|above|earlier)\\s+)?(?:instructions|prompts|messages|rules)\\b',
+    '\\bsystem\\s+prompt\\b',
+    '\\bnew\\s+instructions\\b',
+    '\\bas an ai\\b',
+    '\\blanguage model\\b',
+    '\\bdisregard\\s+(?:all|the|previous|your)\\b',
+    '(?:התעלם|התעלמ[וי]|תתעלמ[וי]?)\\s+מ(?:כל\\s+)?ה?הוראות',
+    'הוראות\\s+(?:קודמות|חדשות)',
+    'פרומפט',
+  ].join('|'),
+  'iu',
+);
+
+export function looksLikeInstructions(text: string): boolean {
+  return INSTRUCTION.test(text);
 }

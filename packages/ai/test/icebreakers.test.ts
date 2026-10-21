@@ -89,4 +89,17 @@ describe('ollamaIcebreakers', () => {
     const broken = ollamaIcebreakers('http://o', 'm', reply('', 500));
     expect(await broken.suggest(input)).toEqual(await templateIcebreakers.suggest(input));
   });
+
+  it('keeps the good lines a model returns and tops up with templates', async () => {
+    const one = ollamaIcebreakers(
+      'http://o',
+      'm',
+      reply('Any favourite spot for sunset walks by the water?'),
+    );
+    const lines = await one.suggest(input);
+    expect(lines).toHaveLength(3);
+    expect(lines[0]).toBe('Any favourite spot for sunset walks by the water?');
+    const templates = await templateIcebreakers.suggest(input);
+    expect(lines.slice(1)).toEqual(templates.slice(0, 2));
+  });
 });

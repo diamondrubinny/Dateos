@@ -96,7 +96,9 @@ export class ChatService {
     private readonly realtime: Realtime,
     private readonly discovery: DiscoveryService,
     private readonly photos: PhotoService,
-    private readonly icebreakers: IcebreakerProvider,
+    /** Picks the icebreaker provider for a conversation (consent of both people for external AI). */
+    private readonly icebreakers:
+      IcebreakerProvider | ((a: string, b: string) => Promise<IcebreakerProvider>),
     private readonly audio?: AudioService,
     private readonly notifier?: ChatNotifier,
   ) {}
@@ -370,7 +372,11 @@ export class ChatService {
       .from(prompts)
       .where(eq(prompts.userId, otherId))
       .orderBy(asc(prompts.position));
-    return this.icebreakers.suggest({
+    const provider =
+      typeof this.icebreakers === 'function'
+        ? await this.icebreakers(viewerId, otherId)
+        : this.icebreakers;
+    return provider.suggest({
       locale,
       otherName: profile?.name ?? '',
       bio: profile?.bio ?? null,

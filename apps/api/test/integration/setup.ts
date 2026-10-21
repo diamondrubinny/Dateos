@@ -1,3 +1,4 @@
+import type { TextModel } from '@dateos/ai';
 import { existsSync } from 'node:fs';
 import { runMigrations } from '@dateos/db';
 import type { DeleteObjectsJob, ProcessAudioJob, ProcessPhotoJob, PushJob } from '@dateos/shared';
@@ -51,7 +52,12 @@ async function isolatedResources(databaseUrl: string, redisUrl: string) {
   return { DATABASE_URL: db.toString(), REDIS_URL: redis.toString() };
 }
 
-export async function setupIntegration(): Promise<TestContext> {
+export interface SetupOptions {
+  /** Text AI model for this suite (default: none). */
+  textModel?: TextModel | null;
+}
+
+export async function setupIntegration(options: SetupOptions = {}): Promise<TestContext> {
   const envFile = new URL('../../../../.env', import.meta.url);
   if (existsSync(envFile)) process.loadEnvFile(envFile);
   const isolated = await isolatedResources(
@@ -100,6 +106,7 @@ export async function setupIntegration(): Promise<TestContext> {
       notifyQueue: { push: async (job) => void jobs.push.push(job), close: async () => undefined },
       today: () => today.value,
       now: () => clock.value,
+      textModel: options.textModel ?? null,
     },
   );
   await services.storage.ensureBuckets();

@@ -1,4 +1,5 @@
 import type {
+  CoachResponse,
   ConsentInput,
   InstanceInfo,
   InteractionInput,
@@ -55,9 +56,9 @@ export const useCreateProfile = () =>
     apiFetch('/v1/me/profile', { method: 'POST', body: json(input) }),
   );
 export const useUpdateProfile = () =>
-  useMeMutation((input: ProfileUpdate) =>
-    apiFetch('/v1/me/profile', { method: 'PATCH', body: json(input) }),
-  );
+  useMeMutation(async (input: ProfileUpdate) => {
+    await apiFetch('/v1/me/profile', { method: 'PATCH', body: json(input) });
+  });
 export const useSetPreferences = () =>
   useMeMutation((input: Preferences) =>
     apiFetch('/v1/me/preferences', { method: 'PUT', body: json(input) }),
@@ -181,3 +182,21 @@ export const useSetLocation = () =>
   );
 export const useClearLocation = () =>
   useMeMutation(() => apiFetch('/v1/me/location', { method: 'DELETE' }));
+
+// ---------------------------------------------------------------- profile coach
+
+export const coachKey = ['coach'] as const;
+
+export function useCoach() {
+  return useQuery({ queryKey: coachKey, queryFn: () => apiFetch<CoachResponse>('/v1/me/coach') });
+}
+
+export function useBioIdeas() {
+  return useMutation({
+    mutationFn: (locale: 'he' | 'en') =>
+      apiFetch<{ ideas: string[] }>('/v1/me/coach/bio-ideas', {
+        method: 'POST',
+        body: json({ locale }),
+      }),
+  });
+}

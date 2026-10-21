@@ -1,5 +1,5 @@
 import { MAX_PROMPTS, promptKeys, type PromptKey } from '@dateos/shared';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
@@ -14,6 +14,8 @@ import { radius, spacing, useColors } from '../../lib/theme';
 
 export default function PromptsStep() {
   const { t } = useTranslation();
+  // Opened from the profile to edit (not during onboarding): go back when done.
+  const editing = useLocalSearchParams<{ edit?: string }>().edit === '1';
   const colors = useColors();
   const me = useMe();
   const save = useSetPrompts();
@@ -37,7 +39,8 @@ export default function PromptsStep() {
     setError(undefined);
     try {
       await save.mutateAsync(items);
-      router.replace('/');
+      if (editing) router.back();
+      else router.replace('/');
     } catch {
       setError(t('common.genericError'));
     }
@@ -47,7 +50,7 @@ export default function PromptsStep() {
     <Screen
       title={t('onboarding.prompts.title')}
       subtitle={t('onboarding.prompts.subtitle')}
-      step={{ current: 4, total: ONBOARDING_TOTAL }}
+      {...(editing ? { back: true } : { step: { current: 4, total: ONBOARDING_TOTAL } })}
       footer={
         <Button
           label={t('onboarding.done')}

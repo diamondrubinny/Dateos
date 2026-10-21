@@ -12,7 +12,8 @@
     "chat": "tsx chat.ts",
     "safety": "tsx safety.ts",
     "instance": "tsx instance.ts",
-    "voice": "tsx voice.ts"
+    "voice": "tsx voice.ts",
+    "coach": "tsx coach.ts"
   },
   "dependencies": {
     "@axe-core/playwright": "4.14.0",

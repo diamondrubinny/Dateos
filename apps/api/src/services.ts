@@ -14,7 +14,8 @@ import {
   type ProfileQueue,
 } from './lib/queue.js';
 import { AudioService } from './modules/chat/audio.js';
-import { ollamaIcebreakers, templateIcebreakers } from '@dateos/ai';
+import { llmIcebreakers, templateIcebreakers, type TextModel } from '@dateos/ai';
+import { AiGate, createTextModel } from './lib/ai-gate.js';
 import { createRealtime, type Realtime } from './lib/realtime.js';
 import { ChatService } from './modules/chat/service.js';
 import { DiscoveryService } from './modules/discovery/service.js';
@@ -46,6 +47,7 @@ export interface Services {
   staffMfa: StaffMfaService;
   moderation: ModerationService;
   instance: InstanceService;
+  ai: AiGate;
   /** Health checks and shutdown hooks for the resources above. */
   dependencies: Dependency[];
 }
@@ -56,6 +58,8 @@ export interface ServiceOverrides {
   profileQueue?: ProfileQueue;
   notifyQueue?: NotifyQueue;
   today?: () => string;
+  /** Text AI model (tests use a fake; null = no AI). */
+  textModel?: TextModel | null;
   /** Clock for TOTP checks (tests). */
   now?: () => number;
 }
@@ -97,10 +101,14 @@ export function createServices(
   const photos = new PhotoService(dbHandle.db, storage, mediaQueue, (viewer, owner) =>
     discovery.canView(viewer, owner),
   );
-  const icebreakers =
-    env.ICEBREAKERS_PROVIDER === 'ollama'
-      ? ollamaIcebreakers(env.OLLAMA_URL, env.OLLAMA_CHAT_MODEL)
-      : templateIcebreakers;
+  const ai = new AiGate(
+    dbHandle.db,
+    overrides.textModel !== undefined ? overrides.textModel : createTextModel(env),
+  );
+  const icebreakers = async (a: string, b: string) => {
+    const model = await ai.modelFor(a, b);
+    return model ? llmIcebreakers(model) : templateIcebreakers;
+  };
 
   const verification = new VerificationService(dbHandle.db, photos);
   const audio = new AudioService(dbHandle.db, storage, mediaQueue);
@@ -139,6 +147,7 @@ export function createServices(
     ),
     moderation: new ModerationService(dbHandle.db, discovery, hashEmail, today),
     instance: new InstanceService(dbHandle.db, env, photos),
+    ai,
     dependencies: [
       {
         name: 'postgres',

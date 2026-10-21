@@ -1,6 +1,6 @@
 import { MAX_PHOTO_BYTES, MAX_PHOTOS, type Photo } from '@dateos/shared';
 import * as ImagePicker from 'expo-image-picker';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
@@ -17,6 +17,8 @@ import { useSessionCookie } from '../../lib/use-cookie';
 
 export default function PhotosStep() {
   const { t } = useTranslation();
+  // Opened from the profile to edit (not during onboarding): go back when done.
+  const editing = useLocalSearchParams<{ edit?: string }>().edit === '1';
   const me = useMe();
   const upload = useUploadPhoto();
   const remove = useDeletePhoto();
@@ -68,14 +70,15 @@ export default function PhotosStep() {
 
   const next = () => {
     if (clean.length === 0) return setError(t('onboarding.photos.needOne'));
-    router.replace('/onboarding/prompts');
+    if (editing) router.back();
+    else router.replace('/onboarding/prompts');
   };
 
   return (
     <Screen
       title={t('onboarding.photos.title')}
       subtitle={t('onboarding.photos.subtitle')}
-      step={{ current: 3, total: ONBOARDING_TOTAL }}
+      {...(editing ? { back: true } : { step: { current: 3, total: ONBOARDING_TOTAL } })}
       footer={<Button label={t('common.continue')} onPress={next} disabled={upload.isPending} />}
     >
       {error ? <Banner tone="error" message={error} /> : null}

@@ -153,6 +153,10 @@ flowchart LR
 | `infra/`           | Docker Compose and the Postgres image                                |
 | `e2e/`             | Browser flow, screenshots and accessibility audit                    |
 
+## AI, transparently
+
+All AI features are optional, run on the community's own server by default, and are documented with their data use and eval results in [`docs/AI.md`](docs/AI.md). No attractiveness scoring, no face recognition, no AI decisions about accounts.
+
 ## Security and privacy
 
 - Passwordless sign-in: magic-link tokens are single-use and stored hashed. Limits apply per IP and per inbox, and responses never reveal whether an email is registered.

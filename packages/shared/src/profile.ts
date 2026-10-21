@@ -166,3 +166,27 @@ export const instanceSchema = z.object({
   setupRequired: z.boolean(),
 });
 export type InstanceInfo = z.infer<typeof instanceSchema>;
+
+// ---------------------------------------------------------------------------
+// Profile Coach (phase 5)
+// ---------------------------------------------------------------------------
+
+export const coachTipIds = [
+  'add_photos',
+  'bio_missing',
+  'bio_short',
+  'bio_generic',
+  'add_prompts',
+  'prompt_short',
+  'verify',
+] as const;
+export type CoachTipId = (typeof coachTipIds)[number];
+
+export const coachResponseSchema = z.object({
+  tips: z.array(z.object({ id: z.enum(coachTipIds) })),
+  /** Bio ideas need an AI provider (and consent if it is external). */
+  bioIdeas: z.enum(['available', 'needs_consent', 'unavailable']),
+});
+export type CoachResponse = z.infer<typeof coachResponseSchema>;
+
+export const bioIdeasSchema = z.object({ ideas: z.array(z.string()) });

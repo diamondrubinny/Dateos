@@ -65,9 +65,18 @@ export const envSchema = z.object({
   APPLE_CLIENT_SECRET: optionalString,
 
   /** `template` works offline; `ollama` uses a local chat model (no data leaves the server). */
-  ICEBREAKERS_PROVIDER: z.enum(['template', 'ollama']).default('template'),
+  /**
+   * Text AI for icebreakers and bio ideas: `template` (no AI), `ollama` (on this server) or
+   * `openai` (any OpenAI-compatible endpoint, see OPENAI_*).
+   */
+  ICEBREAKERS_PROVIDER: z.enum(['template', 'ollama', 'openai']).default('template'),
   OLLAMA_URL: z.url().default('http://localhost:11434'),
   OLLAMA_CHAT_MODEL: z.string().default('qwen2.5:1.5b'),
+  OPENAI_BASE_URL: optionalString.pipe(z.url().optional()),
+  OPENAI_API_KEY: optionalString,
+  OPENAI_MODEL: optionalString,
+  /** true when the endpoint is a third party (members must opt in to `ai_cloud`). */
+  OPENAI_EXTERNAL: booleanString.default(true),
 
   INSTANCE_NAME: z.string().max(40).default('Dateos'),
   INSTANCE_TAGLINE: z.string().max(120).default(DEFAULT_TAGLINE),
