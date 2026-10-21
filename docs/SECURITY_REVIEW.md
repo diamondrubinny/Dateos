@@ -57,3 +57,12 @@ ffmpeg without a shell and with a protocol whitelist; storage keys from server U
 rules and ~1 km location precision; bounded input schemas; consent gates for sensitive data and AI;
 prompt-injection output filters; tokens in the keychain / HttpOnly cookies; no HTML rendering of user
 content.
+
+## CodeQL (security-extended), 2026-10-21
+
+CodeQL on the pull request reported 3 high alerts (`js/polynomial-redos`, CVSS 7.5): quote trimming
+(`[“”"…]+$`) in icebreaker and bio-draft validation, and an email pattern (`\S+@\S+\.\S+`) in the
+contact filter. Text from members and from language models goes through them, so a long crafted string
+could make the server spend quadratic time. Fixed with linear code (a quote-trimming loop, word-by-word
+email check with an anchored pattern) and a test with 200 000-character adversarial input. Local run of
+the same suite afterwards: **0 results**.

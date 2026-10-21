@@ -62,3 +62,31 @@ describe('Arabic and Russian', () => {
     }
   });
 });
+
+describe('linear-time text cleanup (no regex backtracking)', () => {
+  it('trims quote marks around a line', async () => {
+    const { trimQuotes } = await import('../src/icebreakers.js');
+    expect(trimQuotes('“Hello there”')).toBe('Hello there');
+    expect(trimQuotes('«Привет»')).toBe('Привет');
+    expect(trimQuotes('״שלום״')).toBe('שלום');
+    expect(trimQuotes('He said "hi" today')).toBe('He said "hi" today');
+    expect(trimQuotes('""""')).toBe('');
+  });
+
+  it('stays fast on adversarial input', async () => {
+    const { trimQuotes } = await import('../src/icebreakers.js');
+    const quotes = '"'.repeat(100_000) + 'x' + '"'.repeat(100_000) + 'x';
+    const emailish = 'a@'.repeat(50_000) + ' ' + '.'.repeat(50_000);
+    const start = performance.now();
+    trimQuotes(quotes);
+    containsContactOrLink(emailish);
+    sanitizeSuggestions([quotes], 'en');
+    expect(performance.now() - start).toBeLessThan(500);
+  });
+
+  it('still finds email addresses', () => {
+    expect(containsContactOrLink('write to noa.levi@example.co.il')).toBe(true);
+    expect(containsContactOrLink('me@x.io')).toBe(true);
+    expect(containsContactOrLink('meet @ 8 at the café.')).toBe(false);
+  });
+});

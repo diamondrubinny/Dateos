@@ -1,5 +1,5 @@
-import { writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 import AxeBuilder from '@axe-core/playwright';
 import type { Page } from 'playwright';
 import sharp from 'sharp';
@@ -45,11 +45,19 @@ export async function magicLink(email: string): Promise<string> {
 export async function signInHttp(
   email: string,
 ): Promise<{ name: string; value: string; header: string }> {
-  const res = await fetch(`${API}/v1/auth/sign-in/magic-link`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json', origin: WEB },
-    body: JSON.stringify({ email, callbackURL: `${WEB}/` }),
-  });
+  const request = () =>
+    fetch(`${API}/v1/auth/sign-in/magic-link`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', origin: WEB },
+      body: JSON.stringify({ email, callbackURL: `${WEB}/` }),
+    });
+  let res = await request();
+  if (res.status === 429) {
+    // Every account in these scripts signs in from one IP, which the real per-IP limit
+    // (5 links / 10 min) is meant to stop. Clear it on the local dev database and retry once.
+    await resetSignInLimits();
+    res = await request();
+  }
   if (!res.ok) throw new Error(`sign-in ${res.status}: ${await res.text()}`);
   const verify = await fetch(await magicLink(email), { redirect: 'manual' });
   const cookie = verify.headers.getSetCookie().find((c) => c.includes('session_token'));
@@ -57,6 +65,18 @@ export async function signInHttp(
   const [pair] = cookie.split(';');
   const [name, value] = pair!.split('=') as [string, string];
   return { name, value, header: pair! };
+}
+
+async function resetSignInLimits(): Promise<void> {
+  const envFile = new URL('../.env', import.meta.url);
+  if (!process.env.DATABASE_URL && existsSync(envFile)) process.loadEnvFile(envFile);
+  const { createDb } = await import('@dateos/db');
+  const { pool } = createDb(process.env.DATABASE_URL ?? '', { max: 1 });
+  try {
+    await pool.query('DELETE FROM rate_limit');
+  } finally {
+    await pool.end();
+  }
 }
 
 export function apiClient(cookie: string) {
@@ -101,6 +121,7 @@ export async function audit(page: Page, screen: string) {
 }
 
 export async function shot(page: Page, file: string) {
+  mkdirSync(dirname(join(OUT, file)), { recursive: true });
   await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
   await page.waitForTimeout(400);
   const raw = await page.screenshot();

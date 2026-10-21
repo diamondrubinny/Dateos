@@ -416,12 +416,31 @@ const HANDLE = /(?<![\p{L}\p{N}._])@[\p{L}\p{N}_.]{2,}/u;
 const CONTACT_APPS =
   /\b(?:instagram|insta|ig|telegram|whatsapp|snapchat|snap|tiktok|facebook|messenger|signal|wechat|kik|onlyfans)\b|אינסטגרם|אינסטה|טלגרם|וואטסאפ|ווטסאפ|סנאפ|טיקטוק|פייסבוק|واتساب|واتس|تيليجرام|تلغرام|انستغرام|انستقرام|سناب|تيك توك|فيسبوك|телеграм|ватсап|вотсап|инстаграм|инста|тикток|фейсбук|вконтакте/iu;
 
+const EMAIL_WORD = /^[^@.]+(?:\.[^@.]+)*@[^@.]+(?:\.[^@.]+)+$/;
+const isWordChar = (c: string) => /[\p{L}\p{N}]/u.test(c);
+
+/**
+ * Email addresses, checked word by word: an unanchored regex search over a long message can take
+ * quadratic time, this stays linear.
+ */
+function containsEmail(text: string): boolean {
+  for (const raw of text.split(/\s/)) {
+    if (!raw.includes('@')) continue;
+    let start = 0;
+    let end = raw.length;
+    while (start < end && !isWordChar(raw[start]!)) start += 1;
+    while (end > start && !isWordChar(raw[end - 1]!)) end -= 1;
+    if (EMAIL_WORD.test(raw.slice(start, end))) return true;
+  }
+  return false;
+}
+
 /** Links, emails, phone numbers, handles or messaging apps: never allowed in generated text. */
 export function containsContactOrLink(text: string): boolean {
   return (
     LINK.test(text) ||
     PHONE.test(text) ||
-    /\S+@\S+\.\S+/.test(text) ||
+    containsEmail(text) ||
     HANDLE.test(text) ||
     CONTACT_APPS.test(text)
   );

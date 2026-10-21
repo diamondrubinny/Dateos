@@ -1,5 +1,5 @@
 import type { CoachTipId, Locale, PromptKey } from '@dateos/shared';
-import { LANGUAGE_NAMES, matchesLocaleScript } from './icebreakers.js';
+import { LANGUAGE_NAMES, matchesLocaleScript, trimQuotes } from './icebreakers.js';
 import type { TextModel } from './llm.js';
 import {
   checkHarm,
@@ -116,12 +116,9 @@ export function sanitizeBioIdeas(
   return raw
     .split(/\n{2,}|\n(?=\s*(?:\d+[.)]|[-*•]))/)
     .map((block) =>
-      block
-        .replace(/^\s*(?:\d+[.)]|[-*•]|(?:option|idea|bio)\s*\d*:)\s*/i, '')
-        .replace(/^["“”״']+|["“”״']+$/g, '')
-        .replace(/\s+/g, ' ')
-        .trim(),
+      block.replace(/^\s*(?:\d+[.)]|[-*•]|(?:option|idea|bio)\s*\d*:)\s*/i, '').trim(),
     )
+    .map((block) => trimQuotes(block).replace(/\s+/g, ' ').trim())
     .filter((idea) => {
       const key = normalizeForModeration(idea);
       if (seen.has(key) || key === before) return false;

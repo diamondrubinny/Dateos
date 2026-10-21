@@ -176,15 +176,22 @@ const SCRIPTS: Record<IcebreakerLocale, { own: RegExp; threshold: number }> = {
   ru: { own: /\p{Script=Cyrillic}/u, threshold: 0.8 },
 };
 
+const QUOTES = new Set(['"', '“', '”', '״', "'", '«', '»']);
+
+/** Removes quote marks around a line in linear time (a regex with `+$` can backtrack badly). */
+export function trimQuotes(text: string): string {
+  let start = 0;
+  let end = text.length;
+  while (start < end && QUOTES.has(text[start]!)) start += 1;
+  while (end > start && QUOTES.has(text[end - 1]!)) end -= 1;
+  return text.slice(start, end);
+}
+
 /** Validates model output: plain short lines in the right language, no links/contacts. */
 export function sanitizeSuggestions(lines: string[], locale: IcebreakerLocale = 'en'): string[] {
   return lines
-    .map((l) =>
-      l
-        .replace(/^\s*(?:[-*•]|\d+[.)])\s*/, '')
-        .replace(/^["“”״'«»]+|["“”״'«»]+$/g, '')
-        .trim(),
-    )
+    .map((l) => l.replace(/^\s*(?:[-*•]|\d+[.)])\s*/, '').trim())
+    .map((l) => trimQuotes(l).trim())
     .filter(
       (l) =>
         l.length >= 8 &&
