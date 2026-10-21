@@ -106,6 +106,22 @@ describe.skipIf(!integrationEnabled)('instance setup & branding (integration)', 
     expect(log.rows.map((r) => r.action)).toEqual(['setup.claim_failed', 'setup.claimed']);
   });
 
+  it('the token never works again, even after the last admin leaves', async () => {
+    const owner = await signIn(ctx, 'owner@example.test');
+    expect((await claim(owner, TOKEN)).statusCode).toBe(200);
+    // The only admin deletes their account: no admin is left.
+    expect(
+      (await ctx.app.inject({ method: 'DELETE', url: '/v1/me', headers: { cookie: owner } }))
+        .statusCode,
+    ).toBe(200);
+    expect((await instance()).setupRequired).toBe(false);
+    expect((await claim(noa.cookie, TOKEN)).statusCode).toBe(410);
+    const role = await ctx.services.dbHandle.pool.query('SELECT role FROM "user" WHERE id = $1', [
+      noa.id,
+    ]);
+    expect(role.rows[0].role).toBe('user');
+  });
+
   it('is closed once an admin exists from the CLI, and requires a session', async () => {
     await ctx.services.dbHandle.pool.query(`UPDATE "user" SET role = 'admin' WHERE id = $1`, [
       noa.id,

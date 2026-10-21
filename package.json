@@ -18,7 +18,8 @@
     "format:check": "prettier --check .",
     "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test",
     "infra:up": "docker compose -f infra/docker-compose.yml --env-file .env up -d",
-    "infra:down": "docker compose -f infra/docker-compose.yml --env-file .env down"
+    "infra:down": "docker compose -f infra/docker-compose.yml --env-file .env down",
+    "sbom": "npx --yes @cyclonedx/cdxgen@12.8.5 -t js --no-recurse -o sbom.cdx.json ."
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

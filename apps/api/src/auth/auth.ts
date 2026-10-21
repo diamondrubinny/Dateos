@@ -15,8 +15,27 @@ export const AUTH_BASE_PATH = '/v1/auth';
 export const CLIENT_IP_HEADER = 'x-dateos-client-ip';
 
 const MAGIC_LINK_TTL_SECONDS = 10 * 60;
-/** Protects a single inbox from being flooded from many IPs. */
-const MAX_LINKS_PER_EMAIL_PER_HOUR = 5;
+/**
+ * Sign-in emails per address. Counted per address *and* sender IP, so one attacker can't lock
+ * someone out by spending their quota; the per-address total still protects an inbox from floods
+ * coming from many IPs.
+ */
+const MAX_LINKS_PER_EMAIL_AND_IP_PER_HOUR = 5;
+const MAX_LINKS_PER_EMAIL_PER_HOUR = 20;
+
+async function allowEmail(redis: Redis, email: string, ip: string): Promise<boolean> {
+  const hash = createHash('sha256').update(email.toLowerCase()).digest('hex');
+  const ipHash = createHash('sha256').update(ip).digest('hex').slice(0, 16);
+  const counts: number[] = [];
+  for (const key of [`dateos:ml:${hash}`, `dateos:ml:${hash}:${ipHash}`]) {
+    const count = await redis.incr(key);
+    if (count === 1) await redis.expire(key, 3_600);
+    counts.push(count);
+  }
+  return (
+    counts[0]! <= MAX_LINKS_PER_EMAIL_PER_HOUR && counts[1]! <= MAX_LINKS_PER_EMAIL_AND_IP_PER_HOUR
+  );
+}
 
 export interface AuthDeps {
   env: Env;
@@ -25,13 +44,6 @@ export interface AuthDeps {
   redis: Redis;
   mailer: Mailer;
   onMailError: (error: unknown) => void;
-}
-
-async function allowEmail(redis: Redis, email: string): Promise<boolean> {
-  const key = `dateos:ml:${createHash('sha256').update(email.toLowerCase()).digest('hex')}`;
-  const count = await redis.incr(key);
-  if (count === 1) await redis.expire(key, 3_600);
-  return count <= MAX_LINKS_PER_EMAIL_PER_HOUR;
 }
 
 export function createAuth({ env, secret, db, redis, mailer, onMailError }: AuthDeps) {
@@ -119,10 +131,11 @@ export function createAuth({ env, secret, db, redis, mailer, onMailError }: Auth
       magicLink({
         expiresIn: MAGIC_LINK_TTL_SECONDS,
         storeToken: 'hashed',
-        async sendMagicLink({ email, url }) {
+        async sendMagicLink({ email, url }, ctx) {
           // The HTTP response is identical whether or not mail is sent, so callers cannot
           // learn whether an address is registered or currently throttled.
-          if (!(await allowEmail(redis, email))) return;
+          const ip = ctx?.request?.headers.get(CLIENT_IP_HEADER) ?? 'unknown';
+          if (!(await allowEmail(redis, email, ip))) return;
           mailer.send({ to: email, ...magicLinkEmail(env.INSTANCE_NAME, url) }).catch(onMailError);
         },
       }),

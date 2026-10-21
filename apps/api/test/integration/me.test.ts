@@ -58,6 +58,18 @@ describe.skipIf(!integrationEnabled)('auth + profile (integration)', () => {
     for (let i = 0; i < 7; i += 1) expect((await send('victim@example.test')).statusCode).toBe(200);
     await new Promise((r) => setTimeout(r, 20));
     expect(ctx.mail.filter((m) => m.to === 'victim@example.test')).toHaveLength(5);
+
+    // Someone else spending that quota from their IP doesn't lock the owner out on theirs.
+    const fromOwner = await ctx.app.inject({
+      method: 'POST',
+      url: '/v1/auth/sign-in/magic-link',
+      remoteAddress: '198.51.100.7',
+      headers: { origin: 'http://localhost:8081' },
+      payload: { email: 'victim@example.test', callbackURL: 'http://localhost:8081/' },
+    });
+    expect(fromOwner.statusCode).toBe(200);
+    await new Promise((r) => setTimeout(r, 20));
+    expect(ctx.mail.filter((m) => m.to === 'victim@example.test')).toHaveLength(6);
   });
 
   it('magic links are single-use', async () => {

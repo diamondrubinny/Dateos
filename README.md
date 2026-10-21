@@ -178,6 +178,9 @@ All AI features are optional, run on the community's own server by default, and 
 - No tracking, analytics or third-party requests. The privacy e2e test compares the browser's cookies and storage with the published list and fails on any request to another host. See [`docs/PRIVACY.md`](docs/PRIVACY.md).
 - CI runs lint, typecheck, unit and integration tests, a dependency audit, CodeQL, Gitleaks and Docker builds. Actions are pinned to commit SHAs.
 
+- Native sign-in hands the session over with a PKCE code exchange, never in a deep link, so another app that claims the URL scheme gets nothing usable.
+- A release security review (three independent code reviews, 15 fixes, each with a test) is in [`docs/SECURITY_REVIEW.md`](docs/SECURITY_REVIEW.md). CI also produces a CycloneDX SBOM.
+
 Found a vulnerability? Please report it privately; see [SECURITY.md](SECURITY.md).
 
 ## Accessibility
@@ -185,7 +188,7 @@ Found a vulnerability? Please report it privately; see [SECURITY.md](SECURITY.md
 Dateos targets **WCAG 2.1 AA** and the Israeli standard **IS 5568**. Every screen in the screenshot flow is scanned with
 [axe-core](https://github.com/dequelabs/axe-core) and currently reports **0 violations**. Every control has a screen-reader label
 and role, focus is visible for keyboard users, text scales up to 200%, and every swipe action has a button.
-Automated checks catch only part of the issues: manual testing with VoiceOver, TalkBack and keyboard is part of the release checklist.
+Further automated checks cover keyboard-only sign-in with visible focus, reflow at 320 px, 200% text, reduced motion and the document language and direction (`pnpm --dir e2e a11y`). Automated checks catch only part of the issues: manual testing with VoiceOver, TalkBack and keyboard is part of the [release checklist](docs/PRODUCTION_CHECKLIST.md).
 
 ## 💜 Sponsor Dateos
 
@@ -227,6 +230,8 @@ a reviewed privacy policy, terms of use, an accessibility statement and a modera
 Draft texts in English and Hebrew are in [`docs/legal/`](docs/legal/) and **require review by a qualified lawyer** for your jurisdiction.
 [`docs/PRIVACY.md`](docs/PRIVACY.md) lists every piece of data, its purpose, suggested legal basis and retention period, plus
 a DPIA screening and notes on GDPR and Israel's Privacy Protection Law (Amendment 13).
+Go through [`docs/PRODUCTION_CHECKLIST.md`](docs/PRODUCTION_CHECKLIST.md) before launch; backups are covered by
+`scripts/backup.sh` and the load test results are in [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md).
 
 ## Contributing
 

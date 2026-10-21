@@ -115,6 +115,8 @@ export async function purgeClosedChats(
 export async function cleanupModeration(
   db: Database,
   storage?: Storage,
+  /** Evidence files younger than this are kept (their report may not be committed yet). */
+  evidenceGraceMs = 3_600_000,
 ): Promise<{ reports: number; actions: number; verifications: number; evidenceFiles: number }> {
   const days = (n: number) => sql.raw(String(n));
   const reports = await db.execute(sql`
@@ -134,7 +136,10 @@ export async function cleanupModeration(
   // Voice evidence files whose report no longer exists (retention or account deletion).
   let evidenceFiles = 0;
   if (storage) {
-    const keys = await storage.listKeys(storage.buckets.media, 'evidence/');
+    // Files younger than an hour may belong to a report whose transaction hasn't committed yet.
+    const keys = await storage.listKeys(storage.buckets.media, 'evidence/', {
+      olderThan: new Date(Date.now() - evidenceGraceMs),
+    });
     const reportIds = [...new Set(keys.map((k) => k.split('/')[1]!).filter(Boolean))];
     if (reportIds.length > 0) {
       const existing = await db.execute<{ id: string }>(

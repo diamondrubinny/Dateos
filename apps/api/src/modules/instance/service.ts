@@ -63,7 +63,8 @@ export class InstanceService {
     const env = this.env;
     const primaryColor = row?.primaryColor ?? env.INSTANCE_PRIMARY_COLOR;
     const noAdmin = await this.db.execute<{ none: boolean }>(
-      sql`SELECT NOT EXISTS (SELECT 1 FROM "user" WHERE role = 'admin') AS none`,
+      sql`SELECT NOT EXISTS (SELECT 1 FROM "user" WHERE role = 'admin')
+                 AND NOT EXISTS (SELECT 1 FROM instance_claim) AS none`,
     );
     const value: InstanceInfo = {
       name: row?.name ?? env.INSTANCE_NAME,
@@ -98,7 +99,7 @@ export class InstanceService {
   async logo(): Promise<StoredObject> {
     const row = await this.row();
     if (!row?.logoPhotoId) throw new HttpError(404, ErrorCode.NotFound, 'Resource not found.');
-    return this.photos.openForStaff(row.logoPhotoId);
+    return this.photos.openForStaff(row.logoPhotoId, 'branding');
   }
 
   async adminSettings(): Promise<AdminInstanceSettings> {
@@ -202,10 +203,11 @@ export class InstanceService {
     }
     const claimed = await this.db.transaction(async (tx) => {
       await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext('instance-setup'))`);
-      const admins = await tx.execute<{ n: number }>(
-        sql`SELECT count(*)::int AS n FROM "user" WHERE role = 'admin'`,
+      const taken = await tx.execute<{ taken: boolean }>(
+        sql`SELECT EXISTS (SELECT 1 FROM "user" WHERE role = 'admin')
+                OR EXISTS (SELECT 1 FROM instance_claim) AS taken`,
       );
-      if ((admins.rows[0]?.n ?? 0) > 0) return 'taken' as const;
+      if (taken.rows[0]?.taken) return 'taken' as const;
       // Hashing first makes the comparison constant-time regardless of the input length.
       if (!timingSafeEqual(sha256(token), sha256(expected))) {
         await audit(tx, {
@@ -217,6 +219,7 @@ export class InstanceService {
         return 'wrong' as const;
       }
       await tx.update(user).set({ role: 'admin' }).where(eq(user.id, member.id));
+      await tx.insert(schema.instanceClaim).values({ id: 1, claimedBy: member.id });
       await audit(tx, {
         actorId: member.id,
         action: 'setup.claimed',

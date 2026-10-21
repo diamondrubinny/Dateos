@@ -28,18 +28,19 @@ const ok = z.object({ ok: z.literal(true) });
 
 /** Typing events per connection per 10 s; anything above is dropped. */
 const TYPING_BURST = 20;
-const HEARTBEAT_MS = 30_000;
 
 export interface ChatRouteOptions {
   auth: Auth;
   chat: ChatService;
   realtime: Realtime;
   allowedOrigins: string[];
+  /** Ping interval; every ping re-checks the session, so a revoked session loses the socket. */
+  heartbeatMs: number;
 }
 
 export const chatRoutes: FastifyPluginAsyncZod<ChatRouteOptions> = async (
   app,
-  { auth, chat, realtime, allowedOrigins },
+  { auth, chat, realtime, allowedOrigins, heartbeatMs },
 ) => {
   await app.register(multipart, {
     limits: { fileSize: MAX_PHOTO_BYTES, files: 1, fields: 0, parts: 1 },
@@ -165,6 +166,8 @@ export const chatRoutes: FastifyPluginAsyncZod<ChatRouteOptions> = async (
   app.get(
     '/v1/matches/:id/icebreakers',
     {
+      // Each call may run a (possibly paid) language model.
+      config: perUserLimit(60, 24 * 60 * 60_000),
       schema: {
         params: matchParams,
         querystring: z.object({ locale: z.enum(['he', 'en']).default('en') }),
@@ -192,7 +195,7 @@ export const chatRoutes: FastifyPluginAsyncZod<ChatRouteOptions> = async (
       },
     },
     (socket, request) => {
-      const userId = currentUser(request).id;
+      const { id: userId, sessionId } = currentUser(request);
       const unregister = realtime.register(userId, socket);
       const online = () => realtime.touchPresence(userId).catch(() => undefined);
       void online();
@@ -202,9 +205,16 @@ export const chatRoutes: FastifyPluginAsyncZod<ChatRouteOptions> = async (
       const heartbeat = setInterval(() => {
         if (!alive) return socket.terminate();
         alive = false;
+        // Signed out, session revoked or expired, or account suspended: stop delivering events.
+        void chat.sessionActive(sessionId, userId).then(
+          (active) => {
+            if (!active) socket.close(4001, 'session ended');
+          },
+          () => undefined, // database hiccup: keep the socket, check again next time
+        );
         socket.ping();
         void online();
-      }, HEARTBEAT_MS);
+      }, heartbeatMs);
       socket.on('pong', () => (alive = true));
       socket.on('message', (raw: Buffer) => {
         let event;

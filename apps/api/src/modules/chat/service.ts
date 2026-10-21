@@ -103,6 +103,15 @@ export class ChatService {
     private readonly notifier?: ChatNotifier,
   ) {}
 
+  /** Whether a realtime connection may keep receiving events for this session. */
+  async sessionActive(sessionId: string, userId: string): Promise<boolean> {
+    const { rows } = await this.db.execute(sql`
+      SELECT 1 FROM session s JOIN "user" u ON u.id = s.user_id
+      WHERE s.id = ${sessionId} AND s.user_id = ${userId} AND s.expires_at > now()
+        AND u.status <> 'suspended'`);
+    return rows.length > 0;
+  }
+
   /** The active match and the other participant, or 404 for anyone else. */
   async participant(matchId: string, viewerId: string): Promise<{ otherId: string }> {
     const [match] = await this.db

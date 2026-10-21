@@ -153,8 +153,10 @@ export const profiles = pgTable('profiles', {
     .array()
     .notNull()
     .default(sql`'{}'::text[]`),
-  /** Set when a moderator approved a photo verification. */
+  /** Set when a moderator approved a photo verification; cleared when the profile photos change. */
   verifiedAt: timestamp('verified_at', { withTimezone: true }),
+  /** Last time a profile photo was added or removed (a selfie taken before can't be approved). */
+  photosChangedAt: timestamp('photos_changed_at', { withTimezone: true }),
   ...timestamps,
 });
 
@@ -576,6 +578,16 @@ export const verifications = pgTable(
 // ---------------------------------------------------------------------------
 // Instance (phase 1.5)
 // ---------------------------------------------------------------------------
+
+/**
+ * Single row (id = 1): the instance was claimed with the setup token. Permanent, so the token can
+ * never be used again (if the last admin leaves, recovery is the staff CLI on the server).
+ */
+export const instanceClaim = pgTable('instance_claim', {
+  id: smallint('id').primaryKey().default(1),
+  claimedBy: text('claimed_by').references(() => user.id, { onDelete: 'set null' }),
+  claimedAt: timestamp('claimed_at', { withTimezone: true }).notNull().defaultNow(),
+});
 
 /** Single row (id = 1). Public branding only: every value here is shown to visitors. */
 export const instanceSettings = pgTable(

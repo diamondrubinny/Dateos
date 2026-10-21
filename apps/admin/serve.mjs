@@ -44,7 +44,14 @@ export const securityHeaders = {
 
 createServer((req, res) => {
   const url = new URL(req.url ?? '/', 'http://localhost');
-  let file = normalize(join(root, decodeURIComponent(url.pathname)));
+  let path;
+  try {
+    path = decodeURIComponent(url.pathname);
+  } catch {
+    res.writeHead(400).end(); // malformed percent-encoding must not crash the server
+    return;
+  }
+  let file = normalize(join(root, path));
   if (file !== root && !file.startsWith(root + sep)) {
     res.writeHead(403).end();
     return;

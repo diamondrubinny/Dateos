@@ -117,7 +117,14 @@ export const consentInputSchema = z.object({
   granted: z.boolean(),
   version: z.string().min(1).max(32),
 });
-export const consentsInputSchema = z.array(consentInputSchema).min(1).max(consentKinds.length);
+export const consentsInputSchema = z
+  .array(consentInputSchema)
+  .min(1)
+  .max(consentKinds.length)
+  // One decision per kind per request, so the stored record is never ambiguous.
+  .refine((items) => new Set(items.map((i) => i.kind)).size === items.length, {
+    message: 'Each consent may appear only once.',
+  });
 export type ConsentInput = z.infer<typeof consentInputSchema>;
 
 export const photoOrderSchema = z.object({ photoIds: z.array(z.uuid()).min(1).max(MAX_PHOTOS) });

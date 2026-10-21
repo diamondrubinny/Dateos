@@ -68,7 +68,12 @@ export async function buildApp(env: Env, deps: AppDependencies): Promise<Fastify
 
   const { services } = deps;
   if (services) {
-    await app.register(authRoutes, { auth: services.auth, origin: env.PUBLIC_API_URL });
+    await app.register(authRoutes, {
+      auth: services.auth,
+      origin: env.PUBLIC_API_URL,
+      redis: services.redis,
+      appScheme: env.APP_SCHEME,
+    });
     await typed.register(meRoutes, {
       auth: services.auth,
       me: services.me,
@@ -112,6 +117,7 @@ export async function buildApp(env: Env, deps: AppDependencies): Promise<Fastify
       chat: services.chat,
       realtime: services.realtime,
       allowedOrigins: env.CORS_ORIGINS,
+      heartbeatMs: env.WS_HEARTBEAT_MS,
     });
   }
 

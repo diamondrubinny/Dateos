@@ -173,7 +173,7 @@ export const adminRoutes: FastifyPluginAsyncZod<{
     { schema: { params: z.object({ userId: z.string().min(1).max(64), photoId: z.uuid() }) } },
     async (request, reply) => {
       const { userId, photoId } = request.params;
-      const object = await photos.openForStaff(photoId, userId);
+      const object = await photos.openForStaff(photoId, 'profile', userId);
       await moderation.recordPhotoView(currentUser(request), userId, photoId);
       return sendImage(reply, object);
     },

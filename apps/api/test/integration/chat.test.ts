@@ -255,6 +255,28 @@ describe.skipIf(!integrationEnabled)('chat (integration)', () => {
       noaWs.terminate();
     });
 
+    it('closes the socket when the session ends or the account is suspended', async () => {
+      const closedWith = (ws: { once: (e: 'close', cb: (code: number) => void) => void }) =>
+        new Promise<number>((resolve) => ws.once('close', (code) => resolve(code)));
+      // Sign-out (better-auth deletes the session row).
+      const ws = await ctx.app.injectWS('/v1/ws', { headers: { cookie: dan.cookie } });
+      const signedOut = closedWith(ws);
+      await ctx.app.inject({
+        method: 'POST',
+        url: '/v1/auth/sign-out',
+        headers: { cookie: dan.cookie, origin: 'http://localhost:8081' },
+      });
+      expect(await signedOut).toBe(4001);
+      // Suspension, with the session still valid.
+      const noaWs = await ctx.app.injectWS('/v1/ws', { headers: { cookie: noa.cookie } });
+      const suspended = closedWith(noaWs);
+      await ctx.services.dbHandle.pool.query(
+        `UPDATE "user" SET status = 'suspended' WHERE id = $1`,
+        [noa.id],
+      );
+      expect(await suspended).toBe(4001);
+    });
+
     it('rejects connections without a session or from foreign origins', async () => {
       await expect(ctx.app.injectWS('/v1/ws')).rejects.toThrow('Unexpected server response: 401');
       await expect(

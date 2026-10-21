@@ -1,5 +1,6 @@
 import { mediaKey } from '@dateos/storage';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { cleanupModeration } from '../../../worker/src/profile-jobs.js';
 import {
   cleanupPrivacy,
   handleInactiveAccounts,
@@ -88,6 +89,19 @@ describe.skipIf(!integrationEnabled)('retention jobs (integration)', () => {
     const { rows } = await q('SELECT ip_address, user_agent FROM session');
     expect(rows.length).toBeGreaterThan(0);
     expect(rows.every((r) => r.ip_address === null && r.user_agent === null)).toBe(true);
+  });
+
+  it('removes evidence files of deleted reports, but not ones that may still be committing', async () => {
+    const { storage } = ctx.services;
+    const key = 'evidence/00000000-0000-4000-8000-000000000000/voice.m4a';
+    await storage.put(storage.buckets.media, key, Buffer.from('x'), 'audio/mp4');
+    const exists = async () => (await storage.listKeys(storage.buckets.media, key)).length > 0;
+    // A file written moments ago (its report transaction may be open) is kept.
+    await cleanupModeration(ctx.services.dbHandle.db, storage);
+    expect(await exists()).toBe(true);
+    // Once past the grace period, a file without a report is deleted.
+    await cleanupModeration(ctx.services.dbHandle.db, storage, -60_000);
+    expect(await exists()).toBe(false);
   });
 
   it('does nothing when the inactivity rule is off (default)', async () => {

@@ -364,7 +364,7 @@ Dateos/
 | **4 – Safety** ✅ (NSFW אוטומטי → בהמשך) | Block/Report, moderation מקומי, "Are you sure?", NSFW, selfie verification, Admin + MFA + audit                           | לוח מודרציה                  | תרחישי abuse                                  |
 | **5 – AI** ✅                            | Icebreakers, "למה התאמנו", Profile Coach, scam detection, provider switch                                                 | פיצ'רי AI                    | evals ל-prompts, injection tests              |
 | **6 – Privacy & Compliance** ✅          | ייצוא/מחיקה, consents, retention jobs, טיוטות מסמכים משפטיים, הצהרת נגישות                                                | DSAR עובד                    | בדיקת מחיקה מקצה לקצה                         |
-| **7 – Hardening & Release**              | Pen-test, ביצועים, a11y audit ידני, App Store/Play review, Checklist פרודקשן                                              | בטא סגורה                    | Checklist מלא                                 |
+| **7 – Hardening & Release** ✅           | Pen-test, ביצועים, a11y audit ידני, App Store/Play review, Checklist פרודקשן                                              | בטא סגורה                    | Checklist מלא                                 |
 | **8 – v0.3+**                            | Video dates, Safety check-in, Date planner, Anti-ghosting, אירועים                                                        |                              |                                               |
 
 כל שלב = PR נפרד עם קוד מלא, הוראות הרצה ובדיקות. **מעבר בין שלבים רק באישורך.**

@@ -36,7 +36,8 @@ export async function registerSecurity(app: FastifyInstance, { env, redis }: Sec
     timeWindow: env.RATE_LIMIT_WINDOW_MS,
     ...(redis ? { redis, nameSpace: 'dateos:rl:' } : {}),
     // The global limiter fails open so a Redis blip does not take the whole API down (/ready
-    // reports the outage). Sensitive routes such as auth override this to fail closed.
+    // reports the outage). Sign-in keeps its own limits without Redis: better-auth's limiter is
+    // stored in Postgres.
     skipOnError: true,
     allowList: (request) => request.url === '/health',
     // Requests without a peer address (unix sockets, test sockets) share one bucket instead of

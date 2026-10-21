@@ -11,6 +11,18 @@ describe('loadEnv', () => {
     expect(env.BODY_LIMIT_BYTES).toBe(65_536);
   });
 
+  it('never trusts every proxy hop', () => {
+    expect(loadEnv({ ...baseEnv, TRUST_PROXY: 'true' }).TRUST_PROXY).toEqual([
+      'loopback',
+      'uniquelocal',
+    ]);
+    expect(loadEnv({ ...baseEnv, TRUST_PROXY: '10.0.0.5, 192.168.1.0/24' }).TRUST_PROXY).toEqual([
+      '10.0.0.5',
+      '192.168.1.0/24',
+    ]);
+    expect(loadEnv({ ...baseEnv, TRUST_PROXY: 'false' }).TRUST_PROXY).toBe(false);
+  });
+
   it('parses comma-separated origins', () => {
     const env = loadEnv({ ...baseEnv, CORS_ORIGINS: 'https://a.example, https://b.example,' });
     expect(env.CORS_ORIGINS).toEqual(['https://a.example', 'https://b.example']);

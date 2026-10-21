@@ -30,6 +30,7 @@ import { VerificationService } from './modules/safety/verification.js';
 
 export interface Services {
   dbHandle: DbHandle;
+  redis: Redis;
   auth: Auth;
   storage: Storage;
   mediaQueue: MediaQueue;
@@ -116,6 +117,7 @@ export function createServices(
 
   return {
     dbHandle,
+    redis,
     auth,
     storage,
     mediaQueue,

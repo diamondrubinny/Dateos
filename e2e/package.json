@@ -1,7 +1,7 @@
 {
   "name": "@dateos/e2e",
   "author": "Diamond Rubinny",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": true,
   "license": "MIT",
   "type": "module",
@@ -14,7 +14,9 @@
     "instance": "tsx instance.ts",
     "voice": "tsx voice.ts",
     "coach": "tsx coach.ts",
-    "privacy": "tsx privacy.ts"
+    "privacy": "tsx privacy.ts",
+    "a11y": "tsx a11y.ts",
+    "load": "node --env-file=../.env --import tsx load.ts"
   },
   "dependencies": {
     "@axe-core/playwright": "4.14.0",

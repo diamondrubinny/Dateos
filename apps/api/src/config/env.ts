@@ -26,8 +26,24 @@ export const envSchema = z.object({
 
   /** Comma-separated list of allowed browser origins. Empty means no cross-origin access. */
   CORS_ORIGINS: csvList.default([]),
-  /** Set to true only when running behind a reverse proxy you control (e.g. Caddy). */
-  TRUST_PROXY: booleanString.default(false),
+  /**
+   * Whose X-Forwarded-For to believe. `false` (default): nobody. `true`: a proxy on this host or a
+   * private network (Caddy in docker-compose). Or a list of IPs/CIDRs. Never "every hop": a client
+   * could then forge its address and slip past rate limits behind a proxy that appends the header.
+   */
+  TRUST_PROXY: z
+    .string()
+    .default('false')
+    .transform((v): false | string[] =>
+      v === 'false' || v === ''
+        ? false
+        : v === 'true'
+          ? ['loopback', 'uniquelocal']
+          : v
+              .split(',')
+              .map((p) => p.trim())
+              .filter(Boolean),
+    ),
 
   RATE_LIMIT_MAX: z.coerce.number().int().positive().default(300),
   RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(60_000),
@@ -38,6 +54,8 @@ export const envSchema = z.object({
 
   /** Public URL of this API, used in sign-in links. Must be https in production. */
   PUBLIC_API_URL: z.url().default('http://localhost:4000'),
+  /** WebSocket ping interval; each ping also re-checks the session (sign-out, suspension). */
+  WS_HEARTBEAT_MS: z.coerce.number().int().min(100).max(120_000).default(30_000),
   /** Deep-link scheme of the native app (dateos://...). */
   APP_SCHEME: z
     .string()

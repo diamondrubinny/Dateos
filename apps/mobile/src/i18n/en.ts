@@ -25,6 +25,10 @@ export const en = {
     footer: 'By continuing you agree to the Terms and Privacy Policy.',
   },
   signIn: {
+    linkFailedTitle: 'This link didn’t work',
+    linkFailed:
+      'Sign-in links work once, for 10 minutes, on the device where you asked for them. Please ask for a new one.',
+    tryAgain: 'Send a new link',
     title: 'Sign in or create an account',
     subtitle: 'We’ll email you a secure link. No password needed.',
     email: 'Email',

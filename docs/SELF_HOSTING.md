@@ -76,7 +76,8 @@ Your community app is now live at `https://example.org`. Invite moderators: they
 
 ## 5. Before you open the doors
 
-- [ ] Replace the draft legal texts (`apps/mobile/src/i18n/*.ts`, `legal.*`) with reviewed versions ⚖️
+- [ ] Adapt the drafts in [`docs/legal/`](legal/) and the in-app summaries (`apps/mobile/src/i18n/*.ts`, `legal.*`), have them reviewed ⚖️
+- [ ] Go through [PRODUCTION_CHECKLIST.md](PRODUCTION_CHECKLIST.md) and [PRIVACY.md](PRIVACY.md)
 - [ ] Publish a contact address for privacy, accessibility and moderation appeals
 - [ ] Decide on retention periods (defaults in [ADMIN.md](ADMIN.md#6-retention-defaults-need-legal-review-)) ⚖️
 - [ ] Turn on full-disk or volume encryption on the server
@@ -86,17 +87,25 @@ Your community app is now live at `https://example.org`. Invite moderators: they
 
 ## Backups
 
-Back up the database and the media bucket. For example, daily:
+`scripts/backup.sh` saves the database and all stored files, encrypted when you give it a passphrase
+file, and deletes local backups older than 14 days (`BACKUP_KEEP_DAYS`). Run it daily, e.g. from cron:
 
 ```bash
-docker compose -f infra/docker-compose.yml --env-file .env exec -T postgres \
-  pg_dump -U dateos -Fc dateos > backup/dateos-$(date +%F).dump
-docker run --rm -v dateos_seaweedfs-data:/data -v "$PWD/backup:/backup" alpine \
-  tar czf /backup/media-$(date +%F).tgz -C /data .
+head -c 32 /dev/urandom | base64 > /root/.dateos-backup-key && chmod 600 /root/.dateos-backup-key
+# crontab -e
+0 3 * * * cd /opt/dateos && BACKUP_PASSPHRASE_FILE=/root/.dateos-backup-key ./scripts/backup.sh
 ```
 
-Encrypt backups before copying them off the server, and keep `.env` (secrets) separately and safely.
-Deleted accounts are still present in old backups until those expire: document your backup retention ⚖️.
+Copy the encrypted files off the server and keep the passphrase (and `.env`) somewhere else. Test a
+restore regularly, into a separate database first:
+
+```bash
+RESTORE_DATABASE=dateos_check BACKUP_PASSPHRASE_FILE=/root/.dateos-backup-key \
+  ./scripts/restore.sh backups/dateos-db-<time>.dump.enc
+```
+
+Deleted accounts are still present in old backups until those expire; after restoring an old backup,
+delete again the accounts that were deleted since. Document your backup retention ⚖️.
 
 ## Updates
 
@@ -122,6 +131,11 @@ The web app works on phones and can be added to the home screen. Native iOS and 
 from `apps/mobile` with Expo (EAS): set `EXPO_PUBLIC_API_URL=https://api.example.org`, your own app
 name, bundle id and icons, then submit with your own developer accounts. 📘 Follow the current Expo and
 store documentation; dating apps get extra review on both stores.
+
+Sign-in links open the app through its scheme (`APP_SCHEME`, `dateos` by default). The session is
+never put in that link: the app proves it started the sign-in (PKCE) and exchanges a one-time code, so
+another app that registers the same scheme gets nothing usable. Sign-in therefore needs your own build
+(it does not work in Expo Go).
 
 ## Test the whole setup locally
 

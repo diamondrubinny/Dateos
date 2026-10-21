@@ -7,7 +7,7 @@ import {
   type VerificationState,
 } from '@dateos/shared';
 import type { StoredObject } from '@dateos/storage';
-import { and, asc, desc, eq, gt, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gt, isNull, sql } from 'drizzle-orm';
 import { audit } from '../../lib/audit.js';
 import { HttpError } from '../../plugins/error-handler.js';
 import type { PhotoService } from '../photos/service.js';
@@ -118,11 +118,25 @@ export class VerificationService {
     }
     // Goes through the same quarantine → malware scan → re-encode pipeline as every upload.
     const photo = await this.photos.upload(userId, buffer, 'verification');
-    if (row.selfiePhotoId) await this.photos.purge(row.selfiePhotoId);
-    await this.db
+    // Only the request that still sees the selfie it started from wins; a parallel upload that
+    // lost is deleted, so no selfie is ever left behind.
+    const won = await this.db
       .update(verifications)
       .set({ status: 'pending', selfiePhotoId: photo.id })
-      .where(eq(verifications.id, row.id));
+      .where(
+        and(
+          eq(verifications.id, row.id),
+          row.selfiePhotoId
+            ? eq(verifications.selfiePhotoId, row.selfiePhotoId)
+            : isNull(verifications.selfiePhotoId),
+        ),
+      )
+      .returning({ id: verifications.id });
+    if (won.length === 0) {
+      await this.photos.purge(photo.id);
+      throw new HttpError(409, ErrorCode.Conflict, 'A selfie is already being processed.');
+    }
+    if (row.selfiePhotoId) await this.photos.purge(row.selfiePhotoId);
     return { status: 'pending', pose: null, processing: true, decidedAt: null };
   }
 
@@ -183,7 +197,7 @@ export class VerificationService {
       targetType: 'verification',
       targetId: verificationId,
     });
-    return this.photos.openForStaff(row.photoId, row.userId);
+    return this.photos.openForStaff(row.photoId, 'verification', row.userId);
   }
 
   async decide(staffId: string, verificationId: string, approve: boolean): Promise<void> {
@@ -194,6 +208,32 @@ export class VerificationService {
     if (!row) throw notFound();
     if (row.userId === staffId) {
       throw new HttpError(403, ErrorCode.Forbidden, 'You cannot review your own verification.');
+    }
+    if (approve) {
+      // The selfie must be compared with the photos the profile shows now.
+      const [stale] = await this.db
+        .select({ id: verifications.id })
+        .from(verifications)
+        .innerJoin(profiles, eq(profiles.userId, verifications.userId))
+        .innerJoin(photos, eq(photos.id, verifications.selfiePhotoId))
+        .where(
+          and(
+            eq(verifications.id, verificationId),
+            sql`${profiles.photosChangedAt} > ${photos.createdAt}`,
+          ),
+        );
+      if (stale) {
+        await this.db
+          .update(verifications)
+          .set({ status: 'awaiting_selfie', selfiePhotoId: null })
+          .where(eq(verifications.id, verificationId));
+        if (row.photoId) await this.photos.purge(row.photoId);
+        throw new HttpError(
+          409,
+          ErrorCode.Conflict,
+          'The member changed their photos after taking the selfie; they have been asked for a new one.',
+        );
+      }
     }
     await this.db.transaction(async (tx) => {
       await tx

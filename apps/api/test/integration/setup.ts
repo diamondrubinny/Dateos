@@ -75,6 +75,7 @@ export async function setupIntegration(options: SetupOptions = {}): Promise<Test
     ...isolated,
     NODE_ENV: 'test',
     LOG_LEVEL: 'silent',
+    WS_HEARTBEAT_MS: '200',
     CORS_ORIGINS: 'http://localhost:8081',
     PUBLIC_API_URL: 'http://localhost:4000',
     S3_ENDPOINT: process.env.S3_ENDPOINT ?? 'http://localhost:8333',

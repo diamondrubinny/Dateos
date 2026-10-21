@@ -1,3 +1,6 @@
+import { createHash } from 'node:crypto';
+import { PgDialect } from 'drizzle-orm/pg-core';
+import type { QueryConfig } from 'pg';
 import { sql, type SQL } from 'drizzle-orm';
 
 /**
@@ -101,13 +104,25 @@ export function candidateSql(q: CandidateQuery): SQL {
       AND ${notSeparated(sql`me.user_id`, sql`c.user_id`)}
       ${q.targetId ? sql`AND c.user_id = ${q.targetId}` : sql``}
       ${q.excludeDecided ? sql`AND NOT EXISTS (SELECT 1 FROM interactions i WHERE i.actor_id = me.user_id AND i.target_id = c.user_id)` : sql``}
-      ${
-        q.excludeIds && q.excludeIds.length > 0
-          ? sql`AND c.user_id NOT IN (${sql.join(
-              q.excludeIds.map((id) => sql`${id}`),
-              sql`, `,
-            )})`
-          : sql``
-      }
+      -- One array parameter keeps the statement text stable, so it can be prepared once.
+      AND NOT (c.user_id = ANY(${sql.param(q.excludeIds ?? [])}::text[]))
     LIMIT ${q.limit ?? 300}`;
+}
+
+const dialect = new PgDialect();
+
+/**
+ * Runs the candidate query as a named prepared statement. The statement has many joins and
+ * subqueries, and planning it took as long as running it (27 ms vs 42 ms with 5 000 members), so
+ * each connection plans it once per query shape. Names are derived from the text, so a changed
+ * query never reuses a stale statement.
+ */
+export async function queryCandidates(
+  client: { query: (config: QueryConfig) => Promise<{ rows: unknown[] }> },
+  q: CandidateQuery,
+): Promise<CandidateRow[]> {
+  const { sql: text, params } = dialect.sqlToQuery(candidateSql(q));
+  const name = `candidates_${createHash('sha1').update(text).digest('hex').slice(0, 16)}`;
+  const result = await client.query({ name, text, values: params });
+  return result.rows as CandidateRow[];
 }

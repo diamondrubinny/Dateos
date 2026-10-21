@@ -1,4 +1,5 @@
 import { rank, scoreCandidate, type ScoreResult } from '@dateos/ai';
+import type { Pool } from 'pg';
 import { schema, type Database } from '@dateos/db';
 import {
   ageOn,
@@ -22,7 +23,7 @@ import { and, asc, desc, eq, inArray, isNull, or, sql } from 'drizzle-orm';
 import { audit } from '../../lib/audit.js';
 import { HttpError } from '../../plugins/error-handler.js';
 import { photoUrl } from '../me/service.js';
-import { candidateSql, notSeparated, type CandidateRow } from './visibility.js';
+import { notSeparated, queryCandidates, type CandidateRow } from './visibility.js';
 
 const {
   profiles,
@@ -91,10 +92,9 @@ export class DiscoveryService {
     viewerId: string,
     options: { excludeIds?: string[]; targetId?: string; excludeDecided?: boolean },
   ) {
-    const result = await this.db.execute<CandidateRow & Record<string, unknown>>(
-      candidateSql({ viewerId, today: this.today(), ...options }),
-    );
-    return result.rows;
+    // drizzle's node-postgres database exposes its pool as $client.
+    const pool = (this.db as unknown as { $client: Pool }).$client;
+    return queryCandidates(pool, { viewerId, today: this.today(), ...options });
   }
 
   private score(rows: CandidateRow[]): (Ranked & { result: ScoreResult })[] {
@@ -255,16 +255,11 @@ export class DiscoveryService {
     input: InteractionInput,
   ): Promise<{ matched: boolean; matchId: string | null }> {
     if (input.targetId === actorId) throw notFound();
-    if (!(await this.canView(actorId, input.targetId))) throw notFound();
-
-    const [{ count }] = (
-      await this.db.execute<{ count: number }>(sql`
-      SELECT count(*)::int AS count FROM interactions
-      WHERE actor_id = ${actorId} AND created_at >= date_trunc('day', now())`)
-    ).rows as [{ count: number }];
-    if (count >= DAILY_INTERACTION_LIMIT) {
-      throw new HttpError(429, ErrorCode.RateLimited, 'Daily limit reached. Come back tomorrow.');
+    // A paused member (consent for sensitive data withdrawn) is not matched with anyone.
+    if (!(await this.isActive(actorId))) {
+      throw new HttpError(403, ErrorCode.Forbidden, 'Your profile is paused.');
     }
+    if (!(await this.canView(actorId, input.targetId))) throw notFound();
 
     if (input.itemType && input.itemId) {
       const table = input.itemType === 'photo' ? photos : prompts;
@@ -285,6 +280,16 @@ export class DiscoveryService {
     }
 
     const result = await this.db.transaction(async (tx) => {
+      // Count and insert under one per-member lock, so parallel requests can't pass the limit.
+      await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${`interactions:${actorId}`}))`);
+      const [{ count }] = (
+        await tx.execute<{ count: number }>(sql`
+        SELECT count(*)::int AS count FROM interactions
+        WHERE actor_id = ${actorId} AND created_at >= date_trunc('day', now())`)
+      ).rows as [{ count: number }];
+      if (count >= DAILY_INTERACTION_LIMIT) {
+        throw new HttpError(429, ErrorCode.RateLimited, 'Daily limit reached. Come back tomorrow.');
+      }
       const inserted = await tx
         .insert(interactions)
         .values({
@@ -328,8 +333,16 @@ export class DiscoveryService {
     return result;
   }
 
+  private async isActive(userId: string): Promise<boolean> {
+    const { rows } = await this.db.execute(
+      sql`SELECT 1 FROM "user" WHERE id = ${userId} AND status = 'active'`,
+    );
+    return rows.length > 0;
+  }
+
   /** Everyone who liked me and is still waiting for my answer. Free for every user. */
   async likesReceived(viewerId: string): Promise<LikeReceived[]> {
+    if (!(await this.isActive(viewerId))) return [];
     const rows = await this.db.execute<{
       actor_id: string;
       comment: string | null;

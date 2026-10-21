@@ -67,6 +67,12 @@ export class PhotoService {
         .returning();
       const key = quarantineKey(userId, inserted!.id);
       await tx.update(photos).set({ quarantineKey: key }).where(eq(photos.id, inserted!.id));
+      if (purpose === 'profile') {
+        await tx
+          .update(schema.profiles)
+          .set({ verifiedAt: null, photosChangedAt: new Date() })
+          .where(eq(schema.profiles.userId, userId));
+      }
       return { ...inserted!, quarantineKey: key };
     });
 
@@ -110,11 +116,19 @@ export class PhotoService {
   }
 
   /** Staff access (admin API only): any clean photo of a member, regardless of visibility. */
-  async openForStaff(photoId: string, ownerId?: string): Promise<StoredObject> {
+  /**
+   * Staff access to one kind of photo: profile photos (moderation), the selfie under review, or the
+   * instance logo. Private chat images are never available this way.
+   */
+  async openForStaff(
+    photoId: string,
+    purpose: 'profile' | 'verification' | 'branding',
+    ownerId?: string,
+  ): Promise<StoredObject> {
     const [row] = await this.db
       .select({ mediaKey: photos.mediaKey, userId: photos.userId })
       .from(photos)
-      .where(and(eq(photos.id, photoId), eq(photos.status, 'clean')));
+      .where(and(eq(photos.id, photoId), eq(photos.status, 'clean'), eq(photos.purpose, purpose)));
     if (!row?.mediaKey || (ownerId && row.userId !== ownerId)) throw notFound();
     return this.storage.get(this.storage.buckets.media, row.mediaKey);
   }
@@ -148,12 +162,28 @@ export class PhotoService {
     const [row] = await this.db
       .delete(photos)
       .where(and(eq(photos.id, photoId), eq(photos.userId, userId)))
-      .returning({ quarantineKey: photos.quarantineKey, mediaKey: photos.mediaKey });
+      .returning({
+        quarantineKey: photos.quarantineKey,
+        mediaKey: photos.mediaKey,
+        purpose: photos.purpose,
+      });
     if (!row) throw notFound();
+    if (row.purpose === 'profile') await this.profilePhotosChanged(userId);
     await this.mediaQueue.deleteObjects({
       quarantineKeys: row.quarantineKey ? [row.quarantineKey] : [],
       mediaKeys: row.mediaKey ? [row.mediaKey] : [mediaKey(userId, photoId)],
     });
+  }
+
+  /**
+   * A verified badge vouches for the photos a moderator compared with the selfie. Adding or
+   * removing a profile photo removes the badge (the member can verify again).
+   */
+  private async profilePhotosChanged(userId: string): Promise<void> {
+    await this.db
+      .update(schema.profiles)
+      .set({ verifiedAt: null, photosChangedAt: new Date() })
+      .where(eq(schema.profiles.userId, userId));
   }
 
   /** `photoIds` must list exactly the user's current (non-rejected) photos, in the new order. */

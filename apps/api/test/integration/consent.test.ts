@@ -75,6 +75,70 @@ describe.skipIf(!integrationEnabled)('sensitive-data consent (integration)', () 
     expect(await discoverIds(ctx, dan)).toContain(noa.id);
   });
 
+  it('a paused member cannot like or match, and sees no likes', async () => {
+    await api(ctx, dan, 'POST', '/v1/interactions', { targetId: noa.id, kind: 'like' });
+    await sensitive(noa, false);
+    expect((await api(ctx, noa, 'GET', '/v1/likes')).json().likes).toEqual([]);
+    const like = await api(ctx, noa, 'POST', '/v1/interactions', {
+      targetId: dan.id,
+      kind: 'like',
+    });
+    expect(like.statusCode).toBe(403);
+    const { rows } = await ctx.services.dbHandle.pool.query(
+      'SELECT count(*)::int AS n FROM matches',
+    );
+    expect(rows[0].n).toBe(0);
+  });
+
+  it('withdrawing location consent deletes the stored location', async () => {
+    const res = await api(ctx, noa, 'PUT', '/v1/me/consents', {
+      consents: [{ kind: 'location', granted: false, version: '1' }],
+    });
+    expect(res.statusCode).toBe(200);
+    const { rows } = await ctx.services.dbHandle.pool.query(
+      'SELECT count(*)::int AS n FROM locations WHERE user_id = $1',
+      [noa.id],
+    );
+    expect(rows[0].n).toBe(0);
+    expect(await discoverIds(ctx, dan)).not.toContain(noa.id);
+  });
+
+  it('one decision per consent kind per request', async () => {
+    const res = await api(ctx, noa, 'PUT', '/v1/me/consents', {
+      consents: [
+        { kind: 'sensitive', granted: true, version: SENSITIVE_CONSENT_VERSION },
+        { kind: 'sensitive', granted: false, version: SENSITIVE_CONSENT_VERSION },
+      ],
+    });
+    expect(res.statusCode).toBe(400);
+  });
+
+  it('parallel likes cannot pass the daily limit', async () => {
+    const pool = ctx.services.dbHandle.pool;
+    // 297 interactions today with throwaway accounts, so exactly 3 more are allowed.
+    await pool.query(
+      `INSERT INTO "user" (id, email) SELECT 'filler-' || n, 'filler-' || n || '@example.test' FROM generate_series(1, 297) n`,
+    );
+    await pool.query(
+      `INSERT INTO interactions (actor_id, target_id, kind) SELECT $1, 'filler-' || n, 'pass' FROM generate_series(1, 297) n`,
+      [noa.id],
+    );
+    const targets = [dan];
+    for (let i = 0; i < 7; i += 1) {
+      targets.push(
+        await createMember(ctx, { name: `Man${i}`, gender: 'man', interestedIn: ['woman'] }),
+      );
+    }
+    const results = await Promise.all(
+      targets.map((t) =>
+        api(ctx, noa, 'POST', '/v1/interactions', { targetId: t.id, kind: 'pass' }),
+      ),
+    );
+    const codes = results.map((r) => r.statusCode);
+    expect(codes.filter((c) => c === 200)).toHaveLength(3);
+    expect(codes.filter((c) => c === 429)).toHaveLength(5);
+  });
+
   it('giving consent again never lifts a suspension', async () => {
     await ctx.services.dbHandle.pool.query(
       `UPDATE "user" SET status = 'suspended', suspended_reason = 'moderation' WHERE id = $1`,

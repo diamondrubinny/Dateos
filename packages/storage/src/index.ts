@@ -31,7 +31,8 @@ export interface Storage {
   getBuffer(bucket: string, key: string): Promise<Buffer>;
   /** Deletes keys in batches; missing keys are ignored. */
   delete(bucket: string, keys: string[]): Promise<void>;
-  listKeys(bucket: string, prefix: string): Promise<string[]>;
+  /** Keys under a prefix; `olderThan` skips objects written after that time. */
+  listKeys(bucket: string, prefix: string, options?: { olderThan?: Date }): Promise<string[]>;
   /** Creates the buckets if they do not exist (idempotent). */
   ensureBuckets(): Promise<void>;
   isHealthy(): Promise<boolean>;
@@ -84,14 +85,19 @@ export function createStorage(config: StorageConfig): Storage {
         );
       }
     },
-    async listKeys(bucket, prefix) {
+    async listKeys(bucket, prefix, options = {}) {
       const keys: string[] = [];
       let token: string | undefined;
       do {
         const res = await client.send(
           new ListObjectsV2Command({ Bucket: bucket, Prefix: prefix, ContinuationToken: token }),
         );
-        for (const object of res.Contents ?? []) if (object.Key) keys.push(object.Key);
+        for (const object of res.Contents ?? []) {
+          if (!object.Key) continue;
+          if (options.olderThan && object.LastModified && object.LastModified >= options.olderThan)
+            continue;
+          keys.push(object.Key);
+        }
         token = res.IsTruncated ? res.NextContinuationToken : undefined;
       } while (token);
       return keys;

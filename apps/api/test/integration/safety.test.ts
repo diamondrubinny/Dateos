@@ -619,6 +619,74 @@ describe.skipIf(!integrationEnabled)('safety & moderation (integration)', () => 
     expect((await api(ctx, noa, 'POST', '/v1/me/verification')).statusCode).toBe(429);
   });
 
+  it('changing profile photos removes the badge, and a selfie older than the photos cannot be approved', async () => {
+    const mod = await staff('moderator');
+    const pool = ctx.services.dbHandle.pool;
+    const verified = async () =>
+      (await api(ctx, dan, 'GET', `/v1/profiles/${noa.id}`)).json().verified;
+    const markVerified = () =>
+      pool.query('UPDATE profiles SET verified_at = now() WHERE user_id = $1', [noa.id]);
+
+    await markVerified();
+    expect(await verified()).toBe(true);
+    const body = await selfieBody();
+    const added = await ctx.app.inject({
+      method: 'POST',
+      url: '/v1/me/photos',
+      headers: { cookie: noa.cookie, ...body.headers },
+      payload: body.payload,
+    });
+    expect(added.statusCode).toBe(202);
+    expect(await verified()).toBe(false);
+
+    await markVerified();
+    expect((await api(ctx, noa, 'DELETE', `/v1/me/photos/${added.json().id}`)).statusCode).toBe(
+      200,
+    );
+    expect((await api(ctx, noa, 'GET', '/v1/me')).json().verified).toBe(false);
+
+    // Photos swapped while the selfie waited for review.
+    const selfie = await pool.query(
+      `INSERT INTO photos (user_id, status, position, purpose, created_at)
+       VALUES ($1, 'clean', 0, 'verification', now() - interval '1 hour') RETURNING id`,
+      [noa.id],
+    );
+    const pending = await pool.query(
+      `INSERT INTO verifications (user_id, pose, status, selfie_photo_id) VALUES ($1, 'wave', 'pending', $2) RETURNING id`,
+      [noa.id, selfie.rows[0].id],
+    );
+    const decision = await admin(
+      mod.cookie,
+      'POST',
+      `/v1/admin/verifications/${pending.rows[0].id}`,
+      {
+        approve: true,
+      },
+    );
+    expect(decision.statusCode).toBe(409);
+    expect((await api(ctx, noa, 'GET', '/v1/me/verification')).json().status).toBe(
+      'awaiting_selfie',
+    );
+    expect(
+      (await pool.query('SELECT 1 FROM photos WHERE id = $1', [selfie.rows[0].id])).rowCount,
+    ).toBe(0);
+    expect(await verified()).toBe(false);
+  });
+
+  it('staff can open profile photos but never private chat images', async () => {
+    const mod = await staff('moderator');
+    const pool = ctx.services.dbHandle.pool;
+    const chat = await pool.query(
+      `INSERT INTO photos (user_id, status, position, purpose, media_key)
+       VALUES ($1, 'clean', 0, 'chat', $2) RETURNING id`,
+      [noa.id, `photos/${noa.id}/chat.webp`],
+    );
+    const open = (photoId: string) =>
+      admin(mod.cookie, 'GET', `/v1/admin/users/${noa.id}/photos/${photoId}`);
+    expect((await open(noa.photoId)).statusCode).toBe(200);
+    expect((await open(chat.rows[0].id)).statusCode).toBe(404);
+  });
+
   it('staff cannot review their own verification; rejecting deletes the selfie too', async () => {
     const mod = await staff('moderator');
     const pool = ctx.services.dbHandle.pool;

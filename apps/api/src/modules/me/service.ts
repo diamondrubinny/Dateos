@@ -268,6 +268,10 @@ export class MeService {
       await tx.insert(consents).values(items.map((item) => ({ userId, ...item })));
       // Withdrawing consent for sensitive data stops matching on it: the profile is hidden from
       // discovery ('paused') until the person agrees again. Suspensions are never lifted here.
+      // Withdrawing location consent also deletes the stored (approximate) location.
+      if (items.some((item) => item.kind === 'location' && !item.granted)) {
+        await tx.delete(locations).where(eq(locations.userId, userId));
+      }
       if (sensitive) {
         await tx
           .update(user)

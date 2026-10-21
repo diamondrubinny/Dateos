@@ -85,6 +85,20 @@
       "when": 1792607554060,
       "tag": "0011_pause_without_sensitive_consent",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1792609338914,
+      "tag": "0012_photos_changed_at",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1792609527927,
+      "tag": "0013_instance_claim",
+      "breakpoints": true
     }
   ]
 }
