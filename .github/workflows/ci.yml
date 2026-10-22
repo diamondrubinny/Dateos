@@ -25,7 +25,8 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       # Voice messages are re-encoded with ffmpeg (worker unit tests and the integration suite).
-      - run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg
+      - run: ./scripts/ci-install-ffmpeg.sh
+        timeout-minutes: 15
       - run: pnpm install --frozen-lockfile
       - run: pnpm format:check
       - run: pnpm lint
@@ -61,7 +62,8 @@ jobs:
           done
           exit 1
       # Voice messages are re-encoded with ffmpeg (worker unit tests and the integration suite).
-      - run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg
+      - run: ./scripts/ci-install-ffmpeg.sh
+        timeout-minutes: 15
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
       - run: pnpm --filter @nexaheart/api test:integration
