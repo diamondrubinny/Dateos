@@ -10,6 +10,7 @@ import { MfaSetup, MfaVerify } from './pages/Mfa';
 import { ReportDetail } from './pages/ReportDetail';
 import { Reports } from './pages/Reports';
 import { SignIn } from './pages/SignIn';
+import { Venues } from './pages/Venues';
 import { Verifications } from './pages/Verifications';
 
 const LOCALE_KEY = 'dateos-admin-locale';
@@ -38,10 +39,10 @@ function Shell({
   const { t, toggle, locale } = useLocale();
   const route = useRoute();
   const current = route[0] ?? 'reports';
-  const link = (key: 'reports' | 'verifications' | 'audit' | 'branding') => (
+  const link = (key: 'reports' | 'verifications' | 'venues' | 'audit' | 'branding') => (
     <li>
       <a href={`#/${key}`} aria-current={current === key ? 'page' : undefined}>
-        {key === 'branding' ? t.branding.nav : t.nav[key]}
+        {key === 'branding' ? t.branding.nav : key === 'venues' ? t.venues.nav : t.nav[key]}
       </a>
     </li>
   );
@@ -57,6 +58,7 @@ function Shell({
             <ul>
               {link('reports')}
               {link('verifications')}
+              {link('venues')}
               {link('audit')}
               {isAdmin ? link('branding') : null}
             </ul>
@@ -89,6 +91,7 @@ function Routes({ staff }: { staff: NonNullable<Awaited<ReturnType<typeof api.me
   const route = useRoute();
   if (route[0] === 'reports' && route[1]) return <ReportDetail id={route[1]} staff={staff} />;
   if (route[0] === 'verifications') return <Verifications />;
+  if (route[0] === 'venues') return <Venues isAdmin={staff.role === 'admin'} />;
   if (route[0] === 'audit') return <Audit />;
   if (route[0] === 'branding' && staff.role === 'admin') return <Branding wizard={false} />;
   return <Reports />;

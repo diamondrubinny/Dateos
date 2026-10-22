@@ -566,3 +566,19 @@ input[type='password'] {
   color: var(--brand);
   text-decoration: underline;
 }
+
+.block {
+  display: block;
+}
+.venues-grid {
+  grid-template-columns: minmax(0, 1.6fr) minmax(min(100%, 20rem), 1fr);
+}
+@media (max-width: 900px) {
+  .venues-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.cell-detail {
+  font-weight: 400;
+  font-size: 0.9rem;
+}

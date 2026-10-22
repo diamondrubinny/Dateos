@@ -44,6 +44,10 @@ people, with safety and privacy built in.
 
 <img src="../screenshots/showcase-safety-date-en.png" alt="Safety check-in with SOS, and closing a conversation kindly" width="100%">
 
+**Plan a date in a place the community trusts**
+
+<img src="../screenshots/showcase-date-planner-en.png" alt="Choosing a public place and a time, accepting the date, and the check-in already filled in" width="100%">
+
 **Privacy you can check**
 
 <img src="../screenshots/showcase-privacy-en.png" alt="The Privacy and cookies page and Download my data" width="60%">

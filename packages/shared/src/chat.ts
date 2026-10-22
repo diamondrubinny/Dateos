@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { publicProfileSchema } from './discovery.js';
 import { localeSchema } from './common.js';
+import { datePlanSchema } from './dates.js';
 
 export const MAX_MESSAGE_LENGTH = 2000;
 /** Each person must send this many text messages before images unlock in a chat. */
@@ -33,7 +34,7 @@ export const messageViewSchema = z.object({
   id: z.uuid(),
   matchId: z.uuid(),
   mine: z.boolean(),
-  kind: z.enum(['text', 'image', 'voice']),
+  kind: z.enum(['text', 'image', 'voice', 'date']),
   body: z.string().nullable(),
   image: z
     .object({ url: z.string().nullable(), status: z.enum(['pending', 'clean', 'rejected']) })
@@ -45,6 +46,8 @@ export const messageViewSchema = z.object({
       durationMs: z.number().int().nullable(),
     })
     .nullable(),
+  /** A date card (kind 'date'); its status changes are announced with message.updated. */
+  date: datePlanSchema.nullable(),
   /** Receiver-side safety: hidden until the person chooses to show it. */
   hidden: z.boolean(),
   harm: z.array(z.enum(harmCategories)),

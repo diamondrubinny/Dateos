@@ -1,5 +1,6 @@
 import { sql } from 'drizzle-orm';
 import {
+  type AnyPgColumn,
   bigint,
   boolean,
   check,
@@ -28,6 +29,8 @@ import {
   EMBEDDING_DIM,
   genders,
   checkinStatuses,
+  dateStatuses,
+  venueCategories,
   intentions,
   interactionKinds,
   photoStatuses,
@@ -377,7 +380,7 @@ export const impressions = pgTable(
 // Chat (phase 3)
 // ---------------------------------------------------------------------------
 
-export const messageKind = pgEnum('message_kind', ['text', 'image', 'voice']);
+export const messageKind = pgEnum('message_kind', ['text', 'image', 'voice', 'date']);
 
 /** Voice messages. Same lifecycle as photos: quarantine → scan → re-encode → clean. */
 export const audioClips = pgTable(
@@ -414,6 +417,10 @@ export const messages = pgTable(
     body: varchar('body', { length: 2000 }),
     photoId: uuid('photo_id').references(() => photos.id, { onDelete: 'set null' }),
     audioId: uuid('audio_id').references(() => audioClips.id, { onDelete: 'set null' }),
+    /** A date card (kind 'date'). Deleting the plan deletes its message. */
+    datePlanId: uuid('date_plan_id').references((): AnyPgColumn => datePlans.id, {
+      onDelete: 'cascade',
+    }),
     /** Safety labels, e.g. harm:insult, scam:money. Receivers see harmful messages hidden. */
     flags: text('flags')
       .array()
@@ -667,5 +674,65 @@ export const checkins = pgTable(
   (t) => [
     index('checkins_user_idx').on(t.userId, t.createdAt),
     index('checkins_due_idx').on(t.status, t.checkAt),
+  ],
+);
+
+// ---------------------------------------------------------------------------
+// Date planner (phase 12)
+// ---------------------------------------------------------------------------
+
+export const venueCategory = pgEnum('venue_category', venueCategories);
+export const dateStatus = pgEnum('date_status', dateStatuses);
+
+/** Public places curated by the instance's admins. No coordinates are stored. */
+export const venues = pgTable(
+  'venues',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    name: varchar('name', { length: 80 }).notNull(),
+    area: varchar('area', { length: 80 }).notNull(),
+    category: venueCategory('category').notNull(),
+    address: varchar('address', { length: 160 }).notNull(),
+    note: varchar('note', { length: 300 }),
+    stepFree: boolean('step_free').notNull().default(false),
+    active: boolean('active').notNull().default(true),
+    ...timestamps,
+  },
+  (t) => [index('venues_active_idx').on(t.active, t.area, t.name)],
+);
+
+/**
+ * A date proposed in a chat. The place is copied, so later edits to the venue don't change what
+ * the two people agreed on. Deleted with the match (and with the chat purge after an unmatch).
+ */
+export const datePlans = pgTable(
+  'date_plans',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    matchId: uuid('match_id')
+      .notNull()
+      .references(() => matches.id, { onDelete: 'cascade' }),
+    proposerId: text('proposer_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    venueId: uuid('venue_id').references(() => venues.id, { onDelete: 'set null' }),
+    venueName: varchar('venue_name', { length: 80 }).notNull(),
+    venueArea: varchar('venue_area', { length: 80 }).notNull(),
+    venueCategory: venueCategory('venue_category').notNull(),
+    venueAddress: varchar('venue_address', { length: 160 }).notNull(),
+    venueNote: varchar('venue_note', { length: 300 }),
+    venueStepFree: boolean('venue_step_free').notNull(),
+    startsAt: timestamp('starts_at', { withTimezone: true }).notNull(),
+    note: varchar('note', { length: 200 }),
+    status: dateStatus('status').notNull().default('proposed'),
+    respondedAt: timestamp('responded_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    // At most one open proposal per chat.
+    uniqueIndex('date_plans_open_uq')
+      .on(t.matchId)
+      .where(sql`${t.status} = 'proposed'`),
+    index('date_plans_proposer_idx').on(t.proposerId, t.createdAt),
   ],
 );

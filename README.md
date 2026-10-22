@@ -40,27 +40,28 @@ Dateos is built the other way around:
 
 Dateos is in active development. Here is what works today and what comes next. The full plan is in [`docs/PLAN.md`](docs/PLAN.md).
 
-| Area                                                                                              | Status       |
-| ------------------------------------------------------------------------------------------------- | ------------ |
-| Passwordless email sign-in (magic link), sessions, rate limits                                    | ✅ Available |
-| Profile, preferences, prompts, versioned consents                                                 | ✅ Available |
-| Photo upload with malware scan (ClamAV), EXIF/GPS stripping, re-encoding                          | ✅ Available |
-| Account deletion (all data and files)                                                             | ✅ Available |
-| iOS / Android / web app: onboarding, profile, settings (Hebrew + English, RTL)                    | ✅ Available |
-| Approximate location (~1 km grid, bucketed distances)                                             | ✅ Available |
-| Discovery, reciprocal AI matching, Daily Picks, "why you might click"                             | ✅ Available |
-| Like / pass / like a photo or prompt with a comment, Likes You, matches                           | ✅ Available |
-| Unmatch and block                                                                                 | ✅ Available |
-| Real-time chat (WebSocket), read receipts, typing, icebreakers                                    | ✅ Available |
-| "Are you sure?", hidden offensive messages, scam warnings, blurred photos                         | ✅ Available |
-| Voice messages, push notifications                                                                | ✅ Available |
-| Report (with chat evidence), moderation dashboard with mandatory TOTP, audit                      | ✅ Available |
-| Photo verification (live selfie, human review, no face recognition), badge                        | ✅ Available |
-| Your own instance: setup token claim, branding wizard, HTTPS web server (Caddy)                   | ✅ Available |
-| Download my data, retention jobs, explicit consent for sensitive data                             | ✅ Available |
-| Safety check-in with SOS to a trusted contact, "close kindly" and reply reminders (anti-ghosting) | ✅ Available |
-| Four languages: English, Hebrew, Arabic, Russian (right-to-left for Hebrew and Arabic)            | ✅ Available |
-| Video dates, safety check-in, date planner                                                        | 🗓️ Later     |
+| Area                                                                                                                         | Status       |
+| ---------------------------------------------------------------------------------------------------------------------------- | ------------ |
+| Passwordless email sign-in (magic link), sessions, rate limits                                                               | ✅ Available |
+| Profile, preferences, prompts, versioned consents                                                                            | ✅ Available |
+| Photo upload with malware scan (ClamAV), EXIF/GPS stripping, re-encoding                                                     | ✅ Available |
+| Account deletion (all data and files)                                                                                        | ✅ Available |
+| iOS / Android / web app: onboarding, profile, settings (Hebrew + English, RTL)                                               | ✅ Available |
+| Approximate location (~1 km grid, bucketed distances)                                                                        | ✅ Available |
+| Discovery, reciprocal AI matching, Daily Picks, "why you might click"                                                        | ✅ Available |
+| Like / pass / like a photo or prompt with a comment, Likes You, matches                                                      | ✅ Available |
+| Unmatch and block                                                                                                            | ✅ Available |
+| Real-time chat (WebSocket), read receipts, typing, icebreakers                                                               | ✅ Available |
+| "Are you sure?", hidden offensive messages, scam warnings, blurred photos                                                    | ✅ Available |
+| Voice messages, push notifications                                                                                           | ✅ Available |
+| Report (with chat evidence), moderation dashboard with mandatory TOTP, audit                                                 | ✅ Available |
+| Photo verification (live selfie, human review, no face recognition), badge                                                   | ✅ Available |
+| Your own instance: setup token claim, branding wizard, HTTPS web server (Caddy)                                              | ✅ Available |
+| Download my data, retention jobs, explicit consent for sensitive data                                                        | ✅ Available |
+| Safety check-in with SOS to a trusted contact, "close kindly" and reply reminders (anti-ghosting)                            | ✅ Available |
+| Date planner: propose a date in a public place your community curates, accept it in the chat, turn it into a safety check-in | ✅ Available |
+| Four languages: English, Hebrew, Arabic, Russian (right-to-left for Hebrew and Arabic)                                       | ✅ Available |
+| Video dates, safety check-in, date planner                                                                                   | 🗓️ Later     |
 
 ## Screenshots
 
@@ -89,6 +90,10 @@ Dateos is in active development. Here is what works today and what comes next. T
 **Date safety and closing kindly**
 
 <img src="docs/screenshots/showcase-safety-date-en.png" alt="Setting up a safety check-in, the active check-in with I'm OK and SOS, closing a conversation kindly, and the card the other person sees" width="100%">
+
+**Plan a date in a place the community trusts**
+
+<img src="docs/screenshots/showcase-date-planner-en.png" alt="Choosing a curated public place and a time, the date card with Accept and Not this time, the agreed date, and the safety check-in already filled in" width="100%">
 
 **Privacy**
 

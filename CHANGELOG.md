@@ -2,6 +2,19 @@
 
 All notable changes to Dateos. Versions follow [Semantic Versioning](https://semver.org/).
 
+## Unreleased
+
+### Added
+
+- **Date planner**: in a chat, propose a date at a public place from a list your community's admins
+  curate (no maps service, no coordinates), pick a day and time and add a note; the other person
+  accepts or says "not this time", live. An accepted date opens a safety check-in already filled in.
+  Admins manage places in the dashboard ("Places"); every change is audited.
+
+### Fixed
+
+- The chat header cut off its last action in Arabic and Russian; it now wraps.
+
 ## 0.2.0 (2026-10-22)
 
 ### Added

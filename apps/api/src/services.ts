@@ -28,6 +28,8 @@ import { ReportService } from './modules/safety/reports.js';
 import { InstanceService } from './modules/instance/service.js';
 import { VerificationService } from './modules/safety/verification.js';
 import { CheckinService } from './modules/checkins/service.js';
+import { DateService } from './modules/dates/service.js';
+import { VenueService } from './modules/dates/venues.js';
 
 export interface Services {
   dbHandle: DbHandle;
@@ -50,6 +52,8 @@ export interface Services {
   moderation: ModerationService;
   instance: InstanceService;
   checkins: CheckinService;
+  venues: VenueService;
+  dates: DateService;
   ai: AiGate;
   /** Health checks and shutdown hooks for the resources above. */
   dependencies: Dependency[];
@@ -117,6 +121,10 @@ export function createServices(
   const instance = new InstanceService(dbHandle.db, env, photos);
   const audio = new AudioService(dbHandle.db, storage, mediaQueue);
   const hashEmail = createEmailHasher(secrets.authSecret);
+  const venues = new VenueService(dbHandle.db);
+  const chat = new ChatService(dbHandle.db, realtime, discovery, photos, icebreakers, audio, {
+    messageReceived: (userId, matchId) => notifyQueue.push({ userId, kind: 'message', matchId }),
+  });
 
   return {
     dbHandle,
@@ -132,9 +140,9 @@ export function createServices(
     me: new MeService(dbHandle.db, mediaQueue, legal, today, profileQueue),
     photos,
     realtime,
-    chat: new ChatService(dbHandle.db, realtime, discovery, photos, icebreakers, audio, {
-      messageReceived: (userId, matchId) => notifyQueue.push({ userId, kind: 'message', matchId }),
-    }),
+    chat,
+    venues,
+    dates: new DateService(dbHandle.db, chat, venues, overrides.now),
     reports: new ReportService(
       dbHandle.db,
       discovery,

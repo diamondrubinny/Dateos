@@ -142,6 +142,22 @@ export async function exportMemberData(
     .from(t.checkins)
     .where(eq(t.checkins.userId, userId))
     .orderBy(desc(t.checkins.createdAt));
+  // Date ideas in your chats. The other person's own note is theirs, so only yours is included.
+  const datePlanRows = await db
+    .select({
+      proposerId: t.datePlans.proposerId,
+      status: t.datePlans.status,
+      place: t.datePlans.venueName,
+      area: t.datePlans.venueArea,
+      startsAt: t.datePlans.startsAt,
+      note: t.datePlans.note,
+      respondedAt: t.datePlans.respondedAt,
+      createdAt: t.datePlans.createdAt,
+    })
+    .from(t.datePlans)
+    .innerJoin(t.matches, eq(t.matches.id, t.datePlans.matchId))
+    .where(or(eq(t.matches.userA, userId), eq(t.matches.userB, userId)))
+    .orderBy(asc(t.datePlans.createdAt));
   const devices = await db
     .select({
       platform: t.pushTokens.platform,
@@ -242,6 +258,14 @@ export async function exportMemberData(
       startsAt: iso(c.startsAt),
       checkAt: iso(c.checkAt),
       alertedAt: iso(c.alertedAt),
+    })),
+    dateIdeas: datePlanRows.map(({ proposerId, note, ...d }) => ({
+      ...d,
+      proposedByYou: proposerId === userId,
+      note: proposerId === userId ? note : null,
+      startsAt: iso(d.startsAt),
+      respondedAt: iso(d.respondedAt),
+      createdAt: iso(d.createdAt),
     })),
     pushDevices: devices.map((d) => ({
       ...d,

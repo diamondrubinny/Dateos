@@ -1,4 +1,7 @@
 import type {
+  AdminVenue,
+  VenueInput,
+  VenueUpdate,
   AuditEntry,
   InstanceInfo,
   InstanceSettingsInput,
@@ -89,6 +92,11 @@ export const api = {
     request<AdminInstanceSettings>('PATCH', '/v1/admin/instance', input),
   uploadLogo: (file: File) => upload('/v1/admin/instance/logo', file),
   removeLogo: () => request<{ ok: true }>('DELETE', '/v1/admin/instance/logo'),
+  venues: () => request<{ venues: AdminVenue[] }>('GET', '/v1/admin/venues'),
+  createVenue: (input: Omit<VenueInput, 'active'>) =>
+    request<AdminVenue>('POST', '/v1/admin/venues', input),
+  updateVenue: (id: string, patch: VenueUpdate) =>
+    request<AdminVenue>('PATCH', `/v1/admin/venues/${encodeURIComponent(id)}`, patch),
   me: () => request<StaffMe>('GET', '/v1/admin/me'),
   requestLink: (email: string, callbackURL: string) =>
     request<unknown>('POST', '/v1/auth/sign-in/magic-link', { email, callbackURL }),

@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { radius, spacing, useColors } from '../lib/theme';
 import { AppText } from './AppText';
+import { DateCard } from './DateCard';
 import { RemoteImage } from './RemoteImage';
 import { VoicePlayer } from './VoicePlayer';
 
@@ -26,6 +27,7 @@ export function MessageBubble({ message, seen }: { message: MessageView; seen: b
   const [revealed, setRevealed] = useState(false);
   const [imageShown, setImageShown] = useState(false);
   const mine = message.mine;
+  if (message.kind === 'date') return <DateCard message={message} />;
   const bubble = [
     styles.bubble,
     mine ? styles.mine : styles.theirs,

@@ -17,6 +17,7 @@
     "privacy": "tsx privacy.ts",
     "a11y": "tsx a11y.ts",
     "checkin": "tsx checkin.ts",
+    "dates": "tsx dates.ts",
     "load": "node --env-file=../.env --import tsx load.ts"
   },
   "dependencies": {

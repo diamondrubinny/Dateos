@@ -38,6 +38,10 @@
 
 <img src="../screenshots/showcase-safety-date-ar.png" alt="تسجيل الأمان مع SOS، وإنهاء المحادثة بلطف" width="100%">
 
+**خطّط لموعد في مكان يثق به المجتمع**
+
+<img src="../screenshots/showcase-date-planner-ar.png" alt="اختيار مكان عام ووقت، وقبول الموعد، وتسجيل الأمان المُعبّأ مسبقًا" width="100%">
+
 **خصوصية يمكنك التحقق منها**
 
 <img src="../screenshots/showcase-privacy-ar.png" alt="صفحة الخصوصية وملفات تعريف الارتباط، وتنزيل البيانات" width="60%">

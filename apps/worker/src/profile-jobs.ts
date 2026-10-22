@@ -94,6 +94,10 @@ export async function purgeClosedChats(
   const deleted = await db.execute(sql`
     DELETE FROM messages m USING matches ma
     WHERE ma.id = m.match_id AND ma.unmatched_at < now() - interval '${days} days'`);
+  // Date ideas of the same chats (their cards were among the messages above).
+  await db.execute(sql`
+    DELETE FROM date_plans d USING matches ma
+    WHERE ma.id = d.match_id AND ma.unmatched_at < now() - interval '${days} days'`);
   if (images.rows.length > 0) {
     const ids = sql.join(
       images.rows.map((r) => sql`${r.id}::uuid`),

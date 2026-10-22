@@ -46,6 +46,10 @@
 
 <img src="../screenshots/showcase-safety-date-he.png" alt="צ׳ק-אין בטיחות עם SOS, וסיום שיחה בנימוס" width="100%">
 
+**תכנון דייט במקום שהקהילה סומכת עליו**
+
+<img src="../screenshots/showcase-date-planner-he.png" alt="בחירת מקום ציבורי ושעה, אישור הדייט, וצ׳ק-אין שכבר ממולא" width="100%">
+
 **פרטיות שאפשר לבדוק**
 
 <img src="../screenshots/showcase-privacy-he.png" alt="עמוד הפרטיות והעוגיות והורדת המידע" width="60%">

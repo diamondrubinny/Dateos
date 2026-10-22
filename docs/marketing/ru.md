@@ -37,6 +37,10 @@
 
 <img src="../screenshots/showcase-safety-date-ru.png" alt="Проверка безопасности с SOS и вежливое завершение разговора" width="100%">
 
+**Свидание в месте, которому доверяет сообщество**
+
+<img src="../screenshots/showcase-date-planner-ru.png" alt="Выбор общественного места и времени, согласие на свидание и уже заполненная проверка безопасности" width="100%">
+
 **Приватность, которую можно проверить**
 
 <img src="../screenshots/showcase-privacy-ru.png" alt="Страница «Приватность и cookie» и скачивание своих данных" width="60%">

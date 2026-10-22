@@ -20,18 +20,28 @@ import { photoUrl } from '../me/service.js';
 import type { PhotoService } from '../photos/service.js';
 import type { AudioService } from './audio.js';
 
-const { messages, matches, matchReads, photos, profiles, prompts, audioClips, preferences } =
-  schema;
+const {
+  messages,
+  matches,
+  matchReads,
+  photos,
+  profiles,
+  prompts,
+  audioClips,
+  preferences,
+  datePlans,
+} = schema;
 
 type MessageRow = typeof messages.$inferSelect & {
   photoStatus: string | null;
   audioStatus: string | null;
   audioDurationMs: number | null;
+  plan: typeof datePlans.$inferSelect | null;
 };
 
 /** A receiver sees media only after it passed scanning; senders see their own uploads. */
 const visibleTo = (viewerId: string) =>
-  sql`(${messages.kind} = 'text' OR ${messages.senderId} = ${viewerId} OR ${photos.status} = 'clean' OR ${audioClips.status} = 'clean')`;
+  sql`(${messages.kind} IN ('text', 'date') OR ${messages.senderId} = ${viewerId} OR ${photos.status} = 'clean' OR ${audioClips.status} = 'clean')`;
 
 const mediaStatus = (status: string | null) =>
   status === 'clean'
@@ -82,6 +92,25 @@ export function toView(row: MessageRow, viewerId: string): MessageView {
             url: voiceStatus === 'clean' && row.audioId ? audioUrl(row.audioId) : null,
             status: voiceStatus,
             durationMs: row.audioDurationMs,
+          }
+        : null,
+    date:
+      row.kind === 'date' && row.plan
+        ? {
+            id: row.plan.id,
+            status: row.plan.status,
+            mine: row.plan.proposerId === viewerId,
+            venue: {
+              name: row.plan.venueName,
+              area: row.plan.venueArea,
+              category: row.plan.venueCategory,
+              address: row.plan.venueAddress,
+              note: row.plan.venueNote,
+              stepFree: row.plan.venueStepFree,
+            },
+            startsAt: row.plan.startsAt.toISOString(),
+            note: row.plan.note,
+            respondedAt: row.plan.respondedAt?.toISOString() ?? null,
           }
         : null,
     hidden: !mine && harm.length > 0,
@@ -147,11 +176,36 @@ export class ChatService {
         photoStatus: photos.status,
         audioStatus: audioClips.status,
         audioDurationMs: audioClips.durationMs,
+        datePlanId: messages.datePlanId,
+        plan: datePlans,
       })
       .from(messages)
       .leftJoin(photos, eq(photos.id, messages.photoId))
       .leftJoin(audioClips, eq(audioClips.id, messages.audioId))
+      .leftJoin(datePlans, eq(datePlans.id, messages.datePlanId))
       .where(where);
+  }
+
+  /** One message as a participant sees it (used by the date planner after it writes a card). */
+  async messageView(messageId: string, viewerId: string): Promise<MessageView> {
+    const [row] = await this.rows(eq(messages.id, messageId));
+    if (!row) throw notFound();
+    return toView(row, viewerId);
+  }
+
+  /** Tells both people about a new message, with a content-free push to the receiver. */
+  async deliverMessage(messageId: string, senderId: string, otherId: string): Promise<void> {
+    const [row] = await this.rows(eq(messages.id, messageId));
+    if (row) await this.deliver(row, senderId, otherId);
+  }
+
+  /** A message changed (for example a date card was accepted); clients reload the chat. */
+  async announceUpdated(matchId: string, messageId: string, userIds: string[]): Promise<void> {
+    await Promise.all(
+      userIds.map((userId) =>
+        this.realtime.publish(userId, { type: 'message.updated', matchId, messageId }),
+      ),
+    );
   }
 
   private async counts(matchId: string): Promise<Map<string, number>> {

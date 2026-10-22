@@ -14,6 +14,9 @@ import {
   staffMeSchema,
   totpCodeSchema,
   verificationReviewSchema,
+  adminVenueSchema,
+  venueInputSchema,
+  venueUpdateSchema,
 } from '@dateos/shared';
 import type { Storage, StoredObject } from '@dateos/storage';
 import type { FastifyReply } from 'fastify';
@@ -27,6 +30,7 @@ import { adminSettingsSchema } from '../instance/routes.js';
 import type { InstanceService } from '../instance/service.js';
 import type { PhotoService } from '../photos/service.js';
 import type { VerificationService } from '../safety/verification.js';
+import type { VenueService } from '../dates/venues.js';
 import { isStaffRole, type StaffMfaService } from './mfa.js';
 import type { ModerationService } from './moderation.js';
 
@@ -49,7 +53,8 @@ export const adminRoutes: FastifyPluginAsyncZod<{
   photos: PhotoService;
   instance: InstanceService;
   storage: Storage;
-}> = async (app, { auth, mfa, moderation, verification, photos, instance, storage }) => {
+  venues: VenueService;
+}> = async (app, { auth, mfa, moderation, verification, photos, instance, storage, venues }) => {
   await app.register(multipart, {
     limits: { fileSize: MAX_PHOTO_BYTES, files: 1, fields: 0, parts: 1 },
   });
@@ -250,4 +255,35 @@ export const adminRoutes: FastifyPluginAsyncZod<{
     await instance.removeLogo(currentUser(request));
     return { ok: true as const };
   });
+
+  // Date planner places (phase 12): every staff member can see them, only admins change them.
+  app.get(
+    '/v1/admin/venues',
+    { schema: { response: { 200: z.object({ venues: z.array(adminVenueSchema) }) } } },
+    async () => ({ venues: await venues.listAll() }),
+  );
+  app.post(
+    '/v1/admin/venues',
+    {
+      config: perUserLimit(100, 60 * 60 * 1000),
+      schema: { body: venueInputSchema, response: { 201: adminVenueSchema } },
+    },
+    async (request, reply) => {
+      const staff = currentUser(request);
+      adminOnly(staff.role);
+      return reply.status(201).send(await venues.create(staff.id, request.body));
+    },
+  );
+  app.patch(
+    '/v1/admin/venues/:id',
+    {
+      config: perUserLimit(200, 60 * 60 * 1000),
+      schema: { params: idParams, body: venueUpdateSchema, response: { 200: adminVenueSchema } },
+    },
+    async (request) => {
+      const staff = currentUser(request);
+      adminOnly(staff.role);
+      return venues.update(staff.id, request.params.id, request.body);
+    },
+  );
 };

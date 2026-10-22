@@ -1,4 +1,5 @@
 import type { Checkin } from '@dateos/shared';
+import { useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
@@ -25,10 +26,15 @@ import { radius, spacing, useColors } from '../lib/theme';
 const STARTS = { now: 0, in30: 30, in60: 60, in120: 120 } as const;
 const DURATIONS = { h1: 60, h2: 120, h3: 180, h4: 240 } as const;
 
+/** The time, with the day too when it isn't today (a check-in can be set up for a planned date). */
 function time(iso: string, locale: string) {
-  return new Intl.DateTimeFormat(locale, { hour: '2-digit', minute: '2-digit' }).format(
-    new Date(iso),
-  );
+  const d = new Date(iso);
+  const today = d.toDateString() === new Date().toDateString();
+  return new Intl.DateTimeFormat(locale, {
+    ...(today ? {} : { weekday: 'short', day: 'numeric', month: 'short' }),
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(d);
 }
 
 function Active({ checkin, onNotice }: { checkin: Checkin; onNotice: (m: string) => void }) {
@@ -112,9 +118,15 @@ function NewCheckin({ onCreated }: { onCreated: () => void }) {
   const { locale } = useLocale();
   const create = useCreateCheckin();
   const conversations = useConversations();
-  const [matchId, setMatchId] = useState<string>('none');
-  const [place, setPlace] = useState('');
-  const [start, setStart] = useState<keyof typeof STARTS>('now');
+  // Opened from an accepted date card: the match, the place and the start time are filled in.
+  const planned = useLocalSearchParams<{ matchId?: string; place?: string; startsAt?: string }>();
+  const plannedStart =
+    planned.startsAt && Date.parse(planned.startsAt) > Date.now() ? planned.startsAt : undefined;
+  const [matchId, setMatchId] = useState<string>(planned.matchId ?? 'none');
+  const [place, setPlace] = useState(planned.place?.slice(0, 200) ?? '');
+  const [start, setStart] = useState<keyof typeof STARTS | 'planned'>(
+    plannedStart ? 'planned' : 'now',
+  );
   const [duration, setDuration] = useState<keyof typeof DURATIONS>('h2');
   const [contactName, setContactName] = useState('');
   const [contactEmail, setContactEmail] = useState('');
@@ -126,7 +138,10 @@ function NewCheckin({ onCreated }: { onCreated: () => void }) {
     if (place.trim().length < 2 || !contactName.trim() || !/^\S+@\S+\.\S+$/.test(contactEmail)) {
       return setError(t('checkin.invalid'));
     }
-    const startsAt = new Date(Date.now() + STARTS[start] * 60_000);
+    const startsAt =
+      start === 'planned' && plannedStart
+        ? new Date(plannedStart)
+        : new Date(Date.now() + STARTS[start === 'planned' ? 'now' : start] * 60_000);
     const checkAt = new Date(startsAt.getTime() + DURATIONS[duration] * 60_000);
     create.mutate(
       {
@@ -179,6 +194,9 @@ function NewCheckin({ onCreated }: { onCreated: () => void }) {
       <ChoiceGroup
         label={t('checkin.start')}
         options={[
+          ...(plannedStart
+            ? [{ value: 'planned' as const, label: time(plannedStart, locale) }]
+            : []),
           { value: 'now', label: t('checkin.startNow') },
           { value: 'in30', label: t('checkin.start30') },
           { value: 'in60', label: t('checkin.start60') },

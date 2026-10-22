@@ -393,6 +393,16 @@ function ChatScreen() {
                 🎙
               </AppText>
             </Pressable>
+            <Pressable
+              onPress={() => router.push({ pathname: '/date/[id]', params: { id: matchId, name } })}
+              accessibilityRole="button"
+              accessibilityLabel={t('datePlan.open')}
+              style={styles.iconBtn}
+            >
+              <AppText variant="heading" tone="primary">
+                📅
+              </AppText>
+            </Pressable>
             <TextInput
               value={text}
               onChangeText={onChange}
@@ -446,6 +456,8 @@ const styles = StyleSheet.create({
   pad: { padding: spacing.md, gap: spacing.sm },
   header: {
     flexDirection: 'row',
+    // Long names or labels (Arabic, Russian, large text) wrap to a second line instead of being cut.
+    flexWrap: 'wrap',
     alignItems: 'center',
     gap: spacing.sm,
     paddingHorizontal: spacing.sm,

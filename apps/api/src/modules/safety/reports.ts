@@ -60,7 +60,7 @@ export class ReportService {
               and(
                 eq(messages.matchId, match.id),
                 inArray(messages.id, input.messageIds),
-                sql`((${messages.kind} = 'text' AND ${messages.body} IS NOT NULL) OR (${messages.kind} = 'voice' AND ${audioClips.mediaKey} IS NOT NULL))`,
+                sql`((${messages.kind} IN ('text', 'date') AND ${messages.body} IS NOT NULL) OR (${messages.kind} = 'voice' AND ${audioClips.mediaKey} IS NOT NULL))`,
               ),
             )
             .orderBy(messages.createdAt)
@@ -108,8 +108,9 @@ export class ReportService {
           id: evidenceId,
           reportId: id,
           fromReported: m.senderId === targetId,
-          kind: m.kind,
-          body: m.kind === 'text' ? m.body : null,
+          // A date card is kept as its plain-text summary (place, time, note).
+          kind: m.kind === 'voice' ? ('voice' as const) : ('text' as const),
+          body: m.kind === 'voice' ? null : m.body,
           mediaKey,
           durationMs: m.kind === 'voice' ? m.durationMs : null,
           flags: m.flags,
