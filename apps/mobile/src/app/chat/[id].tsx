@@ -214,6 +214,19 @@ function ChatScreen() {
           {conversation ? (
             <Pressable
               onPress={() =>
+                router.push({ pathname: '/close/[id]', params: { id: matchId, name } })
+              }
+              accessibilityRole="button"
+              style={styles.iconBtn}
+            >
+              <AppText variant="caption" tone="muted">
+                {t('ghosting.closeKindly')}
+              </AppText>
+            </Pressable>
+          ) : null}
+          {conversation ? (
+            <Pressable
+              onPress={() =>
                 router.push({
                   pathname: '/report/[id]',
                   params: { id: conversation.profile.id, name, matchId },

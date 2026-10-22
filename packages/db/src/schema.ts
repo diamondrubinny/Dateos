@@ -27,6 +27,7 @@ import {
   verificationPoses,
   EMBEDDING_DIM,
   genders,
+  checkinStatuses,
   intentions,
   interactionKinds,
   photoStatuses,
@@ -309,6 +310,9 @@ export const matches = pgTable(
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     unmatchedAt: timestamp('unmatched_at', { withTimezone: true }),
     unmatchedBy: text('unmatched_by').references(() => user.id, { onDelete: 'set null' }),
+    /** "Close kindly": the message the other person sees on a card for a few days. */
+    closeMessage: varchar('close_message', { length: 300 }),
+    closeDismissedAt: timestamp('close_dismissed_at', { withTimezone: true }),
   },
   (t) => [
     uniqueIndex('matches_pair_uq').on(t.userA, t.userB),
@@ -628,4 +632,40 @@ export const pushTokens = pgTable(
     lastUsedAt: timestamp('last_used_at', { withTimezone: true }),
   },
   (t) => [index('push_tokens_user_idx').on(t.userId)],
+);
+
+// ---------------------------------------------------------------------------
+// Safety check-in (phase 9)
+// ---------------------------------------------------------------------------
+
+export const checkinStatus = pgEnum('checkin_status', checkinStatuses);
+
+/** Deleted CHECKIN_RETENTION_DAYS after it ends, with the contact's address. ⚖️ */
+export const checkins = pgTable(
+  'checkins',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: ownerId(),
+    matchId: uuid('match_id').references(() => matches.id, { onDelete: 'set null' }),
+    /** First name at creation time, so the alert doesn't depend on the match still existing. */
+    matchName: varchar('match_name', { length: 40 }),
+    place: varchar('place', { length: 200 }).notNull(),
+    note: varchar('note', { length: 300 }),
+    contactName: varchar('contact_name', { length: 60 }).notNull(),
+    contactEmail: varchar('contact_email', { length: 254 }).notNull(),
+    locale: varchar('locale', { length: 5 }).notNull(),
+    timeZone: varchar('time_zone', { length: 64 }).notNull(),
+    startsAt: timestamp('starts_at', { withTimezone: true }).notNull(),
+    checkAt: timestamp('check_at', { withTimezone: true }).notNull(),
+    status: checkinStatus('status').notNull().default('active'),
+    sosCount: smallint('sos_count').notNull().default(0),
+    remindedAt: timestamp('reminded_at', { withTimezone: true }),
+    alertedAt: timestamp('alerted_at', { withTimezone: true }),
+    endedAt: timestamp('ended_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index('checkins_user_idx').on(t.userId, t.createdAt),
+    index('checkins_due_idx').on(t.status, t.checkAt),
+  ],
 );

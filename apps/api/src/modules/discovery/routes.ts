@@ -7,6 +7,8 @@ import {
   locationInputSchema,
   matchSummarySchema,
   publicProfileSchema,
+  closeMatchSchema,
+  closedConversationSchema,
 } from '@dateos/shared';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { perUserLimit } from '../../plugins/security.js';
@@ -97,6 +99,33 @@ export const discoveryRoutes: FastifyPluginAsyncZod<{
     { schema: { params: z.object({ id: z.uuid() }), response: { 200: ok } } },
     async (request) => {
       await discovery.unmatch(currentUser(request).id, request.params.id);
+      return { ok: true as const };
+    },
+  );
+
+  app.post(
+    '/v1/matches/:id/close',
+    {
+      config: perUserLimit(30, 60 * 60_000),
+      schema: { params: z.object({ id: z.uuid() }), body: closeMatchSchema, response: { 200: ok } },
+    },
+    async (request) => {
+      await discovery.unmatch(currentUser(request).id, request.params.id, request.body.message);
+      return { ok: true as const };
+    },
+  );
+
+  app.get(
+    '/v1/matches/closed',
+    { schema: { response: { 200: z.object({ closed: z.array(closedConversationSchema) }) } } },
+    async (request) => ({ closed: await discovery.closedConversations(currentUser(request).id) }),
+  );
+
+  app.post(
+    '/v1/matches/:id/closed/dismiss',
+    { schema: { params: z.object({ id: z.uuid() }), response: { 200: ok } } },
+    async (request) => {
+      await discovery.dismissClosed(currentUser(request).id, request.params.id);
       return { ok: true as const };
     },
   );

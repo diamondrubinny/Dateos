@@ -16,6 +16,8 @@ interface ChoiceGroupProps<T extends string> {
   selected: T[];
   onChange: (next: T[]) => void;
   error?: string | undefined;
+  /** One option per line, full width (for sentence-length options). */
+  stacked?: boolean;
 }
 
 /** Chips exposed as radio buttons or checkboxes, so state is announced by screen readers. */
@@ -26,6 +28,7 @@ export function ChoiceGroup<T extends string>({
   selected,
   onChange,
   error,
+  stacked,
 }: ChoiceGroupProps<T>) {
   const colors = useColors();
   const keyboard = useKeyboardMode();
@@ -36,7 +39,7 @@ export function ChoiceGroup<T extends string>({
       accessibilityLabel={label}
     >
       <AppText variant="label">{label}</AppText>
-      <View style={styles.chips}>
+      <View style={stacked ? styles.stack : styles.chips}>
         {options.map((option) => {
           const isOn = selected.includes(option.value);
           const toggle = () => {
@@ -54,6 +57,7 @@ export function ChoiceGroup<T extends string>({
               accessibilityLabel={option.label}
               style={(state) => [
                 styles.chip,
+                stacked && styles.stackedChip,
                 {
                   backgroundColor: isOn ? colors.primary : colors.background,
                   borderColor: isOn ? colors.primary : colors.border,
@@ -66,7 +70,11 @@ export function ChoiceGroup<T extends string>({
                   },
               ]}
             >
-              <AppText variant="label" tone={isOn ? 'onPrimary' : 'default'}>
+              <AppText
+                variant="label"
+                tone={isOn ? 'onPrimary' : 'default'}
+                style={styles.chipText}
+              >
                 {isOn ? `✓ ${option.label}` : option.label}
               </AppText>
             </Pressable>
@@ -144,13 +152,19 @@ export function Checkbox({ label, hint, checked, onChange, badge }: CheckboxProp
 const styles = StyleSheet.create({
   wrap: { gap: spacing.sm },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  stack: { gap: spacing.sm },
   chip: {
     minHeight: MIN_TOUCH - 4,
+    // Long labels (any language, large text) wrap inside the chip instead of leaving the screen.
+    maxWidth: '100%',
     paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
     borderRadius: radius.pill,
     borderWidth: 1.5,
     justifyContent: 'center',
   },
+  stackedChip: { borderRadius: radius.md, paddingVertical: spacing.md },
+  chipText: { flexShrink: 1 },
   checkRow: {
     flexDirection: 'row',
     gap: spacing.md,

@@ -90,6 +90,11 @@ function ProfileContent() {
       </View>
       <Button
         variant="secondary"
+        label={t('checkin.title')}
+        onPress={() => router.push('/checkin')}
+      />
+      <Button
+        variant="secondary"
         label={t('home.settings')}
         onPress={() => router.push('/settings')}
       />

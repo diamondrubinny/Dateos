@@ -27,6 +27,7 @@ import { ModerationService } from './modules/admin/moderation.js';
 import { ReportService } from './modules/safety/reports.js';
 import { InstanceService } from './modules/instance/service.js';
 import { VerificationService } from './modules/safety/verification.js';
+import { CheckinService } from './modules/checkins/service.js';
 
 export interface Services {
   dbHandle: DbHandle;
@@ -48,6 +49,7 @@ export interface Services {
   staffMfa: StaffMfaService;
   moderation: ModerationService;
   instance: InstanceService;
+  checkins: CheckinService;
   ai: AiGate;
   /** Health checks and shutdown hooks for the resources above. */
   dependencies: Dependency[];
@@ -112,6 +114,7 @@ export function createServices(
   };
 
   const verification = new VerificationService(dbHandle.db, photos);
+  const instance = new InstanceService(dbHandle.db, env, photos);
   const audio = new AudioService(dbHandle.db, storage, mediaQueue);
   const hashEmail = createEmailHasher(secrets.authSecret);
 
@@ -148,7 +151,13 @@ export function createServices(
       overrides.now,
     ),
     moderation: new ModerationService(dbHandle.db, discovery, hashEmail, today),
-    instance: new InstanceService(dbHandle.db, env, photos),
+    instance,
+    checkins: new CheckinService(
+      dbHandle.db,
+      mailer,
+      async () => (await instance.info()).name,
+      onMailError,
+    ),
     ai,
     dependencies: [
       {

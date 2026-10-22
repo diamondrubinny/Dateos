@@ -125,6 +125,23 @@ export async function exportMemberData(
     .from(t.verifications)
     .where(eq(t.verifications.userId, userId))
     .orderBy(desc(t.verifications.createdAt));
+  // Safety check-ins you created (kept 7 days after they end), including the contact you entered.
+  const checkinRows = await db
+    .select({
+      status: t.checkins.status,
+      matchName: t.checkins.matchName,
+      place: t.checkins.place,
+      note: t.checkins.note,
+      contactName: t.checkins.contactName,
+      contactEmail: t.checkins.contactEmail,
+      startsAt: t.checkins.startsAt,
+      checkAt: t.checkins.checkAt,
+      sosCount: t.checkins.sosCount,
+      alertedAt: t.checkins.alertedAt,
+    })
+    .from(t.checkins)
+    .where(eq(t.checkins.userId, userId))
+    .orderBy(desc(t.checkins.createdAt));
   const devices = await db
     .select({
       platform: t.pushTokens.platform,
@@ -219,6 +236,12 @@ export async function exportMemberData(
       ...v,
       at: iso(v.at),
       decidedAt: iso(v.decidedAt),
+    })),
+    safetyCheckins: checkinRows.map((c) => ({
+      ...c,
+      startsAt: iso(c.startsAt),
+      checkAt: iso(c.checkAt),
+      alertedAt: iso(c.alertedAt),
     })),
     pushDevices: devices.map((d) => ({
       ...d,

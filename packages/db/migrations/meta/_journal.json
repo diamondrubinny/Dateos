@@ -99,6 +99,13 @@
       "when": 1792609527927,
       "tag": "0013_instance_claim",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1792641343744,
+      "tag": "0014_checkins_and_close_kindly",
+      "breakpoints": true
     }
   ]
 }

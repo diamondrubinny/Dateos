@@ -16,6 +16,7 @@ import { authRoutes } from './auth/routes.js';
 import { instanceRoutes, setupRoutes } from './modules/instance/routes.js';
 import websocket from '@fastify/websocket';
 import { chatRoutes } from './modules/chat/routes.js';
+import { checkinRoutes } from './modules/checkins/routes.js';
 import { discoveryRoutes } from './modules/discovery/routes.js';
 import { meRoutes } from './modules/me/routes.js';
 import { exportMemberData } from './modules/privacy/export.js';
@@ -109,6 +110,7 @@ export async function buildApp(env: Env, deps: AppDependencies): Promise<Fastify
       db: services.dbHandle.db,
       ai: services.ai,
     });
+    await typed.register(checkinRoutes, { auth: services.auth, checkins: services.checkins });
     await typed.register(notificationRoutes, { auth: services.auth, db: services.dbHandle.db });
     await typed.register(setupRoutes, { auth: services.auth, instance: services.instance });
     await app.register(websocket, { options: { maxPayload: 4096 } });

@@ -19,6 +19,7 @@ people, with safety and privacy built in.
 | 🔒 **Privacy by design**             | Sign-in without passwords, location only as a ~1 km area, a separate explicit consent for sensitive data, no tracking cookies, "Download my data" and "Delete my account" in two taps.                                              |
 | 🤖 **AI you control**                | Smart matching and conversation starters run on your server by default. Cloud AI only with each member's consent.                                                                                                                   |
 | 🌍 **Four languages, accessible**    | English, Hebrew, Arabic and Russian, with full right-to-left support. Screen readers, keyboard use, large text, and a button for every swipe.                                                                                       |
+| 🛟 **Date safety, no ghosting**      | A safety check-in emails someone you trust only if you miss it or press SOS. "Close kindly" ends a chat with a polite message instead of silence, and gentle reminders show who is waiting for your reply.                          |
 | 👮 **Moderation tools included**     | A dashboard with mandatory two-factor sign-in, a report queue with evidence, verification reviews and a complete audit log.                                                                                                         |
 
 ## A closer look
@@ -38,6 +39,10 @@ people, with safety and privacy built in.
 **Voice messages** (the receiver can turn them off)
 
 <img src="../screenshots/showcase-voice-en.png" alt="Recording, sending and playing a voice message" width="100%">
+
+**Date safety and closing kindly**
+
+<img src="../screenshots/showcase-safety-date-en.png" alt="Safety check-in with SOS, and closing a conversation kindly" width="100%">
 
 **Privacy you can check**
 

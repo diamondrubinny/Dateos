@@ -5,15 +5,40 @@ import { Banner } from '../../components/Banner';
 import { Loading } from '../../components/Loading';
 import { PersonRow } from '../../components/PersonRow';
 import { Screen } from '../../components/Screen';
+import { waitingForMyReply } from '@dateos/shared';
+import { StyleSheet, View } from 'react-native';
+import { Button } from '../../components/Button';
+import { CheckinEntry } from '../../components/CheckinEntry';
 import { useConversations } from '../../lib/chat-queries';
+import { useClosedConversations, useDismissClosed } from '../../lib/checkin-queries';
+import { radius, spacing, useColors } from '../../lib/theme';
 
 export default function Matches() {
   const { t } = useTranslation();
+  const colors = useColors();
   const conversations = useConversations();
+  const closed = useClosedConversations();
+  const dismiss = useDismissClosed();
   if (conversations.isPending) return <Loading />;
   return (
     <Screen title={t('matches.title')}>
       {conversations.error ? <Banner tone="error" message={t('common.genericError')} /> : null}
+      <CheckinEntry />
+      {closed.data?.map((c) => (
+        <View key={c.matchId} style={[styles.closed, { backgroundColor: colors.surface }]}>
+          <AppText variant="label" userContent>
+            {t('ghosting.closedCard', { name: c.name })}
+          </AppText>
+          <AppText variant="body" userContent>
+            {t('ghosting.quote', { message: c.message })}
+          </AppText>
+          <Button
+            variant="ghost"
+            label={t('ghosting.dismiss')}
+            onPress={() => dismiss.mutate(c.matchId)}
+          />
+        </View>
+      ))}
       {conversations.data?.length === 0 ? (
         <AppText variant="body" tone="muted">
           {t('matches.empty')}
@@ -34,7 +59,13 @@ export default function Matches() {
           <PersonRow
             key={c.matchId}
             profile={c.profile}
-            detail={c.unread > 0 ? t('chat.unread', { count: c.unread }) : undefined}
+            detail={
+              c.unread > 0
+                ? t('chat.unread', { count: c.unread })
+                : waitingForMyReply(last)
+                  ? t('ghosting.waiting')
+                  : undefined
+            }
             quote={preview}
             plainQuote
             onPress={() => router.push({ pathname: '/chat/[id]', params: { id: c.matchId } })}
@@ -44,3 +75,7 @@ export default function Matches() {
     </Screen>
   );
 }
+
+const styles = StyleSheet.create({
+  closed: { padding: spacing.md, borderRadius: radius.md, gap: spacing.xs },
+});

@@ -30,6 +30,7 @@ Dateos is built the other way around:
 - 🛡️ **Safety first.** Photos are scanned for malware and stripped of location data. Location is only ever approximate. Under-18 sign-ups are blocked.
 - 🔒 **Privacy by design.** Passwordless sign-in, minimal data, versioned consent, and full account deletion from inside the app.
 - 💞 **Reciprocal, explainable matching.** Recommends people likely to be interested _in each other_, explains why, and spreads attention fairly. The algorithm is [published](docs/MATCHING.md).
+- 🛟 **Date safety and no ghosting.** A safety check-in emails a trusted contact only if you miss it or press SOS; "close kindly" ends a chat with a polite message instead of silence.
 - 💌 **"Likes You" is free.** See everyone who liked you, and like a specific photo or prompt with a comment.
 - 💬 **Real-time chat with built-in kindness.** An "Are you sure?" check before hurtful messages, offensive messages hidden for the receiver, scam warnings, and photos that stay blurred until you choose to look.
 - 🤖 **AI that respects you.** Matching runs on the instance's own server by default (offline or with a local Ollama model); cloud AI is opt-in only.
@@ -39,26 +40,27 @@ Dateos is built the other way around:
 
 Dateos is in active development. Here is what works today and what comes next. The full plan is in [`docs/PLAN.md`](docs/PLAN.md).
 
-| Area                                                                                   | Status       |
-| -------------------------------------------------------------------------------------- | ------------ |
-| Passwordless email sign-in (magic link), sessions, rate limits                         | ✅ Available |
-| Profile, preferences, prompts, versioned consents                                      | ✅ Available |
-| Photo upload with malware scan (ClamAV), EXIF/GPS stripping, re-encoding               | ✅ Available |
-| Account deletion (all data and files)                                                  | ✅ Available |
-| iOS / Android / web app: onboarding, profile, settings (Hebrew + English, RTL)         | ✅ Available |
-| Approximate location (~1 km grid, bucketed distances)                                  | ✅ Available |
-| Discovery, reciprocal AI matching, Daily Picks, "why you might click"                  | ✅ Available |
-| Like / pass / like a photo or prompt with a comment, Likes You, matches                | ✅ Available |
-| Unmatch and block                                                                      | ✅ Available |
-| Real-time chat (WebSocket), read receipts, typing, icebreakers                         | ✅ Available |
-| "Are you sure?", hidden offensive messages, scam warnings, blurred photos              | ✅ Available |
-| Voice messages, push notifications                                                     | ✅ Available |
-| Report (with chat evidence), moderation dashboard with mandatory TOTP, audit           | ✅ Available |
-| Photo verification (live selfie, human review, no face recognition), badge             | ✅ Available |
-| Your own instance: setup token claim, branding wizard, HTTPS web server (Caddy)        | ✅ Available |
-| Download my data, retention jobs, explicit consent for sensitive data                  | ✅ Available |
-| Four languages: English, Hebrew, Arabic, Russian (right-to-left for Hebrew and Arabic) | ✅ Available |
-| Video dates, safety check-in, date planner                                             | 🗓️ Later     |
+| Area                                                                                              | Status       |
+| ------------------------------------------------------------------------------------------------- | ------------ |
+| Passwordless email sign-in (magic link), sessions, rate limits                                    | ✅ Available |
+| Profile, preferences, prompts, versioned consents                                                 | ✅ Available |
+| Photo upload with malware scan (ClamAV), EXIF/GPS stripping, re-encoding                          | ✅ Available |
+| Account deletion (all data and files)                                                             | ✅ Available |
+| iOS / Android / web app: onboarding, profile, settings (Hebrew + English, RTL)                    | ✅ Available |
+| Approximate location (~1 km grid, bucketed distances)                                             | ✅ Available |
+| Discovery, reciprocal AI matching, Daily Picks, "why you might click"                             | ✅ Available |
+| Like / pass / like a photo or prompt with a comment, Likes You, matches                           | ✅ Available |
+| Unmatch and block                                                                                 | ✅ Available |
+| Real-time chat (WebSocket), read receipts, typing, icebreakers                                    | ✅ Available |
+| "Are you sure?", hidden offensive messages, scam warnings, blurred photos                         | ✅ Available |
+| Voice messages, push notifications                                                                | ✅ Available |
+| Report (with chat evidence), moderation dashboard with mandatory TOTP, audit                      | ✅ Available |
+| Photo verification (live selfie, human review, no face recognition), badge                        | ✅ Available |
+| Your own instance: setup token claim, branding wizard, HTTPS web server (Caddy)                   | ✅ Available |
+| Download my data, retention jobs, explicit consent for sensitive data                             | ✅ Available |
+| Safety check-in with SOS to a trusted contact, "close kindly" and reply reminders (anti-ghosting) | ✅ Available |
+| Four languages: English, Hebrew, Arabic, Russian (right-to-left for Hebrew and Arabic)            | ✅ Available |
+| Video dates, safety check-in, date planner                                                        | 🗓️ Later     |
 
 ## Screenshots
 
@@ -83,6 +85,10 @@ Dateos is in active development. Here is what works today and what comes next. T
 **Voice messages**
 
 <img src="docs/screenshots/showcase-voice-en.png" alt="Recording a voice message with a timer, confirming before sending, playing it, and the setting to turn voice messages off" width="100%">
+
+**Date safety and closing kindly**
+
+<img src="docs/screenshots/showcase-safety-date-en.png" alt="Setting up a safety check-in, the active check-in with I'm OK and SOS, closing a conversation kindly, and the card the other person sees" width="100%">
 
 **Privacy**
 

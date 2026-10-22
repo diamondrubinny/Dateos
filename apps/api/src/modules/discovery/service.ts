@@ -1,4 +1,4 @@
-import { rank, scoreCandidate, type ScoreResult } from '@dateos/ai';
+import { checkHarm, rank, scoreCandidate, type ScoreResult } from '@dateos/ai';
 import type { Pool } from 'pg';
 import { schema, type Database } from '@dateos/db';
 import {
@@ -17,6 +17,8 @@ import {
   type PublicProfile,
   type ReasonCode,
   type RealtimeEvent,
+  CLOSED_CARD_DAYS,
+  type ClosedConversation,
 } from '@dateos/shared';
 import type { Realtime } from '../../lib/realtime.js';
 import { and, asc, desc, eq, inArray, isNull, or, sql } from 'drizzle-orm';
@@ -426,10 +428,18 @@ export class DiscoveryService {
     });
   }
 
-  async unmatch(viewerId: string, matchId: string): Promise<void> {
+  /** Unmatch. With `closeMessage` ("close kindly") the other person sees it on a card for a few days. */
+  async unmatch(viewerId: string, matchId: string, closeMessage?: string): Promise<void> {
+    if (closeMessage !== undefined && checkHarm(closeMessage).flagged) {
+      throw new HttpError(
+        422,
+        ErrorCode.ValidationError,
+        'This message may hurt. Please choose kinder words.',
+      );
+    }
     const updated = await this.db
       .update(matches)
-      .set({ unmatchedAt: new Date(), unmatchedBy: viewerId })
+      .set({ unmatchedAt: new Date(), unmatchedBy: viewerId, closeMessage: closeMessage ?? null })
       .where(
         and(
           eq(matches.id, matchId),
@@ -440,6 +450,51 @@ export class DiscoveryService {
       .returning({ id: matches.id, userA: matches.userA, userB: matches.userB });
     if (updated.length === 0) throw notFound();
     this.notify([updated[0]!.userA, updated[0]!.userB], { type: 'match.closed', matchId });
+  }
+
+  /** Conversations someone closed kindly with me, for a few days (name and message only). */
+  async closedConversations(viewerId: string): Promise<ClosedConversation[]> {
+    const days = sql.raw(String(CLOSED_CARD_DAYS));
+    const { rows } = await this.db.execute<{
+      id: string;
+      name: string;
+      message: string;
+      closed_at: string;
+    }>(sql`
+      SELECT m.id, p.display_name AS name, m.close_message AS message, m.unmatched_at AS closed_at
+      FROM matches m
+      JOIN profiles p ON p.user_id = m.unmatched_by
+      JOIN "user" u ON u.id = m.unmatched_by AND u.status = 'active'
+      WHERE (m.user_a = ${viewerId} OR m.user_b = ${viewerId})
+        AND m.unmatched_by <> ${viewerId}
+        AND m.close_message IS NOT NULL AND m.close_dismissed_at IS NULL
+        AND m.unmatched_at > now() - interval '${days} days'
+        AND NOT EXISTS (SELECT 1 FROM blocks b
+          WHERE (b.blocker_id = m.user_a AND b.blocked_id = m.user_b)
+             OR (b.blocker_id = m.user_b AND b.blocked_id = m.user_a))
+      ORDER BY m.unmatched_at DESC
+      LIMIT 20`);
+    return rows.map((r) => ({
+      matchId: r.id,
+      name: r.name,
+      message: r.message,
+      closedAt: new Date(r.closed_at).toISOString(),
+    }));
+  }
+
+  async dismissClosed(viewerId: string, matchId: string): Promise<void> {
+    const done = await this.db
+      .update(matches)
+      .set({ closeDismissedAt: new Date() })
+      .where(
+        and(
+          eq(matches.id, matchId),
+          or(eq(matches.userA, viewerId), eq(matches.userB, viewerId)),
+          sql`${matches.unmatchedBy} <> ${viewerId}`,
+        ),
+      )
+      .returning({ id: matches.id });
+    if (done.length === 0) throw notFound();
   }
 
   /** Always succeeds for well-formed ids, so blocking cannot be used to probe which accounts exist. */

@@ -23,8 +23,13 @@ function Navigator() {
     if (Platform.OS === 'web') return;
     // Tapping a notification opens the conversation (the payload carries only the match id).
     const sub = Notifications.addNotificationResponseReceivedListener((response) => {
-      const data = response.notification.request.content.data as { matchId?: unknown };
-      if (typeof data.matchId === 'string' && /^[0-9a-f-]{36}$/.test(data.matchId)) {
+      const data = response.notification.request.content.data as {
+        type?: unknown;
+        matchId?: unknown;
+      };
+      if (data.type === 'checkin') {
+        router.push('/checkin');
+      } else if (typeof data.matchId === 'string' && /^[0-9a-f-]{36}$/.test(data.matchId)) {
         router.push({ pathname: '/chat/[id]', params: { id: data.matchId } });
       }
     });

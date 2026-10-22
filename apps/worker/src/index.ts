@@ -22,7 +22,9 @@ import { loadWorkerEnv } from './env.js';
 import { deleteObjects, processAudio, processPhoto, type JobContext } from './jobs.js';
 import { sendPush } from './push.js';
 import { cleanupPrivacy, handleInactiveAccounts } from './privacy-jobs.js';
+import { processCheckins } from './checkin-jobs.js';
 import nodemailer from 'nodemailer';
+import { sql } from 'drizzle-orm';
 import {
   cleanupDiscovery,
   cleanupModeration,
@@ -48,6 +50,14 @@ async function main(): Promise<void> {
   await storage.ensureBuckets();
 
   const publisher = new Redis(env.REDIS_URL, { maxRetriesPerRequest: 2 });
+  const pushContext = {
+    db,
+    redis: publisher,
+    log,
+    provider: env.PUSH_PROVIDER,
+    expoUrl: env.EXPO_PUSH_URL,
+    expoAccessToken: env.EXPO_ACCESS_TOKEN,
+  };
   publisher.on('error', (error) => log.error({ err: error }, 'redis publisher error'));
   const scanningEnabled = env.MALWARE_SCAN === 'clamav';
   if (!scanningEnabled) log.warn('Lite mode: MALWARE_SCAN=disabled, uploads are NOT scanned');
@@ -123,6 +133,22 @@ async function main(): Promise<void> {
               },
             })),
           };
+        case 'checkins':
+          return processCheckins({
+            db,
+            instanceName: async () => {
+              const { rows } = await db.execute<{ name: string | null }>(
+                sql`SELECT name FROM instance_settings WHERE id = 1`,
+              );
+              return rows[0]?.name ?? env.INSTANCE_NAME;
+            },
+            sendMail: async (m) => {
+              await mailer.sendMail({ from: env.SMTP_FROM, ...m });
+            },
+            remind: async (userId, checkinId) => {
+              await sendPush(pushContext, { userId, kind: 'checkin', matchId: checkinId });
+            },
+          });
         default:
           throw new Error(`Unknown job: ${job.name}`);
       }
@@ -136,18 +162,7 @@ async function main(): Promise<void> {
 
   const notifyWorker = new Worker(
     NOTIFY_QUEUE,
-    async (job) =>
-      sendPush(
-        {
-          db,
-          redis: publisher,
-          log,
-          provider: env.PUSH_PROVIDER,
-          expoUrl: env.EXPO_PUSH_URL,
-          expoAccessToken: env.EXPO_ACCESS_TOKEN,
-        },
-        job.data as PushJob,
-      ),
+    async (job) => sendPush(pushContext, job.data as PushJob),
     { connection, concurrency: env.WORKER_CONCURRENCY },
   );
   // Only the outcome is logged: never tokens or user ids together with content.
@@ -163,6 +178,8 @@ async function main(): Promise<void> {
     { pattern: '17 3 * * *' },
     { name: 'cleanup-discovery' },
   );
+  // Safety check-ins: reminders, alerts to trusted contacts, retention (every minute).
+  await scheduler.upsertJobScheduler('checkins', { every: 60_000 }, { name: 'checkins' });
 
   log.info(
     { scanningEnabled, embeddings: embeddings.model, push: env.PUSH_PROVIDER },

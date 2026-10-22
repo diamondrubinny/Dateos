@@ -42,9 +42,12 @@ describe('translations', () => {
 
     it(`${code}: every text is actually translated`, () => {
       // Language names are shown in their own language everywhere.
-      const untranslated = Object.entries(other).filter(
-        ([key, value]) => !key.startsWith('language.') && !scripts[code].test(value),
-      );
+      const untranslated = Object.entries(other).filter(([key, value]) => {
+        const words = value.replace(/\{\{\w+\}\}/g, '');
+        // Language names stay in their own language; pure punctuation needs no translation.
+        if (key.startsWith('language.') || !/\p{L}/u.test(words)) return false;
+        return !scripts[code].test(words);
+      });
       expect(untranslated.map(([key]) => key)).toEqual([]);
     });
   }

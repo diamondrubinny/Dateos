@@ -7,3 +7,5 @@ export * from './discovery.js';
 export * from './chat.js';
 export * from './moderation.js';
 export * from './branding.js';
+export * from './checkin.js';
+export * from './checkin-email.js';

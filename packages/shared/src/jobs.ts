@@ -39,6 +39,7 @@ export const NotifyJob = {
 /** Pushes carry no names or message text: they pass through Expo, Apple and Google. */
 export interface PushJob {
   userId: string;
-  kind: 'message' | 'match';
+  kind: 'message' | 'match' | 'checkin';
+  /** For 'checkin': the check-in id. */
   matchId: string;
 }

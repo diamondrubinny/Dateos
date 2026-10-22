@@ -2,6 +2,25 @@
 
 All notable changes to Dateos. Versions follow [Semantic Versioning](https://semver.org/).
 
+## 0.2.0 (2026-10-22)
+
+### Added
+
+- **Safety check-in**: share where you'll be and when you expect to be done; a trusted contact is
+  emailed (in your language, with only what you wrote) if you don't tap "I'm OK" in time, or at once
+  with **SOS**. A push reminder at check-in time. Deleted 7 days after it ends.
+- **Anti-ghosting**: "Close kindly" ends a conversation with a polite message (three ready-made in each
+  language, or your own) that the other person sees on a card for 7 days; chats waiting more than 3 days
+  for your reply are marked.
+
+### Fixed
+
+- Long option labels overflowed the screen in any language; chips now wrap, and long choices are shown
+  one per line.
+- The Arabic "Profile" tab label was cut off.
+- Gender-neutral wording in the new Arabic, Hebrew and Russian texts; the SOS label reads correctly
+  right to left.
+
 ## 0.1.0 (2026-10-21): first release candidate
 
 The first complete version: a free, open-source dating app (iOS, Android, web) that any community can
