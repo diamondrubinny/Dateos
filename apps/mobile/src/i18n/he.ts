@@ -305,6 +305,11 @@ export const he: Translations = {
     going: 'אני מגיע/ה',
     notGoing: 'בסוף לא אוכל להגיע',
     privacy: 'אף אחד לא יכול לראות מי עוד מגיע: רק את המספר. תקבלו תזכורת יום לפני.',
+    waitlistJoin: 'הצטרפות לרשימת ההמתנה',
+    waitlistLeave: 'יציאה מרשימת ההמתנה',
+    waiting: 'ברשימת ההמתנה · לפניך: {{count}}',
+    fullWaiting: 'מלא · ממתינים: {{count}}',
+    waitlistHint: 'אם מתפנה מקום, הוא עובר לבא בתור, שמקבל התראה.',
     gone: 'האירוע כבר לא זמין.',
   },
   ghosting: {

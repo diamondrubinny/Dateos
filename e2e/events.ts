@@ -33,31 +33,41 @@ const T = { en, he, ar, ru } as const;
 type L = keyof typeof T;
 const DATA: Record<
   L,
-  { venue: [string, string, string]; title: string; description: string; other: string }
+  {
+    venue: [string, string, string];
+    title: string;
+    description: string;
+    other: string;
+    full: string;
+  }
 > = {
   en: {
     venue: ['HaYarkon Park', 'Tel Aviv', 'Rokach Blvd'],
     title: 'Picnic and board games',
     description: 'Bring a blanket and your favourite game. We bring snacks and name tags.',
     other: 'Walking tour of old Jaffa',
+    full: 'Sunset salsa class',
   },
   he: {
     venue: ['פארק הירקון', 'תל אביב', 'שדרות רוקח'],
     title: 'פיקניק ומשחקי קופסה',
     description: 'הביאו שמיכה ואת המשחק האהוב עליכם. אנחנו מביאים כיבוד ותגי שם.',
     other: 'סיור רגלי ביפו העתיקה',
+    full: 'שיעור סלסה בשקיעה',
   },
   ar: {
     venue: ['حديقة اليركون', 'تل أبيب', 'جادة روكاح'],
     title: 'نزهة وألعاب لوحية',
     description: 'أحضر بطانية ولعبتك المفضلة. نحن نحضر الوجبات الخفيفة وبطاقات الأسماء.',
     other: 'جولة مشي في يافا القديمة',
+    full: 'درس سالسا عند الغروب',
   },
   ru: {
     venue: ['Парк Яркон', 'Тель-Авив', 'бульвар Роках'],
     title: 'Пикник и настольные игры',
     description: 'Возьмите плед и любимую игру. Угощение и бейджи с именами — с нас.',
     other: 'Пешая прогулка по старому Яффо',
+    full: 'Урок сальсы на закате',
   },
 };
 
@@ -180,15 +190,29 @@ async function run(locale: L, browser: Browser, pool: Pool) {
       [d.title, d.description, venueId, nextSaturday()],
     );
   }
+  // A full event (2 places, both taken) for the waiting list.
+  await pool.query(
+    `INSERT INTO events (title, venue_id, starts_at, ends_at, capacity)
+     VALUES ($1, $2, (current_date + 12 + time '18:00') AT TIME ZONE 'Asia/Jerusalem',
+             (current_date + 12 + time '20:00') AT TIME ZONE 'Asia/Jerusalem', 2)`,
+    [d.full, venueId],
+  );
   // A few people already going (anonymous to everyone, including in this test's screenshots).
   const others = await pool.query(
     `SELECT id FROM "user" WHERE email LIKE '%@demo.nexaheart.invalid' ORDER BY email LIMIT 7`,
   );
   for (const [i, o] of others.rows.entries()) {
     await pool.query(
-      `INSERT INTO event_rsvps (event_id, user_id) SELECT id, $1 FROM events WHERE $2 OR title = $3`,
-      [o.id, i < 3, d.other],
+      `INSERT INTO event_rsvps (event_id, user_id)
+       SELECT id, $1 FROM events WHERE title <> $4 AND ($2 OR title = $3)`,
+      [o.id, i < 3, d.other, d.full],
     );
+    if (i < 2) {
+      await pool.query(
+        `INSERT INTO event_rsvps (event_id, user_id) SELECT id, $1 FROM events WHERE title = $2`,
+        [o.id, d.full],
+      );
+    }
   }
 
   await pool.query('DELETE FROM rate_limit');
@@ -216,6 +240,17 @@ async function run(locale: L, browser: Browser, pool: Pool) {
     const page = await A.page.content();
     check(!/@demo\.nexaheart\.invalid|Noam|Omer|Amit/.test(page), 'no names of people going');
     await shot(A.page, `${locale}/50-event-going`);
+
+    // A full event: join the waiting list, see your place in line (a number, never names).
+    await A.page.goto(`${WEB}/events`);
+    await A.page.getByText(d.full).click();
+    await A.page.getByRole('button', { name: t.events.waitlistJoin }).click();
+    await A.page.getByRole('button', { name: t.events.waitlistLeave }).waitFor();
+    check(
+      await A.page.getByText(t.events.waiting.replace('{{count}}', '0')).last().isVisible(),
+      'on the waiting list, first in line',
+    );
+    await shot(A.page, `${locale}/58-event-waitlist`);
   } finally {
     await A.context.close();
   }

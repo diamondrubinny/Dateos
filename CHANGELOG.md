@@ -14,6 +14,9 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Added
 
+- **Waiting lists for community events**: a full event offers "Join the waiting list"; members see
+  their place in line (never who else waits); when someone can't go after all or an admin adds places,
+  the next people in line are moved to "going" and notified. The dashboard shows how many are waiting.
 - **Video dates**: matches can have a video or voice-only call in the app, through the community's own
   LiveKit server (`docker compose --profile video`, `./install.sh --domain … --video`). Off until an
   admin turns it on (dashboard → Branding → Video dates, with a maximum length). Calls unlock with the

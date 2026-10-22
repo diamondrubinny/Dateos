@@ -25,6 +25,9 @@ export function formatEventTime(
 export function eventStatus(event: CommunityEvent, t: TFunction) {
   if (event.status === 'cancelled') return t('events.cancelled');
   if (event.mine) return t('events.youreGoing', { count: event.going });
+  if (event.waitingAhead !== null) return t('events.waiting', { count: event.waitingAhead });
+  if (event.full && event.waitingCount > 0)
+    return t('events.fullWaiting', { count: event.waitingCount });
   if (event.full) return t('events.full');
   return t('events.goingCount', { count: event.going });
 }

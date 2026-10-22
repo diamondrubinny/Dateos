@@ -63,7 +63,7 @@ NexaHeart is in active development. Here is what works today and what comes next
 | Download my data, retention jobs, explicit consent for sensitive data                                                        | ✅ Available |
 | Safety check-in with SOS to a trusted contact, "close kindly" and reply reminders (anti-ghosting)                            | ✅ Available |
 | Date planner: propose a date in a public place your community curates, accept it in the chat, turn it into a safety check-in | ✅ Available |
-| Community events: the team publishes meetups at the community's places; members see how many are going, never who            | ✅ Available |
+| Community events: meetups at the community's places, a count of people going (never who), a waiting list when full           | ✅ Available |
 | Four languages: English, Hebrew, Arabic, Russian (right-to-left for Hebrew and Arabic)                                       | ✅ Available |
 | Video dates: video or voice calls between matches through your own LiveKit, camera off on join, never recorded               | ✅ Available |
 

@@ -4,6 +4,11 @@ import { venueSchema } from './dates.js';
 /** Community events (phase 14): see docs/phases/PHASE-14.md. */
 export const eventStatuses = ['scheduled', 'cancelled'] as const;
 export type EventStatus = (typeof eventStatuses)[number];
+/** Going, or on the waiting list of a full event (phase 16). */
+export const rsvpStatuses = ['going', 'waiting'] as const;
+export type RsvpStatus = (typeof rsvpStatuses)[number];
+/** At most this many people wait for one event. */
+export const MAX_EVENT_WAITLIST = 500;
 
 export const MAX_EVENT_HOURS = 24;
 export const MAX_EVENT_CAPACITY = 10_000;
@@ -76,11 +81,15 @@ export const eventSchema = z.object({
   full: z.boolean(),
   /** Whether the viewer said they're going. */
   mine: z.boolean(),
+  /** How many people are on the waiting list (a count, never who). */
+  waitingCount: z.number().int(),
+  /** The viewer's place: null if not waiting, else how many people are ahead of them. */
+  waitingAhead: z.number().int().nullable(),
 });
 export type CommunityEvent = z.infer<typeof eventSchema>;
 
 /** Staff view: the venue id for editing, and when it was created. Still no attendee identities. */
-export const adminEventSchema = eventSchema.omit({ mine: true }).extend({
+export const adminEventSchema = eventSchema.omit({ mine: true, waitingAhead: true }).extend({
   venueId: z.uuid().nullable(),
   createdAt: z.string(),
 });

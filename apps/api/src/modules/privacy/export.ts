@@ -142,12 +142,13 @@ export async function exportMemberData(
     .from(t.checkins)
     .where(eq(t.checkins.userId, userId))
     .orderBy(desc(t.checkins.createdAt));
-  // Community events you said you're going to.
+  // Community events you said you're going to, or whose waiting list you joined.
   const rsvpRows = await db
     .select({
       title: t.events.title,
       startsAt: t.events.startsAt,
       status: t.events.status,
+      you: t.eventRsvps.status,
       at: t.eventRsvps.createdAt,
     })
     .from(t.eventRsvps)

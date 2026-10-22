@@ -32,6 +32,7 @@ import {
   checkinStatuses,
   dateStatuses,
   eventStatuses,
+  rsvpStatuses,
   venueCategories,
   intentions,
   interactionKinds,
@@ -751,6 +752,7 @@ export const datePlans = pgTable(
 // ---------------------------------------------------------------------------
 
 export const eventStatus = pgEnum('event_status', eventStatuses);
+export const rsvpStatus = pgEnum('rsvp_status', rsvpStatuses);
 
 /** Published by the instance's admins, always at one of its places. No personal data. */
 export const events = pgTable(
@@ -769,7 +771,10 @@ export const events = pgTable(
   (t) => [index('events_upcoming_idx').on(t.status, t.endsAt)],
 );
 
-/** Who said they're going. Deleted RSVP_RETENTION_DAYS after the event, or with the account. ⚖️ */
+/**
+ * Who said they're going, or is waiting for a place (phase 16). Deleted RSVP_RETENTION_DAYS after
+ * the event, or with the account. ⚖️
+ */
 export const eventRsvps = pgTable(
   'event_rsvps',
   {
@@ -777,12 +782,15 @@ export const eventRsvps = pgTable(
       .notNull()
       .references(() => events.id, { onDelete: 'cascade' }),
     userId: ownerId(),
+    status: rsvpStatus('status').notNull().default('going'),
     remindedAt: timestamp('reminded_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
     uniqueIndex('event_rsvps_uq').on(t.eventId, t.userId),
     index('event_rsvps_user_idx').on(t.userId),
+    // The waiting list, in order.
+    index('event_rsvps_waiting_idx').on(t.eventId, t.status, t.createdAt),
   ],
 );
 

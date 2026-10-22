@@ -23,12 +23,14 @@ export function useEvent(id: string) {
   });
 }
 
-/** "I'm going" (true) or "I can't go after all" (false). */
+/** "I'm going", "join the waiting list", or leave either. */
 export function useRsvp(id: string) {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (going: boolean) =>
-      apiFetch<CommunityEvent>(`/v1/events/${id}/rsvp`, { method: going ? 'POST' : 'DELETE' }),
+    mutationFn: (action: 'going' | 'waitlist' | 'leave') =>
+      apiFetch<CommunityEvent>(`/v1/events/${id}/${action === 'waitlist' ? 'waitlist' : 'rsvp'}`, {
+        method: action === 'leave' ? 'DELETE' : 'POST',
+      }),
     onSuccess: (event) => {
       client.setQueryData(eventKeys.one(id), event);
       return client.invalidateQueries({ queryKey: eventKeys.list });

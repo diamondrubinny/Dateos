@@ -21,6 +21,7 @@ export async function processEvents(
     UPDATE event_rsvps r SET reminded_at = ${now}
     FROM events e
     WHERE e.id = r.event_id AND r.reminded_at IS NULL AND e.status = 'scheduled'
+      AND r.status = 'going'
       AND e.starts_at > ${now}
       AND e.starts_at <= ${new Date(now.getTime() + EVENT_REMINDER_HOURS * 3_600_000)}
     RETURNING r.user_id, r.event_id`);

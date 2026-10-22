@@ -33,6 +33,12 @@ export const eventRoutes: FastifyPluginAsyncZod<{ auth: Auth; events: EventServi
     { config: limit, schema: { params, response: { 200: eventSchema } } },
     async (request) => events.rsvp(request.params.id, currentUser(request).id),
   );
+  app.post(
+    '/v1/events/:id/waitlist',
+    { config: limit, schema: { params, response: { 200: eventSchema } } },
+    async (request) => events.joinWaitlist(request.params.id, currentUser(request).id),
+  );
+  // Leaves the event or its waiting list, whichever the member is on.
   app.delete(
     '/v1/events/:id/rsvp',
     { config: limit, schema: { params, response: { 200: eventSchema } } },
