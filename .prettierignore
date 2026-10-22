@@ -4,3 +4,4 @@ coverage
 pnpm-lock.yaml
 apps/mobile/.expo
 apps/mobile/expo-env.d.ts
+apps/api/data/cities.json

@@ -33,6 +33,14 @@ modified versions and services that let people use it over a network.
    NexaHeart, or the names of its authors, except as needed to show the credit above and to
    describe the origin of the work truthfully.
 
+THIRD-PARTY DATA
+
+The city list used by travel mode (apps/api/data/cities.json) is built from GeoNames
+(https://www.geonames.org), licensed under the Creative Commons Attribution 4.0 License
+(https://creativecommons.org/licenses/by/4.0/). Changes: filtered to cities of 100,000+ people and
+towns of 15,000+ in Israel and the Palestinian territories, with Hebrew, Arabic and Russian names
+picked from GeoNames' alternate names (scripts/build-cities.mjs).
+
 EARLIER VERSIONS
 
 Versions of NexaHeart published before this NOTICE was added (22 October 2026) were released under

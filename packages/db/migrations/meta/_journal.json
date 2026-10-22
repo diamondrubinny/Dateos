@@ -148,6 +148,13 @@
       "when": 1792708014023,
       "tag": "0020_incognito",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1792708443352,
+      "tag": "0021_travel_mode",
+      "breakpoints": true
     }
   ]
 }

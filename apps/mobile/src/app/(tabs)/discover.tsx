@@ -14,7 +14,9 @@ import { Loading } from '../../components/Loading';
 import { MatchCelebration } from '../../components/MatchCelebration';
 import { Screen } from '../../components/Screen';
 import { OnBreak } from '../../components/OnBreak';
-import { useDiscover, useMe } from '../../lib/queries';
+import { travelLine } from '../../components/TravelMode';
+import { useLocale } from '../../lib/locale';
+import { useDiscover, useMe, useTravel } from '../../lib/queries';
 import { radius, spacing, useColors } from '../../lib/theme';
 
 export default function Discover() {
@@ -22,6 +24,8 @@ export default function Discover() {
   const colors = useColors();
   const feed = useDiscover();
   const onBreak = Boolean(useMe().data?.pause);
+  const travel = useTravel();
+  const { locale } = useLocale();
   const [index, setIndex] = useState(0);
   const [matchedWith, setMatchedWith] = useState<string>();
 
@@ -48,6 +52,7 @@ export default function Discover() {
   return (
     <Screen title={t('discover.title')}>
       <AccountNotices />
+      {travel.data ? <Banner tone="info" message={travelLine(travel.data, locale, t)} /> : null}
       {feed.error ? <Banner tone="error" message={t('common.genericError')} /> : null}
       {matchedWith ? (
         <MatchCelebration name={matchedWith} onClose={() => setMatchedWith(undefined)} />

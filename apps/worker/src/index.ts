@@ -30,6 +30,7 @@ import { cleanupPrivacy, handleInactiveAccounts } from './privacy-jobs.js';
 import { processCheckins } from './checkin-jobs.js';
 import { processEvents } from './event-jobs.js';
 import { processPauses } from './pause-jobs.js';
+import { processTrips } from './travel-jobs.js';
 import { processCalls } from './call-jobs.js';
 import { RoomServiceClient } from 'livekit-server-sdk';
 import nodemailer from 'nodemailer';
@@ -185,6 +186,8 @@ async function main(): Promise<void> {
               await sendPush(pushContext, { userId, kind: 'visible', matchId: userId });
             },
           });
+        case 'trips':
+          return processTrips(db);
         case 'events':
           return processEvents({
             db,
@@ -231,6 +234,8 @@ async function main(): Promise<void> {
   await scheduler.upsertJobScheduler('calls', { every: 15_000 }, { name: 'calls' });
   // Community events: day-before reminders and retention (every 10 minutes).
   await scheduler.upsertJobScheduler('events', { every: 600_000 }, { name: 'events' });
+  // Travel mode: delete trips 30 days after they ended (hourly).
+  await scheduler.upsertJobScheduler('trips', { every: 3_600_000 }, { name: 'trips' });
   // Take a break: end breaks whose time is up and tell the member (every 5 minutes).
   await scheduler.upsertJobScheduler(
     'pauses',

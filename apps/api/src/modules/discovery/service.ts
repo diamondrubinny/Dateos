@@ -24,10 +24,11 @@ import {
   type ClosedConversation,
 } from '@nexaheart/shared';
 import type { Realtime } from '../../lib/realtime.js';
-import { and, asc, desc, eq, inArray, isNull, or, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gt, inArray, isNull, or, sql } from 'drizzle-orm';
 import { audit } from '../../lib/audit.js';
 import { HttpError } from '../../plugins/error-handler.js';
 import { photoUrl } from '../me/service.js';
+import type { CityIndex } from '../places/cities.js';
 import { notOnBreak, notSeparated, queryCandidates, type CandidateRow } from './visibility.js';
 
 const {
@@ -60,6 +61,8 @@ export class DiscoveryService {
     private readonly realtime?: Pick<Realtime, 'publish'>,
     /** Push notification for the person who was liked back (content-free). */
     private readonly onMatch?: (userId: string, matchId: string) => Promise<void>,
+    /** Names of the cities travellers visit (phase 18c). */
+    private readonly cities?: CityIndex,
   ) {}
 
   private closedListeners: ((matchId: string) => Promise<void>)[] = [];
@@ -593,6 +596,19 @@ export class DiscoveryService {
       )
       .orderBy(asc(photos.position), asc(photos.createdAt));
     const byId = new Map(profileRows.map((p) => [p.userId, p]));
+    // Travellers (phase 18c) show "Visiting {city}" instead of a distance from the city centre.
+    const trips = await this.db
+      .select({ userId: locations.userId, cityId: locations.travelCityId })
+      .from(locations)
+      .where(and(inArray(locations.userId, ids), gt(locations.travelUntil, sql`now()`)));
+    const visiting = new Map(
+      trips.flatMap((trip) => {
+        const city = trip.cityId ? this.cities?.get(trip.cityId) : undefined;
+        return city
+          ? [[trip.userId, { id: city.id, names: city.names, country: city.country }]]
+          : [];
+      }),
+    );
 
     return items.flatMap((item) => {
       const p = byId.get(item.userId);
@@ -612,7 +628,9 @@ export class DiscoveryService {
           photos: photoRows
             .filter((r) => r.userId === p.userId)
             .map(({ id, width, height }) => ({ id, url: photoUrl(id), width, height })),
-          distance: Number.isFinite(item.km) ? distanceBucket(item.km) : null,
+          distance:
+            Number.isFinite(item.km) && !visiting.has(p.userId) ? distanceBucket(item.km) : null,
+          visiting: visiting.get(p.userId) ?? null,
           verified: p.verifiedAt !== null,
           reasons: item.result?.reasons ?? [],
         },

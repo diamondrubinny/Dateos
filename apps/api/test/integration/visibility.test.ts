@@ -4,7 +4,8 @@
 import { SENSITIVE_CONSENT_VERSION } from '@nexaheart/shared';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { processPauses } from '../../../worker/src/pause-jobs.js';
-import { api, createMember, discoverIds, type Member } from './members.js';
+import { processTrips } from '../../../worker/src/travel-jobs.js';
+import { api, createMember, discoverIds, places, type Member } from './members.js';
 import {
   integrationEnabled,
   resetState,
@@ -21,9 +22,10 @@ describe.skipIf(!integrationEnabled)('who sees me: take a break (integration)', 
   afterAll(async () => teardown(ctx));
   beforeEach(async () => resetState(ctx));
 
-  const woman = (name = 'Noa') =>
-    createMember(ctx, { name, gender: 'woman', interestedIn: ['man'] });
-  const man = (name = 'Dan') => createMember(ctx, { name, gender: 'man', interestedIn: ['woman'] });
+  const woman = (name = 'Noa', at = places.telAviv) =>
+    createMember(ctx, { name, gender: 'woman', interestedIn: ['man'], at });
+  const man = (name = 'Dan', at = places.telAviv) =>
+    createMember(ctx, { name, gender: 'man', interestedIn: ['woman'], at });
   const pause = (m: Member, duration: string) => api(ctx, m, 'PUT', '/v1/me/pause', { duration });
   const me = async (m: Member) => (await api(ctx, m, 'GET', '/v1/me')).json();
   const query = (text: string, values: unknown[] = []) =>
@@ -178,6 +180,109 @@ describe.skipIf(!integrationEnabled)('who sees me: take a break (integration)', 
     await api(ctx, noa, 'PUT', '/v1/me/incognito', { on: false });
     expect(await discoverIds(ctx, omer)).toContain(noa.id);
     expect((await api(ctx, noa, 'PUT', '/v1/me/incognito', { on: 'yes' })).statusCode).toBe(400);
+  });
+
+  const HAIFA = 294801;
+  const search = async (m: Member, q: string) =>
+    (await api(ctx, m, 'GET', `/v1/places?q=${encodeURIComponent(q)}`)).json().places as {
+      id: number;
+      names: { en: string; he: string | null };
+      country: string;
+    }[];
+
+  it('searches the bundled cities in every language, on our own server', async () => {
+    const noa = await woman();
+    expect((await search(noa, 'haifa'))[0]).toMatchObject({ id: HAIFA, country: 'IL' });
+    expect((await search(noa, 'חיפה'))[0]?.id).toBe(HAIFA);
+    expect((await search(noa, 'حيفا'))[0]?.id).toBe(HAIFA);
+    expect((await search(noa, 'Хайфа'))[0]?.id).toBe(HAIFA);
+    expect((await search(noa, 'tel-aviv'))[0]?.names.en).toBe('Tel Aviv');
+    expect((await search(noa, 'נצרת'))[0]?.names.en).toBe('Nazareth');
+    expect((await search(noa, 'berl'))[0]?.names.en).toBe('Berlin');
+    expect(await search(noa, 'zzzzqqq')).toEqual([]);
+    expect((await api(ctx, noa, 'GET', '/v1/places?q=a')).statusCode).toBe(400);
+    expect((await ctx.app.inject({ method: 'GET', url: '/v1/places?q=haifa' })).statusCode).toBe(
+      401,
+    );
+  });
+
+  it('travel mode: Discover works from the city, the profile says "Visiting", and home comes back', async () => {
+    const noa = await woman('Noa', places.telAviv);
+    const dan = await man('Dan', places.haifa);
+    const omer = await man('Omer', places.telAviv);
+    // At home in Tel Aviv: Omer is near, Dan in Haifa (~80 km) is too far.
+    expect(await discoverIds(ctx, noa)).toEqual([omer.id]);
+
+    const start = await api(ctx, noa, 'PUT', '/v1/me/travel', { cityId: HAIFA, days: 7 });
+    expect(start.statusCode).toBe(200);
+    const trip = start.json().travel;
+    expect(trip).toMatchObject({ id: HAIFA, names: { en: 'Haifa', he: 'חיפה' }, country: 'IL' });
+    expect(Math.round((Date.parse(trip.until) - Date.now()) / 86_400_000)).toBe(7);
+    expect((await api(ctx, noa, 'GET', '/v1/me/travel')).json().travel.id).toBe(HAIFA);
+
+    // In Haifa: Dan is near, Omer is not; and the other way round.
+    expect(await discoverIds(ctx, noa)).toEqual([dan.id]);
+    expect(await discoverIds(ctx, dan)).toContain(noa.id);
+    expect(await discoverIds(ctx, omer)).not.toContain(noa.id);
+    const seen = (await api(ctx, dan, 'GET', `/v1/profiles/${noa.id}`)).json();
+    expect(seen.visiting).toMatchObject({ id: HAIFA, names: { en: 'Haifa' } });
+    expect(seen.distance).toBeNull();
+    // Her own home cell was never touched.
+    const { rows } = await query(
+      'SELECT ST_Distance(geo, ST_SetSRID(ST_MakePoint($2, $3), 4326)::geography) AS m FROM locations WHERE user_id = $1',
+      [noa.id, places.telAviv.lng, places.telAviv.lat],
+    );
+    expect(Number(rows[0].m)).toBeLessThan(1000);
+
+    // The trip ends by itself: home again, at once.
+    await query(
+      `UPDATE locations SET travel_until = now() - interval '1 minute' WHERE user_id = $1`,
+      [noa.id],
+    );
+    expect((await api(ctx, noa, 'GET', '/v1/me/travel')).json().travel).toBeNull();
+    expect(await discoverIds(ctx, noa)).toEqual([omer.id]);
+    expect((await api(ctx, omer, 'GET', `/v1/profiles/${noa.id}`)).json().visiting).toBeNull();
+  });
+
+  it('validates trips, limits them to 3 a day, ends them early and deletes old ones', async () => {
+    // Invalid trips (every attempt counts towards the daily limit, so another member checks them).
+    const dan = await man();
+    const bad = (body: object) => api(ctx, dan, 'PUT', '/v1/me/travel', body);
+    expect((await bad({ cityId: 999_999_999, days: 3 })).statusCode).toBe(400);
+    expect((await bad({ cityId: HAIFA, days: 15 })).statusCode).toBe(400);
+    expect((await bad({ cityId: HAIFA, days: 0 })).statusCode).toBe(400);
+
+    const noa = await woman();
+    const put = (body: object) => api(ctx, noa, 'PUT', '/v1/me/travel', body);
+    expect((await put({ cityId: HAIFA, days: 3 })).statusCode).toBe(200);
+    // Ending early deletes the trip at once.
+    expect((await api(ctx, noa, 'DELETE', '/v1/me/travel')).statusCode).toBe(200);
+    const none = await query(
+      'SELECT travel_city_id, travel_geo FROM locations WHERE user_id = $1',
+      [noa.id],
+    );
+    expect(none.rows[0]).toEqual({ travel_city_id: null, travel_geo: null });
+    expect((await put({ cityId: HAIFA, days: 3 })).statusCode).toBe(200);
+    expect((await put({ cityId: HAIFA, days: 3 })).statusCode).toBe(200);
+    expect((await put({ cityId: HAIFA, days: 3 })).statusCode).toBe(429);
+
+    // The export lists the trip; 30 days after it ends, it's deleted.
+    const zip = await api(ctx, noa, 'GET', '/v1/me/export');
+    expect(zip.statusCode).toBe(200);
+    await query(
+      `UPDATE locations SET travel_until = now() - interval '31 days' WHERE user_id = $1`,
+      [noa.id],
+    );
+    expect(await processTrips(ctx.services.dbHandle.db)).toEqual({ tripsDeleted: 1 });
+    expect(await processTrips(ctx.services.dbHandle.db)).toEqual({ tripsDeleted: 0 });
+  });
+
+  it('needs a location before travelling', async () => {
+    const noa = await woman();
+    await api(ctx, noa, 'DELETE', '/v1/me/location');
+    expect(
+      (await api(ctx, noa, 'PUT', '/v1/me/travel', { cityId: HAIFA, days: 3 })).statusCode,
+    ).toBe(409);
   });
 
   it('validates the duration and keeps the break in "Download my data"', async () => {

@@ -3,6 +3,7 @@
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 import { z } from 'zod';
 import { genderSchema, intentionSchema, promptKeySchema } from './profile.js';
+import { placeSchema } from './visibility.js';
 
 /** Dimension of stored profile embeddings (hashing provider and 768-d Ollama models). */
 export const EMBEDDING_DIM = 768;
@@ -84,6 +85,8 @@ export const publicProfileSchema = z.object({
   prompts: z.array(z.object({ id: z.uuid(), promptKey: promptKeySchema, answer: z.string() })),
   photos: z.array(publicPhotoSchema),
   distance: z.enum(distanceBuckets).nullable(),
+  /** Travel mode (phase 18c): shown as "Visiting {city}" instead of a distance. */
+  visiting: placeSchema.nullable(),
   /** A moderator compared a live selfie with the photos. */
   verified: z.boolean(),
   reasons: z.array(z.enum(reasonCodes)),

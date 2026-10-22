@@ -34,6 +34,8 @@ import { CheckinService } from './modules/checkins/service.js';
 import { DateService } from './modules/dates/service.js';
 import { VenueService } from './modules/dates/venues.js';
 import { EventService } from './modules/events/service.js';
+import { CityIndex } from './modules/places/cities.js';
+import { TravelService } from './modules/places/service.js';
 import { CallService } from './modules/calls/service.js';
 import { createLiveKitMedia, type CallMedia } from './lib/livekit.js';
 
@@ -61,6 +63,8 @@ export interface Services {
   venues: VenueService;
   dates: DateService;
   events: EventService;
+  cities: CityIndex;
+  travel: TravelService;
   calls: CallService;
   ai: AiGate;
   /** Health checks and shutdown hooks for the resources above. */
@@ -103,8 +107,13 @@ export function createServices(
   const today = overrides.today ?? todayUtc;
   const notifyQueue = overrides.notifyQueue ?? createNotifyQueue(env.REDIS_URL);
   const realtime = createRealtime(env.REDIS_URL);
-  const discovery = new DiscoveryService(dbHandle.db, today, realtime, (userId, matchId) =>
-    notifyQueue.push({ userId, kind: 'match', matchId }),
+  const cities = CityIndex.load();
+  const discovery = new DiscoveryService(
+    dbHandle.db,
+    today,
+    realtime,
+    (userId, matchId) => notifyQueue.push({ userId, kind: 'match', matchId }),
+    cities,
   );
   const auth = createAuth({
     env,
@@ -168,6 +177,8 @@ export function createServices(
     venues,
     dates: new DateService(dbHandle.db, chat, venues, overrides.now),
     calls,
+    cities,
+    travel: new TravelService(dbHandle.db, cities),
     events: new EventService(
       dbHandle.db,
       (userId, eventId) => notifyQueue.push({ userId, kind: 'event', matchId: eventId }),

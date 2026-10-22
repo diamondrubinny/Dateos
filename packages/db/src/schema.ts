@@ -276,8 +276,18 @@ export const locations = pgTable(
     userId: ownerId().primaryKey(),
     geo: geographyPoint('geo').notNull(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+    /** Travel mode (phase 18c): a city centre from the bundled GeoNames list, never the member's own spot. */
+    travelCityId: integer('travel_city_id'),
+    travelGeo: geographyPoint('travel_geo'),
+    travelStartedAt: timestamp('travel_started_at', { withTimezone: true }),
+    travelUntil: timestamp('travel_until', { withTimezone: true }),
   },
-  (t) => [index('locations_geo_gist').using('gist', t.geo)],
+  (t) => [
+    index('locations_geo_gist').using('gist', t.geo),
+    index('locations_travel_geo_gist')
+      .using('gist', t.travelGeo)
+      .where(sql`travel_geo IS NOT NULL`),
+  ],
 );
 
 export const profileEmbeddings = pgTable('profile_embeddings', {
