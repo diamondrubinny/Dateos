@@ -1,0 +1,14 @@
+node_modules/
+dist/
+coverage/
+.turbo/
+*.log
+.env
+.env.*
+!.env.example
+.DS_Store
+infra/data/
+
+# Instance backups (personal data)
+backups/
+sbom.cdx.json

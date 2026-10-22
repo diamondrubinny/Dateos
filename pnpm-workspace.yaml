@@ -1,0 +1,12 @@
+packages:
+  - apps/*
+  - packages/*
+  - e2e
+onlyBuiltDependencies:
+  - esbuild
+# Advisories reviewed in docs/SECURITY_REVIEW.md: build-time tooling only (Expo CLI, Metro,
+# drizzle-kit), never run by the API or worker, with no patched version available. Re-check monthly.
+auditConfig:
+  ignoreGhsas:
+    - GHSA-86w9-cpqp-85rv # node-forge via @expo/cli (dev HTTPS certificates)
+    - GHSA-vfj7-8cjw-p6xm # braces via metro-file-map (build-time globs we control)

@@ -1,0 +1,1 @@
+ALTER TYPE "public"."consent_kind" ADD VALUE 'sensitive' BEFORE 'location';

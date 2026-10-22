@@ -1,0 +1,1 @@
+ALTER TABLE "audio_clips" ADD COLUMN "opus_key" text;

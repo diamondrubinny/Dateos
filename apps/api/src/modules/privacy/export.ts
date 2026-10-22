@@ -1,0 +1,283 @@
+import { schema, type Database } from '@dateos/db';
+import type { Storage } from '@dateos/storage';
+import { asc, desc, eq, or, sql } from 'drizzle-orm';
+import { strToU8, zipSync, type Zippable } from 'fflate';
+
+const t = schema;
+
+// Raw SQL rows return timestamps as strings, Drizzle rows as Dates.
+const iso = (d: Date | string | null | undefined) => (d ? new Date(d).toISOString() : null);
+
+/**
+ * Everything this server holds about one member, for access and portability requests.
+ * Other people's data is left out (their messages, their photos, staff notes about the member,
+ * hashes of banned emails), so one export never discloses someone else. ⚖️
+ */
+export async function exportMemberData(
+  db: Database,
+  storage: Storage,
+  userId: string,
+): Promise<Uint8Array> {
+  const [account] = await db
+    .select({
+      id: t.user.id,
+      email: t.user.email,
+      status: t.user.status,
+      createdAt: t.user.createdAt,
+    })
+    .from(t.user)
+    .where(eq(t.user.id, userId));
+  if (!account) throw new Error('no such member');
+  const [profile] = await db.select().from(t.profiles).where(eq(t.profiles.userId, userId));
+  const [preferences] = await db
+    .select()
+    .from(t.preferences)
+    .where(eq(t.preferences.userId, userId));
+  const prompts = await db
+    .select({
+      promptKey: t.prompts.promptKey,
+      answer: t.prompts.answer,
+      createdAt: t.prompts.createdAt,
+    })
+    .from(t.prompts)
+    .where(eq(t.prompts.userId, userId))
+    .orderBy(asc(t.prompts.position));
+  const consents = await db
+    .select({
+      kind: t.consents.kind,
+      granted: t.consents.granted,
+      version: t.consents.version,
+      at: t.consents.createdAt,
+    })
+    .from(t.consents)
+    .where(eq(t.consents.userId, userId))
+    .orderBy(asc(t.consents.createdAt));
+  const photos = await db
+    .select()
+    .from(t.photos)
+    .where(eq(t.photos.userId, userId))
+    .orderBy(asc(t.photos.createdAt));
+  const clips = await db.select().from(t.audioClips).where(eq(t.audioClips.userId, userId));
+  const [location] = await db
+    .execute<{ lat: number; lng: number; updated_at: Date }>(
+      sql`SELECT ST_Y(geo::geometry) AS lat, ST_X(geo::geometry) AS lng, updated_at FROM locations WHERE user_id = ${userId}`,
+    )
+    .then((r) => r.rows);
+  const interactions = await db
+    .select({
+      targetId: t.interactions.targetId,
+      kind: t.interactions.kind,
+      comment: t.interactions.comment,
+      at: t.interactions.createdAt,
+    })
+    .from(t.interactions)
+    .where(eq(t.interactions.actorId, userId));
+  const matches = await db
+    .select({
+      id: t.matches.id,
+      userA: t.matches.userA,
+      userB: t.matches.userB,
+      createdAt: t.matches.createdAt,
+      unmatchedAt: t.matches.unmatchedAt,
+    })
+    .from(t.matches)
+    .where(or(eq(t.matches.userA, userId), eq(t.matches.userB, userId)));
+  const sent = await db
+    .select({
+      matchId: t.messages.matchId,
+      kind: t.messages.kind,
+      body: t.messages.body,
+      at: t.messages.createdAt,
+    })
+    .from(t.messages)
+    .where(eq(t.messages.senderId, userId))
+    .orderBy(asc(t.messages.createdAt));
+  const blocks = await db
+    .select({ blockedId: t.blocks.blockedId, at: t.blocks.createdAt })
+    .from(t.blocks)
+    .where(eq(t.blocks.blockerId, userId));
+  const reportsFiled = await db
+    .select({
+      reportedId: t.reports.reportedId,
+      category: t.reports.category,
+      details: t.reports.details,
+      status: t.reports.status,
+      at: t.reports.createdAt,
+    })
+    .from(t.reports)
+    .where(eq(t.reports.reporterId, userId));
+  // Warnings and suspensions affecting the member: the category and date, not staff notes.
+  const moderation = await db
+    .select({
+      action: t.moderationLog.action,
+      category: t.moderationLog.category,
+      at: t.moderationLog.createdAt,
+    })
+    .from(t.moderationLog)
+    .where(eq(t.moderationLog.targetId, userId));
+  const verifications = await db
+    .select({
+      status: t.verifications.status,
+      pose: t.verifications.pose,
+      at: t.verifications.createdAt,
+      decidedAt: t.verifications.decidedAt,
+    })
+    .from(t.verifications)
+    .where(eq(t.verifications.userId, userId))
+    .orderBy(desc(t.verifications.createdAt));
+  // Safety check-ins you created (kept 7 days after they end), including the contact you entered.
+  const checkinRows = await db
+    .select({
+      status: t.checkins.status,
+      matchName: t.checkins.matchName,
+      place: t.checkins.place,
+      note: t.checkins.note,
+      contactName: t.checkins.contactName,
+      contactEmail: t.checkins.contactEmail,
+      startsAt: t.checkins.startsAt,
+      checkAt: t.checkins.checkAt,
+      sosCount: t.checkins.sosCount,
+      alertedAt: t.checkins.alertedAt,
+    })
+    .from(t.checkins)
+    .where(eq(t.checkins.userId, userId))
+    .orderBy(desc(t.checkins.createdAt));
+  // Date ideas in your chats. The other person's own note is theirs, so only yours is included.
+  const datePlanRows = await db
+    .select({
+      proposerId: t.datePlans.proposerId,
+      status: t.datePlans.status,
+      place: t.datePlans.venueName,
+      area: t.datePlans.venueArea,
+      startsAt: t.datePlans.startsAt,
+      note: t.datePlans.note,
+      respondedAt: t.datePlans.respondedAt,
+      createdAt: t.datePlans.createdAt,
+    })
+    .from(t.datePlans)
+    .innerJoin(t.matches, eq(t.matches.id, t.datePlans.matchId))
+    .where(or(eq(t.matches.userA, userId), eq(t.matches.userB, userId)))
+    .orderBy(asc(t.datePlans.createdAt));
+  const devices = await db
+    .select({
+      platform: t.pushTokens.platform,
+      createdAt: t.pushTokens.createdAt,
+      lastUsedAt: t.pushTokens.lastUsedAt,
+    })
+    .from(t.pushTokens)
+    .where(eq(t.pushTokens.userId, userId));
+
+  const files: Zippable = {};
+  const photoEntries = [];
+  for (const p of photos) {
+    let file: string | null = null;
+    if (p.mediaKey && p.status === 'clean') {
+      file = `photos/${p.id}.webp`;
+      files[file] = new Uint8Array(await storage.getBuffer(storage.buckets.media, p.mediaKey));
+    }
+    photoEntries.push({
+      id: p.id,
+      purpose: p.purpose,
+      status: p.status,
+      uploadedAt: iso(p.createdAt),
+      file,
+    });
+  }
+  const voiceEntries = [];
+  for (const c of clips) {
+    let file: string | null = null;
+    if (c.mediaKey && c.status === 'clean') {
+      file = `voice/${c.id}.m4a`;
+      files[file] = new Uint8Array(await storage.getBuffer(storage.buckets.media, c.mediaKey));
+    }
+    voiceEntries.push({
+      id: c.id,
+      durationMs: c.durationMs,
+      status: c.status,
+      recordedAt: iso(c.createdAt),
+      file,
+    });
+  }
+
+  const data = {
+    exportedAt: new Date().toISOString(),
+    note:
+      'All personal data this community holds about you. Messages written by other people are not included. ' +
+      'Your location is stored only as an approximate ~1 km grid cell.',
+    account: { ...account, createdAt: iso(account.createdAt) },
+    profile: profile
+      ? {
+          displayName: profile.displayName,
+          birthDate: profile.birthDate,
+          gender: profile.gender,
+          interestedIn: profile.interestedIn,
+          intention: profile.intention,
+          bio: profile.bio,
+          languages: profile.languages,
+          verifiedAt: iso(profile.verifiedAt),
+        }
+      : null,
+    preferences: preferences
+      ? {
+          ageMin: preferences.ageMin,
+          ageMax: preferences.ageMax,
+          maxDistanceKm: preferences.maxDistanceKm,
+          intentions: preferences.intentions,
+          acceptVoice: preferences.acceptVoice,
+        }
+      : null,
+    approximateLocation: location
+      ? {
+          lat: Number(location.lat),
+          lng: Number(location.lng),
+          updatedAt: iso(location.updated_at),
+        }
+      : null,
+    prompts: prompts.map((p) => ({ ...p, createdAt: iso(p.createdAt) })),
+    consents: consents.map((c) => ({ ...c, at: iso(c.at) })),
+    photos: photoEntries,
+    voiceMessages: voiceEntries,
+    likesAndPasses: interactions.map((i) => ({ ...i, at: iso(i.at) })),
+    matches: matches.map((m) => ({
+      id: m.id,
+      otherMemberId: m.userA === userId ? m.userB : m.userA,
+      createdAt: iso(m.createdAt),
+      unmatchedAt: iso(m.unmatchedAt),
+    })),
+    messagesYouSent: sent.map((m) => ({ ...m, at: iso(m.at) })),
+    blocks: blocks.map((b) => ({ ...b, at: iso(b.at) })),
+    reportsYouFiled: reportsFiled.map((r) => ({ ...r, at: iso(r.at) })),
+    moderationAffectingYou: moderation.map((m) => ({ ...m, at: iso(m.at) })),
+    photoVerifications: verifications.map((v) => ({
+      ...v,
+      at: iso(v.at),
+      decidedAt: iso(v.decidedAt),
+    })),
+    safetyCheckins: checkinRows.map((c) => ({
+      ...c,
+      startsAt: iso(c.startsAt),
+      checkAt: iso(c.checkAt),
+      alertedAt: iso(c.alertedAt),
+    })),
+    dateIdeas: datePlanRows.map(({ proposerId, note, ...d }) => ({
+      ...d,
+      proposedByYou: proposerId === userId,
+      note: proposerId === userId ? note : null,
+      startsAt: iso(d.startsAt),
+      respondedAt: iso(d.respondedAt),
+      createdAt: iso(d.createdAt),
+    })),
+    pushDevices: devices.map((d) => ({
+      ...d,
+      createdAt: iso(d.createdAt),
+      lastUsedAt: iso(d.lastUsedAt),
+    })),
+  };
+  files['data.json'] = strToU8(JSON.stringify(data, null, 2));
+  files['README.txt'] = strToU8(
+    'This archive contains your data from this Dateos community.\n' +
+      'data.json: your account, profile, choices and activity. photos/ and voice/: your files.\n' +
+      'Keep it safe: it contains personal information.\n',
+  );
+  return zipSync(files, { level: 6 });
+}

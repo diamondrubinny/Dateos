@@ -1,0 +1,6 @@
+dist
+coverage
+.turbo
+pnpm-lock.yaml
+apps/mobile/.expo
+apps/mobile/expo-env.d.ts

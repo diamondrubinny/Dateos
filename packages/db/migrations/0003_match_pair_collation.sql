@@ -1,0 +1,2 @@
+ALTER TABLE "matches" DROP CONSTRAINT "matches_ordered_pair";--> statement-breakpoint
+ALTER TABLE "matches" ADD CONSTRAINT "matches_ordered_pair" CHECK ("matches"."user_a" COLLATE "C" < "matches"."user_b" COLLATE "C");

@@ -1,0 +1,68 @@
+# Security review (phase 7)
+
+> 🔍 An internal review, not a substitute for an independent penetration test before a public launch.
+
+## Dependency advisories (`pnpm audit --prod`, 2026-10-21)
+
+| Advisory                                                                 | Package (path)                                      | Severity | Reachable at runtime?                                                                                        | Decision                                                                                                  |
+| ------------------------------------------------------------------------ | --------------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------- |
+| [GHSA-86w9-cpqp-85rv](https://github.com/advisories/GHSA-86w9-cpqp-85rv) | node-forge (`expo` → `@expo/cli`)                   | high     | No: the Expo CLI uses it for local development certificates; it is not part of the app bundle, API or worker | Ignored in `pnpm-workspace.yaml` (`auditConfig.ignoreGhsas`); no patched version exists. Re-check monthly |
+| [GHSA-vfj7-8cjw-p6xm](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm) | braces (`expo` → Metro → micromatch)                | high     | No: build-time file globbing with patterns from the project itself                                           | Ignored, same reason                                                                                      |
+| [GHSA-67mh-4wv8-2f99](https://github.com/advisories/GHSA-67mh-4wv8-2f99) | esbuild ≤ 0.24 (`better-auth` → `drizzle-kit` peer) | moderate | No: only affects `esbuild --serve` dev servers, never started                                                | Below the CI threshold (high); tracked                                                                    |
+| [GHSA-w5hq-g745-h8pq](https://github.com/advisories/GHSA-w5hq-g745-h8pq) | uuid < 11.1.1 (Expo config plugins → xcode)         | moderate | No: native project generation, and only when a buffer is passed                                              | Below the CI threshold; tracked                                                                           |
+
+CI still fails on any **new** high or critical advisory.
+
+## Code review (2026-10-21)
+
+Three independent read-only reviews (auth/staff/setup; chat/media/worker; discovery/profile/mobile)
+traced each finding from a real route. Every fix below has an integration test, and the important ones
+were checked by removing the fix and watching the test fail.
+
+| #   | Severity   | Finding                                                                                                                                                                                                                                | Fix                                                                                                                                                                                                   | Test                                                     |
+| --- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
+| 1   | **High**   | Native magic-link sign-in redirected to `dateos://?cookie=<session>` (better-auth Expo plugin). On Android any app can claim the scheme and take over the account. The app also never read that cookie, so native sign-in did not work | PKCE hand-off: the app sends `SHA-256(verifier)`, the redirect carries a one-time code (2 min), `POST /v1/auth/native/exchange` returns the session only for the verifier; the browser gets no cookie | `native-signin.test.ts` (5), RFC 7636 vectors in the app |
+| 2   | Medium     | WebSocket kept delivering messages after sign-out, session revocation or suspension                                                                                                                                                    | Every heartbeat (30 s) re-checks the session and the account; the socket closes with 4001                                                                                                             | `chat.test.ts`                                           |
+| 3   | Medium     | "Verified" badge survived replacing all profile photos (catfishing), and a moderator could approve a selfie against photos swapped during review                                                                                       | Adding/removing a profile photo clears the badge; a selfie older than the last photo change can't be approved (asks for a new one)                                                                    | `safety.test.ts`                                         |
+| 4   | Medium     | Setup token worked again whenever no admin existed (e.g. after the only admin deleted their account)                                                                                                                                   | Permanent `instance_claim` record; recovery only through the staff CLI on the server                                                                                                                  | `instance.test.ts`                                       |
+| 5   | Low–Medium | A paused member (sensitive-data consent withdrawn) could still like and create matches through the API                                                                                                                                 | Interactions require an active account; "Likes you" is empty while paused                                                                                                                             | `consent.test.ts`                                        |
+| 6   | Low        | Anyone could block a person's sign-in by requesting 5 links for their address                                                                                                                                                          | Counted per address **and** sender IP (5/h), plus 20/h per address in total                                                                                                                           | `me.test.ts`                                             |
+| 7   | Low        | Daily like limit could be exceeded with parallel requests                                                                                                                                                                              | Count + insert under a per-member advisory lock                                                                                                                                                       | `consent.test.ts` (8 parallel)                           |
+| 8   | Low        | Withdrawing location consent via the API kept the stored location                                                                                                                                                                      | The location row is deleted                                                                                                                                                                           | `consent.test.ts`                                        |
+| 9   | Low        | Duplicate consent kinds in one request made the record ambiguous                                                                                                                                                                       | Rejected by the schema                                                                                                                                                                                | `consent.test.ts`                                        |
+| 10  | Low        | Icebreakers had no per-member limit (cost with a paid model)                                                                                                                                                                           | 60 per day per member                                                                                                                                                                                 | — (config)                                               |
+| 11  | Low        | Evidence cleanup could delete files of a report still being committed                                                                                                                                                                  | Only files older than one hour are considered                                                                                                                                                         | `retention.test.ts`                                      |
+| 12  | Low        | Two parallel selfie uploads could leave one selfie stored forever                                                                                                                                                                      | Conditional update; the losing upload is deleted                                                                                                                                                      | — (race; code path reviewed)                             |
+| 13  | Low        | Staff photo route could open private chat images                                                                                                                                                                                       | Staff access is limited by purpose (profile / selfie / logo)                                                                                                                                          | `safety.test.ts`                                         |
+| 14  | Low        | `TRUST_PROXY=true` trusted every hop: behind a proxy that appends `X-Forwarded-For`, clients could forge their IP                                                                                                                      | `true` now means loopback and private networks only; explicit IP/CIDR lists accepted                                                                                                                  | `env.test.ts`                                            |
+| 15  | Low        | Admin preview server crashed on a malformed URL (`/%E0`)                                                                                                                                                                               | 400 instead                                                                                                                                                                                           | manual (`curl`)                                          |
+
+### Accepted risks
+
+- **Push tokens move to the last account that registers them.** Someone who knows another person's
+  Expo token could make them stop receiving notifications. Tokens are hard to obtain and pushes carry no
+  content; binding tokens to an installation secret is a possible later improvement.
+- **Development builds** (Expo Go, `exp://`) can't use the PKCE hand-off; native sign-in is meant for
+  your own builds with the `dateos` scheme (or `APP_SCHEME`).
+- Native sign-in, sharing and push need testing on real iOS and Android devices before release 📘.
+
+### Checked and found sound
+
+Server-side role checks on every admin route (role read from the database per request); TOTP with
+replay protection, lockout and encrypted secrets; setup-claim race (advisory lock) and constant-time
+token comparison; magic-link callback URLs validated against trusted origins; spoofable IP headers
+stripped; CORS allowlist, SameSite cookies and origin checks; strict CSP and security headers;
+chat and media access (active match, blocks, suspension); upload sniffing, pixel limits and re-encoding;
+ffmpeg without a shell and with a protocol whitelist; storage keys from server UUIDs only; visibility
+rules and ~1 km location precision; bounded input schemas; consent gates for sensitive data and AI;
+prompt-injection output filters; tokens in the keychain / HttpOnly cookies; no HTML rendering of user
+content.
+
+## CodeQL (security-extended), 2026-10-21
+
+CodeQL on the pull request reported 3 high alerts (`js/polynomial-redos`, CVSS 7.5): quote trimming
+(`[“”"…]+$`) in icebreaker and bio-draft validation, and an email pattern (`\S+@\S+\.\S+`) in the
+contact filter. Text from members and from language models goes through them, so a long crafted string
+could make the server spend quadratic time. Fixed with linear code (a quote-trimming loop, word-by-word
+email check with an anchored pattern) and a test with 200 000-character adversarial input. Local run of
+the same suite afterwards: **0 results**.

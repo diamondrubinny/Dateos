@@ -1,0 +1,1 @@
+ALTER TABLE "profiles" ADD COLUMN "photos_changed_at" timestamp with time zone;
