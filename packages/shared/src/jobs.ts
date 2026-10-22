@@ -12,6 +12,8 @@ export const MediaJob = {
 
 export interface ProcessAudioJob {
   audioId: string;
+  /** Shorter limit than a voice message, e.g. a voice prompt (phase 19). */
+  maxSeconds?: number;
 }
 
 export interface ProcessPhotoJob {

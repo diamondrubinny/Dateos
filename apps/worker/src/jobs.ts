@@ -138,7 +138,10 @@ export async function deleteObjects(ctx: JobContext, job: DeleteObjectsJob): Pro
 }
 
 /** Voice messages: quarantine → malware scan → re-encode to clean AAC/M4A → visible. */
-export async function processAudio(ctx: JobContext, { audioId }: ProcessAudioJob): Promise<string> {
+export async function processAudio(
+  ctx: JobContext,
+  { audioId, maxSeconds }: ProcessAudioJob,
+): Promise<string> {
   const [row] = await ctx.db.select().from(audioClips).where(eq(audioClips.id, audioId));
   if (!row || !row.quarantineKey || (row.status !== 'quarantine' && row.status !== 'processing')) {
     return 'skipped';
@@ -181,6 +184,7 @@ export async function processAudio(ctx: JobContext, { audioId }: ProcessAudioJob
     processed = await transcodeVoice(original, {
       ffmpeg: ctx.ffmpegPath,
       ffprobe: ctx.ffprobePath,
+      maxSeconds,
     });
   } catch (error) {
     if (!(error instanceof InvalidAudioError)) throw error;

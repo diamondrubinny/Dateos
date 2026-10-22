@@ -84,3 +84,15 @@ describe('rank', () => {
     expect(rank([...items].reverse(), '2026-10-21').map((i) => i.userId)).toEqual(first);
   });
 });
+
+describe('shared interests (phase 19)', () => {
+  it('nudge the score by up to 15% and show as a reason', () => {
+    const none = scoreCandidate(base);
+    const two = scoreCandidate({ ...base, sharedInterests: 2 });
+    const many = scoreCandidate({ ...base, sharedInterests: 8 });
+    expect(two.score).toBeGreaterThan(none.score);
+    expect(many.parts.interests).toBeCloseTo(1.15);
+    expect(none.reasons).not.toContain('shared_interests');
+    expect(two.reasons).toContain('shared_interests');
+  });
+});

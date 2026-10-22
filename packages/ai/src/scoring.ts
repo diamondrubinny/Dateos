@@ -29,6 +29,8 @@ export interface CandidateSignals {
   candidateLikedViewer: boolean;
   /** Times the candidate was shown to anyone in the last 24 hours. */
   impressions24h: number;
+  /** Interests both people picked (phase 19). */
+  sharedInterests?: number;
 }
 
 export interface ScoreResult {
@@ -36,7 +38,14 @@ export interface ScoreResult {
   score: number;
   reasons: ReasonCode[];
   parts: Record<
-    'vibe' | 'intention' | 'distance' | 'language' | 'activity' | 'reciprocity' | 'fairness',
+    | 'vibe'
+    | 'intention'
+    | 'distance'
+    | 'language'
+    | 'activity'
+    | 'interests'
+    | 'reciprocity'
+    | 'fairness',
     number
   >;
 }
@@ -85,12 +94,16 @@ export function scoreCandidate(s: CandidateSignals): ScoreResult {
         : 0.3;
   const activity = activityScore(s.lastActiveDays);
 
+  // Shared interests (phase 19) add up to 15% on top: a nudge, never a filter.
+  const shared = Math.min(3, s.sharedInterests ?? 0);
+  const interests = 1 + 0.05 * shared;
   const compatibility =
-    WEIGHTS.vibe * vibe +
-    WEIGHTS.intention * intention +
-    WEIGHTS.distance * distance +
-    WEIGHTS.language * language +
-    WEIGHTS.activity * activity;
+    (WEIGHTS.vibe * vibe +
+      WEIGHTS.intention * intention +
+      WEIGHTS.distance * distance +
+      WEIGHTS.language * language +
+      WEIGHTS.activity * activity) *
+    interests;
 
   // Reciprocity: how likely the other person is to like back. Laplace-smoothed like rate,
   // or near-certain if they already liked the viewer. Selective people are not penalised
@@ -112,6 +125,7 @@ export function scoreCandidate(s: CandidateSignals): ScoreResult {
     candidates.push(['same_intention', WEIGHTS.intention]);
   if (vibe >= 0.6 && s.vibeCosine !== null) candidates.push(['similar_vibe', WEIGHTS.vibe * vibe]);
   if (sharedLanguages.length > 0) candidates.push(['shared_language', WEIGHTS.language]);
+  if (shared > 0) candidates.push(['shared_interests', 0.08 + 0.04 * shared]);
   if (s.distanceKm < 5) candidates.push(['nearby', WEIGHTS.distance * distance]);
   if (s.lastActiveDays !== null && s.lastActiveDays <= 1)
     candidates.push(['active_recently', WEIGHTS.activity * 0.5]);
@@ -124,7 +138,7 @@ export function scoreCandidate(s: CandidateSignals): ScoreResult {
   return {
     score,
     reasons,
-    parts: { vibe, intention, distance, language, activity, reciprocity, fairness },
+    parts: { vibe, intention, distance, language, activity, interests, reciprocity, fairness },
   };
 }
 

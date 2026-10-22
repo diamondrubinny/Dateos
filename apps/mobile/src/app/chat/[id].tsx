@@ -340,6 +340,25 @@ function ChatScreen() {
               <AppText variant="body" tone="muted" center>
                 {t('chat.emptyBody')}
               </AppText>
+              {conversation?.profile.about?.openingQuestion ? (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityHint={t('chat.answerQuestionHint')}
+                  onPress={() => setText(`“${conversation.profile.about!.openingQuestion}”\n`)}
+                  style={[
+                    styles.suggestion,
+                    { borderColor: colors.primary, backgroundColor: colors.primarySoft },
+                  ]}
+                  testID="opening-question"
+                >
+                  <AppText variant="caption" tone="primary">
+                    {t('chat.answerQuestion', { name })}
+                  </AppText>
+                  <AppText variant="body" userContent>
+                    {conversation.profile.about.openingQuestion}
+                  </AppText>
+                </Pressable>
+              ) : null}
               <View
                 role="list"
                 accessibilityLabel={t('chat.icebreakersLabel')}

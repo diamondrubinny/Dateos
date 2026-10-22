@@ -106,6 +106,11 @@ function SettingsContent() {
       />
       <Button
         variant="secondary"
+        label={t('deal.title')}
+        onPress={() => router.push('/dealbreakers')}
+      />
+      <Button
+        variant="secondary"
         label={me.data?.verified ? `✓ ${t('verify.approved')}` : t('verify.entry')}
         onPress={() => router.push('/verify')}
       />

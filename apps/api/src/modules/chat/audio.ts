@@ -2,14 +2,14 @@
 // Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 import { schema, type Database } from '@nexaheart/db';
-import { ErrorCode } from '@nexaheart/shared';
+import { ErrorCode, MAX_VOICE_PROMPT_SECONDS, type PromptKey } from '@nexaheart/shared';
 import { audioQuarantineKey, type Storage, type StoredObject } from '@nexaheart/storage';
 import { and, eq, sql } from 'drizzle-orm';
 import { fileTypeFromBuffer } from 'file-type';
 import type { MediaQueue } from '../../lib/queue.js';
 import { HttpError } from '../../plugins/error-handler.js';
 
-const { audioClips } = schema;
+const { audioClips, profileAbout } = schema;
 
 /** What phones and browsers record: M4A/MP4 (iOS, Android, Safari), WebM (Chrome), Ogg (Firefox). */
 const allowed = new Set([
@@ -37,7 +37,13 @@ export class AudioService {
     private readonly mediaQueue: MediaQueue,
   ) {}
 
-  async upload(userId: string, buffer: Buffer): Promise<{ id: string }> {
+  /** Who may see whose profile (and so hear a voice prompt): the discovery visibility rules. */
+  private canView?: (viewerId: string, ownerId: string) => Promise<boolean>;
+  useVisibility(canView: (viewerId: string, ownerId: string) => Promise<boolean>): void {
+    this.canView = canView;
+  }
+
+  async upload(userId: string, buffer: Buffer, maxSeconds?: number): Promise<{ id: string }> {
     const mime = await sniffAudioType(buffer);
     if (!mime) throw new HttpError(415, ErrorCode.BadRequest, 'Unsupported audio format.');
     const [row] = await this.db
@@ -51,13 +57,65 @@ export class AudioService {
         .set({ quarantineKey: key })
         .where(eq(audioClips.id, row!.id));
       await this.storage.put(this.storage.buckets.quarantine, key, buffer, mime);
-      await this.mediaQueue.processAudio({ audioId: row!.id });
+      await this.mediaQueue.processAudio({
+        audioId: row!.id,
+        ...(maxSeconds ? { maxSeconds } : {}),
+      });
     } catch (error) {
       await this.db.delete(audioClips).where(eq(audioClips.id, row!.id));
       await this.storage.delete(this.storage.buckets.quarantine, [key]).catch(() => undefined);
       throw error;
     }
     return row!;
+  }
+
+  /**
+   * Voice prompt (phase 19): one spoken answer on the profile, at most 30 s. Recording a new one
+   * replaces (and deletes) the old clip.
+   */
+  async setVoicePrompt(
+    userId: string,
+    promptKey: PromptKey,
+    buffer: Buffer,
+  ): Promise<{ id: string }> {
+    const clip = await this.upload(userId, buffer, MAX_VOICE_PROMPT_SECONDS);
+    const [before] = await this.db
+      .select({ audioId: profileAbout.voiceAudioId })
+      .from(profileAbout)
+      .where(eq(profileAbout.userId, userId));
+    const values = { voicePromptKey: promptKey, voiceAudioId: clip.id, updatedAt: new Date() };
+    await this.db
+      .insert(profileAbout)
+      .values({ userId, ...values })
+      .onConflictDoUpdate({ target: profileAbout.userId, set: values });
+    if (before?.audioId) await this.deleteClip(before.audioId);
+    return clip;
+  }
+
+  async removeVoicePrompt(userId: string): Promise<void> {
+    const [row] = await this.db
+      .select({ audioId: profileAbout.voiceAudioId })
+      .from(profileAbout)
+      .where(eq(profileAbout.userId, userId));
+    if (!row?.audioId) return;
+    await this.db
+      .update(profileAbout)
+      .set({ voicePromptKey: null, voiceAudioId: null })
+      .where(eq(profileAbout.userId, userId));
+    await this.deleteClip(row.audioId);
+  }
+
+  /** Deletes a clip row now and its stored files through the worker. */
+  private async deleteClip(audioId: string): Promise<void> {
+    const [clip] = await this.db
+      .delete(audioClips)
+      .where(eq(audioClips.id, audioId))
+      .returning({ q: audioClips.quarantineKey, m: audioClips.mediaKey, o: audioClips.opusKey });
+    if (!clip) return;
+    await this.mediaQueue.deleteObjects({
+      quarantineKeys: clip.q ? [clip.q] : [],
+      mediaKeys: [clip.m, clip.o].filter((k): k is string => Boolean(k)),
+    });
   }
 
   /** Only the two people of an active match where the clip was sent can play it. */
@@ -76,7 +134,25 @@ export class AudioService {
           WHERE (b.blocker_id = ma.user_a AND b.blocked_id = ma.user_b) OR (b.blocker_id = ma.user_b AND b.blocked_id = ma.user_a)
         )
       LIMIT 1`);
-    const row = result.rows[0];
+    let row = result.rows[0];
+    if (!row) {
+      // A voice prompt: anyone who may see the owner's profile can hear it.
+      const prompt = await this.db.execute<{
+        user_id: string;
+        media_key: string | null;
+        opus_key: string | null;
+      }>(sql`
+        SELECT a.user_id, a.media_key, a.opus_key FROM audio_clips a
+        JOIN profile_about pa ON pa.voice_audio_id = a.id AND pa.user_id = a.user_id
+        WHERE a.id = ${audioId} AND a.status = 'clean'`);
+      const owner = prompt.rows[0];
+      if (
+        owner &&
+        (owner.user_id === viewerId || (await this.canView?.(viewerId, owner.user_id)))
+      ) {
+        row = owner;
+      }
+    }
     const key = format === 'opus' ? row?.opus_key : row?.media_key;
     if (!key) throw notFound();
     return this.storage.get(this.storage.buckets.media, key);

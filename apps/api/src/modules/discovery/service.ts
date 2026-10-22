@@ -11,6 +11,7 @@ import {
   distanceBucket,
   ErrorCode,
   snapToGrid,
+  type About,
   type InteractionInput,
   type Intention,
   type LikeReceived,
@@ -40,6 +41,7 @@ const {
   blocks,
   dailyPicks,
   locations,
+  profileAbout,
   consents,
   user,
 } = schema;
@@ -134,6 +136,7 @@ export class DiscoveryService {
         candidateDecisions: row.decisions_30d,
         candidateLikedViewer: row.liked_viewer,
         impressions24h: row.impressions_24h,
+        sharedInterests: row.shared_interests,
       }),
     }));
     return rank(scored, this.today());
@@ -596,6 +599,17 @@ export class DiscoveryService {
       )
       .orderBy(asc(photos.position), asc(photos.createdAt));
     const byId = new Map(profileRows.map((p) => [p.userId, p]));
+    const voiceClips = await this.db
+      .select({ id: schema.audioClips.id, durationMs: schema.audioClips.durationMs })
+      .from(schema.audioClips)
+      .innerJoin(profileAbout, eq(profileAbout.voiceAudioId, schema.audioClips.id))
+      .where(and(inArray(profileAbout.userId, ids), eq(schema.audioClips.status, 'clean')));
+    const cleanVoice = new Map(voiceClips.map((c) => [c.id, c.durationMs]));
+    const aboutById = new Map(
+      (await this.db.select().from(profileAbout).where(inArray(profileAbout.userId, ids))).map(
+        (a) => [a.userId, a],
+      ),
+    );
     // Travellers (phase 18c) show "Visiting {city}" instead of a distance from the city centre.
     const trips = await this.db
       .select({ userId: locations.userId, cityId: locations.travelCityId })
@@ -631,10 +645,39 @@ export class DiscoveryService {
           distance:
             Number.isFinite(item.km) && !visiting.has(p.userId) ? distanceBucket(item.km) : null,
           visiting: visiting.get(p.userId) ?? null,
+          about: toAbout(aboutById.get(p.userId)),
+          voicePrompt: toVoicePrompt(aboutById.get(p.userId), cleanVoice),
           verified: p.verifiedAt !== null,
           reasons: item.result?.reasons ?? [],
         },
       ];
     });
   }
+}
+
+/** A member's about-me fields as others see them (phase 19), or null if never filled in. */
+function toAbout(row: typeof profileAbout.$inferSelect | undefined): About | null {
+  if (!row) return null;
+  return {
+    interests: row.interests as About['interests'],
+    children: row.children as About['children'],
+    smoking: row.smoking as About['smoking'],
+    drinking: row.drinking as About['drinking'],
+    heightCm: row.heightCm,
+    religion: row.religion as About['religion'],
+    openingQuestion: row.openingQuestion,
+  };
+}
+
+/** A voice prompt others can play: only once its clip passed the scan and re-encoding. */
+function toVoicePrompt(
+  row: typeof profileAbout.$inferSelect | undefined,
+  clean: Map<string, number | null>,
+): PublicProfile['voicePrompt'] {
+  if (!row?.voiceAudioId || !row.voicePromptKey || !clean.has(row.voiceAudioId)) return null;
+  return {
+    promptKey: row.voicePromptKey as PromptKey,
+    audioId: row.voiceAudioId,
+    durationMs: clean.get(row.voiceAudioId) ?? null,
+  };
 }

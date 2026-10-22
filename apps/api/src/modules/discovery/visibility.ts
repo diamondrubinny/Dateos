@@ -40,6 +40,7 @@ export interface CandidateRow {
   decisions_30d: number;
   liked_viewer: boolean;
   impressions_24h: number;
+  shared_interests: number;
 }
 
 /**
@@ -72,7 +73,10 @@ export function candidateSql(q: CandidateQuery): SQL {
              pr.age_min, pr.age_max, pr.max_distance_km, pr.intentions AS wants,
              -- Travel mode (phase 18c): a traveller looks from the city they're visiting.
              CASE WHEN l.travel_until > now() THEN l.travel_geo ELSE l.geo END AS geo,
-             e.embedding, e.model
+             e.embedding, e.model,
+             -- About me and dealbreakers (phase 19).
+             pr.smoking_ok, pr.children_ok, pr.religion_ok, pr.height_min, pr.height_max,
+             COALESCE(ma.interests, '{}') AS interests, ma.smoking, ma.children, ma.religion, ma.height_cm
       FROM profiles p
       -- A paused viewer (sensitive-data consent withdrawn) is not matched either way.
       JOIN "user" mu ON mu.id = p.user_id AND mu.status = 'active'
@@ -81,6 +85,7 @@ export function candidateSql(q: CandidateQuery): SQL {
       JOIN preferences pr ON pr.user_id = p.user_id
       JOIN locations l ON l.user_id = p.user_id
       LEFT JOIN profile_embeddings e ON e.user_id = p.user_id
+      LEFT JOIN profile_about ma ON ma.user_id = p.user_id
       WHERE p.user_id = ${q.viewerId}
     )
     SELECT
@@ -101,13 +106,15 @@ export function candidateSql(q: CandidateQuery): SQL {
       (SELECT count(*) FROM interactions i
         WHERE i.actor_id = c.user_id AND i.created_at > now() - interval '30 days')::int AS decisions_30d,
       EXISTS (SELECT 1 FROM interactions i WHERE i.actor_id = c.user_id AND i.target_id = me.user_id AND i.kind = 'like') AS liked_viewer,
-      (SELECT count(*) FROM impressions im WHERE im.candidate_id = c.user_id AND im.created_at > now() - interval '24 hours')::int AS impressions_24h
+      (SELECT count(*) FROM impressions im WHERE im.candidate_id = c.user_id AND im.created_at > now() - interval '24 hours')::int AS impressions_24h,
+      cardinality(ARRAY(SELECT unnest(me.interests) INTERSECT SELECT unnest(ca.interests)))::int AS shared_interests
     FROM me
     JOIN profiles c ON c.user_id <> me.user_id
     JOIN "user" u ON u.id = c.user_id AND u.status = 'active' AND ${notOnBreak('u')}
     JOIN preferences cpr ON cpr.user_id = c.user_id
     JOIN locations cl ON cl.user_id = c.user_id
     LEFT JOIN profile_embeddings ce ON ce.user_id = c.user_id
+    LEFT JOIN profile_about ca ON ca.user_id = c.user_id
     WHERE c.gender = ANY(me.interested_in)
       AND me.gender = ANY(c.interested_in)
       AND date_part('year', age(${today}, c.birth_date)) BETWEEN me.age_min AND me.age_max
@@ -123,6 +130,17 @@ export function candidateSql(q: CandidateQuery): SQL {
       AND (cardinality(cpr.intentions) = 0 OR me.intention = ANY(cpr.intentions))
       AND EXISTS (SELECT 1 FROM photos ph WHERE ph.user_id = c.user_id AND ph.status = 'clean' AND ph.purpose = 'profile')
       AND ${notSeparated(sql`me.user_id`, sql`c.user_id`)}
+      -- Dealbreakers (phase 19), both ways. An empty list means any; a missing answer passes.
+      AND (cardinality(me.smoking_ok) = 0 OR ca.smoking IS NULL OR ca.smoking = ANY(me.smoking_ok))
+      AND (cardinality(cpr.smoking_ok) = 0 OR me.smoking IS NULL OR me.smoking = ANY(cpr.smoking_ok))
+      AND (cardinality(me.children_ok) = 0 OR ca.children IS NULL OR ca.children = ANY(me.children_ok))
+      AND (cardinality(cpr.children_ok) = 0 OR me.children IS NULL OR me.children = ANY(cpr.children_ok))
+      AND (cardinality(me.religion_ok) = 0 OR ca.religion IS NULL OR ca.religion = ANY(me.religion_ok))
+      AND (cardinality(cpr.religion_ok) = 0 OR me.religion IS NULL OR me.religion = ANY(cpr.religion_ok))
+      AND (ca.height_cm IS NULL OR ((me.height_min IS NULL OR ca.height_cm >= me.height_min)
+                                AND (me.height_max IS NULL OR ca.height_cm <= me.height_max)))
+      AND (me.height_cm IS NULL OR ((cpr.height_min IS NULL OR me.height_cm >= cpr.height_min)
+                                AND (cpr.height_max IS NULL OR me.height_cm <= cpr.height_max)))
       -- Incognito (phase 18b): seen only by people they liked. Matches stay visible through canView.
       AND (NOT u.incognito OR EXISTS (
         SELECT 1 FROM interactions inc

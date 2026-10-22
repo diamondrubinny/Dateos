@@ -6,6 +6,15 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Added
 
+- **About me**: up to 10 interests from 40, children, smoking, drinking and height, all optional,
+  shown on the profile as chips (shared interests are marked and nudge the ranking). Religious
+  observance can be added with its own explicit consent; it's never used for ranking, and
+  withdrawing the consent deletes it.
+- **Dealbreakers**: smoking, children, height and religious observance filters that work both ways;
+  people who didn't answer are always shown.
+- **Opening question**: a question your matches see on your profile and in a new chat.
+- **Voice prompt**: answer one prompt out loud (up to 30 seconds), through the same malware scan and
+  re-encoding as voice messages, played only to people who can see your profile.
 - **Travel mode**: going somewhere? Pick a city (search in any of the four languages) and up to
   two weeks: Discover shows people around that city, and your profile honestly says "Visiting Haifa"
   instead of a distance. Your own area is untouched. Cities come from a bundled GeoNames list (CC BY

@@ -139,6 +139,7 @@ export function createServices(
   const verification = new VerificationService(dbHandle.db, photos);
   const instance = new InstanceService(dbHandle.db, env, photos);
   const audio = new AudioService(dbHandle.db, storage, mediaQueue);
+  audio.useVisibility((viewerId, ownerId) => discovery.canView(viewerId, ownerId));
   const hashEmail = createEmailHasher(secrets.authSecret);
   const venues = new VenueService(dbHandle.db);
   const chat = new ChatService(dbHandle.db, realtime, discovery, photos, icebreakers, audio, {

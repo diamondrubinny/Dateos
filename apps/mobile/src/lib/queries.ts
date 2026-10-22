@@ -18,6 +18,8 @@ import type {
   ProfileUpdate,
   PromptAnswer,
   PauseDuration,
+  About,
+  Dealbreakers,
   Place,
   TravelInput,
   TravelState,
@@ -43,7 +45,9 @@ export function useMe(enabled = true) {
     enabled,
     // While photos are being scanned, refresh until they settle.
     refetchInterval: (query) =>
-      query.state.data?.photos.some((p) => p.status === 'quarantine' || p.status === 'processing')
+      query.state.data?.photos.some(
+        (p) => p.status === 'quarantine' || p.status === 'processing',
+      ) || ['quarantine', 'processing'].includes(query.state.data?.voicePrompt?.status ?? '')
         ? 1500
         : false,
   });
@@ -108,6 +112,31 @@ export const useSetIncognito = () =>
   );
 export const useResume = () =>
   useBreakMutation(() => apiFetch('/v1/me/pause', { method: 'DELETE' }));
+/** About me and dealbreakers (phase 19): what Discover shows changes, so the feeds refresh. */
+export const useSetAbout = () =>
+  useBreakMutation((about: About) =>
+    apiFetch('/v1/me/about', { method: 'PUT', body: json(about) }),
+  );
+export const useSetDealbreakers = () =>
+  useBreakMutation((d: Dealbreakers) =>
+    apiFetch('/v1/me/dealbreakers', { method: 'PUT', body: json(d) }),
+  );
+/** Voice prompt (phase 19): the same upload as a voice message, to the profile. */
+export const useSetVoicePrompt = () =>
+  useMeMutation(async ({ uri, promptKey }: { uri: string; promptKey: string }) => {
+    const form = new FormData();
+    if (Platform.OS === 'web') {
+      form.append('file', await (await fetch(uri)).blob(), 'voice');
+    } else {
+      form.append('file', { uri, name: 'voice.m4a', type: 'audio/mp4' } as unknown as Blob);
+    }
+    return apiFetch(`/v1/me/voice-prompt?promptKey=${encodeURIComponent(promptKey)}`, {
+      method: 'POST',
+      body: form,
+    });
+  });
+export const useRemoveVoicePrompt = () =>
+  useMeMutation(() => apiFetch('/v1/me/voice-prompt', { method: 'DELETE' }));
 export const useDeleteAccount = () =>
   useMutation({ mutationFn: () => apiFetch('/v1/me', { method: 'DELETE' }) });
 

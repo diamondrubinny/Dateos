@@ -15,14 +15,15 @@ The code lives in [`packages/ai/src/scoring.ts`](../packages/ai/src/scoring.ts) 
 
 Two people can only see each other when **both** of the following hold, in both directions:
 
-| Rule             | Detail                                                                                     |
-| ---------------- | ------------------------------------------------------------------------------------------ |
-| Gender           | Each person's gender is in the other's "interested in" list                                |
-| Age              | Each person's age is inside the other's age range                                          |
-| Distance         | They are within the _smaller_ of the two maximum distances                                 |
-| Intention filter | If someone chose intentions to filter by, the other person's intention must be one of them |
-| Safety           | Both accounts are active; nobody blocked anybody; they never unmatched                     |
-| Completeness     | The person has a location and at least one photo that passed scanning                      |
+| Rule             | Detail                                                                                                                                  |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| Gender           | Each person's gender is in the other's "interested in" list                                                                             |
+| Age              | Each person's age is inside the other's age range                                                                                       |
+| Distance         | They are within the _smaller_ of the two maximum distances                                                                              |
+| Intention filter | If someone chose intentions to filter by, the other person's intention must be one of them                                              |
+| Dealbreakers     | Smoking, children, height and (with its consent) religious observance, if someone chose them. A missing answer always passes (phase 19) |
+| Safety           | Both accounts are active; nobody blocked anybody; they never unmatched                                                                  |
+| Completeness     | The person has a location and at least one photo that passed scanning                                                                   |
 
 The same rule decides who can open a profile, view a photo, or send a like. Anything outside it returns "not found".
 
@@ -38,7 +39,7 @@ For each visible person the server computes:
 | Distance  | 15%    | Closer is better, never below 0.2 inside the range                                                                                                                                                                    |
 | Language  | 10%    | Sharing a language                                                                                                                                                                                                    |
 
-`compatibility = Σ weight × signal` (0–1)
+`compatibility = Σ weight × signal` (0–1), then **× (1 + 0.05 × shared interests)**, at most 3 counted (phase 19): a nudge, never a filter. Shared interests also show as a reason ("Shared interests").
 
 **Reciprocity:** `0.4 + 0.6 × P(they like you back)`. P is the person's recent like rate, Laplace-smoothed, or 0.95 if they already liked you.
 The floor of 0.4 means choosy people are never hidden.
