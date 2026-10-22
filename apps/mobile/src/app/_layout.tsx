@@ -11,6 +11,7 @@ import { ApiRequestError } from '../lib/api';
 import { authClient } from '../lib/auth-client';
 import { LocaleProvider, useLocale } from '../lib/locale';
 import { RealtimeProvider } from '../lib/realtime';
+import { IncomingCall } from '../components/IncomingCall';
 import { useInstance } from '../lib/queries';
 import { useColors } from '../lib/theme';
 
@@ -49,6 +50,7 @@ function Navigator() {
     <RouterLocaleProvider direction={direction}>
       <RealtimeProvider enabled={Boolean(session.data)}>
         <StatusBar style="auto" />
+        {session.data ? <IncomingCall /> : null}
         <Stack
           screenOptions={{
             headerShown: false,

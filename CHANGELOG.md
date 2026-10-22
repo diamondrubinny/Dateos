@@ -14,6 +14,12 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Added
 
+- **Video dates**: matches can have a video or voice-only call in the app, through the community's own
+  LiveKit server (`docker compose --profile video`, `./install.sh --domain … --video`). Off until an
+  admin turns it on (dashboard → Branding → Video dates, with a maximum length). Calls unlock with the
+  chat, the other person always chooses to join, cameras are off on join, there is no recording or
+  screen sharing, and reporting, blocking or a suspension hangs up at once. Limits against unwanted
+  calls; a line in the chat ("Video call · 14 min"); audio and video are never stored.
 - **Community events**: the team publishes meetups at the community's places (dashboard → Events,
   with capacity); members see upcoming events and how many are going (never who), say they're going,
   get a reminder the day before and a notice if it's cancelled. Who's going is deleted 30 days after

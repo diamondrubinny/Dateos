@@ -128,6 +128,34 @@ Notifications are off by default. To enable them: build the app with your own Ex
 Notifications never contain names or message text, only "You have a new message" or "It's a match",
 but they still pass through Expo, Apple and Google: mention this in your privacy policy ⚖️.
 
+## Video dates (optional)
+
+Members who matched can have a video or voice-only call in the app. Calls go through
+[LiveKit](https://livekit.io) (Apache-2.0) on your own server: audio and video are forwarded, never
+recorded or stored, and members never see each other's IP addresses.
+
+1. Run the installer with `--video` (or add the values by hand): it sets `LIVEKIT_URL=wss://rtc.<domain>`
+   and `RTC_DOMAIN=rtc.<domain>` in `.env` and writes `infra/data/livekit/livekit.yaml` with the
+   generated `LIVEKIT_API_KEY` / `LIVEKIT_API_SECRET`. The config turns off automatic room creation (only
+   the API creates rooms, so an old join token can't reopen a call) and limits rooms to two people.
+   **On a server that is already running** (never re-run the installer with `--force` there: it
+   replaces every secret), add the values by hand. In `.env`: `LIVEKIT_URL=wss://rtc.<domain>`,
+   `RTC_DOMAIN=rtc.<domain>`, `LIVEKIT_API_KEY=API` followed by 12 random letters, and
+   `LIVEKIT_API_SECRET=` 48 random letters (`openssl rand -base64 48 | tr -d '/+=' | cut -c1-48`).
+   Then create `infra/data/livekit/livekit.yaml` with the same content the installer writes (see the
+   LiveKit section of `install.sh`), using your key and secret, and `chmod 644` it.
+2. DNS: point `rtc.<domain>` at the server. Firewall: open **TCP 7881** and **UDP 7882** (audio and
+   video); signalling goes through Caddy on 443.
+3. Start with `--profile video` added to your usual `docker compose ... up -d` command.
+4. In the dashboard: **Branding → Video dates**, turn them on and choose the maximum length
+   (default 60 minutes).
+
+Bandwidth: a 1:1 video call uses roughly 1–3 GB of server traffic per hour. Strict networks that block
+UDP fall back to TCP 7881; for networks that only allow HTTPS, LiveKit's TURN over TLS can be added
+(certificate needed) 📘 https://docs.livekit.io/home/self-hosting/. Using a hosted LiveKit instead
+works too (point `LIVEKIT_URL` at it), but then a third party carries the calls: DPA and international
+transfers ⚖️. Mention video calls in your privacy policy (the drafts in `docs/legal` already do) ⚖️.
+
 ## Mobile apps
 
 The web app works on phones and can be added to the home screen. Native iOS and Android builds come

@@ -65,7 +65,7 @@ NexaHeart is in active development. Here is what works today and what comes next
 | Date planner: propose a date in a public place your community curates, accept it in the chat, turn it into a safety check-in | ✅ Available |
 | Community events: the team publishes meetups at the community's places; members see how many are going, never who            | ✅ Available |
 | Four languages: English, Hebrew, Arabic, Russian (right-to-left for Hebrew and Arabic)                                       | ✅ Available |
-| Video dates, safety check-in, date planner                                                                                   | 🗓️ Later     |
+| Video dates: video or voice calls between matches through your own LiveKit, camera off on join, never recorded               | ✅ Available |
 
 ## Screenshots
 
@@ -102,6 +102,10 @@ NexaHeart is in active development. Here is what works today and what comes next
 **Community events**
 
 <img src="docs/screenshots/showcase-events-en.png" alt="Upcoming community events with how many people are going, an event with its place and description, and the member going" width="100%">
+
+**Video dates**
+
+<img src="docs/screenshots/showcase-calls-en.png" alt="An invitation to a video call with Join and Not now, the call with the other person's camera on and the controls, and the call-ended screen" width="100%">
 
 **Privacy**
 

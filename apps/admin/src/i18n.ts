@@ -64,6 +64,15 @@ const en = {
     continue: 'Continue to the dashboard',
     saved: 'Saved. The app shows the new branding within a few seconds.',
     done: 'Your instance is ready. Next: review the report queue and invite moderators (see docs/ADMIN.md).',
+    callsTitle: 'Video dates',
+    callsEnable: 'Allow video and voice calls between matches',
+    callsHint:
+      'Members can call a match after they both wrote a few messages; the other person always chooses whether to join. Calls go through this server’s LiveKit and are never recorded.',
+    callsMax: 'Maximum call length (minutes, 5–120)',
+    callsSave: 'Save video settings',
+    callsSaved: 'Video settings saved.',
+    callsNotConfigured:
+      'Video dates need LiveKit on this server. See “Video dates” in docs/SELF_HOSTING.md.',
   },
   noAccess: {
     title: 'No staff access',
@@ -339,6 +348,15 @@ const he: Messages = {
     continue: 'המשך ללוח הבקרה',
     saved: 'נשמר. האפליקציה תציג את המיתוג החדש בתוך כמה שניות.',
     done: 'השרת שלכם מוכן. השלב הבא: לעבור על תור הדיווחים ולצרף מנהלי קהילה (ראו docs/ADMIN.md).',
+    callsTitle: 'דייטים בווידאו',
+    callsEnable: 'לאפשר שיחות וידאו ושיחות קוליות בין התאמות',
+    callsHint:
+      'חברים יכולים להתקשר להתאמה אחרי שכל צד כתב כמה הודעות, והצד השני תמיד מחליט אם להצטרף. השיחות עוברות דרך LiveKit בשרת הזה ואף פעם לא מוקלטות.',
+    callsMax: 'אורך שיחה מרבי (בדקות, 5–120)',
+    callsSave: 'שמירת הגדרות הווידאו',
+    callsSaved: 'הגדרות הווידאו נשמרו.',
+    callsNotConfigured:
+      'דייטים בווידאו דורשים LiveKit בשרת הזה. פרטים בפרק “Video dates” בקובץ docs/SELF_HOSTING.md.',
   },
   noAccess: {
     title: 'אין הרשאת צוות',

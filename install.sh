@@ -4,6 +4,8 @@
 #   ./install.sh                          first-time setup (local development)
 #   ./install.sh --domain example.org     production: app on example.org, dashboard on
 #                                         admin.example.org, API on api.example.org
+#   ./install.sh --domain example.org --video
+#                                         also set up video dates (LiveKit on rtc.example.org)
 #   ./install.sh --force                  regenerate secrets (only when no data exists yet)
 #   ./install.sh --force --reset-data     regenerate secrets AND delete all local data volumes
 set -euo pipefail
@@ -12,11 +14,13 @@ cd "$(dirname "$0")"
 
 FORCE=false
 RESET_DATA=false
+VIDEO=false
 DOMAIN=""
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --force) FORCE=true ;;
     --reset-data) RESET_DATA=true ;;
+    --video) VIDEO=true ;;
     --domain)
       [[ $# -ge 2 ]] || { printf 'Missing value for --domain\n' >&2; exit 2; }
       DOMAIN="$2"; shift ;;
@@ -31,6 +35,10 @@ if [[ -n "$DOMAIN" && ! "$DOMAIN" =~ ^([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-
 fi
 
 fail() { printf 'Error: %s\n' "$1" >&2; exit 1; }
+if [[ "$VIDEO" == true && -z "$DOMAIN" ]]; then
+  printf 'Use --video together with --domain (video needs HTTPS and a public address).\n' >&2
+  exit 2
+fi
 need() { command -v "$1" >/dev/null 2>&1 || fail "'$1' is required but not installed."; }
 
 need openssl
@@ -63,6 +71,8 @@ S3_ACCESS_KEY_ID="$(secret 20)"
 S3_SECRET_ACCESS_KEY="$(secret 40)"
 AUTH_SECRET="$(secret 64)"
 SETUP_TOKEN="$(secret 32)"
+LIVEKIT_API_KEY="API$(secret 12)"
+LIVEKIT_API_SECRET="$(secret 48)"
 
 umask 077
 # Write to a temp file first so a failed run never leaves a half-configured .env behind.
@@ -77,6 +87,8 @@ sed \
   -e "s|^S3_SECRET_ACCESS_KEY=.*|S3_SECRET_ACCESS_KEY=${S3_SECRET_ACCESS_KEY}|" \
   -e "s|^AUTH_SECRET=.*|AUTH_SECRET=${AUTH_SECRET}|" \
   -e "s|^SETUP_TOKEN=.*|SETUP_TOKEN=${SETUP_TOKEN}|" \
+  -e "s|^LIVEKIT_API_KEY=.*|LIVEKIT_API_KEY=${LIVEKIT_API_KEY}|" \
+  -e "s|^LIVEKIT_API_SECRET=.*|LIVEKIT_API_SECRET=${LIVEKIT_API_SECRET}|" \
   .env.example > "$TMP_ENV"
 
 if [[ -n "$DOMAIN" ]]; then
@@ -87,6 +99,13 @@ if [[ -n "$DOMAIN" ]]; then
     -e "s|^PUBLIC_API_URL=.*|PUBLIC_API_URL=https://api.${DOMAIN}|" \
     -e "s|^CORS_ORIGINS=.*|CORS_ORIGINS=https://${DOMAIN},https://admin.${DOMAIN}|" \
     -e "s|^SMTP_FROM=.*|SMTP_FROM=\"${DOMAIN} <no-reply@${DOMAIN}>\"|" \
+    "$TMP_ENV"
+  rm -f "$TMP_ENV.bak"
+fi
+if [[ "$VIDEO" == true ]]; then
+  sed -i.bak \
+    -e "s|^LIVEKIT_URL=.*|LIVEKIT_URL=wss://rtc.${DOMAIN}|" \
+    -e "s|^RTC_DOMAIN=.*|RTC_DOMAIN=rtc.${DOMAIN}|" \
     "$TMP_ENV"
   rm -f "$TMP_ENV.bak"
 fi
@@ -108,6 +127,32 @@ cat > infra/data/seaweedfs/s3.json <<JSON
   ]
 }
 JSON
+# LiveKit (docker compose --profile video). Rooms are created only by the API (auto_create off),
+# so a join token can't reopen a call that was ended; one room holds two people.
+mkdir -p infra/data/livekit
+cat > infra/data/livekit/livekit.yaml <<YAML
+port: 7880
+rtc:
+  tcp_port: 7881
+  udp_port: 7882
+  use_external_ip: true
+keys:
+  ${LIVEKIT_API_KEY}: ${LIVEKIT_API_SECRET}
+room:
+  auto_create: false
+  max_participants: 2
+  empty_timeout: 60
+  departure_timeout: 20
+webhook:
+  api_key: ${LIVEKIT_API_KEY}
+  urls:
+    - http://api:4000/v1/livekit/webhook
+logging:
+  level: warn
+YAML
+chmod 700 infra/data/livekit
+chmod 644 infra/data/livekit/livekit.yaml
+
 # The directory stays owner-only on the host; the file itself must be readable by the
 # unprivileged 'seaweed' user inside the container, which sees it through the bind mount.
 chmod 700 infra/data infra/data/seaweedfs
@@ -121,6 +166,10 @@ if [[ -n "$DOMAIN" ]]; then
   printf '  2. Set SMTP_HOST / SMTP_USER / SMTP_PASSWORD in .env (sign-in links are sent by email).\n'
   printf '  3. docker compose -f infra/docker-compose.yml --env-file .env --profile app --profile full up -d --build\n'
   printf '  4. Open https://admin.%s, sign in, and claim the instance with the token below.\n' "$DOMAIN"
+  if [[ "$VIDEO" == true ]]; then
+    printf '  Video dates: also point DNS for rtc.%s here, open TCP 7881 and UDP 7882, add\n' "$DOMAIN"
+    printf '     --profile video to the command in step 3, then turn them on in the dashboard.\n'
+  fi
   printf '  Full guide: docs/SELF_HOSTING.md\n'
 else
   printf '  pnpm install\n'

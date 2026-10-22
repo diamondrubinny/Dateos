@@ -65,6 +65,9 @@ export interface AdminInstanceSettings {
   sponsorUrl: string | null;
   logoUrl: string | null;
   setupCompleted: boolean;
+  callsConfigured: boolean;
+  callsEnabled: boolean;
+  callMaxMinutes: number;
 }
 
 async function upload(path: string, file: File): Promise<void> {

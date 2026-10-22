@@ -5,6 +5,10 @@
   "main": "expo-router/entry",
   "dependencies": {
     "@better-auth/expo": "1.7.12",
+    "@config-plugins/react-native-webrtc": "15.0.2",
+    "@livekit/react-native": "3.1.0",
+    "@livekit/react-native-expo-plugin": "1.1.0",
+    "@livekit/react-native-webrtc": "150.1.0",
     "@nexaheart/shared": "workspace:*",
     "@tanstack/react-query": "^5.104.5",
     "better-auth": "1.7.12",
@@ -27,6 +31,7 @@
     "expo-updates": "~58.0.17",
     "expo-web-browser": "~58.0.6",
     "i18next": "^26.5.3",
+    "livekit-client": "2.23.0",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "react-i18next": "^17.1.0",

@@ -29,7 +29,7 @@
 	root * /srv/app
 	import spa
 	header {
-		Content-Security-Policy "default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data: https://api.{$DOMAIN}; media-src 'self' blob: https://api.{$DOMAIN}; connect-src 'self' https://api.{$DOMAIN} wss://api.{$DOMAIN}; font-src 'self' data:; manifest-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'"
+		Content-Security-Policy "default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data: https://api.{$DOMAIN}; media-src 'self' blob: https://api.{$DOMAIN}; connect-src 'self' https://api.{$DOMAIN} wss://api.{$DOMAIN} https://{$RTC_DOMAIN:rtc.localhost} wss://{$RTC_DOMAIN:rtc.localhost}; font-src 'self' data:; manifest-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'"
 		X-Frame-Options "DENY"
 		Permissions-Policy "camera=(self), geolocation=(self), microphone=(self)"
 	}
@@ -60,4 +60,12 @@ api.{$DOMAIN} {
 		max_size 12MB
 	}
 	reverse_proxy api:4000
+}
+
+# Video dates (docker compose --profile video): LiveKit's signalling over WSS. Audio and video use
+# LiveKit's own ports (TCP 7881, UDP 7882), not this proxy. RTC_DOMAIN defaults to rtc.localhost,
+# which needs no public certificate, so nothing happens here until video dates are set up.
+{$RTC_DOMAIN:rtc.localhost} {
+	import security
+	reverse_proxy livekit:7880
 }

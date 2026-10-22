@@ -56,9 +56,13 @@ export default function Matches() {
               ? t('chat.photo')
               : last.kind === 'date' && last.date
                 ? t('datePlan.preview', { place: last.date.venue.name })
-                : last.mine
-                  ? t('chat.you', { text: last.body ?? '' })
-                  : (last.body ?? '');
+                : last.kind === 'call' && last.call
+                  ? last.call.video
+                    ? t('call.previewVideo')
+                    : t('call.previewVoice')
+                  : last.mine
+                    ? t('chat.you', { text: last.body ?? '' })
+                    : (last.body ?? '');
         return (
           <PersonRow
             key={c.matchId}

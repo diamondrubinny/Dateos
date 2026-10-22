@@ -19,6 +19,7 @@
     "checkin": "tsx checkin.ts",
     "dates": "tsx dates.ts",
     "events": "tsx events.ts",
+    "calls": "tsx calls.ts",
     "load": "node --env-file=../.env --import tsx load.ts"
   },
   "dependencies": {

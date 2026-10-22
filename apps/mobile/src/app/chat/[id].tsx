@@ -35,6 +35,8 @@ import {
 } from '../../lib/chat-queries';
 import { useLocale } from '../../lib/locale';
 import { useRealtime } from '../../lib/realtime';
+import { useStartCall } from '../../lib/call-queries';
+import { useInstance } from '../../lib/queries';
 import { MIN_TOUCH, radius, spacing, useColors } from '../../lib/theme';
 
 function ChatScreen() {
@@ -49,6 +51,9 @@ function ChatScreen() {
   const sendImage = useSendImage(matchId);
   const sendVoice = useSendVoice(matchId);
   const [recording, setRecording] = useState(false);
+  const [callMenu, setCallMenu] = useState(false);
+  const startCall = useStartCall(matchId);
+  const callsOn = useInstance().data?.calls ?? false;
   const realtime = useRealtime();
   const [text, setText] = useState('');
   const [confirming, setConfirming] = useState<{ text: string; clientId: string }>();
@@ -155,6 +160,30 @@ function ChatScreen() {
     (newest?.imagesUnlocked ?? false) ||
     (textCount(true) >= MESSAGES_BEFORE_IMAGES && textCount(false) >= MESSAGES_BEFORE_IMAGES);
   const voiceAccepted = newest?.otherAcceptsVoice ?? true;
+  const callsAvailable = newest?.callsAvailable ?? false;
+  const callBlocked = !unlocked
+    ? t('chat.imagesLocked', { n: MESSAGES_BEFORE_IMAGES })
+    : !callsAvailable
+      ? t('call.notAccepted', { name })
+      : undefined;
+
+  const call = (video: boolean) =>
+    startCall.mutate(video, {
+      onSuccess: (started) => {
+        setCallMenu(false);
+        router.push({ pathname: '/call/[id]', params: { id: started.id } });
+      },
+      onError: (e) =>
+        setError(
+          e instanceof ApiRequestError && e.status === 429
+            ? t('call.limited')
+            : e instanceof ApiRequestError && e.status === 409
+              ? t('call.busy')
+              : e instanceof ApiRequestError && (e.status === 403 || e.status === 503)
+                ? t('call.unavailable')
+                : t('common.genericError'),
+        ),
+    });
 
   const sendRecording = (rec: Recording) =>
     sendVoice.mutate(rec, {
@@ -195,6 +224,25 @@ function ChatScreen() {
           <AppText variant="heading" style={styles.flex} accessibilityRole="header">
             {name}
           </AppText>
+          {conversation && callsOn && !closed ? (
+            <Pressable
+              onPress={() => {
+                if (callBlocked) return setError(callBlocked);
+                setError(undefined);
+                setCallMenu((v) => !v);
+              }}
+              accessibilityRole="button"
+              accessibilityLabel={t('call.start', { name })}
+              {...(callBlocked ? { accessibilityHint: callBlocked } : {})}
+              aria-disabled={Boolean(callBlocked)}
+              aria-expanded={callMenu}
+              style={[styles.iconBtn, { opacity: callBlocked ? 0.45 : 1 }]}
+            >
+              <AppText variant="heading" tone="primary">
+                🎥
+              </AppText>
+            </Pressable>
+          ) : null}
           {conversation ? (
             <Pressable
               onPress={() =>
@@ -242,6 +290,26 @@ function ChatScreen() {
             </Pressable>
           ) : null}
         </View>
+
+        {callMenu && !callBlocked ? (
+          <View style={[styles.pad, { borderBottomColor: colors.border }]}>
+            <AppText variant="body">{t('call.choose', { name })}</AppText>
+            <Button
+              label={t('call.startVideo')}
+              loading={startCall.isPending && startCall.variables === true}
+              disabled={startCall.isPending}
+              onPress={() => call(true)}
+            />
+            <Button
+              variant="secondary"
+              label={t('call.startVoice')}
+              loading={startCall.isPending && startCall.variables === false}
+              disabled={startCall.isPending}
+              onPress={() => call(false)}
+            />
+            <Button variant="ghost" label={t('common.cancel')} onPress={() => setCallMenu(false)} />
+          </View>
+        ) : null}
 
         <FlatList
           // Keyboard users must be able to focus and scroll the conversation (WCAG 2.1.1).

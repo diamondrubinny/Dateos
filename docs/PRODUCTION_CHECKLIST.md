@@ -13,6 +13,10 @@
 - ☐ Run the end-to-end suites against your own domain (`WEB_URL`, `API_URL`).
 - ☐ Test the native apps on real iPhone and Android devices: sign-in link opens the app, notifications,
   "Download my data" share sheet, voice recording 📘.
+- ☐ Video dates (if enabled): `pnpm --dir e2e calls` against your domain, then a real call between an
+  iPhone and an Android phone on mobile data (camera and microphone permissions, switching cameras,
+  speaker vs earpiece, the app in the background, a lost connection) 📘. Check that TCP 7881 and UDP 7882
+  are reachable from outside.
 
 ## 2. Roles and permissions
 
@@ -133,4 +137,4 @@ Full inventory: [PRIVACY.md](PRIVACY.md). ☐ Confirm each legal basis ⚖️.
 | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Lawyer / privacy officer ⚖️ | Legal bases, legal drafts, DPIA, Israeli database duties and privacy officer, EU representative, retention periods (bans, consents after deletion), transfers (push via US companies), incident duties |
 | Accessibility consultant ♿ | Manual audit with assistive technology, accessibility statement                                                                                                                                        |
-| Penetration tester 🔍       | External test of the API, WebSocket, uploads, admin and native sign-in before a public launch ([internal review](SECURITY_REVIEW.md))                                                                  |
+| Penetration tester 🔍       | External test of the API, WebSocket, uploads, admin, native sign-in and the LiveKit server (join tokens, webhooks) before a public launch ([internal review](SECURITY_REVIEW.md))                      |

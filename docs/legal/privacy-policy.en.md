@@ -36,6 +36,7 @@ data.
 | Safety check-in (optional): the place and note you write, the times, your match's first name, your trusted contact's name and email | Emailing your contact only if you miss the check-in or press SOS | Legitimate interest / protecting your vital interests ⚖️ | 7 days after the check-in ends                                                              |
 | Date ideas you send or receive in a chat: the place (chosen from the community's list), the time, your note                         | Planning a date with your match                                  | Contract ⚖️                                              | With the chat: 30 days after an unmatch, or when either account is deleted                  |
 | Community events you say you're going to                                                                                            | Counting places and reminding you the day before                 | Contract ⚖️                                              | 30 days after the event ends; others only ever see the number of people going               |
+| Video and voice calls (optional): who called whom, when, how long. **Audio and video are never recorded or stored**                 | Calling your matches                                             | Contract ⚖️                                              | With the chat; audio and video pass through our server only while the call lasts ⚖️         |
 | Notification token (only if you turn notifications on)                                                                              | Sending notifications                                            | Your consent                                             | Until you sign out or turn them off                                                         |
 | Security logs (may include IP addresses)                                                                                            | Protecting the service against abuse                             | Legitimate interest                                      | [LOG_RETENTION, e.g. 30 days]                                                               |
 | Last sign-in date                                                                                                                   | [Only if enabled:] deleting long-unused accounts                 | Legitimate interest                                      | Until you delete your account                                                               |
@@ -46,7 +47,8 @@ You must be 18 or older; accounts with a birth date under 18 are suspended immed
 ## Who else sees your data
 
 - **Other members** see your profile (never your email, exact location or birth date) and the
-  messages you send them.
+  messages you send them. In a call, the other person sees and hears only what you choose to share (your camera is off
+  until you turn it on); the app never records calls, but the other person could record their screen ⚖️.
 - **Our moderators** see reports, the reported content and verification selfies, and only for that
   purpose.
 - **Service providers** that process data for us under contract: [HOSTING_PROVIDER] ([COUNTRY]),

@@ -2,6 +2,7 @@
 #   pnpm infra:up                       -> core services (postgres, redis, object storage)
 #   docker compose ... --profile full   -> + ClamAV malware scanning (recommended in production)
 #   docker compose ... --profile ai     -> + Ollama local AI
+#   docker compose ... --profile video  -> + LiveKit for video dates (see docs/SELF_HOSTING.md)
 #   docker compose ... --profile dev    -> + Mailpit (catches outgoing email locally)
 # All ports bind to 127.0.0.1 only; expose services publicly through the reverse proxy, never directly.
 name: nexaheart
@@ -86,6 +87,21 @@ services:
     ports:
       - '127.0.0.1:11434:11434'
 
+  # Video dates (Apache-2.0). Signalling and its API stay on 127.0.0.1 (public only through Caddy
+  # at RTC_DOMAIN); the media ports must be reachable from the internet. Config written by install.sh.
+  livekit:
+    image: livekit/livekit-server:v1.13.10
+    profiles: [video]
+    restart: unless-stopped
+    logging: *logging
+    command: --config /etc/livekit.yaml
+    volumes:
+      - ./data/livekit/livekit.yaml:/etc/livekit.yaml:ro
+    ports:
+      - '127.0.0.1:7880:7880'
+      - '7881:7881'
+      - '7882:7882/udp'
+
   mailpit:
     image: axllent/mailpit:v1.31.6
     profiles: [dev]
@@ -110,6 +126,7 @@ services:
       # Inside Docker "localhost" is the container itself; set SMTP_HOST_DOCKER (e.g. mailpit) if needed.
       SMTP_HOST: ${SMTP_HOST_DOCKER:-${SMTP_HOST}}
       OLLAMA_URL: http://ollama:11434
+      LIVEKIT_API_URL: http://livekit:7880
     depends_on:
       postgres:
         condition: service_healthy
@@ -133,6 +150,7 @@ services:
       S3_ENDPOINT: http://seaweedfs:8333
       CLAMAV_HOST: clamav
       OLLAMA_URL: http://ollama:11434
+      LIVEKIT_API_URL: http://livekit:7880
       SMTP_HOST: ${SMTP_HOST_DOCKER:-${SMTP_HOST}}
     depends_on:
       postgres:
@@ -152,6 +170,8 @@ services:
     restart: unless-stopped
     environment:
       DOMAIN: ${DOMAIN:-localhost}
+      # Video dates: the LiveKit address (rtc.example.org). The default never requests a certificate.
+      RTC_DOMAIN: ${RTC_DOMAIN:-rtc.localhost}
     ports:
       - '80:80'
       - '443:443'
