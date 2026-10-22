@@ -1,4 +1,4 @@
-import { schema, type Database } from '@dateos/db';
+import { schema, type Database } from '@nexaheart/db';
 import {
   checkinAlertEmail,
   CHECKINS_PER_DAY,
@@ -8,7 +8,7 @@ import {
   type Checkin,
   type CheckinInput,
   type Locale,
-} from '@dateos/shared';
+} from '@nexaheart/shared';
 import { and, desc, eq, inArray, isNull, or, sql } from 'drizzle-orm';
 import type { Mailer } from '../../lib/mailer.js';
 import { audit } from '../../lib/audit.js';

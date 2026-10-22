@@ -1,6 +1,6 @@
 # Supporters
 
-Thank you to everyone who keeps Dateos free for the whole world. 💜
+Thank you to everyone who keeps NexaHeart free for the whole world. 💜
 
 Want to appear here? See [docs/SPONSORS.md](docs/SPONSORS.md).
 

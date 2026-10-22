@@ -62,7 +62,7 @@
 
 ## Known limitations / follow-ups
 
-- Native (iOS/Android) builds were not run in this environment: only the web build was tested end to end. Magic-link deep links on device (`dateos://`) need to be verified on a device 📘.
+- Native (iOS/Android) builds were not run in this environment: only the web build was tested end to end. Magic-link deep links on device (`nexaheart://`) need to be verified on a device 📘.
 - Passkeys and Google/Apple sign-in: Google/Apple are wired through env variables but untested without credentials. Passkeys move to phase 1b.
 - If a storage cleanup job fails permanently, orphaned files can remain. A periodic reconciliation sweep is planned for phase 6.
 - Legal texts in the app are drafts ⚖️.

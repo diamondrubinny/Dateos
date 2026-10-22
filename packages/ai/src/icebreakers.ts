@@ -1,5 +1,5 @@
 import { ollamaModel, type TextModel } from './llm.js';
-import type { Locale, PromptKey } from '@dateos/shared';
+import type { Locale, PromptKey } from '@nexaheart/shared';
 import { containsContactOrLink, looksLikeInstructions } from './moderation.js';
 
 export type IcebreakerLocale = Locale;

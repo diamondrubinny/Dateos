@@ -1,4 +1,4 @@
-import { ErrorCode } from '@dateos/shared';
+import { ErrorCode } from '@nexaheart/shared';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { HttpError } from '../plugins/error-handler.js';
 import type { Auth } from './auth.js';

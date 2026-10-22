@@ -1,5 +1,5 @@
 {
-  "name": "@dateos/db",
+  "name": "@nexaheart/db",
   "author": "Diamond Rubinny",
   "version": "0.2.0",
   "private": true,
@@ -22,7 +22,7 @@
     "db:migrate": "node --env-file-if-exists=../../.env dist/migrate.js"
   },
   "dependencies": {
-    "@dateos/shared": "workspace:*",
+    "@nexaheart/shared": "workspace:*",
     "drizzle-orm": "0.45.4",
     "pg": "8.23.1"
   },

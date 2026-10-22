@@ -1,6 +1,6 @@
 <div dir="rtl">
 
-# Dateos: تعارف يحترمك
+# NexaHeart: تعارف يحترمك
 
 [English](en.md) · [עברית](he.md) · **العربية** · [Русский](ru.md)
 
@@ -10,7 +10,7 @@
 
 <img src="../screenshots/showcase-ar.png" alt="اكتشاف أشخاص مع أسباب التوافق، الإعجاب بإجابة مع تعليق، توافق جديد، اختيارات اليوم ومن أعجب بك" width="100%">
 
-## لماذا Dateos
+## لماذا NexaHeart
 
 |                                    |                                                                                                                                                                                             |
 | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -64,7 +64,7 @@
 ## كيف تبدأ
 
 ```bash
-git clone https://github.com/diamondrubinny/Dateos.git && cd Dateos
+git clone https://github.com/diamondrubinny/Dateos.git nexaheart && cd nexaheart
 ./install.sh --domain example.org
 ```
 
@@ -73,7 +73,7 @@ git clone https://github.com/diamondrubinny/Dateos.git && cd Dateos
 💜 **ادعم المشروع:** [GitHub Sponsors](https://github.com/sponsors/diamondrubinny) يموّل مراجعات الأمان
 وفحوص إمكانية الوصول والقوالب القانونية للجميع.
 
-<sub>أنشأ Diamond Rubinny مشروع Dateos. لقطات الشاشة حقيقية من الإصدار الحالي؛ صور الملفات الشخصية
+<sub>أنشأ Diamond Rubinny مشروع NexaHeart. لقطات الشاشة حقيقية من الإصدار الحالي؛ صور الملفات الشخصية
 رسومات توضيحية. النصوص القانونية مسودات وليست استشارة قانونية.</sub>
 
 </div>

@@ -43,10 +43,13 @@ describe.skipIf(!integrationEnabled)('native sign-in hand-off (integration)', ()
 
   it('hands the session over only with the secret, once, and never in a URL', async () => {
     const { verifier, challenge } = pkce();
-    const res = await click('maya@example.test', `dateos://auth/callback?challenge=${challenge}`);
+    const res = await click(
+      'maya@example.test',
+      `nexaheart://auth/callback?challenge=${challenge}`,
+    );
     expect(res.statusCode).toBe(302);
     const location = res.headers.location as string;
-    expect(location).toMatch(/^dateos:\/\/auth\/callback\?code=[A-Za-z0-9_-]{43}$/);
+    expect(location).toMatch(/^nexaheart:\/\/auth\/callback\?code=[A-Za-z0-9_-]{43}$/);
     expect(location).not.toContain('cookie');
     expect(location).not.toContain('session');
     expect(res.headers['set-cookie']).toBeUndefined(); // the browser doesn't get a session either
@@ -59,7 +62,7 @@ describe.skipIf(!integrationEnabled)('native sign-in hand-off (integration)', ()
 
   it('the app that started the sign-in gets a working session', async () => {
     const { verifier, challenge } = pkce();
-    const res = await click('noa@example.test', `dateos://auth/callback?challenge=${challenge}`);
+    const res = await click('noa@example.test', `nexaheart://auth/callback?challenge=${challenge}`);
     const code = new URL(res.headers.location as string).searchParams.get('code')!;
     const ok = await exchange(code, verifier);
     expect(ok.statusCode).toBe(200);
@@ -75,8 +78,8 @@ describe.skipIf(!integrationEnabled)('native sign-in hand-off (integration)', ()
   });
 
   it('without a challenge there is no code (old app versions get an error, not a session)', async () => {
-    const res = await click('dan@example.test', 'dateos://auth/callback');
-    expect(res.headers.location).toBe('dateos://auth/callback?error=sign_in_failed');
+    const res = await click('dan@example.test', 'nexaheart://auth/callback');
+    expect(res.headers.location).toBe('nexaheart://auth/callback?error=sign_in_failed');
     expect(res.headers['set-cookie']).toBeUndefined();
   });
 
@@ -88,9 +91,12 @@ describe.skipIf(!integrationEnabled)('native sign-in hand-off (integration)', ()
 
   it('codes expire', async () => {
     const { verifier, challenge } = pkce();
-    const res = await click('late@example.test', `dateos://auth/callback?challenge=${challenge}`);
+    const res = await click(
+      'late@example.test',
+      `nexaheart://auth/callback?challenge=${challenge}`,
+    );
     const code = new URL(res.headers.location as string).searchParams.get('code')!;
-    const key = `dateos:native-code:${createHash('sha256').update(code).digest('hex')}`;
+    const key = `nexaheart:native-code:${createHash('sha256').update(code).digest('hex')}`;
     expect(await ctx.redis.ttl(key)).toBeGreaterThan(100);
     await ctx.redis.del(key);
     expect((await exchange(code, verifier)).statusCode).toBe(400);

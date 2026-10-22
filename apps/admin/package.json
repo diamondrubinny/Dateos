@@ -1,5 +1,5 @@
 {
-  "name": "@dateos/admin",
+  "name": "@nexaheart/admin",
   "author": "Diamond Rubinny",
   "version": "0.2.0",
   "private": true,
@@ -13,7 +13,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@dateos/shared": "workspace:*",
+    "@nexaheart/shared": "workspace:*",
     "qrcode": "1.5.4",
     "react": "19.3.0",
     "react-dom": "19.3.0"

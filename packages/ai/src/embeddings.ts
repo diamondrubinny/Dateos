@@ -1,4 +1,4 @@
-import { EMBEDDING_DIM, type Intention, type PromptAnswer } from '@dateos/shared';
+import { EMBEDDING_DIM, type Intention, type PromptAnswer } from '@nexaheart/shared';
 
 export interface EmbeddingProvider {
   /** Stored with each vector so scores are only compared within the same model. */

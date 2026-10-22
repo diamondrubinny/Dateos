@@ -1,4 +1,4 @@
-import { ErrorCode, type ApiError, type ValidationIssue } from '@dateos/shared';
+import { ErrorCode, type ApiError, type ValidationIssue } from '@nexaheart/shared';
 import type { FastifyError, FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { hasZodFastifySchemaValidationErrors } from 'fastify-type-provider-zod';
 import { ZodError } from 'zod';

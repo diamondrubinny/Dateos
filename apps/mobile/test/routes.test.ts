@@ -1,4 +1,4 @@
-import type { MeResponse } from '@dateos/shared';
+import type { MeResponse } from '@nexaheart/shared';
 import { describe, expect, it } from 'vitest';
 import { routeFor } from '../src/lib/routes';
 

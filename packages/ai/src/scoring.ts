@@ -1,4 +1,4 @@
-import type { Intention, ReasonCode } from '@dateos/shared';
+import type { Intention, ReasonCode } from '@nexaheart/shared';
 
 /**
  * Reciprocal, explainable ranking. The full method is documented in docs/MATCHING.md.

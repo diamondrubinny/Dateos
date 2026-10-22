@@ -3,9 +3,9 @@
  * includes prompt-injection attempts. Reports how often the output was usable, how often the
  * safe fallback was used, and whether anything from an injection leaked into the output.
  *
- *   pnpm --filter @dateos/ai eval                      # template (no AI)
- *   EVAL_PROVIDER=ollama OLLAMA_URL=http://localhost:11434 OLLAMA_CHAT_MODEL=qwen2.5:1.5b pnpm --filter @dateos/ai eval
- *   EVAL_PROVIDER=openai OPENAI_BASE_URL=... OPENAI_MODEL=... OPENAI_API_KEY=... pnpm --filter @dateos/ai eval
+ *   pnpm --filter @nexaheart/ai eval                      # template (no AI)
+ *   EVAL_PROVIDER=ollama OLLAMA_URL=http://localhost:11434 OLLAMA_CHAT_MODEL=qwen2.5:1.5b pnpm --filter @nexaheart/ai eval
+ *   EVAL_PROVIDER=openai OPENAI_BASE_URL=... OPENAI_MODEL=... OPENAI_API_KEY=... pnpm --filter @nexaheart/ai eval
  */
 import { readFileSync } from 'node:fs';
 import {

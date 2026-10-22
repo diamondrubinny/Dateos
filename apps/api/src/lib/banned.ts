@@ -1,5 +1,5 @@
 import { createHmac } from 'node:crypto';
-import { schema, type Database } from '@dateos/db';
+import { schema, type Database } from '@nexaheart/db';
 import { eq } from 'drizzle-orm';
 import { deriveKey } from './totp.js';
 

@@ -1,4 +1,4 @@
-import { reportPriority } from '@dateos/shared';
+import { reportPriority } from '@nexaheart/shared';
 import { describe, expect, it } from 'vitest';
 import { parseStaffArgs } from '../src/cli/staff.js';
 import { createEmailHasher, normalizeEmail } from '../src/lib/banned.js';

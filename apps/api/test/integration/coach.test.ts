@@ -1,4 +1,4 @@
-import type { TextModel } from '@dateos/ai';
+import type { TextModel } from '@nexaheart/ai';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { api, createMember, type Member } from './members.js';
 import {

@@ -1,5 +1,5 @@
-import { ollamaModel, openAiCompatibleModel, type TextModel } from '@dateos/ai';
-import { schema, type Database } from '@dateos/db';
+import { ollamaModel, openAiCompatibleModel, type TextModel } from '@nexaheart/ai';
+import { schema, type Database } from '@nexaheart/db';
 import { and, desc, eq, inArray } from 'drizzle-orm';
 import type { Env } from '../config/env.js';
 

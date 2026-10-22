@@ -1,6 +1,6 @@
 # Draft legal texts
 
-> ⚖️ **Drafts only.** These texts describe what the Dateos software does. They are not legal advice and
+> ⚖️ **Drafts only.** These texts describe what the NexaHeart software does. They are not legal advice and
 > must be reviewed by a lawyer for your country and community before you publish them.
 
 | Document                | English                                                        | עברית                                                          |

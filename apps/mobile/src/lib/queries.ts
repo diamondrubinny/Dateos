@@ -1,4 +1,4 @@
-import type { Locale } from '@dateos/shared';
+import type { Locale } from '@nexaheart/shared';
 import type {
   CoachResponse,
   ConsentInput,
@@ -14,7 +14,7 @@ import type {
   ProfileInput,
   ProfileUpdate,
   PromptAnswer,
-} from '@dateos/shared';
+} from '@nexaheart/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Platform } from 'react-native';
 import { apiFetch, json } from './api';

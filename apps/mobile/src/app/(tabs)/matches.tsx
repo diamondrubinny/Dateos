@@ -5,7 +5,7 @@ import { Banner } from '../../components/Banner';
 import { Loading } from '../../components/Loading';
 import { PersonRow } from '../../components/PersonRow';
 import { Screen } from '../../components/Screen';
-import { waitingForMyReply } from '@dateos/shared';
+import { waitingForMyReply } from '@nexaheart/shared';
 import { StyleSheet, View } from 'react-native';
 import { Button } from '../../components/Button';
 import { CheckinEntry } from '../../components/CheckinEntry';

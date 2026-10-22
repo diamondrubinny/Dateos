@@ -1,4 +1,4 @@
-import { runMigrations } from '@dateos/db';
+import { runMigrations } from '@nexaheart/db';
 import { buildApp } from './app.js';
 import { loadEnv } from './config/env.js';
 import { createRedis } from './lib/dependencies.js';

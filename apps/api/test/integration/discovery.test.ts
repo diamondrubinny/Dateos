@@ -1,4 +1,4 @@
-import { DAILY_INTERACTION_LIMIT, snapToGrid } from '@dateos/shared';
+import { DAILY_INTERACTION_LIMIT, snapToGrid } from '@nexaheart/shared';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { api, createMember, discoverIds, places } from './members.js';
 import {

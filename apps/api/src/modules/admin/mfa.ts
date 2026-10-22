@@ -1,5 +1,5 @@
-import { schema, type Database } from '@dateos/db';
-import { ErrorCode, STAFF_MFA_TTL_MS, type StaffMe, type StaffRole } from '@dateos/shared';
+import { schema, type Database } from '@nexaheart/db';
+import { ErrorCode, STAFF_MFA_TTL_MS, type StaffMe, type StaffRole } from '@nexaheart/shared';
 import { eq, sql } from 'drizzle-orm';
 import { audit } from '../../lib/audit.js';
 import {

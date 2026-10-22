@@ -1,5 +1,5 @@
-import { createDb, type DbHandle } from '@dateos/db';
-import { createStorage, type Storage } from '@dateos/storage';
+import { createDb, type DbHandle } from '@nexaheart/db';
+import { createStorage, type Storage } from '@nexaheart/storage';
 import type { Redis } from 'ioredis';
 import { createAuth, type Auth } from './auth/auth.js';
 import { requireServiceEnv, type Env } from './config/env.js';
@@ -14,7 +14,7 @@ import {
   type ProfileQueue,
 } from './lib/queue.js';
 import { AudioService } from './modules/chat/audio.js';
-import { llmIcebreakers, templateIcebreakers, type TextModel } from '@dateos/ai';
+import { llmIcebreakers, templateIcebreakers, type TextModel } from '@nexaheart/ai';
 import { AiGate, createTextModel } from './lib/ai-gate.js';
 import { createRealtime, type Realtime } from './lib/realtime.js';
 import { ChatService } from './modules/chat/service.js';

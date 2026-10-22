@@ -1,4 +1,4 @@
-import type { Photo } from '@dateos/shared';
+import type { Photo } from '@nexaheart/shared';
 import { Image } from 'expo-image';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Platform, Pressable, StyleSheet, View } from 'react-native';

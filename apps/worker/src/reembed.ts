@@ -1,9 +1,9 @@
 /**
  * Queues an embedding job for every profile, e.g. after switching EMBEDDINGS_PROVIDER.
- * Usage: pnpm --filter @dateos/worker reembed
+ * Usage: pnpm --filter @nexaheart/worker reembed
  */
-import { createDb } from '@dateos/db';
-import { PROFILE_QUEUE, ProfileJob } from '@dateos/shared';
+import { createDb } from '@nexaheart/db';
+import { PROFILE_QUEUE, ProfileJob } from '@nexaheart/shared';
 import { Queue } from 'bullmq';
 import { Redis } from 'ioredis';
 import { loadWorkerEnv } from './env.js';

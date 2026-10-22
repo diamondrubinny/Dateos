@@ -1,4 +1,4 @@
-import { MAX_CLOSING_MESSAGE_LENGTH } from '@dateos/shared';
+import { MAX_CLOSING_MESSAGE_LENGTH } from '@nexaheart/shared';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';

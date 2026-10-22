@@ -88,7 +88,7 @@ proposes, B accepts live, A opens the pre-filled check-in, in four languages wit
 - Places are a flat list (up to 500) without search or a map; enough for one community.
 - Times are chosen in 15-minute steps between 09:00 and 22:45.
 
-## Next (phase 13)
+## Next (phase 14)
 
 Community events: staff publish events (speed dating evening, picnic), members RSVP, an attendee
 count without a public guest list.

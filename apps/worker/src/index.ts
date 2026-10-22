@@ -1,5 +1,5 @@
-import { createDb } from '@dateos/db';
-import { hashingProvider, ollamaProvider } from '@dateos/ai';
+import { createDb } from '@nexaheart/db';
+import { hashingProvider, ollamaProvider } from '@nexaheart/ai';
 import {
   MEDIA_QUEUE,
   MediaJob,
@@ -12,8 +12,8 @@ import {
   type EmbedProfileJob,
   type ProcessAudioJob,
   type ProcessPhotoJob,
-} from '@dateos/shared';
-import { createStorage } from '@dateos/storage';
+} from '@nexaheart/shared';
+import { createStorage } from '@nexaheart/storage';
 import { Queue, Worker } from 'bullmq';
 import { Redis } from 'ioredis';
 import { pino } from 'pino';

@@ -1,10 +1,10 @@
-# Dateos infrastructure. Run from the repo root:
+# NexaHeart infrastructure. Run from the repo root:
 #   pnpm infra:up                       -> core services (postgres, redis, object storage)
 #   docker compose ... --profile full   -> + ClamAV malware scanning (recommended in production)
 #   docker compose ... --profile ai     -> + Ollama local AI
 #   docker compose ... --profile dev    -> + Mailpit (catches outgoing email locally)
 # All ports bind to 127.0.0.1 only; expose services publicly through the reverse proxy, never directly.
-name: dateos
+name: nexaheart
 
 # Logs contain IP addresses (personal data): keep them small and short-lived. With these limits each
 # service keeps at most ~50 MB of logs; ship them elsewhere only with a retention policy (docs/PRIVACY.md).

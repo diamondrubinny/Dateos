@@ -1,6 +1,6 @@
-import { schema, type Database } from '@dateos/db';
-import { AUDIT_LOG_RETENTION_DAYS, INACTIVITY_NOTICE_DAYS } from '@dateos/shared';
-import type { Storage } from '@dateos/storage';
+import { schema, type Database } from '@nexaheart/db';
+import { AUDIT_LOG_RETENTION_DAYS, INACTIVITY_NOTICE_DAYS } from '@nexaheart/shared';
+import type { Storage } from '@nexaheart/storage';
 import { eq, inArray, sql } from 'drizzle-orm';
 
 /** Housekeeping that limits how long personal data is kept (see docs/PRIVACY.md). */

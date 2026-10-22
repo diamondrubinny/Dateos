@@ -1,4 +1,4 @@
-import { schema, type Database } from '@dateos/db';
+import { schema, type Database } from '@nexaheart/db';
 import {
   ageOn,
   ErrorCode,
@@ -13,7 +13,7 @@ import {
   type ProfileInput,
   type ProfileUpdate,
   type PromptAnswer,
-} from '@dateos/shared';
+} from '@nexaheart/shared';
 import { and, asc, desc, eq, isNull, ne } from 'drizzle-orm';
 import { HttpError } from '../../plugins/error-handler.js';
 import type { MediaQueue, ProfileQueue } from '../../lib/queue.js';

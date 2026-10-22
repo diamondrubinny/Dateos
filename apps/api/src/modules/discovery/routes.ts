@@ -9,7 +9,7 @@ import {
   publicProfileSchema,
   closeMatchSchema,
   closedConversationSchema,
-} from '@dateos/shared';
+} from '@nexaheart/shared';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { perUserLimit } from '../../plugins/security.js';
 import { z } from 'zod';

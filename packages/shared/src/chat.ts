@@ -100,9 +100,9 @@ export const clientEventSchema = z.discriminatedUnion('type', [
 
 /** Redis pub/sub channel carrying RealtimeEvents for one user (all API instances listen). */
 export function realtimeChannel(userId: string): string {
-  return `dateos:rt:user:${userId}`;
+  return `nexaheart:rt:user:${userId}`;
 }
-export const REALTIME_PATTERN = 'dateos:rt:user:*';
+export const REALTIME_PATTERN = 'nexaheart:rt:user:*';
 
 export const chatSettingsSchema = z.object({ acceptVoice: z.boolean() });
 

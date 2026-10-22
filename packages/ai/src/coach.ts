@@ -1,4 +1,4 @@
-import type { CoachTipId, Locale, PromptKey } from '@dateos/shared';
+import type { CoachTipId, Locale, PromptKey } from '@nexaheart/shared';
 import { LANGUAGE_NAMES, matchesLocaleScript, trimQuotes } from './icebreakers.js';
 import type { TextModel } from './llm.js';
 import {

@@ -1,12 +1,12 @@
 import { randomInt } from 'node:crypto';
-import { schema, type Database } from '@dateos/db';
+import { schema, type Database } from '@nexaheart/db';
 import {
   ErrorCode,
   verificationPoses,
   type VerificationReview,
   type VerificationState,
-} from '@dateos/shared';
-import type { StoredObject } from '@dateos/storage';
+} from '@nexaheart/shared';
+import type { StoredObject } from '@nexaheart/storage';
 import { and, asc, desc, eq, gt, isNull, sql } from 'drizzle-orm';
 import { audit } from '../../lib/audit.js';
 import { HttpError } from '../../plugins/error-handler.js';

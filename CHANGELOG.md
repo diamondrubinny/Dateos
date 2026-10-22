@@ -1,8 +1,16 @@
 # Changelog
 
-All notable changes to Dateos. Versions follow [Semantic Versioning](https://semver.org/).
+All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://semver.org/).
 
 ## Unreleased
+
+### Changed
+
+- **New name: NexaHeart** (formerly Dateos, a name already used by a company in the UK). Packages are
+  `@nexaheart/*`; the app's link scheme, cookies, storage keys and defaults for new installations use
+  `nexaheart`. Nothing was released under the old name, so no migration is needed.
+- A real app icon: a heart with three connected points, on the brand violet (it was Expo's
+  placeholder).
 
 ### Added
 
@@ -13,6 +21,7 @@ All notable changes to Dateos. Versions follow [Semantic Versioning](https://sem
 
 ### Fixed
 
+- Arabic and Russian were missing from the native apps' language list (iOS and Android).
 - The chat header cut off its last action in Arabic and Russian; it now wraps.
 
 ## 0.2.0 (2026-10-22)

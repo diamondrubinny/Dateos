@@ -7,8 +7,8 @@
  *
  * Requests are paced per member below the per-member limits, so latencies are measured without 429s.
  */
-import { createDb, runMigrations } from '@dateos/db';
-import { EMBEDDING_DIM, SENSITIVE_CONSENT_VERSION } from '@dateos/shared';
+import { createDb, runMigrations } from '@nexaheart/db';
+import { EMBEDDING_DIM, SENSITIVE_CONSENT_VERSION } from '@nexaheart/shared';
 import { API, signInHttp, WEB } from './lib.ts';
 
 const MEMBERS = Number(process.env.MEMBERS ?? 5000);

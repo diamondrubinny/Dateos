@@ -1,4 +1,4 @@
-import { MAX_PHOTO_BYTES } from '@dateos/shared';
+import { MAX_PHOTO_BYTES } from '@nexaheart/shared';
 import * as ImagePicker from 'expo-image-picker';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';

@@ -1,4 +1,4 @@
-import type { Checkin, CheckinInput, ClosedConversation } from '@dateos/shared';
+import type { Checkin, CheckinInput, ClosedConversation } from '@nexaheart/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiFetch, json } from './api';
 import { chatKeys } from './realtime';

@@ -1,4 +1,4 @@
-import { contrastRatio, isAccessiblePrimary, type InstanceSettingsInput } from '@dateos/shared';
+import { contrastRatio, isAccessiblePrimary, type InstanceSettingsInput } from '@nexaheart/shared';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { api, type AdminInstanceSettings } from '../api';
 import { useAsync } from '../hooks';

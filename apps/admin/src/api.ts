@@ -10,11 +10,11 @@ import type {
   ReportSummary,
   StaffMe,
   VerificationReview,
-} from '@dateos/shared';
+} from '@nexaheart/shared';
 
 export const API_URL: string = import.meta.env.VITE_API_URL ?? 'http://localhost:4000';
 
-export const MFA_REQUIRED_EVENT = 'dateos:mfa-required';
+export const MFA_REQUIRED_EVENT = 'nexaheart:mfa-required';
 
 export class ApiError extends Error {
   constructor(

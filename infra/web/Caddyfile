@@ -1,4 +1,4 @@
-# Dateos public site. Set DOMAIN (e.g. example.org) in .env; DNS for DOMAIN, admin.DOMAIN and
+# NexaHeart public site. Set DOMAIN (e.g. example.org) in .env; DNS for DOMAIN, admin.DOMAIN and
 # api.DOMAIN must point at this server. Caddy obtains and renews the certificates itself.
 # To receive certificate notices, add a global block at the top:  { email you@example.org }
 

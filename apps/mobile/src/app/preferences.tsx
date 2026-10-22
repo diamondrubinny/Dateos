@@ -1,4 +1,4 @@
-import { intentions, MAX_AGE, MIN_AGE, type Intention } from '@dateos/shared';
+import { intentions, MAX_AGE, MIN_AGE, type Intention } from '@nexaheart/shared';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';

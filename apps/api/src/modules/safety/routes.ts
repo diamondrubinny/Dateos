@@ -5,7 +5,7 @@ import {
   reportInputSchema,
   reportResultSchema,
   verificationStateSchema,
-} from '@dateos/shared';
+} from '@nexaheart/shared';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import type { Auth } from '../../auth/auth.js';
 import { currentUser, requireUser } from '../../auth/session.js';

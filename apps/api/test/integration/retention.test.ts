@@ -1,4 +1,4 @@
-import { mediaKey } from '@dateos/storage';
+import { mediaKey } from '@nexaheart/storage';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { cleanupModeration } from '../../../worker/src/profile-jobs.js';
 import {
@@ -26,7 +26,7 @@ describe.skipIf(!integrationEnabled)('retention jobs (integration)', () => {
     db: ctx.services.dbHandle.db,
     storage: ctx.services.storage,
     months,
-    instanceName: 'Dateos',
+    instanceName: 'NexaHeart',
     sendMail: async (to, subject, text) => {
       sent.push({ to, subject, text });
     },

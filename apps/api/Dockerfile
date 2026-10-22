@@ -7,8 +7,8 @@ WORKDIR /repo
 FROM base AS build
 COPY . .
 RUN pnpm install --frozen-lockfile \
-  && pnpm turbo run build --filter=@dateos/api... \
-  && pnpm --filter=@dateos/api deploy --prod --legacy /out
+  && pnpm turbo run build --filter=@nexaheart/api... \
+  && pnpm --filter=@nexaheart/api deploy --prod --legacy /out
 
 FROM node:22-trixie-slim AS runtime
 ENV NODE_ENV=production

@@ -1,4 +1,4 @@
-import { EMBEDDING_DIM } from '@dateos/shared';
+import { EMBEDDING_DIM } from '@nexaheart/shared';
 import { describe, expect, it } from 'vitest';
 import { cosine, hashingEmbedding, ollamaProvider, profileText, tokenize } from '../src/index.js';
 

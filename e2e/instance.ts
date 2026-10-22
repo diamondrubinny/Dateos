@@ -3,7 +3,7 @@
  * claims the instance with the setup token, sets up TOTP, brands it, uploads a logo, and the
  * member app shows the branding. Needs a fresh stack (see docs/SELF_HOSTING.md, "Test locally").
  *
- *   DOMAIN=dateos.test SETUP_TOKEN=... pnpm --filter @dateos/e2e instance
+ *   DOMAIN=nexaheart.test SETUP_TOKEN=... pnpm --filter @nexaheart/e2e instance
  */
 import sharp from 'sharp';
 import { chromium, type Browser } from 'playwright';
@@ -13,7 +13,7 @@ import { en } from '../apps/mobile/src/i18n/en.ts';
 import { he } from '../apps/mobile/src/i18n/he.ts';
 import { magicLink, reportA11y, shot, showcase } from './lib.ts';
 
-const DOMAIN = process.env.DOMAIN ?? 'dateos.test';
+const DOMAIN = process.env.DOMAIN ?? 'nexaheart.test';
 const TOKEN = process.env.SETUP_TOKEN ?? '';
 const APP = `https://${DOMAIN}`;
 const ADMIN = `https://admin.${DOMAIN}`;
@@ -47,8 +47,8 @@ async function context(browser: Browser, locale: string, colorScheme: 'light' | 
   });
   await ctx.addInitScript(
     (l) => {
-      localStorage.setItem('dateos.locale', l);
-      localStorage.setItem('dateos-admin-locale', l);
+      localStorage.setItem('nexaheart.locale', l);
+      localStorage.setItem('nexaheart-admin-locale', l);
     },
     locale.slice(0, 2),
   );

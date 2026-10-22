@@ -57,10 +57,7 @@ function ProfileScreen() {
       {error ? <Banner tone="error" message={error} /> : null}
       {matched ? <MatchCelebration name={p.displayName} onClose={() => router.back()} /> : null}
       {matchId ? (
-        <>
-          <Banner tone="info" message={t('matches.chatSoon')} />
-          <ProfileCard profile={p} />
-        </>
+        <ProfileCard profile={p} />
       ) : matched ? (
         <ProfileCard profile={p} />
       ) : (

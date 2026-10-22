@@ -9,9 +9,9 @@ RUN corepack enable
 WORKDIR /repo
 COPY . .
 RUN pnpm install --frozen-lockfile \
-  && pnpm turbo run build --filter=@dateos/shared \
-  && pnpm --filter @dateos/admin build \
-  && pnpm --filter @dateos/mobile build:web
+  && pnpm turbo run build --filter=@nexaheart/shared \
+  && pnpm --filter @nexaheart/admin build \
+  && pnpm --filter @nexaheart/mobile build:web
 
 FROM caddy:2.11.7-alpine AS runtime
 COPY infra/web/Caddyfile /etc/caddy/Caddyfile

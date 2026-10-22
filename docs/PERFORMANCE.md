@@ -38,7 +38,7 @@ interactions by actor and target, matches by both users, impressions by candidat
 cd e2e
 pnpm load seed                      # creates <database>_load with MEMBERS=5000 (override with MEMBERS=…)
 # an API on that database, with sign-in rate limits off (NODE_ENV=test) and its own Redis database:
-DATABASE_URL=…/dateos_load REDIS_URL=…/4 PORT=4200 PUBLIC_API_URL=http://localhost:4200 \
+DATABASE_URL=…/nexaheart_load REDIS_URL=…/4 PORT=4200 PUBLIC_API_URL=http://localhost:4200 \
   NODE_ENV=test RATE_LIMIT_MAX=100000 pnpm --dir ../apps/api exec tsx --env-file=../../.env src/server.ts
 API_URL=http://localhost:4200 VIEWERS=60 pnpm load run
 ```

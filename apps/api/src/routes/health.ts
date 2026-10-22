@@ -1,4 +1,4 @@
-import { healthResponseSchema, readinessResponseSchema } from '@dateos/shared';
+import { healthResponseSchema, readinessResponseSchema } from '@nexaheart/shared';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import type { Dependency } from '../lib/dependencies.js';
 

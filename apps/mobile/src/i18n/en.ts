@@ -62,7 +62,7 @@ export const en = {
       invalidDate: 'Enter a valid date.',
       required: 'This field is required.',
       chooseOne: 'Choose at least one option.',
-      underage: 'Dateos is only for people 18 and older.',
+      underage: 'NexaHeart is only for people 18 and older.',
     },
     consents: {
       title: 'Your privacy, your choice',
@@ -132,7 +132,7 @@ export const en = {
     editPrompts: 'Edit prompts',
     greeting: 'Welcome, {{name}}',
     readyTitle: 'Your profile is ready',
-    readyBody: 'Discovery and Daily Picks arrive in the next release. We’ll let you know.',
+    readyBody: 'People who might be a good match are waiting in Discover and Today’s picks.',
     profileTitle: 'Your profile',
     editProfile: 'Edit profile',
     settings: 'Settings',
@@ -155,7 +155,7 @@ export const en = {
     privacy: 'Privacy choices',
     support: 'Support this free project',
     supportHint:
-      'Dateos is free for everyone. Sponsors fund security audits, accessibility and legal reviews.',
+      'NexaHeart is free for everyone. Sponsors fund security audits, accessibility and legal reviews.',
     accessibility: 'Accessibility statement',
     terms: 'Terms of Use',
     privacyPolicy: 'Privacy Policy',
@@ -166,7 +166,7 @@ export const en = {
       'This permanently deletes your profile, photos and data. It cannot be undone.',
     deleteConfirm: 'Delete permanently',
     deleted: 'Your account was deleted.',
-    credit: 'Dateos is free, open-source software created by Diamond Rubinny (MIT license).',
+    credit: 'NexaHeart is free, open-source software created by Diamond Rubinny (MIT license).',
   },
   cookies: {
     title: 'Privacy & cookies',
@@ -329,7 +329,7 @@ export const en = {
   },
   location: {
     title: 'Show people near you',
-    subtitle: 'Dateos uses your approximate location to find people nearby.',
+    subtitle: 'NexaHeart uses your approximate location to find people nearby.',
     point1: 'Only a ~1 km area is saved, never your exact spot',
     point2: 'Others only see a distance like “less than 5 km”',
     point3: 'You can remove your location anytime in Settings',
@@ -385,7 +385,7 @@ export const en = {
   },
   picks: {
     title: 'Today’s picks',
-    subtitle: 'Chosen for you by Dateos matching. New picks every day.',
+    subtitle: 'Chosen for you by NexaHeart matching. New picks every day.',
     empty: 'No picks today. Check back tomorrow.',
   },
   likes: {
@@ -403,7 +403,7 @@ export const en = {
     newMatchBody: 'You and {{name}} like each other.',
     keepExploring: 'Keep exploring',
     viewMatches: 'See matches',
-    chatSoon: 'Chat arrives in the next release.',
+    sayHi: 'Say hello in Matches. A kind first message goes a long way.',
     unmatch: 'Unmatch',
     unmatchConfirm: 'Unmatch {{name}}? You won’t see each other again.',
     matchedOn: 'Matched {{date}}',

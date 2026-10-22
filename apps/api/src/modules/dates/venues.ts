@@ -1,11 +1,11 @@
-import { schema, type Database } from '@dateos/db';
+import { schema, type Database } from '@nexaheart/db';
 import {
   type AdminVenue,
   ErrorCode,
   type Venue,
   type VenueInput,
   type VenueUpdate,
-} from '@dateos/shared';
+} from '@nexaheart/shared';
 import { asc, desc, eq } from 'drizzle-orm';
 import { audit } from '../../lib/audit.js';
 import { HttpError } from '../../plugins/error-handler.js';

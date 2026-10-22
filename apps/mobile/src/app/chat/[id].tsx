@@ -1,4 +1,4 @@
-import { MESSAGES_BEFORE_IMAGES, type MessageView } from '@dateos/shared';
+import { MESSAGES_BEFORE_IMAGES, type MessageView } from '@nexaheart/shared';
 import * as ImagePicker from 'expo-image-picker';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';

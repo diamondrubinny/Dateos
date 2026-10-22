@@ -1,13 +1,13 @@
-import type { TextModel } from '@dateos/ai';
+import type { TextModel } from '@nexaheart/ai';
 import { existsSync } from 'node:fs';
-import { runMigrations } from '@dateos/db';
+import { runMigrations } from '@nexaheart/db';
 import {
   SENSITIVE_CONSENT_VERSION,
   type DeleteObjectsJob,
   type ProcessAudioJob,
   type ProcessPhotoJob,
   type PushJob,
-} from '@dateos/shared';
+} from '@nexaheart/shared';
 import type { FastifyInstance, LightMyRequestResponse } from 'fastify';
 import { Redis } from 'ioredis';
 import pg from 'pg';
@@ -79,8 +79,8 @@ export async function setupIntegration(options: SetupOptions = {}): Promise<Test
     CORS_ORIGINS: 'http://localhost:8081',
     PUBLIC_API_URL: 'http://localhost:4000',
     S3_ENDPOINT: process.env.S3_ENDPOINT ?? 'http://localhost:8333',
-    S3_BUCKET_QUARANTINE: 'dateos-test-quarantine',
-    S3_BUCKET_MEDIA: 'dateos-test-media',
+    S3_BUCKET_QUARANTINE: 'nexaheart-test-quarantine',
+    S3_BUCKET_MEDIA: 'nexaheart-test-media',
   });
   await runMigrations(env.DATABASE_URL);
 
@@ -131,7 +131,7 @@ export async function resetState(ctx: TestContext): Promise<void> {
       await storage.delete(bucket, await storage.listKeys(bucket, prefix));
     }
   }
-  const keys = await ctx.redis.keys('dateos:*');
+  const keys = await ctx.redis.keys('nexaheart:*');
   if (keys.length > 0) await ctx.redis.del(...keys);
   ctx.services.instance.invalidate();
   ctx.mail.length = 0;

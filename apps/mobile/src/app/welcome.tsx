@@ -6,7 +6,7 @@ import { Button } from '../components/Button';
 import { LanguageSwitch } from '../components/LanguageSwitch';
 import { RemoteImage } from '../components/RemoteImage';
 import { Screen } from '../components/Screen';
-import { DEFAULT_TAGLINE } from '@dateos/shared';
+import { DEFAULT_TAGLINE } from '@nexaheart/shared';
 import { useInstance } from '../lib/queries';
 import { radius, spacing, useColors } from '../lib/theme';
 
@@ -24,7 +24,7 @@ export default function Welcome() {
           <RemoteImage path={instance.data.logoUrl} label="" style={styles.logo} />
         ) : null}
         <AppText variant="display" tone="onPrimary" center accessibilityRole="header" userContent>
-          {instance.data?.name ?? 'Dateos'}
+          {instance.data?.name ?? 'NexaHeart'}
         </AppText>
         {instance.data && instance.data.tagline !== DEFAULT_TAGLINE ? (
           <AppText variant="body" tone="onPrimary" center userContent>

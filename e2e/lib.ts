@@ -70,7 +70,7 @@ export async function signInHttp(
 async function resetSignInLimits(): Promise<void> {
   const envFile = new URL('../.env', import.meta.url);
   if (!process.env.DATABASE_URL && existsSync(envFile)) process.loadEnvFile(envFile);
-  const { createDb } = await import('@dateos/db');
+  const { createDb } = await import('@nexaheart/db');
   const { pool } = createDb(process.env.DATABASE_URL ?? '', { max: 1 });
   try {
     await pool.query('DELETE FROM rate_limit');

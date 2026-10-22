@@ -1,5 +1,5 @@
-import { schema, type Database } from '@dateos/db';
-import type { PushJob } from '@dateos/shared';
+import { schema, type Database } from '@nexaheart/db';
+import type { PushJob } from '@nexaheart/shared';
 import { eq, inArray, sql } from 'drizzle-orm';
 import type { Redis } from 'ioredis';
 import type { Logger } from 'pino';
@@ -68,7 +68,7 @@ export async function sendPush(ctx: PushContext, job: PushJob): Promise<PushResu
     ) AS ok`);
   if (!active.rows[0]?.ok) return 'inactive';
   // Someone with the app open sees the message live; no need to buzz their phone.
-  if (await ctx.redis.exists(`dateos:presence:${job.userId}`)) return 'online';
+  if (await ctx.redis.exists(`nexaheart:presence:${job.userId}`)) return 'online';
   return sendToDevices(ctx, job);
 }
 
@@ -76,7 +76,7 @@ async function sendToDevices(ctx: PushContext, job: PushJob): Promise<PushResult
   const tokens = await ctx.db.select().from(pushTokens).where(eq(pushTokens.userId, job.userId));
   if (tokens.length === 0) return 'no-devices';
   const throttle = await ctx.redis.set(
-    `dateos:push:throttle:${job.userId}:${job.matchId}:${job.kind}`,
+    `nexaheart:push:throttle:${job.userId}:${job.matchId}:${job.kind}`,
     '1',
     'EX',
     PUSH_THROTTLE_SECONDS,
@@ -87,7 +87,7 @@ async function sendToDevices(ctx: PushContext, job: PushJob): Promise<PushResult
   const [settings] = await ctx.db
     .execute<{ name: string | null }>(sql`SELECT name FROM instance_settings WHERE id = 1`)
     .then((r) => r.rows);
-  const instanceName = settings?.name ?? process.env.INSTANCE_NAME ?? 'Dateos';
+  const instanceName = settings?.name ?? process.env.INSTANCE_NAME ?? 'NexaHeart';
   const messages = tokens.map((t) => ({
     to: t.token,
     ...pushContent(job.kind, t.locale, instanceName),

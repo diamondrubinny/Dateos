@@ -1,5 +1,5 @@
-import { checkHarm, detectScamSignals, type IcebreakerProvider } from '@dateos/ai';
-import { schema, type Database } from '@dateos/db';
+import { checkHarm, detectScamSignals, type IcebreakerProvider } from '@nexaheart/ai';
+import { schema, type Database } from '@nexaheart/db';
 import {
   type Conversation,
   ErrorCode,
@@ -10,7 +10,7 @@ import {
   type MessageView,
   type PromptKey,
   scamSignals,
-} from '@dateos/shared';
+} from '@nexaheart/shared';
 import { randomUUID } from 'node:crypto';
 import { and, asc, desc, eq, isNull, lt, or, sql } from 'drizzle-orm';
 import type { Realtime } from '../../lib/realtime.js';

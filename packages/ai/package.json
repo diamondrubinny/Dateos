@@ -1,5 +1,5 @@
 {
-  "name": "@dateos/ai",
+  "name": "@nexaheart/ai",
   "author": "Diamond Rubinny",
   "version": "0.2.0",
   "private": true,
@@ -21,7 +21,7 @@
     "eval": "tsx evals/run.ts"
   },
   "dependencies": {
-    "@dateos/shared": "workspace:*"
+    "@nexaheart/shared": "workspace:*"
   },
   "devDependencies": {
     "vitest": "5.0.5",

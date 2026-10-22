@@ -1,5 +1,5 @@
 import multipart from '@fastify/multipart';
-import { ErrorCode, MAX_PHOTO_BYTES, photoOrderSchema, photoSchema } from '@dateos/shared';
+import { ErrorCode, MAX_PHOTO_BYTES, photoOrderSchema, photoSchema } from '@nexaheart/shared';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { perUserLimit } from '../../plugins/security.js';
 import { z } from 'zod';

@@ -1,4 +1,4 @@
-import { REALTIME_PATTERN, realtimeChannel, type RealtimeEvent } from '@dateos/shared';
+import { REALTIME_PATTERN, realtimeChannel, type RealtimeEvent } from '@nexaheart/shared';
 import { Redis } from 'ioredis';
 
 export interface RealtimeSocket {
@@ -24,7 +24,7 @@ export interface Realtime {
 
 const PREFIX = realtimeChannel('');
 
-export const presenceKey = (userId: string) => `dateos:presence:${userId}`;
+export const presenceKey = (userId: string) => `nexaheart:presence:${userId}`;
 
 export function createRealtime(
   redisUrl: string,

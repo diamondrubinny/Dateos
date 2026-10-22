@@ -9,7 +9,7 @@ import {
   type ProcessAudioJob,
   type ProcessPhotoJob,
   type PushJob,
-} from '@dateos/shared';
+} from '@nexaheart/shared';
 import { Queue } from 'bullmq';
 import { Redis } from 'ioredis';
 

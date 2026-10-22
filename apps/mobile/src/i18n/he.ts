@@ -64,7 +64,7 @@ export const he: Translations = {
       invalidDate: 'יש להזין תאריך תקין.',
       required: 'שדה חובה.',
       chooseOne: 'יש לבחור לפחות אפשרות אחת.',
-      underage: 'Dateos מיועדת לבני 18 ומעלה בלבד.',
+      underage: 'NexaHeart מיועדת לבני 18 ומעלה בלבד.',
     },
     consents: {
       title: 'הפרטיות שלך, הבחירה שלך',
@@ -132,7 +132,7 @@ export const he: Translations = {
     editPrompts: 'עריכת התשובות',
     greeting: 'ברוך/ה הבא/ה, {{name}}',
     readyTitle: 'הפרופיל שלך מוכן',
-    readyBody: 'גילוי התאמות ו-Daily Picks יגיעו בגרסה הבאה. נעדכן אותך.',
+    readyBody: 'אנשים שעשויים להתאים לך מחכים בגילוי ובבחירות של היום.',
     profileTitle: 'הפרופיל שלך',
     editProfile: 'עריכת פרופיל',
     settings: 'הגדרות',
@@ -154,7 +154,7 @@ export const he: Translations = {
     locationRemoved: 'המיקום הוסר. לא תופיעו בגילוי עד שתשתפו אותו שוב.',
     privacy: 'בחירות פרטיות',
     support: 'תמיכה בפרויקט החינמי',
-    supportHint: 'Dateos חינמית לכולם. נותני החסות מממנים בדיקות אבטחה, נגישות ובדיקות משפטיות.',
+    supportHint: 'NexaHeart חינמית לכולם. נותני החסות מממנים בדיקות אבטחה, נגישות ובדיקות משפטיות.',
     accessibility: 'הצהרת נגישות',
     terms: 'תנאי שימוש',
     privacyPolicy: 'מדיניות פרטיות',
@@ -164,7 +164,7 @@ export const he: Translations = {
     deleteConfirmBody: 'הפעולה תמחק לצמיתות את הפרופיל, התמונות והמידע שלך. אי אפשר לבטל אותה.',
     deleteConfirm: 'מחיקה לצמיתות',
     deleted: 'החשבון נמחק.',
-    credit: 'Dateos היא תוכנה חינמית בקוד פתוח שנוצרה על ידי Diamond Rubinny (רישיון MIT).',
+    credit: 'NexaHeart היא תוכנה חינמית בקוד פתוח שנוצרה על ידי Diamond Rubinny (רישיון MIT).',
   },
   cookies: {
     title: 'פרטיות ועוגיות',
@@ -322,7 +322,7 @@ export const he: Translations = {
   },
   location: {
     title: 'הכירו אנשים בסביבה',
-    subtitle: 'Dateos משתמשת במיקום משוער כדי למצוא אנשים קרובים אליך.',
+    subtitle: 'NexaHeart משתמשת במיקום משוער כדי למצוא אנשים קרובים אליך.',
     point1: 'נשמר רק אזור של כקילומטר, אף פעם לא המיקום המדויק',
     point2: 'אחרים רואים רק מרחק כמו ״פחות מ-5 ק״מ״',
     point3: 'אפשר להסיר את המיקום בכל עת בהגדרות',
@@ -378,7 +378,7 @@ export const he: Translations = {
   },
   picks: {
     title: 'הבחירות של היום',
-    subtitle: 'נבחרו עבורך במנוע ההתאמה של Dateos. בחירות חדשות בכל יום.',
+    subtitle: 'נבחרו עבורך במנוע ההתאמה של NexaHeart. בחירות חדשות בכל יום.',
     empty: 'אין בחירות להיום. נתראה מחר.',
   },
   likes: {
@@ -396,7 +396,7 @@ export const he: Translations = {
     newMatchBody: 'יש עניין הדדי בינך לבין {{name}}.',
     keepExploring: 'להמשיך לגלות',
     viewMatches: 'להתאמות',
-    chatSoon: 'הצ׳אט מגיע בגרסה הבאה.',
+    sayHi: 'אפשר לכתוב הודעה ראשונה בהתאמות. הודעה נחמדה עושה הבדל.',
     unmatch: 'ביטול התאמה',
     unmatchConfirm: 'לבטל את ההתאמה עם {{name}}? לא תראו זה את זה יותר.',
     matchedOn: 'התאמה מ-{{date}}',

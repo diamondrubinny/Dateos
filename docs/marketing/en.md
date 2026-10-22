@@ -1,4 +1,4 @@
-# Dateos: dating that respects you
+# NexaHeart: dating that respects you
 
 **English** · [עברית](he.md) · [العربية](ar.md) · [Русский](ru.md)
 
@@ -8,7 +8,7 @@ people, with safety and privacy built in.
 
 <img src="../screenshots/showcase-en.png" alt="Discovery with reasons, liking a prompt with a comment, a match, Daily Picks and Likes You" width="100%">
 
-## Why Dateos
+## Why NexaHeart
 
 |                                      |                                                                                                                                                                                                                                     |
 | ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -70,7 +70,7 @@ people, with safety and privacy built in.
 ## Get started
 
 ```bash
-git clone https://github.com/diamondrubinny/Dateos.git && cd Dateos
+git clone https://github.com/diamondrubinny/Dateos.git nexaheart && cd nexaheart
 ./install.sh --domain example.org
 ```
 
@@ -79,5 +79,5 @@ Then follow [the self-hosting guide](../SELF_HOSTING.md) and the [production che
 💜 **Support the project:** [GitHub Sponsors](https://github.com/sponsors/diamondrubinny) funds security
 audits, accessibility reviews and legal templates for everyone.
 
-<sub>Dateos is created by Diamond Rubinny. Screenshots are real captures of the current build; profile
+<sub>NexaHeart is created by Diamond Rubinny. Screenshots are real captures of the current build; profile
 photos are illustrations. Legal texts are drafts, not legal advice.</sub>

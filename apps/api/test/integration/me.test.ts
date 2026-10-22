@@ -1,4 +1,4 @@
-import { apiErrorSchema, SENSITIVE_CONSENT_VERSION } from '@dateos/shared';
+import { apiErrorSchema, SENSITIVE_CONSENT_VERSION } from '@nexaheart/shared';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import {
   integrationEnabled,
@@ -30,7 +30,7 @@ describe.skipIf(!integrationEnabled)('auth + profile (integration)', () => {
 
   it('signs in with a magic link and reports onboarding steps', async () => {
     const cookie = await signIn(ctx, 'noa@example.test');
-    expect(cookie).toMatch(/dateos\.session_token=/);
+    expect(cookie).toMatch(/nexaheart\.session_token=/);
     const res = await me(cookie);
     expect(res.statusCode).toBe(200);
     expect(res.json().user.email).toBe('noa@example.test');
@@ -301,6 +301,6 @@ describe.skipIf(!integrationEnabled)('auth + profile (integration)', () => {
   it('exposes public instance info without auth', async () => {
     const res = await ctx.app.inject({ method: 'GET', url: '/v1/instance' });
     expect(res.statusCode).toBe(200);
-    expect(res.json()).toMatchObject({ name: 'Dateos', auth: { magicLink: true } });
+    expect(res.json()).toMatchObject({ name: 'NexaHeart', auth: { magicLink: true } });
   });
 });

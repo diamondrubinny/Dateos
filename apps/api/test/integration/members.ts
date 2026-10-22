@@ -1,4 +1,4 @@
-import { mediaKey } from '@dateos/storage';
+import { mediaKey } from '@nexaheart/storage';
 import sharp from 'sharp';
 import type { TestContext } from './setup.js';
 import { acceptConsents, signIn } from './setup.js';

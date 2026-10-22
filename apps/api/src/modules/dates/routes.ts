@@ -1,4 +1,4 @@
-import { messageViewSchema, proposeDateSchema, venueSchema } from '@dateos/shared';
+import { messageViewSchema, proposeDateSchema, venueSchema } from '@nexaheart/shared';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import type { Auth } from '../../auth/auth.js';

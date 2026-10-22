@@ -42,5 +42,5 @@ answers to the usual questions without reading the code.
 
 - The load-test answer first said "on the recommended setup"; the test ran on one 4-vCPU machine
   ([PERFORMANCE.md](../PERFORMANCE.md)), so it now says so, with the measured numbers.
-- Trying Dateos locally needs the `dev` profile for the local mailbox (Mailpit); `pnpm infra:up` alone
+- Trying NexaHeart locally needs the `dev` profile for the local mailbox (Mailpit); `pnpm infra:up` alone
   doesn't start it.

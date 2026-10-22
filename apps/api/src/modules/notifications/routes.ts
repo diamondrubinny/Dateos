@@ -1,5 +1,5 @@
-import { schema, type Database } from '@dateos/db';
-import { chatSettingsSchema, ErrorCode, pushTokenInputSchema } from '@dateos/shared';
+import { schema, type Database } from '@nexaheart/db';
+import { chatSettingsSchema, ErrorCode, pushTokenInputSchema } from '@nexaheart/shared';
 import { and, eq } from 'drizzle-orm';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';

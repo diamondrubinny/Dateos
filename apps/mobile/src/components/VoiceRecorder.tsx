@@ -1,4 +1,4 @@
-import { MAX_VOICE_SECONDS } from '@dateos/shared';
+import { MAX_VOICE_SECONDS } from '@nexaheart/shared';
 import {
   RecordingPresets,
   requestRecordingPermissionsAsync,

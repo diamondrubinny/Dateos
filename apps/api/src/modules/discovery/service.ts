@@ -1,6 +1,6 @@
-import { checkHarm, rank, scoreCandidate, type ScoreResult } from '@dateos/ai';
+import { checkHarm, rank, scoreCandidate, type ScoreResult } from '@nexaheart/ai';
 import type { Pool } from 'pg';
-import { schema, type Database } from '@dateos/db';
+import { schema, type Database } from '@nexaheart/db';
 import {
   ageOn,
   DAILY_INTERACTION_LIMIT,
@@ -19,7 +19,7 @@ import {
   type RealtimeEvent,
   CLOSED_CARD_DAYS,
   type ClosedConversation,
-} from '@dateos/shared';
+} from '@nexaheart/shared';
 import type { Realtime } from '../../lib/realtime.js';
 import { and, asc, desc, eq, inArray, isNull, or, sql } from 'drizzle-orm';
 import { audit } from '../../lib/audit.js';

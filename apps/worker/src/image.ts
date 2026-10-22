@@ -1,4 +1,4 @@
-import { allowedPhotoMimeTypes } from '@dateos/shared';
+import { allowedPhotoMimeTypes } from '@nexaheart/shared';
 import { fileTypeFromBuffer } from 'file-type';
 import sharp from 'sharp';
 

@@ -1,4 +1,4 @@
-import { SENSITIVE_CONSENT_VERSION } from '@dateos/shared';
+import { SENSITIVE_CONSENT_VERSION } from '@nexaheart/shared';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { api, createMember, discoverIds, type Member } from './members.js';
 import {

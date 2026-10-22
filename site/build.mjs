@@ -44,7 +44,7 @@ const body = page.slice(headEnd);
 const description = /name="description" content="([^"]+)"/.exec(head)?.[1] ?? '';
 const og = [
   `<meta property="og:type" content="website">`,
-  `<meta property="og:title" content="Dateos">`,
+  `<meta property="og:title" content="NexaHeart">`,
   `<meta property="og:description" content="${description}">`,
   // Social previews need an absolute image URL, so it is only added when SITE_URL is known.
   ...(SITE_URL

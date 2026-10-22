@@ -338,7 +338,7 @@ describe.skipIf(!integrationEnabled)('voice messages & push (integration)', () =
       expect(received[0]!.body).toEqual([
         expect.objectContaining({
           to: token('dan'),
-          title: 'Dateos',
+          title: 'NexaHeart',
           body: 'יש לך הודעה חדשה',
           data: { type: 'message', matchId },
         }),
@@ -351,9 +351,9 @@ describe.skipIf(!integrationEnabled)('voice messages & push (integration)', () =
     it('skips people who are online, conversations that ended, and removes dead tokens', async () => {
       await api(ctx, dan, 'POST', '/v1/me/push-tokens', { token: token('dan1'), platform: 'ios' });
       await api(ctx, dan, 'POST', '/v1/me/push-tokens', { token: token('dan2'), platform: 'ios' });
-      await ctx.redis.set(`dateos:presence:${dan.id}`, '1', 'EX', 60);
+      await ctx.redis.set(`nexaheart:presence:${dan.id}`, '1', 'EX', 60);
       expect(await push({ userId: dan.id, kind: 'match', matchId })).toBe('online');
-      await ctx.redis.del(`dateos:presence:${dan.id}`);
+      await ctx.redis.del(`nexaheart:presence:${dan.id}`);
 
       reply = () => ({
         data: [

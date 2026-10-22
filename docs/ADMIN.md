@@ -1,6 +1,6 @@
 # Moderation guide for instance operators
 
-Every Dateos instance needs people who handle reports. This guide covers staff roles, two-factor
+Every NexaHeart instance needs people who handle reports. This guide covers staff roles, two-factor
 authentication, the dashboard (`apps/admin`) and what each decision does.
 
 > ⚖️ Moderation touches personal data (chat excerpts, photos, selfies). Check retention periods, your
@@ -17,11 +17,11 @@ Roles are **never granted over HTTP**. The person signs in to the app once (so t
 exists), then an operator with shell access to the server runs:
 
 ```bash
-pnpm --filter @dateos/api staff grant moderator@example.org moderator
-pnpm --filter @dateos/api staff grant you@example.org admin
-pnpm --filter @dateos/api staff list
-pnpm --filter @dateos/api staff revoke former@example.org      # also removes their 2FA
-pnpm --filter @dateos/api staff reset-mfa lost-phone@example.org
+pnpm --filter @nexaheart/api staff grant moderator@example.org moderator
+pnpm --filter @nexaheart/api staff grant you@example.org admin
+pnpm --filter @nexaheart/api staff list
+pnpm --filter @nexaheart/api staff revoke former@example.org      # also removes their 2FA
+pnpm --filter @nexaheart/api staff reset-mfa lost-phone@example.org
 ```
 
 In the Docker image, use `node dist/cli/staff.js <command>` instead of `pnpm ... staff`. Every
@@ -45,8 +45,8 @@ app (TOTP, RFC 6238: Aegis, 2FAS, Google Authenticator, 1Password, and so on) an
 The dashboard is a static site that calls the API with the staff member's session cookie.
 
 ```bash
-pnpm --filter @dateos/admin build            # VITE_API_URL=https://api.example.org for production
-pnpm --filter @dateos/admin preview          # local preview on http://127.0.0.1:5174 with security headers
+pnpm --filter @nexaheart/admin build            # VITE_API_URL=https://api.example.org for production
+pnpm --filter @nexaheart/admin preview          # local preview on http://127.0.0.1:5174 with security headers
 ```
 
 Requirements:
@@ -61,7 +61,7 @@ Example for Caddy:
 
 ```caddy
 admin.example.org {
-  root * /srv/dateos-admin
+  root * /srv/nexaheart-admin
   try_files {path} /index.html
   file_server
   header {

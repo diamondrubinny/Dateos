@@ -1,4 +1,4 @@
-# Install Dateos, step by step
+# Install NexaHeart, step by step
 
 **English** · [עברית](INSTALL.he.md)
 
@@ -66,12 +66,12 @@ DNS changes can take from a few minutes to a few hours to spread.
 
 ✅ **Check:** `ping admin.example.org` (from your own computer) shows your server's IP.
 
-## Step 3: Download Dateos and create the configuration
+## Step 3: Download NexaHeart and create the configuration
 
 ```bash
-sudo mkdir -p /opt/dateos && sudo chown "$USER" /opt/dateos
-git clone https://github.com/diamondrubinny/Dateos.git /opt/dateos
-cd /opt/dateos
+sudo mkdir -p /opt/nexaheart && sudo chown "$USER" /opt/nexaheart
+git clone https://github.com/diamondrubinny/Dateos.git /opt/nexaheart
+cd /opt/nexaheart
 ./install.sh --domain example.org
 ```
 
@@ -107,13 +107,13 @@ explains 📘.
 To save typing, create a short alias (run it once per SSH session, or add it to `~/.bashrc`):
 
 ```bash
-alias dc='docker compose -f /opt/dateos/infra/docker-compose.yml --env-file /opt/dateos/.env --profile app --profile full'
+alias dc='docker compose -f /opt/nexaheart/infra/docker-compose.yml --env-file /opt/nexaheart/.env --profile app --profile full'
 ```
 
 Then build and start:
 
 ```bash
-cd /opt/dateos
+cd /opt/nexaheart
 dc up -d --build
 ```
 
@@ -171,7 +171,7 @@ plus bans and the audit log). See [ADMIN.md](ADMIN.md) for how reports and decis
 
 ### Local AI (smarter matching and conversation starters)
 
-By default Dateos uses no AI model at all: matching uses text similarity and conversation starters
+By default NexaHeart uses no AI model at all: matching uses text similarity and conversation starters
 come from ready-made templates in each language. To use a small model that runs **on your own server**
 (nothing leaves it), you need about 4 GB of extra RAM:
 
@@ -211,14 +211,14 @@ your own IP range in place of `203.0.113.0/24`, then run `dc up -d --build web`.
 
 ## Day to day
 
-| Task                         | Command                                          |
-| ---------------------------- | ------------------------------------------------ |
-| Update to the latest version | `cd /opt/dateos && git pull && dc up -d --build` |
-| See what's running           | `dc ps`                                          |
-| Read the logs                | `dc logs -f api` (or `worker`, `web`, `clamav`)  |
-| Apply a change to `.env`     | `dc up -d --force-recreate api worker`           |
-| Stop everything              | `dc stop` (data is kept)                         |
-| Start again                  | `dc up -d`                                       |
+| Task                         | Command                                             |
+| ---------------------------- | --------------------------------------------------- |
+| Update to the latest version | `cd /opt/nexaheart && git pull && dc up -d --build` |
+| See what's running           | `dc ps`                                             |
+| Read the logs                | `dc logs -f api` (or `worker`, `web`, `clamav`)     |
+| Apply a change to `.env`     | `dc up -d --force-recreate api worker`              |
+| Stop everything              | `dc stop` (data is kept)                            |
+| Start again                  | `dc up -d`                                          |
 
 Database updates run automatically when the new version starts. Read [CHANGELOG.md](../CHANGELOG.md)
 before updating.
@@ -229,20 +229,20 @@ before updating.
 passphrase, and removes local copies older than 14 days. Set it up once:
 
 ```bash
-head -c 32 /dev/urandom | base64 | sudo tee /root/.dateos-backup-key >/dev/null
-sudo chmod 600 /root/.dateos-backup-key
+head -c 32 /dev/urandom | base64 | sudo tee /root/.nexaheart-backup-key >/dev/null
+sudo chmod 600 /root/.nexaheart-backup-key
 sudo crontab -e
 # add this line: a backup every night at 03:00
-0 3 * * * cd /opt/dateos && BACKUP_PASSPHRASE_FILE=/root/.dateos-backup-key ./scripts/backup.sh
+0 3 * * * cd /opt/nexaheart && BACKUP_PASSPHRASE_FILE=/root/.nexaheart-backup-key ./scripts/backup.sh
 ```
 
-Copy the files in `/opt/dateos/backups/` to another place (another server or storage service), and
+Copy the files in `/opt/nexaheart/backups/` to another place (another server or storage service), and
 keep the passphrase and `.env` separately from them. Test a restore into a separate database from time
 to time:
 
 ```bash
-RESTORE_DATABASE=dateos_check BACKUP_PASSPHRASE_FILE=/root/.dateos-backup-key \
-  ./scripts/restore.sh backups/dateos-db-<time>.dump.enc
+RESTORE_DATABASE=nexaheart_check BACKUP_PASSPHRASE_FILE=/root/.nexaheart-backup-key \
+  ./scripts/restore.sh backups/nexaheart-db-<time>.dump.enc
 ```
 
 ## Troubleshooting
@@ -281,7 +281,7 @@ picks a language in the app; you choose the default language in the dashboard.
 
 **Where is my members' data stored?**
 Only on your server: the database and the uploaded photos and voice messages live in Docker volumes
-there. Nothing goes to the Dateos authors. Emails go through your email provider, and push
+there. Nothing goes to the NexaHeart authors. Emails go through your email provider, and push
 notifications (if you turn them on) through Expo, Apple and Google. The full list is in
 [PRIVACY.md](PRIVACY.md).
 
@@ -324,7 +324,7 @@ Yes. In `.env`, change `DOMAIN`, `PUBLIC_API_URL`, `CORS_ORIGINS` and `SMTP_FROM
 add the new DNS records, and run `dc up -d --build` (the web app is rebuilt with the new address).
 
 **How do I delete everything?**
-`dc down -v` stops Dateos and **permanently deletes all data**, including every member's account.
+`dc down -v` stops NexaHeart and **permanently deletes all data**, including every member's account.
 Make and keep a backup first if you might need it, and tell your members in advance ⚖️.
 
 **Where do I get help or report a bug?**

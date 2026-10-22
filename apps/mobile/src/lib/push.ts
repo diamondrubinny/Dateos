@@ -1,11 +1,11 @@
-import type { Locale } from '@dateos/shared';
+import type { Locale } from '@nexaheart/shared';
 import Constants from 'expo-constants';
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import { apiFetch, json } from './api';
 import { prefs } from './storage';
 
-const TOKEN_KEY = 'dateos.pushToken';
+const TOKEN_KEY = 'nexaheart.pushToken';
 
 export type PushSetupResult = 'enabled' | 'denied' | 'unsupported' | 'not-configured';
 

@@ -64,7 +64,7 @@ export const ar: Translations = {
       invalidDate: 'يُرجى إدخال تاريخ صالح.',
       required: 'هذا الحقل مطلوب.',
       chooseOne: 'يُرجى اختيار خيار واحد على الأقل.',
-      underage: 'Dateos مخصص لمن هم في سن 18 عامًا فأكثر فقط.',
+      underage: 'NexaHeart مخصص لمن هم في سن 18 عامًا فأكثر فقط.',
     },
     consents: {
       title: 'خصوصيتك، اختيارك',
@@ -133,7 +133,7 @@ export const ar: Translations = {
     editPrompts: 'تعديل الأسئلة',
     greeting: 'أهلًا، {{name}}',
     readyTitle: 'ملفك الشخصي جاهز',
-    readyBody: 'ستصل ميزتا الاستكشاف والاختيارات اليومية في الإصدار القادم. سنُعلمك بذلك.',
+    readyBody: 'أشخاص قد يناسبونك بانتظارك في الاستكشاف واختيارات اليوم.',
     profileTitle: 'ملفك الشخصي',
     editProfile: 'تعديل الملف الشخصي',
     settings: 'الإعدادات',
@@ -156,7 +156,7 @@ export const ar: Translations = {
     privacy: 'خيارات الخصوصية',
     support: 'ادعم هذا المشروع المجاني',
     supportHint:
-      'Dateos مجاني للجميع. يموّل الرعاة عمليات التدقيق الأمني وإمكانية الوصول والمراجعات القانونية.',
+      'NexaHeart مجاني للجميع. يموّل الرعاة عمليات التدقيق الأمني وإمكانية الوصول والمراجعات القانونية.',
     accessibility: 'بيان إمكانية الوصول',
     terms: 'شروط الاستخدام',
     privacyPolicy: 'سياسة الخصوصية',
@@ -167,7 +167,7 @@ export const ar: Translations = {
       'سيؤدي هذا إلى حذف ملفك الشخصي وصورك وبياناتك نهائيًا. لا يمكن التراجع عن ذلك.',
     deleteConfirm: 'حذف نهائي',
     deleted: 'تم حذف حسابك.',
-    credit: 'Dateos برنامج مجاني ومفتوح المصدر أنشأه Diamond Rubinny (ترخيص MIT).',
+    credit: 'NexaHeart برنامج مجاني ومفتوح المصدر أنشأه Diamond Rubinny (ترخيص MIT).',
   },
   cookies: {
     title: 'الخصوصية وملفات تعريف الارتباط',
@@ -325,7 +325,7 @@ export const ar: Translations = {
   },
   location: {
     title: 'اعرض الأشخاص القريبين منك',
-    subtitle: 'يستخدم Dateos موقعك التقريبي للعثور على أشخاص بالقرب منك.',
+    subtitle: 'يستخدم NexaHeart موقعك التقريبي للعثور على أشخاص بالقرب منك.',
     point1: 'تُحفظ فقط منطقة بمساحة 1 كم تقريبًا، وليس موقعك الدقيق أبدًا',
     point2: 'يرى الآخرون فقط مسافة مثل «أقل من 5 كم»',
     point3: 'يمكنك إزالة موقعك في أي وقت من الإعدادات',
@@ -381,7 +381,7 @@ export const ar: Translations = {
   },
   picks: {
     title: 'اختيارات اليوم',
-    subtitle: 'اختارها لك نظام التوافق في Dateos. اختيارات جديدة كل يوم.',
+    subtitle: 'اختارها لك نظام التوافق في NexaHeart. اختيارات جديدة كل يوم.',
     empty: 'لا توجد اختيارات اليوم. عُد غدًا.',
   },
   likes: {
@@ -399,7 +399,7 @@ export const ar: Translations = {
     newMatchBody: 'أنت و{{name}} معجبان ببعضكما.',
     keepExploring: 'مواصلة الاستكشاف',
     viewMatches: 'عرض التوافقات',
-    chatSoon: 'ستصل الدردشة في الإصدار القادم.',
+    sayHi: 'اكتب أول رسالة في التوافقات. الرسالة اللطيفة تُحدث فرقًا.',
     unmatch: 'إلغاء التوافق',
     unmatchConfirm: 'إلغاء التوافق مع {{name}}؟ لن يرى أحدكما الآخر مجددًا.',
     matchedOn: 'تم التوافق في {{date}}',

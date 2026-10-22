@@ -1,4 +1,4 @@
-import { apiErrorSchema, type ApiError, type ErrorCode } from '@dateos/shared';
+import { apiErrorSchema, type ApiError, type ErrorCode } from '@nexaheart/shared';
 import { Platform } from 'react-native';
 import { authHeaders } from './auth-client';
 import { API_URL } from './config';

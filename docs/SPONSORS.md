@@ -1,17 +1,17 @@
-# Sponsoring Dateos
+# Sponsoring NexaHeart
 
-Dateos is free for everyone, forever: no premium tier, no paywalls, no ads, no selling data.
+NexaHeart is free for everyone, forever: no premium tier, no paywalls, no ads, no selling data.
 Sponsorships pay for the things a safe dating platform needs and code alone cannot provide.
 
 ## Where the money goes
 
-| Priority | Item                                                              | Why it matters                                       |
-| -------- | ----------------------------------------------------------------- | ---------------------------------------------------- |
-| 1        | Independent security audit and penetration test                   | The app stores location, photos and private messages |
-| 2        | Accessibility audit (WCAG 2.1 AA / IS 5568)                       | Dating should work for everyone                      |
-| 3        | Legal review of privacy, terms and consent templates (Israel, EU) | So every operator starts from a reviewed baseline    |
-| 4        | Public demo instance and CI infrastructure                        | Lets people try Dateos without installing anything   |
-| 5        | Translations and moderation tooling                               | Safer, more communities                              |
+| Priority | Item                                                              | Why it matters                                        |
+| -------- | ----------------------------------------------------------------- | ----------------------------------------------------- |
+| 1        | Independent security audit and penetration test                   | The app stores location, photos and private messages  |
+| 2        | Accessibility audit (WCAG 2.1 AA / IS 5568)                       | Dating should work for everyone                       |
+| 3        | Legal review of privacy, terms and consent templates (Israel, EU) | So every operator starts from a reviewed baseline     |
+| 4        | Public demo instance and CI infrastructure                        | Lets people try NexaHeart without installing anything |
+| 5        | Translations and moderation tooling                               | Safer, more communities                               |
 
 We will publish a yearly transparency report of income and spending.
 

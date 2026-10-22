@@ -13,8 +13,8 @@ import {
   messagesQuerySchema,
   messageViewSchema,
   sendMessageSchema,
-} from '@dateos/shared';
-import { checkHarm } from '@dateos/ai';
+} from '@nexaheart/shared';
+import { checkHarm } from '@nexaheart/ai';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { perUserLimit } from '../../plugins/security.js';
 import { z } from 'zod';

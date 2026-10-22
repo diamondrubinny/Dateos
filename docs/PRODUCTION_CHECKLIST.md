@@ -19,7 +19,7 @@
 - ✅ Members, moderators and admins are checked on the server for every request; moderators can't act
   on staff or on reports about themselves; staff need TOTP every 12 hours (`safety.test.ts`, `admin`).
 - ✅ The setup token works once, ever (`instance.test.ts`).
-- ☐ Grant staff roles only with `pnpm --filter @dateos/api staff grant …`; keep at least two admins.
+- ☐ Grant staff roles only with `pnpm --filter @nexaheart/api staff grant …`; keep at least two admins.
 - ☐ Review the audit log (dashboard → Audit) weekly.
 
 ## 3. Sign-in and sessions
