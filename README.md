@@ -109,6 +109,8 @@ Dateos is in active development. Here is what works today and what comes next. T
 
 More in each language: [English](docs/marketing/en.md) · [עברית](docs/marketing/he.md) · [العربية](docs/marketing/ar.md) · [Русский](docs/marketing/ru.md)
 
+A ready-made marketing website in English and Hebrew is in [`site/`](site/README.md): build it with `node site/build.mjs` and upload `site/dist` to any static host.
+
 <sub>All 74 screens (37 in English, 37 in Hebrew) are in <a href="docs/screenshots">docs/screenshots</a>. Demo members are fictional and their pictures are illustrations.
 Chat screenshots come from two real accounts chatting live in two browsers (<a href="e2e/chat.ts">e2e/chat.ts</a>); the safety screens from a reporter, a reported member and a moderator in three browsers (<a href="e2e/safety.ts">e2e/safety.ts</a>).</sub>
 

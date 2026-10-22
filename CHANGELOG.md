@@ -6,6 +6,8 @@ All notable changes to Dateos. Versions follow [Semantic Versioning](https://sem
 
 ### Added
 
+- **Marketing site** in English and Hebrew (`site/`), with real screenshots, light and dark, no
+  cookies or analytics.
 - **Safety check-in**: share where you'll be and when you expect to be done; a trusted contact is
   emailed (in your language, with only what you wrote) if you don't tap "I'm OK" in time, or at once
   with **SOS**. A push reminder at check-in time. Deleted 7 days after it ends.

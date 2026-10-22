@@ -1,0 +1,1359 @@
+<title>Dateos</title>
+<meta name="claude:viewport-fit-sides" content="cover" />
+<meta
+  name="description"
+  content="Dateos is a free, open-source dating app for iPhone, Android and the web that any community can run under its own name. No ads, no paywalls, no selling data."
+/>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link
+  rel="stylesheet"
+  href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Rubik:wght@400;500;700&family=Secular+One&family=IBM+Plex+Mono:wght@500&display=swap"
+/>
+<style>
+  /* Layout: a lavender paper page; phones carry the story, one bold "Dating Facts" label carries the argument. */
+  :root {
+    --paper: #fbf9ff;
+    --panel: #f1ecff;
+    --ink: #1b1530;
+    --muted: #5b5470;
+    --line: #d9d2ee;
+    --violet: #6d28d9;
+    --on-violet: #ffffff;
+    --apricot: #b45309;
+    --frame: #1b1530;
+    --band: #1b1530;
+    --band-fg: #fbf9ff;
+    --band-soft: #cfc8e4;
+    --band-line: #3a3352;
+    --band-accent: #fbbf24;
+    --font-display: 'Bricolage Grotesque', 'Secular One', 'Rubik', system-ui, sans-serif;
+    --font-body: 'Rubik', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --font-mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+    --step--1: 0.875rem;
+    --step-0: 1.0625rem;
+    --step-1: 1.3rem;
+    --step-2: clamp(1.6rem, 1.2rem + 1.6vw, 2.2rem);
+    --step-3: clamp(2.3rem, 1.4rem + 4vw, 4.4rem);
+    --wrap: 72rem;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme='light']) {
+      --paper: #120f1c;
+      --panel: #1e1930;
+      --ink: #f4f1fa;
+      --muted: #b9b2cc;
+      --line: #3a3352;
+      --violet: #a78bfa;
+      --on-violet: #120f1c;
+      --apricot: #fbbf24;
+      --frame: #2e2550;
+      --band: #1e1930;
+      --band-fg: #f4f1fa;
+      --band-soft: #b9b2cc;
+      --band-line: #3a3352;
+      --band-accent: #fbbf24;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme='dark'] {
+    --paper: #120f1c;
+    --panel: #1e1930;
+    --ink: #f4f1fa;
+    --muted: #b9b2cc;
+    --line: #3a3352;
+    --violet: #a78bfa;
+    --on-violet: #120f1c;
+    --apricot: #fbbf24;
+    --frame: #2e2550;
+    --band: #1e1930;
+    --band-fg: #f4f1fa;
+    --band-soft: #b9b2cc;
+    --band-line: #3a3352;
+    --band-accent: #fbbf24;
+    color-scheme: dark;
+  }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: var(--step-0);
+    line-height: 1.6;
+  }
+  :lang(he) body,
+  body:lang(he) {
+    line-height: 1.7;
+  }
+  a {
+    color: var(--violet);
+    text-underline-offset: 0.2em;
+  }
+  :focus-visible {
+    outline: 3px solid var(--apricot);
+    outline-offset: 3px;
+    border-radius: 6px;
+  }
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    line-height: 1.1;
+    text-wrap: balance;
+    margin: 0;
+  }
+  p {
+    margin: 0;
+  }
+  .wrap {
+    max-width: var(--wrap);
+    margin-inline: auto;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+  .skip {
+    position: absolute;
+    inset-inline-start: 1rem;
+    top: -4rem;
+    background: var(--violet);
+    color: var(--on-violet);
+    padding: 0.6rem 1rem;
+    border-radius: 8px;
+    z-index: 20;
+  }
+  .skip:focus {
+    top: calc(env(safe-area-inset-top, 0px) + 0.5rem);
+  }
+
+  /* Header */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0 0 auto;
+    height: env(safe-area-inset-top, 0px);
+    z-index: 10;
+    background: var(--paper);
+  }
+  .top {
+    position: sticky;
+    top: env(safe-area-inset-top, 0px);
+    z-index: 9;
+    background: color-mix(in srgb, var(--paper) 88%, transparent);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--line);
+  }
+  .top .wrap {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding-block: 0.7rem;
+  }
+  .mark {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 1.35rem;
+    color: var(--ink);
+    text-decoration: none;
+    letter-spacing: -0.02em;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+  }
+  .mark svg {
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+  .top nav {
+    margin-inline-start: auto;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+  .top nav > a {
+    font-weight: 500;
+    color: var(--ink);
+    text-decoration: none;
+    font-size: var(--step--1);
+  }
+  .top nav > a:hover {
+    color: var(--violet);
+  }
+  .lang {
+    display: inline-flex;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 3px;
+    background: var(--paper);
+  }
+  .lang button {
+    font: 500 var(--step--1) / 1 var(--font-body);
+    border: 0;
+    background: transparent;
+    color: var(--ink);
+    padding: 0.45rem 0.8rem;
+    min-height: 36px;
+    border-radius: 999px;
+    cursor: pointer;
+  }
+  .lang button[aria-pressed='true'] {
+    background: var(--violet);
+    color: var(--on-violet);
+  }
+
+  /* Hero */
+  .hero {
+    padding-block: clamp(2.5rem, 6vw, 5rem) 0;
+    overflow: hidden;
+  }
+  .hero .wrap {
+    display: grid;
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+    gap: clamp(1.5rem, 4vw, 4rem);
+    align-items: center;
+  }
+  .eyebrow {
+    font: 500 var(--step--1) / 1.3 var(--font-mono);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  :lang(he) .eyebrow {
+    letter-spacing: 0;
+    text-transform: none;
+    font-family: var(--font-body);
+  }
+  .hero h1 {
+    font-size: var(--step-3);
+    font-weight: 800;
+    letter-spacing: -0.035em;
+    margin-block: 0.9rem 1.2rem;
+  }
+  :lang(he) .hero h1 {
+    letter-spacing: 0;
+    font-weight: 400;
+    line-height: 1.15;
+  }
+  .hero h1 em {
+    font-style: normal;
+    color: var(--violet);
+  }
+  .lede {
+    font-size: var(--step-1);
+    color: var(--muted);
+    max-width: 34rem;
+  }
+  .ctas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 1.8rem;
+  }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 48px;
+    padding: 0.7rem 1.3rem;
+    border-radius: 999px;
+    font-weight: 500;
+    text-decoration: none;
+    border: 2px solid var(--violet);
+  }
+  .btn.primary {
+    background: var(--violet);
+    color: var(--on-violet);
+  }
+  .btn.ghost {
+    color: var(--violet);
+  }
+  .btn:hover {
+    filter: brightness(1.08);
+  }
+  .langs {
+    margin-top: 1.4rem;
+    font-size: var(--step--1);
+    color: var(--muted);
+  }
+
+  .phones {
+    direction: ltr;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    min-height: 0;
+    padding-bottom: 2rem;
+  }
+  .phone {
+    margin: 0;
+    flex: none;
+    width: clamp(9rem, 18vw, 15rem);
+    aspect-ratio: 780 / 1688;
+    max-width: 100%;
+    border: 7px solid var(--frame);
+    border-radius: 30px;
+    overflow: hidden;
+    background: var(--panel);
+    box-shadow: 0 30px 60px -30px rgb(27 21 48 / 0.45);
+  }
+  .phone img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .phones .phone:nth-child(1) {
+    transform: translateX(14%) rotate(-7deg) translateY(1.5rem);
+  }
+  .phones .phone:nth-child(2) {
+    position: relative;
+    z-index: 2;
+    width: clamp(10.5rem, 21vw, 17rem);
+  }
+  .phones .phone:nth-child(3) {
+    transform: translateX(-14%) rotate(7deg) translateY(1.5rem);
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .phones .phone {
+      animation: rise 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    }
+    .phones .phone:nth-child(1) {
+      animation-delay: 0.1s;
+    }
+    .phones .phone:nth-child(3) {
+      animation-delay: 0.2s;
+    }
+    @keyframes rise {
+      from {
+        translate: 0 2.5rem;
+      }
+      to {
+        translate: 0 0;
+      }
+    }
+  }
+
+  /* Facts */
+  .facts-band {
+    background: var(--panel);
+    border-block: 1px solid var(--line);
+    padding-block: clamp(2.5rem, 6vw, 4.5rem);
+  }
+  .facts-band .wrap {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 22rem);
+    gap: clamp(2rem, 5vw, 5rem);
+    align-items: center;
+  }
+  .argument h2 {
+    font-size: var(--step-2);
+    margin-bottom: 1rem;
+  }
+  .argument p {
+    max-width: 36rem;
+    color: var(--muted);
+  }
+  .argument p + p {
+    margin-top: 0.9rem;
+  }
+  .label {
+    background: var(--paper);
+    color: var(--ink);
+    border: 2px solid var(--ink);
+    padding: 0.6rem 0.9rem 0.8rem;
+    font-family: var(--font-body);
+    max-width: 100%;
+  }
+  .label h2 {
+    font: 800 2.1rem / 1 var(--font-display);
+    letter-spacing: -0.02em;
+    padding-bottom: 0.3rem;
+    border-bottom: 10px solid var(--ink);
+  }
+  :lang(he) .label h2 {
+    font-weight: 400;
+    letter-spacing: 0;
+  }
+  .label .per {
+    font-size: var(--step--1);
+    padding-block: 0.3rem;
+    border-bottom: 5px solid var(--ink);
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    font-weight: 700;
+  }
+  .label dl {
+    margin: 0;
+  }
+  .label .row {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    padding-block: 0.32rem;
+    border-bottom: 1px solid var(--ink);
+  }
+  .label .row:last-child {
+    border-bottom: 5px solid var(--ink);
+  }
+  .label dt {
+    font-weight: 700;
+  }
+  .label dd {
+    margin: 0;
+    font-variant-numeric: tabular-nums;
+    font-weight: 500;
+    text-align: end;
+  }
+  .label .note {
+    font-size: 0.78rem;
+    line-height: 1.45;
+    padding-top: 0.5rem;
+    color: var(--muted);
+  }
+
+  /* Tour */
+  .section {
+    padding-block: clamp(3rem, 7vw, 5.5rem);
+  }
+  .section > .wrap > h2 {
+    font-size: var(--step-2);
+    max-width: 40rem;
+  }
+  .section-intro {
+    color: var(--muted);
+    max-width: 40rem;
+    margin-top: 0.8rem;
+  }
+  .tour {
+    display: grid;
+    gap: clamp(3rem, 7vw, 5rem);
+    margin-top: clamp(2rem, 5vw, 3.5rem);
+  }
+  .feature {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: clamp(1.5rem, 5vw, 4.5rem);
+    align-items: center;
+  }
+  .feature:nth-child(even) .copy {
+    order: 2;
+  }
+  .copy h3 {
+    font-size: var(--step-1);
+    font-size: clamp(1.4rem, 1.1rem + 1vw, 1.9rem);
+    margin-block: 0.5rem 0.8rem;
+  }
+  :lang(he) .copy h3 {
+    font-weight: 400;
+  }
+  .copy p {
+    color: var(--muted);
+    max-width: 32rem;
+  }
+  .copy ul {
+    margin: 1rem 0 0;
+    padding-inline-start: 1.1rem;
+    color: var(--muted);
+    display: grid;
+    gap: 0.35rem;
+  }
+  .copy li::marker {
+    color: var(--violet);
+  }
+  .shots {
+    display: flex;
+    justify-content: center;
+    gap: clamp(0.75rem, 2.5vw, 1.5rem);
+  }
+  .shots .phone {
+    width: clamp(8.5rem, 22vw, 14.5rem);
+  }
+  .shots .phone:nth-child(2) {
+    margin-top: 2.5rem;
+  }
+  .tag {
+    display: inline-block;
+    font: 500 0.78rem / 1 var(--font-mono);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--violet);
+  }
+  :lang(he) .tag {
+    letter-spacing: 0;
+    text-transform: none;
+    font-family: var(--font-body);
+    font-size: var(--step--1);
+    font-weight: 700;
+  }
+
+  /* Operators */
+  .ops {
+    background: var(--band);
+    color: var(--band-fg);
+  }
+  .ops a {
+    color: var(--band-fg);
+  }
+  .ops .section-intro {
+    color: var(--band-soft);
+  }
+  .ops .tag {
+    color: var(--band-accent);
+  }
+  .ops-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 0.7fr) minmax(0, 1.6fr);
+    gap: clamp(1.5rem, 4vw, 3rem);
+    align-items: end;
+    margin-top: 2.5rem;
+  }
+  .ops .phone {
+    width: 100%;
+    max-width: 15rem;
+    border-color: var(--band-line);
+    justify-self: center;
+  }
+  .desk {
+    margin: 0;
+    border-radius: 14px;
+    overflow: hidden;
+    border: 1px solid var(--band-line);
+    box-shadow: 0 30px 60px -30px rgb(0 0 0 / 0.6);
+  }
+  .desk img {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+  .ops-points {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.5rem;
+    margin-top: 2.5rem;
+  }
+  .ops-points h3 {
+    font-size: var(--step-1);
+    margin-bottom: 0.4rem;
+  }
+  :lang(he) .ops-points h3 {
+    font-weight: 400;
+  }
+  .ops-points p {
+    color: var(--band-soft);
+    font-size: var(--step--1);
+  }
+
+  /* Install */
+  .install {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+    gap: clamp(1.5rem, 4vw, 3.5rem);
+    align-items: start;
+  }
+  .terminal {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    overflow: hidden;
+    min-width: 0;
+  }
+  .terminal .bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.5rem 0.6rem 0.5rem 1rem;
+    border-bottom: 1px solid var(--line);
+    font: 500 var(--step--1) / 1 var(--font-mono);
+    color: var(--muted);
+  }
+  .terminal pre {
+    margin: 0;
+    padding: 1.1rem 1rem;
+    overflow-x: auto;
+    font: 500 0.9rem / 1.7 var(--font-mono);
+    color: var(--ink);
+    direction: ltr;
+    text-align: left;
+  }
+  .terminal pre .c {
+    color: var(--muted);
+  }
+  .copybtn {
+    font: 500 var(--step--1) / 1 var(--font-body);
+    border: 1px solid var(--line);
+    background: var(--paper);
+    color: var(--ink);
+    border-radius: 999px;
+    padding: 0.5rem 0.9rem;
+    min-height: 36px;
+    cursor: pointer;
+  }
+  .checklist {
+    list-style: none;
+    margin: 1.2rem 0 0;
+    padding: 0;
+    display: grid;
+    gap: 0.5rem;
+  }
+  .checklist li {
+    display: flex;
+    gap: 0.6rem;
+  }
+  .checklist li::before {
+    content: '✓';
+    color: var(--violet);
+    font-weight: 700;
+  }
+
+  /* Audience + trust */
+  .who {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.5rem;
+    margin-top: 2rem;
+  }
+  .who article {
+    border-top: 3px solid var(--violet);
+    padding-top: 1rem;
+  }
+  .who h3 {
+    font-size: var(--step-1);
+    margin-bottom: 0.4rem;
+  }
+  :lang(he) .who h3 {
+    font-weight: 400;
+  }
+  .who p {
+    color: var(--muted);
+    font-size: var(--step--1);
+  }
+
+  footer {
+    border-top: 1px solid var(--line);
+    padding-block: 2.5rem;
+    font-size: var(--step--1);
+    color: var(--muted);
+  }
+  footer .wrap {
+    display: grid;
+    gap: 1rem;
+  }
+  footer .links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.2rem;
+  }
+  .sponsor {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 1.2rem 1.4rem;
+    margin-top: 3rem;
+  }
+  .sponsor p {
+    max-width: 40rem;
+  }
+
+  @media (max-width: 860px) {
+    .hero .wrap,
+    .facts-band .wrap,
+    .feature,
+    .install,
+    .ops-grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .feature:nth-child(even) .copy {
+      order: 0;
+    }
+    .who,
+    .ops-points {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .label {
+      max-width: 24rem;
+    }
+  }
+  @media (max-width: 520px) {
+    .top nav > a {
+      display: none;
+    }
+    .phones .phone {
+      width: 7.4rem;
+      border-width: 5px;
+      border-radius: 22px;
+    }
+    .phones .phone:nth-child(2) {
+      width: 9rem;
+    }
+    .shots .phone {
+      width: 44%;
+      border-width: 5px;
+      border-radius: 22px;
+    }
+  }
+</style>
+
+<a class="skip" href="#main" data-t="skip">Skip to content</a>
+
+<header class="top">
+  <div class="wrap">
+    <a class="mark" href="#top" aria-label="Dateos">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path
+          fill="var(--violet)"
+          d="M12 21s-7.5-4.6-9.6-9.2C.9 8.4 3 4.5 6.7 4.5c2.1 0 3.6 1.2 4.3 2.6h2c.7-1.4 2.2-2.6 4.3-2.6 3.7 0 5.8 3.9 4.3 7.3C19.5 16.4 12 21 12 21Z"
+        />
+        <circle cx="12" cy="11.5" r="2.6" fill="var(--paper)" />
+      </svg>
+      Dateos
+    </a>
+    <nav aria-label="Main" data-t-label="nav">
+      <a href="#tour" data-t="navTour">Tour</a>
+      <a href="#operators" data-t="navOps">For operators</a>
+      <a href="#install" data-t="navInstall">Install</a>
+      <a href="https://github.com/diamondrubinny/Dateos">GitHub</a>
+      <div class="lang" role="group" aria-label="Language / שפה">
+        <button type="button" id="lang-en" data-lang="en" aria-pressed="true" lang="en">EN</button>
+        <button type="button" id="lang-he" data-lang="he" aria-pressed="false" lang="he">
+          עברית
+        </button>
+      </div>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+  <section class="hero" id="top" aria-labelledby="hero-title">
+    <div class="wrap">
+      <div>
+        <p class="eyebrow" data-t="eyebrow">Free · Open source · Version 0.2</p>
+        <h1 id="hero-title" data-t="h1">Dating that belongs to <em>your community</em>.</h1>
+        <p class="lede" data-t="lede">
+          Dateos is a free, open-source dating app for iPhone, Android and the web. A city, a
+          university or any community can run it under its own name, on its own server. No ads, no
+          paywalls, no selling data.
+        </p>
+        <div class="ctas">
+          <a class="btn primary" href="#install" data-t="ctaRun">Run it for your community</a>
+          <a class="btn ghost" href="#tour" data-t="ctaTour">See the app</a>
+        </div>
+        <p class="langs" data-t="langs">
+          The app speaks English, Hebrew, Arabic and Russian, right to left included.
+        </p>
+      </div>
+      <div class="phones">
+        <figure class="phone">
+          <img
+            data-shot="13-likes"
+            src="img/en/13-likes.webp"
+            width="780"
+            height="1688"
+            alt="Likes You: everyone who liked you, free"
+            data-t-alt="aLikes"
+          />
+        </figure>
+        <figure class="phone">
+          <img
+            data-shot="09-discover"
+            src="img/en/09-discover.webp"
+            width="780"
+            height="1688"
+            alt="Discovery: a profile with the reasons you might match"
+            data-t-alt="aDiscover"
+          />
+        </figure>
+        <figure class="phone">
+          <img
+            data-shot="11-match"
+            src="img/en/11-match.webp"
+            width="780"
+            height="1688"
+            alt="It's a match screen"
+            data-t-alt="aMatch"
+          />
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <section class="facts-band" aria-labelledby="facts-title">
+    <div class="wrap">
+      <div class="argument">
+        <h2 data-t="argTitle">Built for fewer, better conversations.</h2>
+        <p data-t="arg1">
+          Most dating apps earn more the longer you keep swiping. Dateos earns nothing, so it can be
+          built for the opposite: people who like each other, real conversations, and a kind goodbye
+          when it isn't a match.
+        </p>
+        <p data-t="arg2">
+          Every feature is free for everyone, including seeing who liked you. The code is public
+          under the MIT license, so anyone can check what it does with your data.
+        </p>
+      </div>
+      <div class="label">
+        <h2 id="facts-title" data-t="factsTitle">Dating Facts</h2>
+        <div class="per">
+          <span data-t="factsPer">Per member, per month</span
+          ><span data-t="factsCost">Cost: 0</span>
+        </div>
+        <dl>
+          <div class="row">
+            <dt data-t="fAds">Ads</dt>
+            <dd>0</dd>
+          </div>
+          <div class="row">
+            <dt data-t="fPaid">Paid features</dt>
+            <dd>0</dd>
+          </div>
+          <div class="row">
+            <dt data-t="fCookies">Tracking cookies</dt>
+            <dd>0</dd>
+          </div>
+          <div class="row">
+            <dt data-t="fSold">Data sold</dt>
+            <dd>0</dd>
+          </div>
+          <div class="row">
+            <dt data-t="fLoc">Location shared</dt>
+            <dd data-t="fLocV">~1 km area</dd>
+          </div>
+          <div class="row">
+            <dt data-t="fPwd">Passwords to leak</dt>
+            <dd>0</dd>
+          </div>
+          <div class="row">
+            <dt data-t="fLangs">App languages</dt>
+            <dd>4</dd>
+          </div>
+          <div class="row">
+            <dt data-t="fTests">Automated tests</dt>
+            <dd>272</dd>
+          </div>
+          <div class="row">
+            <dt data-t="fLicense">License</dt>
+            <dd>MIT</dd>
+          </div>
+        </dl>
+        <p class="note" data-t="factsNote">
+          Values for version 0.2.0. Sign-in is by email link, so there is no password to store.
+          Legal texts in the repo are drafts to review with a lawyer.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="tour" aria-labelledby="tour-title">
+    <div class="wrap">
+      <h2 id="tour-title" data-t="tourTitle">What members get</h2>
+      <p class="section-intro" data-t="tourIntro">
+        Real screenshots of the current version. Profile photos are illustrations.
+      </p>
+      <div class="tour">
+        <article class="feature">
+          <div class="copy">
+            <span class="tag" data-t="t1Tag">Matching</span>
+            <h3 data-t="t1Title">Matches that explain themselves</h3>
+            <p data-t="t1Body">
+              Dateos suggests people who are likely to like each other, and says why: a shared
+              language, the same idea of a perfect Sunday. Attention is spread fairly, so nobody
+              gets buried. The algorithm is published.
+            </p>
+            <ul>
+              <li data-t="t1a">Daily picks, chosen with care</li>
+              <li data-t="t1b">Like a specific answer and add a comment</li>
+              <li data-t="t1c">"Likes You" is free</li>
+            </ul>
+          </div>
+          <div class="shots">
+            <figure class="phone">
+              <img
+                data-shot="12-picks"
+                src="img/en/12-picks.webp"
+                width="780"
+                height="1688"
+                loading="lazy"
+                alt="Daily Picks with the reason for each person"
+                data-t-alt="aPicks"
+              />
+            </figure>
+          </div>
+        </article>
+
+        <article class="feature">
+          <div class="copy">
+            <span class="tag" data-t="t2Tag">Safety</span>
+            <h3 data-t="t2Title">Kindness is built into the chat</h3>
+            <p data-t="t2Body">
+              Before a hurtful message goes out, Dateos asks "Are you sure?". Offensive messages are
+              hidden, common scam patterns get a warning, and photos stay blurred until you choose
+              to look. A report button is always one tap away.
+            </p>
+          </div>
+          <div class="shots">
+            <figure class="phone">
+              <img
+                data-shot="20-chat-are-you-sure"
+                src="img/en/20-chat-are-you-sure.webp"
+                width="780"
+                height="1688"
+                loading="lazy"
+                alt="The Are you sure? prompt before a hurtful message"
+                data-t-alt="aSure"
+              />
+            </figure>
+            <figure class="phone">
+              <img
+                data-shot="21-chat-safety"
+                src="img/en/21-chat-safety.webp"
+                width="780"
+                height="1688"
+                loading="lazy"
+                alt="A hidden offensive message and a scam warning"
+                data-t-alt="aSafety"
+              />
+            </figure>
+          </div>
+        </article>
+
+        <article class="feature">
+          <div class="copy">
+            <span class="tag" data-t="t3Tag">New in 0.2</span>
+            <h3 data-t="t3Title">Safer dates, and no ghosting</h3>
+            <p data-t="t3Body">
+              Going on a date? Set a safety check-in. Someone you trust gets an email only if you
+              don't tap "I'm OK" in time, or right away if you press SOS. When a chat isn't going
+              anywhere, "Close kindly" ends it with a polite message instead of silence.
+            </p>
+            <ul>
+              <li data-t="t3a">The email holds only what you wrote, in your language</li>
+              <li data-t="t3b">Check-ins are deleted 7 days after they end</li>
+              <li data-t="t3c">Chats waiting 3 days for your reply are marked</li>
+            </ul>
+          </div>
+          <div class="shots">
+            <figure class="phone">
+              <img
+                data-shot="41-checkin-active"
+                src="img/en/41-checkin-active.webp"
+                width="780"
+                height="1688"
+                loading="lazy"
+                alt="An active safety check-in with I'm OK and SOS buttons"
+                data-t-alt="aCheckin"
+              />
+            </figure>
+            <figure class="phone">
+              <img
+                data-shot="43-closed-card"
+                src="img/en/43-closed-card.webp"
+                width="780"
+                height="1688"
+                loading="lazy"
+                alt="The card the other person sees after a chat is closed kindly"
+                data-t-alt="aClosed"
+              />
+            </figure>
+          </div>
+        </article>
+
+        <article class="feature">
+          <div class="copy">
+            <span class="tag" data-t="t4Tag">Privacy</span>
+            <h3 data-t="t4Title">Privacy you can check</h3>
+            <p data-t="t4Body">
+              Consent comes first, and sensitive details need their own explicit yes. Your location
+              is shown only as an area of about 1 km. "Download my data" and "Delete my account" are
+              two taps away, and there are no tracking cookies at all.
+            </p>
+          </div>
+          <div class="shots">
+            <figure class="phone">
+              <img
+                data-shot="04-consents"
+                src="img/en/04-consents.webp"
+                width="780"
+                height="1688"
+                loading="lazy"
+                alt="Separate consent choices during sign-up"
+                data-t-alt="aConsents"
+              />
+            </figure>
+            <figure class="phone">
+              <img
+                data-shot="39-download-data"
+                src="img/en/39-download-data.webp"
+                width="780"
+                height="1688"
+                loading="lazy"
+                alt="Download my data"
+                data-t-alt="aDownload"
+              />
+            </figure>
+          </div>
+        </article>
+
+        <article class="feature">
+          <div class="copy">
+            <span class="tag" data-t="t5Tag">AI</span>
+            <h3 data-t="t5Title">AI that runs on your server</h3>
+            <p data-t="t5Body">
+              Matching, conversation starters and a gentle profile coach run on the community's own
+              server by default. A cloud AI service is used only if the operator turns it on and
+              each member agrees.
+            </p>
+          </div>
+          <div class="shots">
+            <figure class="phone">
+              <img
+                data-shot="35-coach"
+                src="img/en/35-coach.webp"
+                width="780"
+                height="1688"
+                loading="lazy"
+                alt="The profile coach suggesting improvements"
+                data-t-alt="aCoach"
+              />
+            </figure>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="section ops" id="operators" aria-labelledby="ops-title">
+    <div class="wrap">
+      <span class="tag" data-t="opsTag">For the people who run it</span>
+      <h2 id="ops-title" data-t="opsTitle">Your name, your server, your rules</h2>
+      <p class="section-intro" data-t="opsIntro">
+        One install script gives your community its own app, with your name, logo and colours. The
+        data stays on your server.
+      </p>
+      <div class="ops-grid">
+        <figure class="phone">
+          <img
+            data-shot="setup-04-welcome-light"
+            src="img/en/setup-04-welcome-light.webp"
+            width="780"
+            height="1688"
+            loading="lazy"
+            alt="The app with a community's own name and colours"
+            data-t-alt="aBrand"
+          />
+        </figure>
+        <figure class="desk">
+          <img
+            data-shot="admin-03-reports"
+            src="img/en/admin-03-reports.webp"
+            width="1600"
+            height="1075"
+            loading="lazy"
+            alt="The moderation dashboard with the report queue"
+            data-t-alt="aAdmin"
+          />
+        </figure>
+      </div>
+      <div class="ops-points">
+        <div>
+          <h3 data-t="o1Title">Moderation included</h3>
+          <p data-t="o1Body">
+            A dashboard with mandatory two-factor sign-in, a report queue with evidence, photo
+            verification reviewed by a person, and a full audit log.
+          </p>
+        </div>
+        <div>
+          <h3 data-t="o2Title">Runs on one server</h3>
+          <p data-t="o2Body">
+            PostgreSQL, Redis and S3-compatible storage in Docker, with HTTPS, virus scanning for
+            uploads and backups. Load-tested with 5,000 members.
+          </p>
+        </div>
+        <div>
+          <h3 data-t="o3Title">No vendor in the middle</h3>
+          <p data-t="o3Body">
+            No analytics or third-party scripts. Email goes through the provider you choose, and
+            push notifications are opt-in and carry no names or message text.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="install" aria-labelledby="install-title">
+    <div class="wrap install">
+      <div>
+        <h2 id="install-title" data-t="installTitle">Start in an afternoon</h2>
+        <p class="section-intro" data-t="installIntro">
+          You need a Linux server with Docker and a domain name. The installer asks a few questions
+          and starts everything.
+        </p>
+        <ul class="checklist">
+          <li data-t="i1">HTTPS certificates set up for you</li>
+          <li data-t="i2">A setup page to claim the instance and pick your brand</li>
+          <li data-t="i3">A production checklist before you invite members</li>
+        </ul>
+      </div>
+      <div class="terminal">
+        <div class="bar">
+          <span>bash</span
+          ><button class="copybtn" type="button" id="copy" data-t="copy">Copy</button>
+        </div>
+        <pre id="cmd"><code>git clone https://github.com/diamondrubinny/Dateos.git
+cd Dateos
+./install.sh --domain example.org</code></pre>
+      </div>
+    </div>
+    <div class="wrap">
+      <h2 style="margin-top: clamp(3rem, 7vw, 5rem)" data-t="whoTitle">Who it's for</h2>
+      <div class="who">
+        <article>
+          <h3 data-t="w1Title">Communities</h3>
+          <p data-t="w1Body">
+            A city, a university, a religious or cultural community, an LGBTQ+ organisation or a
+            professional network that wants a dating space of its own.
+          </p>
+        </article>
+        <article>
+          <h3 data-t="w2Title">Non-profits</h3>
+          <p data-t="w2Body">
+            Social initiatives that care about safety and dignity more than time spent in the app.
+          </p>
+        </article>
+        <article>
+          <h3 data-t="w3Title">Developers</h3>
+          <p data-t="w3Body">
+            A modern, tested codebase in TypeScript, React Native and PostgreSQL, with every phase
+            documented.
+          </p>
+        </article>
+      </div>
+      <div class="sponsor">
+        <p data-t="sponsor">
+          Dateos is free for everyone. Sponsorship pays for security audits, accessibility reviews
+          and legal templates that every community can use.
+        </p>
+        <a class="btn primary" href="https://github.com/sponsors/diamondrubinny" data-t="sponsorBtn"
+          >Support the project</a
+        >
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="links">
+      <a href="https://github.com/diamondrubinny/Dateos" data-t="fRepo">Source code</a>
+      <a
+        href="https://github.com/diamondrubinny/Dateos/blob/main/docs/SELF_HOSTING.md"
+        data-t="fHost"
+        >Self-hosting guide</a
+      >
+      <a href="https://github.com/diamondrubinny/Dateos/blob/main/docs/PRIVACY.md" data-t="fPrivacy"
+        >Privacy guide</a
+      >
+      <a
+        href="https://github.com/diamondrubinny/Dateos/blob/main/docs/SECURITY_REVIEW.md"
+        data-t="fSecurity"
+        >Security review</a
+      >
+    </div>
+    <p data-t="fNote">
+      Dateos is created by Diamond Rubinny and released under the MIT license. Screenshots are real
+      captures of version 0.2.0; profile photos are illustrations. Legal texts are drafts, not legal
+      advice. This page uses no cookies and no analytics.
+    </p>
+  </div>
+</footer>
+
+<script>
+  (() => {
+    const he = {
+      skip: 'דילוג לתוכן',
+      navTour: 'סיור',
+      navOps: 'למפעילים',
+      navInstall: 'התקנה',
+      eyebrow: 'חינם · קוד פתוח · גרסה 0.2',
+      h1: 'היכרויות ששייכות <em>לקהילה שלכם</em>.',
+      lede: 'Dateos היא אפליקציית היכרויות חינמית בקוד פתוח ל-iPhone, ל-Android ולדפדפן. עירייה, אוניברסיטה או כל קהילה יכולה להפעיל אותה בשם שלה ועל השרת שלה. בלי פרסומות, בלי תשלומים ובלי מכירת מידע.',
+      ctaRun: 'להפעיל לקהילה שלכם',
+      ctaTour: 'להכיר את האפליקציה',
+      langs: 'האפליקציה מדברת עברית, אנגלית, ערבית ורוסית, כולל כתיבה מימין לשמאל.',
+      aLikes: 'עשו לך לייק: כל מי שעשה לך לייק, בחינם',
+      aDiscover: 'גילוי: פרופיל עם הסיבות להתאמה',
+      aMatch: 'מסך "יש התאמה"',
+      argTitle: 'בנויה לפחות שיחות, וטובות יותר.',
+      arg1: 'רוב אפליקציות ההיכרויות מרוויחות יותר ככל שממשיכים להחליק. Dateos לא מרוויחה כלום, ולכן אפשר לבנות אותה בדיוק להפך: אנשים שמוצאים חן זה בעיני זה, שיחות אמיתיות, ופרידה מכבדת כשזה לא מתאים.',
+      arg2: 'כל הפיצ׳רים חינמיים לכולם, כולל לראות מי עשה לך לייק. הקוד פתוח לציבור ברישיון MIT, כך שכל אחד ואחת יכולים לבדוק מה הוא עושה עם המידע שלכם.',
+      factsTitle: 'ערכים להיכרות',
+      factsPer: 'לחבר/ת קהילה, לחודש',
+      factsCost: 'עלות: 0',
+      fAds: 'פרסומות',
+      fPaid: 'פיצ׳רים בתשלום',
+      fCookies: 'עוגיות מעקב',
+      fSold: 'מידע שנמכר',
+      fLoc: 'מיקום שמוצג',
+      fLocV: 'אזור של כ-1 ק״מ',
+      fPwd: 'סיסמאות שיכולות לדלוף',
+      fLangs: 'שפות באפליקציה',
+      fTests: 'בדיקות אוטומטיות',
+      fLicense: 'רישיון',
+      factsNote:
+        'הערכים נכונים לגרסה 0.2.0. ההתחברות היא בקישור במייל, ולכן אין סיסמה לשמור. המסמכים המשפטיים במאגר הם טיוטות שיש לבדוק עם עורך/ת דין.',
+      tourTitle: 'מה מקבלים חברי הקהילה',
+      tourIntro: 'צילומי מסך אמיתיים של הגרסה הנוכחית. תמונות הפרופיל הן איורים.',
+      t1Tag: 'התאמה',
+      t1Title: 'התאמות שמסבירות את עצמן',
+      t1Body:
+        'Dateos מציעה אנשים שסביר שימצאו חן זה בעיני זה, ואומרת למה: שפה משותפת, אותו רעיון ליום ראשון מושלם. תשומת הלב מתחלקת בהוגנות, כך שאף אחד לא נקבר בתחתית. האלגוריתם מפורסם.',
+      t1a: 'בחירות יומיות, שנבחרו בקפידה',
+      t1b: 'לייק לתשובה מסוימת, עם הערה',
+      t1c: '"עשו לך לייק" בחינם',
+      aPicks: 'הבחירות של היום, עם הסיבה לכל אחד ואחת',
+      t2Tag: 'בטיחות',
+      t2Title: 'נימוס מובנה בצ׳אט',
+      t2Body:
+        'לפני שהודעה פוגענית יוצאת, Dateos שואלת "בטוח/ה?". הודעות פוגעניות מוסתרות, דפוסי הונאה נפוצים מקבלים אזהרה, ותמונות נשארות מטושטשות עד שבוחרים לראות. כפתור דיווח תמיד במרחק לחיצה.',
+      aSure: 'השאלה "בטוח/ה?" לפני הודעה פוגענית',
+      aSafety: 'הודעה פוגענית מוסתרת ואזהרת הונאה',
+      t3Tag: 'חדש בגרסה 0.2',
+      t3Title: 'דייטים בטוחים יותר, ובלי היעלמויות',
+      t3Body:
+        'יוצאים לדייט? הגדירו צ׳ק-אין בטיחות. מי שאתם סומכים עליו מקבל מייל רק אם לא לחצתם "אני בסדר" בזמן, או מיד אם לחצתם SOS. וכששיחה לא מובילה לשום מקום, "לסיים בנימוס" סוגר אותה בהודעה מכבדת במקום שתיקה.',
+      t3a: 'במייל רק מה שכתבתם, בשפה שלכם',
+      t3b: 'הצ׳ק-אין נמחק 7 ימים אחרי שהסתיים',
+      t3c: 'שיחות שמחכות 3 ימים לתשובה שלכם מסומנות',
+      aCheckin: 'צ׳ק-אין בטיחות פעיל עם הכפתורים "אני בסדר" ו-SOS',
+      aClosed: 'הכרטיס שהצד השני רואה אחרי סיום בנימוס',
+      t4Tag: 'פרטיות',
+      t4Title: 'פרטיות שאפשר לבדוק',
+      t4Body:
+        'ההסכמה באה קודם, ופרטים רגישים דורשים "כן" נפרד ומפורש. המיקום שלכם מוצג רק כאזור של כ-1 ק״מ. "הורדת המידע שלי" ו"מחיקת החשבון" במרחק שתי לחיצות, ואין עוגיות מעקב בכלל.',
+      aConsents: 'בחירות הסכמה נפרדות בהרשמה',
+      aDownload: 'הורדת המידע שלי',
+      t5Tag: 'בינה מלאכותית',
+      t5Title: 'בינה מלאכותית שרצה על השרת שלכם',
+      t5Body:
+        'ההתאמה, פותחי השיחה ומאמן הפרופיל העדין רצים כברירת מחדל על השרת של הקהילה. שירות AI בענן משמש רק אם המפעיל הפעיל אותו וכל חבר/ת קהילה הסכימו.',
+      aCoach: 'מאמן הפרופיל מציע שיפורים',
+      opsTag: 'למי שמפעילים את זה',
+      opsTitle: 'השם שלכם, השרת שלכם, הכללים שלכם',
+      opsIntro:
+        'סקריפט התקנה אחד נותן לקהילה אפליקציה משלה, עם השם, הלוגו והצבעים שלכם. המידע נשאר על השרת שלכם.',
+      aBrand: 'האפליקציה עם השם והצבעים של הקהילה',
+      aAdmin: 'לוח המודרציה עם תור הדיווחים',
+      o1Title: 'מודרציה כלולה',
+      o1Body:
+        'לוח ניהול עם אימות דו-שלבי חובה, תור דיווחים עם ראיות, אימות תמונות שנבדק בידי אדם, ויומן פעולות מלא.',
+      o2Title: 'רצה על שרת אחד',
+      o2Body:
+        'PostgreSQL, Redis ואחסון תואם S3 ב-Docker, עם HTTPS, סריקת וירוסים לקבצים וגיבויים. נבדקה בעומס של 5,000 משתמשים.',
+      o3Title: 'בלי ספק באמצע',
+      o3Body:
+        'בלי אנליטיקס ובלי סקריפטים של צד שלישי. מיילים עוברים דרך הספק שאתם בוחרים, והתראות הן לפי בחירה ובלי שמות או תוכן הודעות.',
+      installTitle: 'מתחילים בצהריים אחד',
+      installIntro: 'צריך שרת Linux עם Docker ושם דומיין. ההתקנה שואלת כמה שאלות ומפעילה הכול.',
+      i1: 'תעודות HTTPS מוגדרות בשבילכם',
+      i2: 'עמוד הגדרה לתפיסת השרת ולבחירת המיתוג',
+      i3: 'רשימת בדיקות לפני שמזמינים חברים',
+      copy: 'העתקה',
+      copied: 'הועתק',
+      whoTitle: 'למי זה מתאים',
+      w1Title: 'קהילות',
+      w1Body:
+        'עירייה, אוניברסיטה, קהילה דתית או תרבותית, ארגון להט״ב+ או רשת מקצועית שרוצים מרחב היכרויות משלהם.',
+      w2Title: 'עמותות',
+      w2Body: 'יוזמות חברתיות שחשובים להן בטיחות וכבוד יותר מזמן שמבלים באפליקציה.',
+      w3Title: 'מפתחים ומפתחות',
+      w3Body: 'קוד מודרני ובדוק ב-TypeScript, ‏React Native ו-PostgreSQL, עם תיעוד לכל שלב.',
+      sponsor:
+        'Dateos חינמית לכולם. החסות מממנת ביקורות אבטחה, בדיקות נגישות ותבניות משפטיות שכל קהילה יכולה להשתמש בהן.',
+      sponsorBtn: 'לתמוך בפרויקט',
+      fRepo: 'קוד המקור',
+      fHost: 'מדריך התקנה עצמית',
+      fPrivacy: 'מדריך פרטיות',
+      fSecurity: 'סקירת אבטחה',
+      fNote:
+        'Dateos נוצרה על ידי Diamond Rubinny ומשוחררת ברישיון MIT. צילומי המסך אמיתיים מגרסה 0.2.0; תמונות הפרופיל הן איורים. המסמכים המשפטיים הם טיוטות ואינם ייעוץ משפטי. העמוד הזה לא משתמש בעוגיות ולא באנליטיקס.',
+      nav: 'ראשי',
+    };
+    const en = { copied: 'Copied', nav: 'Main' };
+    // English is the page's own text; capture it so switching back restores it exactly.
+    document.querySelectorAll('[data-t]').forEach((el) => {
+      en[el.dataset.t] = el.innerHTML;
+    });
+    document.querySelectorAll('[data-t-alt]').forEach((el) => {
+      en[el.dataset.tAlt] = el.alt;
+    });
+    const dict = { en, he };
+    const buttons = document.querySelectorAll('.lang button');
+    let current = 'en';
+
+    function apply(lang) {
+      const t = dict[lang];
+      current = lang;
+      const root = document.documentElement;
+      root.lang = lang;
+      root.dir = lang === 'he' ? 'rtl' : 'ltr';
+      document.querySelectorAll('[data-t]').forEach((el) => {
+        if (t[el.dataset.t] != null) el.innerHTML = t[el.dataset.t];
+      });
+      document.querySelectorAll('[data-t-alt]').forEach((el) => {
+        if (t[el.dataset.tAlt] != null) el.alt = t[el.dataset.tAlt];
+      });
+      document
+        .querySelectorAll('[data-t-label]')
+        .forEach((el) => el.setAttribute('aria-label', t[el.dataset.tLabel]));
+      document.querySelectorAll('img[data-shot]').forEach((img) => {
+        img.src = `img/${lang}/${img.dataset.shot}.webp`;
+      });
+      buttons.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.lang === lang)));
+      try {
+        localStorage.setItem('dateos.site.lang', lang);
+      } catch {}
+      try {
+        history.replaceState(null, '', `#${lang}`);
+      } catch {}
+    }
+
+    buttons.forEach((b) => b.addEventListener('click', () => apply(b.dataset.lang)));
+
+    let start = 'en';
+    try {
+      start = localStorage.getItem('dateos.site.lang') || start;
+    } catch {}
+    if (!['en', 'he'].includes(start)) start = 'en';
+    if (!location.hash && (navigator.language || '').toLowerCase().startsWith('he')) start = 'he';
+    if (location.hash === '#he' || location.hash === '#en') start = location.hash.slice(1);
+    if (start !== 'en') apply(start);
+
+    const copyBtn = document.getElementById('copy');
+    copyBtn.addEventListener('click', () => {
+      const text = document.getElementById('cmd').innerText;
+      const done = () => {
+        copyBtn.textContent = dict[current].copied;
+        setTimeout(() => {
+          copyBtn.innerHTML = dict[current].copy;
+        }, 1600);
+      };
+      const select = () => {
+        const r = document.createRange();
+        r.selectNodeContents(document.getElementById('cmd'));
+        const s = getSelection();
+        s.removeAllRanges();
+        s.addRange(r);
+      };
+      if (navigator.clipboard?.writeText) navigator.clipboard.writeText(text).then(done, select);
+      else select();
+    });
+  })();
+</script>
