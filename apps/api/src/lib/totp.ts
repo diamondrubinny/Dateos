@@ -112,7 +112,7 @@ export function otpauthUrl(issuer: string, account: string, secretBase32: string
 // ---------------------------------------------------------------------------
 
 export function deriveKey(masterSecret: string, purpose: string): Buffer {
-  return Buffer.from(hkdfSync('sha256', masterSecret, 'dateos', purpose, 32));
+  return Buffer.from(hkdfSync('sha256', masterSecret, 'nexaheart', purpose, 32));
 }
 
 export function encryptSecret(key: Buffer, plaintext: string): string {

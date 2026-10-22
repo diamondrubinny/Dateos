@@ -1,4 +1,4 @@
-# Contributing to Dateos
+# Contributing to NexaHeart
 
 Thanks for helping build a free, safe, privacy-first dating platform.
 
@@ -19,8 +19,8 @@ pnpm infra:up         # postgres + postgis + pgvector, redis, object storage
 pnpm dev
 ```
 
-Integration tests (`pnpm --filter @dateos/api test:integration`) run against isolated resources (database
-`<name>_test`, Redis DB 15, `dateos-test-*` buckets), so they never touch your local data.
+Integration tests (`pnpm --filter @nexaheart/api test:integration`) run against isolated resources (database
+`<name>_test`, Redis DB 15, `nexaheart-test-*` buckets), so they never touch your local data.
 
 Before opening a PR, run the same checks as CI:
 
@@ -30,7 +30,7 @@ pnpm check            # format, lint, typecheck, test
 
 ## Code style
 
-- TypeScript strict mode everywhere; validate inputs with Zod schemas from `@dateos/shared`.
+- TypeScript strict mode everywhere; validate inputs with Zod schemas from `@nexaheart/shared`.
 - Modules follow `routes → service → repository`. Routes stay thin.
 - Code, identifiers and comments in English; user-facing text goes through i18n.
 - Keep PRs small and focused; describe the user-facing change and any security/privacy impact.

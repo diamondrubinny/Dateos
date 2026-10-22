@@ -1,22 +1,22 @@
 {
   "expo": {
-    "name": "Dateos",
-    "slug": "dateos",
-    "scheme": "dateos",
+    "name": "NexaHeart",
+    "slug": "nexaheart",
+    "scheme": "nexaheart",
     "version": "0.2.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "org.dateos.app",
+      "bundleIdentifier": "org.nexaheart.app",
       "infoPlist": {
         "NSPhotoLibraryUsageDescription": "Choose photos for your dating profile.",
         "NSCameraUsageDescription": "Take a photo for your dating profile."
       }
     },
     "android": {
-      "package": "org.dateos.app",
+      "package": "org.nexaheart.app",
       "adaptiveIcon": {
         "backgroundColor": "#7C3AED",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -27,8 +27,8 @@
     },
     "web": {
       "favicon": "./assets/favicon.png",
-      "name": "Dateos",
-      "shortName": "Dateos",
+      "name": "NexaHeart",
+      "shortName": "NexaHeart",
       "description": "Free, open-source dating. Built for real connections.",
       "themeColor": "#7C3AED",
       "backgroundColor": "#FFFFFF",
@@ -42,8 +42,8 @@
         "expo-localization",
         {
           "supportedLocales": {
-            "ios": ["he", "en"],
-            "android": ["he", "en"]
+            "ios": ["he", "en", "ar", "ru"],
+            "android": ["he", "en", "ar", "ru"]
           }
         }
       ],
@@ -60,13 +60,13 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "Dateos uses your approximate location (about 1 km) to show people nearby."
+          "locationWhenInUsePermission": "NexaHeart uses your approximate location (about 1 km) to show people nearby."
         }
       ],
       [
         "expo-audio",
         {
-          "microphonePermission": "Dateos uses the microphone only while you record a voice message."
+          "microphonePermission": "NexaHeart uses the microphone only while you record a voice message."
         }
       ],
       ["expo-notifications", {}],

@@ -1,6 +1,6 @@
-import { schema, type Database } from '@dateos/db';
-import { ErrorCode } from '@dateos/shared';
-import { audioQuarantineKey, type Storage, type StoredObject } from '@dateos/storage';
+import { schema, type Database } from '@nexaheart/db';
+import { ErrorCode } from '@nexaheart/shared';
+import { audioQuarantineKey, type Storage, type StoredObject } from '@nexaheart/storage';
 import { and, eq, sql } from 'drizzle-orm';
 import { fileTypeFromBuffer } from 'file-type';
 import type { MediaQueue } from '../../lib/queue.js';

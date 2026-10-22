@@ -3,4 +3,4 @@ export const API_URL = (process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:400
   /\/$/,
   '',
 );
-export const APP_SCHEME = 'dateos';
+export const APP_SCHEME = 'nexaheart';

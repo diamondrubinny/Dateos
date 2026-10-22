@@ -9,8 +9,8 @@ export const workerEnvSchema = z.object({
   S3_REGION: z.string().default('us-east-1'),
   S3_ACCESS_KEY_ID: z.string().min(1),
   S3_SECRET_ACCESS_KEY: z.string().min(1),
-  S3_BUCKET_QUARANTINE: z.string().default('dateos-quarantine'),
-  S3_BUCKET_MEDIA: z.string().default('dateos-media'),
+  S3_BUCKET_QUARANTINE: z.string().default('nexaheart-quarantine'),
+  S3_BUCKET_MEDIA: z.string().default('nexaheart-media'),
   /** `disabled` is "Lite mode" for tiny servers: every job logs a warning. */
   MALWARE_SCAN: z.enum(['clamav', 'disabled']).default('clamav'),
   CLAMAV_HOST: z.string().default('localhost'),
@@ -30,7 +30,7 @@ export const workerEnvSchema = z.object({
     .transform((v) => (v ? v : undefined)),
   /** Months without sign-in before an account is warned and then deleted. 0 = never (default). ⚖️ */
   INACTIVE_ACCOUNT_DELETE_MONTHS: z.coerce.number().int().min(0).max(120).default(0),
-  INSTANCE_NAME: z.string().max(40).default('Dateos'),
+  INSTANCE_NAME: z.string().max(40).default('NexaHeart'),
   SMTP_HOST: z.string().default('localhost'),
   SMTP_PORT: z.coerce.number().int().default(1025),
   SMTP_SECURE: z
@@ -45,7 +45,7 @@ export const workerEnvSchema = z.object({
     .string()
     .optional()
     .transform((v) => (v ? v : undefined)),
-  SMTP_FROM: z.string().default('Dateos <no-reply@localhost>'),
+  SMTP_FROM: z.string().default('NexaHeart <no-reply@localhost>'),
   WORKER_CONCURRENCY: z.coerce.number().int().min(1).max(16).default(2),
 });
 

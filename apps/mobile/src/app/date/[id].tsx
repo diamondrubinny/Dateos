@@ -1,4 +1,4 @@
-import { DATE_MIN_LEAD_MINUTES, MAX_DATE_NOTE_LENGTH, type VenueCategory } from '@dateos/shared';
+import { DATE_MIN_LEAD_MINUTES, MAX_DATE_NOTE_LENGTH, type VenueCategory } from '@nexaheart/shared';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';

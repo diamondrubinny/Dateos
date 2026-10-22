@@ -1,4 +1,4 @@
-import type { MeResponse } from '@dateos/shared';
+import type { MeResponse } from '@nexaheart/shared';
 
 export const onboardingRoutes = {
   profile: '/onboarding/profile',

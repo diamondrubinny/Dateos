@@ -1,6 +1,6 @@
-# AI in Dateos
+# AI in NexaHeart
 
-Every AI feature in Dateos is optional, explainable, and runs **on the community's own server by
+Every AI feature in NexaHeart is optional, explainable, and runs **on the community's own server by
 default**. Nothing is sent to an external AI service unless the operator configures one **and** the
 member opts in. This page lists every feature, the data it uses, and how to turn it off.
 
@@ -20,7 +20,7 @@ member opts in. This page lists every feature, the data it uses, and how to turn
 | **Profile tips**                        | Suggests improvements (photos, bio, prompts, verification)        | Your own profile                                                     | This server, published rules (`packages/ai/src/coach.ts`)                              | On                                      | Ignore them                                                            |
 | **Bio drafts**                          | On request, two drafts of your bio from your own words            | Your own bio and prompt answers                                      | A model on this server; or an external model if **you** opted in                       | Off unless the operator enables a model | Operator: no model; member: don't ask                                  |
 
-What Dateos does **not** do with AI: no attractiveness scoring, no face recognition (photo verification
+What NexaHeart does **not** do with AI: no attractiveness scoring, no face recognition (photo verification
 is a human comparison), no automatic decisions about accounts (moderators decide), no reading of
 private messages by a model, no advertising profiles.
 
@@ -46,9 +46,9 @@ are never applied automatically: the person edits and saves.
 asking for sexual content. Run it against any provider:
 
 ```bash
-pnpm --filter @dateos/ai eval                                   # templates
-EVAL_PROVIDER=ollama OLLAMA_CHAT_MODEL=qwen2.5:1.5b pnpm --filter @dateos/ai eval
-EVAL_PROVIDER=openai OPENAI_BASE_URL=... OPENAI_MODEL=... pnpm --filter @dateos/ai eval
+pnpm --filter @nexaheart/ai eval                                   # templates
+EVAL_PROVIDER=ollama OLLAMA_CHAT_MODEL=qwen2.5:1.5b pnpm --filter @nexaheart/ai eval
+EVAL_PROVIDER=openai OPENAI_BASE_URL=... OPENAI_MODEL=... pnpm --filter @nexaheart/ai eval
 ```
 
 Results on this repository (2026-10-21; model output varies between runs):

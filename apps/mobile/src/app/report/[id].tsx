@@ -3,7 +3,7 @@ import {
   reportCategories,
   type MessagesPage,
   type ReportCategory,
-} from '@dateos/shared';
+} from '@nexaheart/shared';
 import { useQueryClient, type InfiniteData } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';

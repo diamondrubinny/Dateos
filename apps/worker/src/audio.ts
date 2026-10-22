@@ -2,7 +2,7 @@ import { execFile } from 'node:child_process';
 import { mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { MAX_VOICE_SECONDS } from '@dateos/shared';
+import { MAX_VOICE_SECONDS } from '@nexaheart/shared';
 import { fileTypeFromBuffer } from 'file-type';
 
 /** Accepted voice formats, by magic bytes, and the only ffmpeg demuxer allowed for each. */
@@ -100,7 +100,7 @@ export async function transcodeVoice(
 ): Promise<TranscodedAudio> {
   const container = await sniffAudio(buffer);
   if (!container) throw new InvalidAudioError('unsupported_format');
-  const dir = await mkdtemp(join(tmpdir(), 'dateos-audio-'));
+  const dir = await mkdtemp(join(tmpdir(), 'nexaheart-audio-'));
   const input = join(dir, 'in');
   const output = join(dir, 'out.m4a');
   const opusOutput = join(dir, 'out.webm');

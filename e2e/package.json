@@ -1,5 +1,5 @@
 {
-  "name": "@dateos/e2e",
+  "name": "@nexaheart/e2e",
   "author": "Diamond Rubinny",
   "version": "0.2.0",
   "private": true,
@@ -22,10 +22,10 @@
   },
   "dependencies": {
     "@axe-core/playwright": "4.14.0",
-    "@dateos/ai": "workspace:*",
-    "@dateos/db": "workspace:*",
-    "@dateos/shared": "workspace:*",
-    "@dateos/storage": "workspace:*",
+    "@nexaheart/ai": "workspace:*",
+    "@nexaheart/db": "workspace:*",
+    "@nexaheart/shared": "workspace:*",
+    "@nexaheart/storage": "workspace:*",
     "drizzle-orm": "0.45.4",
     "fflate": "0.8.3",
     "playwright": "1.64.1",

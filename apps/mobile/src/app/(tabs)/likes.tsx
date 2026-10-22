@@ -1,4 +1,4 @@
-import type { LikeReceived } from '@dateos/shared';
+import type { LikeReceived } from '@nexaheart/shared';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { AppText } from '../../components/AppText';

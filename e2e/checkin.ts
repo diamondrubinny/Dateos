@@ -92,7 +92,7 @@ async function open(browser: Browser, session: { name: string; value: string }, 
       sameSite: 'Lax',
     },
   ]);
-  await context.addInitScript((l) => localStorage.setItem('dateos.locale', l), locale);
+  await context.addInitScript((l) => localStorage.setItem('nexaheart.locale', l), locale);
   return { context, page: await context.newPage() };
 }
 

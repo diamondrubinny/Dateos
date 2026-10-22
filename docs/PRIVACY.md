@@ -5,7 +5,7 @@
 > advice and not a statement that any instance complies** with the GDPR, Israel's Privacy Protection
 > Law or any other law. Compliance depends on how you run your community.
 
-Whoever runs an instance (the **operator**) is the controller of its members' data. The Dateos project
+Whoever runs an instance (the **operator**) is the controller of its members' data. The NexaHeart project
 (Diamond Rubinny and contributors) only publishes the software; it does not receive data from your
 instance.
 

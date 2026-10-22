@@ -1,6 +1,6 @@
-import { schema, type Database } from '@dateos/db';
-import { allowedPhotoMimeTypes, ErrorCode, MAX_PHOTOS, type Photo } from '@dateos/shared';
-import { mediaKey, quarantineKey, type Storage, type StoredObject } from '@dateos/storage';
+import { schema, type Database } from '@nexaheart/db';
+import { allowedPhotoMimeTypes, ErrorCode, MAX_PHOTOS, type Photo } from '@nexaheart/shared';
+import { mediaKey, quarantineKey, type Storage, type StoredObject } from '@nexaheart/storage';
 import { and, asc, eq, ne, sql } from 'drizzle-orm';
 import { fileTypeFromBuffer } from 'file-type';
 import { HttpError } from '../../plugins/error-handler.js';

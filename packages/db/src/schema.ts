@@ -35,7 +35,7 @@ import {
   interactionKinds,
   photoStatuses,
   promptKeys,
-} from '@dateos/shared';
+} from '@nexaheart/shared';
 
 const timestamps = {
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),

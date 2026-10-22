@@ -1,4 +1,4 @@
-import type { Checkin } from '@dateos/shared';
+import type { Checkin } from '@nexaheart/shared';
 import { useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';

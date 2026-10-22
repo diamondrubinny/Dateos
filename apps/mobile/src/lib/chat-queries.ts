@@ -1,4 +1,4 @@
-import type { Conversation, MessagesPage, MessageView } from '@dateos/shared';
+import type { Conversation, MessagesPage, MessageView } from '@nexaheart/shared';
 import {
   useInfiniteQuery,
   useMutation,

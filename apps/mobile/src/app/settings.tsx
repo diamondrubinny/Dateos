@@ -1,4 +1,4 @@
-import { SENSITIVE_CONSENT_VERSION } from '@dateos/shared';
+import { SENSITIVE_CONSENT_VERSION } from '@nexaheart/shared';
 import { Link, router } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useEffect, useState } from 'react';

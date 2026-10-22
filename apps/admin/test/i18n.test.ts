@@ -1,4 +1,4 @@
-import { moderationActions, reportCategories, verificationPoses } from '@dateos/shared';
+import { moderationActions, reportCategories, verificationPoses } from '@nexaheart/shared';
 import { describe, expect, it } from 'vitest';
 import { format, messages } from '../src/i18n';
 

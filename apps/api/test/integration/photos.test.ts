@@ -1,4 +1,4 @@
-import { mediaKey } from '@dateos/storage';
+import { mediaKey } from '@nexaheart/storage';
 import sharp from 'sharp';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import {
@@ -10,7 +10,7 @@ import {
   type TestContext,
 } from './setup.js';
 
-const BOUNDARY = 'dateosboundary';
+const BOUNDARY = 'nexaheartboundary';
 
 function multipart(file: Buffer, filename = 'photo.png', contentType = 'image/png') {
   const head = Buffer.from(

@@ -182,7 +182,10 @@ async function openAs(
       sameSite: 'Lax',
     },
   ]);
-  await context.addInitScript((l) => localStorage.setItem('dateos.locale', l), locale.slice(0, 2));
+  await context.addInitScript(
+    (l) => localStorage.setItem('nexaheart.locale', l),
+    locale.slice(0, 2),
+  );
   const page = await context.newPage();
   page.on('pageerror', (e) => process.stderr.write(`pageerror: ${e.message}\n`));
   return { context, page };

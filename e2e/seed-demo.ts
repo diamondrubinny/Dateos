@@ -1,22 +1,22 @@
 /**
  * Demo data for local development and screenshots: fictional people with illustrated
  * (non-photographic) avatars around Tel Aviv. Refuses to run in production.
- *   pnpm --filter @dateos/e2e seed            # create demo members
- *   pnpm --filter @dateos/e2e seed -- --reset # remove them first
+ *   pnpm --filter @nexaheart/e2e seed            # create demo members
+ *   pnpm --filter @nexaheart/e2e seed -- --reset # remove them first
  */
 import { randomUUID } from 'node:crypto';
 import { existsSync } from 'node:fs';
-import { hashingProvider, profileText } from '@dateos/ai';
-import { createDb, schema } from '@dateos/db';
-import { snapToGrid, type Gender, type Intention, type PromptKey } from '@dateos/shared';
-import { createStorage, mediaKey } from '@dateos/storage';
+import { hashingProvider, profileText } from '@nexaheart/ai';
+import { createDb, schema } from '@nexaheart/db';
+import { snapToGrid, type Gender, type Intention, type PromptKey } from '@nexaheart/shared';
+import { createStorage, mediaKey } from '@nexaheart/storage';
 import { eq, inArray, like, sql } from 'drizzle-orm';
 import sharp from 'sharp';
 
 const envFile = new URL('../.env', import.meta.url);
 if (existsSync(envFile)) process.loadEnvFile(envFile);
 
-export const DEMO_EMAIL_DOMAIN = 'demo.dateos.invalid';
+export const DEMO_EMAIL_DOMAIN = 'demo.nexaheart.invalid';
 const CENTER = { lat: 32.0853, lng: 34.7818 }; // Tel Aviv
 
 interface Person {
@@ -226,8 +226,8 @@ export async function seedDemo({ reset = false } = {}): Promise<string[]> {
     region: process.env.S3_REGION ?? 'us-east-1',
     accessKeyId: process.env.S3_ACCESS_KEY_ID ?? '',
     secretAccessKey: process.env.S3_SECRET_ACCESS_KEY ?? '',
-    quarantineBucket: process.env.S3_BUCKET_QUARANTINE ?? 'dateos-quarantine',
-    mediaBucket: process.env.S3_BUCKET_MEDIA ?? 'dateos-media',
+    quarantineBucket: process.env.S3_BUCKET_QUARANTINE ?? 'nexaheart-quarantine',
+    mediaBucket: process.env.S3_BUCKET_MEDIA ?? 'nexaheart-media',
   });
   await storage.ensureBuckets();
   try {

@@ -1,4 +1,4 @@
-import type { MessageView, ProposeDateInput, Venue } from '@dateos/shared';
+import type { MessageView, ProposeDateInput, Venue } from '@nexaheart/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiFetch, json } from './api';
 import { chatKeys } from './realtime';

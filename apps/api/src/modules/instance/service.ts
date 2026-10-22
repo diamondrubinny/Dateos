@@ -1,13 +1,13 @@
 import { createHash, timingSafeEqual } from 'node:crypto';
-import { schema, type Database } from '@dateos/db';
+import { schema, type Database } from '@nexaheart/db';
 import {
   deriveBrand,
   ErrorCode,
   type InstanceInfo,
   type InstanceSettingsInput,
   type Locale,
-} from '@dateos/shared';
-import type { StoredObject } from '@dateos/storage';
+} from '@nexaheart/shared';
+import type { StoredObject } from '@nexaheart/storage';
 import { and, eq, sql } from 'drizzle-orm';
 import type { Env } from '../../config/env.js';
 import { audit } from '../../lib/audit.js';

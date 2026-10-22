@@ -1,4 +1,4 @@
-import { schema, type Database } from '@dateos/db';
+import { schema, type Database } from '@nexaheart/db';
 
 type Tx = Pick<Database, 'insert'>;
 

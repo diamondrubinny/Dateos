@@ -26,7 +26,7 @@ export function MatchCelebration({ name, onClose }: { name: string; onClose: () 
             {t('matches.newMatchBody', { name })}
           </AppText>
           <AppText variant="body" tone="onPrimary" center>
-            {t('matches.chatSoon')}
+            {t('matches.sayHi')}
           </AppText>
           <Button
             variant="secondary"

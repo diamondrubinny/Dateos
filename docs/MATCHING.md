@@ -1,6 +1,6 @@
-# How Dateos matching works
+# How NexaHeart matching works
 
-Dateos publishes its matching algorithm so anyone can check it: users, researchers, and every community that runs an instance.
+NexaHeart publishes its matching algorithm so anyone can check it: users, researchers, and every community that runs an instance.
 The code lives in [`packages/ai/src/scoring.ts`](../packages/ai/src/scoring.ts) and
 [`apps/api/src/modules/discovery/visibility.ts`](../apps/api/src/modules/discovery/visibility.ts).
 
@@ -79,7 +79,7 @@ Vibe is only compared between embeddings from the same model, so mixing models i
 After changing `EMBEDDINGS_PROVIDER` or `OLLAMA_EMBED_MODEL`, re-embed everyone:
 
 ```bash
-pnpm --filter @dateos/worker reembed
+pnpm --filter @nexaheart/worker reembed
 ```
 
 Measured on this repository (English vs. Hebrew sentences with the same meaning): `paraphrase-multilingual` similarity **0.93**

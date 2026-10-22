@@ -1,6 +1,6 @@
 # Security Policy
 
-Dateos handles highly sensitive personal data (location, photos, private messages, sexual
+NexaHeart handles highly sensitive personal data (location, photos, private messages, sexual
 orientation). We take every report seriously.
 
 ## Reporting a vulnerability

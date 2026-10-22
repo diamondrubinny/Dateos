@@ -6,7 +6,7 @@ import type { Dependency } from '../src/lib/dependencies.js';
 export const baseEnv = {
   NODE_ENV: 'test',
   LOG_LEVEL: 'silent',
-  DATABASE_URL: 'postgres://dateos:secret@localhost:5432/dateos',
+  DATABASE_URL: 'postgres://nexaheart:secret@localhost:5432/nexaheart',
   REDIS_URL: 'redis://localhost:6379',
 } satisfies NodeJS.ProcessEnv;
 

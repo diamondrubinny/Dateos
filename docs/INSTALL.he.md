@@ -1,4 +1,4 @@
-# התקנת Dateos, צעד אחר צעד
+# התקנת NexaHeart, צעד אחר צעד
 
 [English](INSTALL.md) · **עברית**
 
@@ -6,7 +6,7 @@
 שלכם. בפעם הראשונה כדאי לתכנן כשעה, ורובה המתנה ל-DNS ולבנייה הראשונה. לא צריך להיות מפתחים: אם
 אתם יודעים להתחבר לשרת ב-SSH ולהדביק פקודות, תצליחו.
 
-> ⚖️ מי שמפעיל שרת של Dateos הוא המפעיל (בדיני פרטיות: בעל השליטה במאגר) של המידע של חברי הקהילה.
+> ⚖️ מי שמפעיל שרת של NexaHeart הוא המפעיל (בדיני פרטיות: בעל השליטה במאגר) של המידע של חברי הקהילה.
 > קראו את שלב 8 לפני שמזמינים מישהו, ובקשו מעורך/ת דין לבדוק את המסמכים המשפטיים לפי הדין במדינה
 > שלכם. שום דבר במאגר הזה אינו הצהרה על עמידה בדרישות החוק.
 
@@ -64,12 +64,12 @@ docker compose version
 
 ✅ **בדיקה:** `ping admin.example.org` (מהמחשב שלכם) מראה את כתובת ה-IP של השרת.
 
-## שלב 3: הורדת Dateos ויצירת ההגדרות
+## שלב 3: הורדת NexaHeart ויצירת ההגדרות
 
 ```bash
-sudo mkdir -p /opt/dateos && sudo chown "$USER" /opt/dateos
-git clone https://github.com/diamondrubinny/Dateos.git /opt/dateos
-cd /opt/dateos
+sudo mkdir -p /opt/nexaheart && sudo chown "$USER" /opt/nexaheart
+git clone https://github.com/diamondrubinny/Dateos.git /opt/nexaheart
+cd /opt/nexaheart
 ./install.sh --domain example.org
 ```
 
@@ -104,13 +104,13 @@ SMTP_FROM="Your Community <no-reply@example.org>"
 כדי לחסוך הקלדה, צרו קיצור (הריצו פעם אחת בכל התחברות SSH, או הוסיפו ל-`~/.bashrc`):
 
 ```bash
-alias dc='docker compose -f /opt/dateos/infra/docker-compose.yml --env-file /opt/dateos/.env --profile app --profile full'
+alias dc='docker compose -f /opt/nexaheart/infra/docker-compose.yml --env-file /opt/nexaheart/.env --profile app --profile full'
 ```
 
 ואז בנו והפעילו:
 
 ```bash
-cd /opt/dateos
+cd /opt/nexaheart
 dc up -d --build
 ```
 
@@ -166,7 +166,7 @@ dc exec api node dist/cli/staff.js list
 
 ### בינה מלאכותית מקומית (התאמה חכמה יותר ופותחי שיחה)
 
-כברירת מחדל Dateos לא משתמשת בשום מודל בינה מלאכותית: ההתאמה מבוססת על דמיון בין טקסטים, ופותחי
+כברירת מחדל NexaHeart לא משתמשת בשום מודל בינה מלאכותית: ההתאמה מבוססת על דמיון בין טקסטים, ופותחי
 השיחה הם תבניות מוכנות בכל שפה. כדי להשתמש במודל קטן שרץ **על השרת שלכם** (שום מידע לא יוצא ממנו),
 צריך עוד כ-4GB זיכרון:
 
@@ -205,14 +205,14 @@ ICEBREAKERS_PROVIDER=ollama
 
 ## יום-יום
 
-| משימה               | פקודה                                             |
-| ------------------- | ------------------------------------------------- |
-| עדכון לגרסה האחרונה | `cd /opt/dateos && git pull && dc up -d --build`  |
-| מה רץ עכשיו         | `dc ps`                                           |
-| קריאת לוגים         | `dc logs -f api` (או `worker`, ‏`web`, ‏`clamav`) |
-| החלת שינוי ב-`.env` | `dc up -d --force-recreate api worker`            |
-| עצירת הכול          | `dc stop` (המידע נשמר)                            |
-| הפעלה מחדש          | `dc up -d`                                        |
+| משימה               | פקודה                                               |
+| ------------------- | --------------------------------------------------- |
+| עדכון לגרסה האחרונה | `cd /opt/nexaheart && git pull && dc up -d --build` |
+| מה רץ עכשיו         | `dc ps`                                             |
+| קריאת לוגים         | `dc logs -f api` (או `worker`, ‏`web`, ‏`clamav`)   |
+| החלת שינוי ב-`.env` | `dc up -d --force-recreate api worker`              |
+| עצירת הכול          | `dc stop` (המידע נשמר)                              |
+| הפעלה מחדש          | `dc up -d`                                          |
 
 עדכוני מסד הנתונים רצים אוטומטית כשהגרסה החדשה עולה. קראו את [CHANGELOG.md](../CHANGELOG.md) לפני
 עדכון.
@@ -223,19 +223,19 @@ ICEBREAKERS_PROVIDER=ollama
 מקומיים ישנים מ-14 יום. מגדירים פעם אחת:
 
 ```bash
-head -c 32 /dev/urandom | base64 | sudo tee /root/.dateos-backup-key >/dev/null
-sudo chmod 600 /root/.dateos-backup-key
+head -c 32 /dev/urandom | base64 | sudo tee /root/.nexaheart-backup-key >/dev/null
+sudo chmod 600 /root/.nexaheart-backup-key
 sudo crontab -e
 # הוסיפו את השורה הזו: גיבוי בכל לילה ב-03:00
-0 3 * * * cd /opt/dateos && BACKUP_PASSPHRASE_FILE=/root/.dateos-backup-key ./scripts/backup.sh
+0 3 * * * cd /opt/nexaheart && BACKUP_PASSPHRASE_FILE=/root/.nexaheart-backup-key ./scripts/backup.sh
 ```
 
-העתיקו את הקבצים מ-`/opt/dateos/backups/` למקום אחר (שרת אחר או שירות אחסון), ושמרו את הסיסמה ואת
+העתיקו את הקבצים מ-`/opt/nexaheart/backups/` למקום אחר (שרת אחר או שירות אחסון), ושמרו את הסיסמה ואת
 `.env` בנפרד מהם. מדי פעם נסו שחזור למסד נתונים נפרד:
 
 ```bash
-RESTORE_DATABASE=dateos_check BACKUP_PASSPHRASE_FILE=/root/.dateos-backup-key \
-  ./scripts/restore.sh backups/dateos-db-<time>.dump.enc
+RESTORE_DATABASE=nexaheart_check BACKUP_PASSPHRASE_FILE=/root/.nexaheart-backup-key \
+  ./scripts/restore.sh backups/nexaheart-db-<time>.dump.enc
 ```
 
 ## פתרון בעיות
@@ -273,7 +273,7 @@ Linux יטפל בעדכונים ובגיבויים.
 
 **איפה נשמר המידע של חברי הקהילה?**
 רק על השרת שלכם: מסד הנתונים והתמונות וההודעות הקוליות נמצאים שם ב-volumes של Docker. שום דבר לא
-נשלח ליוצרי Dateos. מיילים עוברים דרך ספק המיילים שלכם, והתראות פוש (אם הפעלתם) דרך Expo, ‏Apple
+נשלח ליוצרי NexaHeart. מיילים עוברים דרך ספק המיילים שלכם, והתראות פוש (אם הפעלתם) דרך Expo, ‏Apple
 ו-Google. הרשימה המלאה ב-[PRIVACY.md](PRIVACY.md).
 
 **צריך סיסמה כדי להיכנס?**
@@ -312,7 +312,7 @@ Linux יטפל בעדכונים ובגיבויים.
 רשומות ה-DNS החדשות והריצו `dc up -d --build` (אפליקציית הדפדפן נבנית מחדש עם הכתובת החדשה).
 
 **איך מוחקים הכול?**
-`dc down -v` עוצר את Dateos ו**מוחק לצמיתות את כל המידע**, כולל כל חשבונות החברים. אם ייתכן שתצטרכו
+`dc down -v` עוצר את NexaHeart ו**מוחק לצמיתות את כל המידע**, כולל כל חשבונות החברים. אם ייתכן שתצטרכו
 אותו, עשו ושמרו גיבוי קודם, והודיעו לחברי הקהילה מראש ⚖️.
 
 **איפה מקבלים עזרה או מדווחים על באג?**

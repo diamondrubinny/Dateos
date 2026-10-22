@@ -1,4 +1,4 @@
-import { DEFAULT_TAGLINE, localeSchema } from '@dateos/shared';
+import { DEFAULT_TAGLINE, localeSchema } from '@nexaheart/shared';
 import { z } from 'zod';
 
 const booleanString = z.enum(['true', 'false']).transform((value) => value === 'true');
@@ -56,11 +56,11 @@ export const envSchema = z.object({
   PUBLIC_API_URL: z.url().default('http://localhost:4000'),
   /** WebSocket ping interval; each ping also re-checks the session (sign-out, suspension). */
   WS_HEARTBEAT_MS: z.coerce.number().int().min(100).max(120_000).default(30_000),
-  /** Deep-link scheme of the native app (dateos://...). */
+  /** Deep-link scheme of the native app (nexaheart://...). */
   APP_SCHEME: z
     .string()
     .regex(/^[a-z][a-z0-9+.-]*$/)
-    .default('dateos'),
+    .default('nexaheart'),
   AUTH_SECRET: z.string().min(32).optional(),
 
   SMTP_HOST: z.string().default('localhost'),
@@ -68,14 +68,14 @@ export const envSchema = z.object({
   SMTP_SECURE: booleanString.default(false),
   SMTP_USER: optionalString,
   SMTP_PASSWORD: optionalString,
-  SMTP_FROM: z.string().default('Dateos <no-reply@localhost>'),
+  SMTP_FROM: z.string().default('NexaHeart <no-reply@localhost>'),
 
   S3_ENDPOINT: z.url().default('http://localhost:8333'),
   S3_REGION: z.string().default('us-east-1'),
   S3_ACCESS_KEY_ID: optionalString,
   S3_SECRET_ACCESS_KEY: optionalString,
-  S3_BUCKET_QUARANTINE: z.string().default('dateos-quarantine'),
-  S3_BUCKET_MEDIA: z.string().default('dateos-media'),
+  S3_BUCKET_QUARANTINE: z.string().default('nexaheart-quarantine'),
+  S3_BUCKET_MEDIA: z.string().default('nexaheart-media'),
 
   GOOGLE_CLIENT_ID: optionalString,
   GOOGLE_CLIENT_SECRET: optionalString,
@@ -96,7 +96,7 @@ export const envSchema = z.object({
   /** true when the endpoint is a third party (members must opt in to `ai_cloud`). */
   OPENAI_EXTERNAL: booleanString.default(true),
 
-  INSTANCE_NAME: z.string().max(40).default('Dateos'),
+  INSTANCE_NAME: z.string().max(40).default('NexaHeart'),
   INSTANCE_TAGLINE: z.string().max(120).default(DEFAULT_TAGLINE),
   INSTANCE_PRIMARY_COLOR: z
     .string()

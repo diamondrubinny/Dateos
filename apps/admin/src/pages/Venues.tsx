@@ -1,4 +1,4 @@
-import { type AdminVenue, venueCategories, type VenueCategory } from '@dateos/shared';
+import { type AdminVenue, venueCategories, type VenueCategory } from '@nexaheart/shared';
 import { useRef, useState, type FormEvent } from 'react';
 import { api } from '../api';
 import { useAsync } from '../hooks';

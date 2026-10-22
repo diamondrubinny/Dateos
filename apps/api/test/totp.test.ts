@@ -47,10 +47,10 @@ describe('TOTP (RFC 6238 appendix B, SHA-1)', () => {
   });
 
   it('builds an otpauth URL authenticator apps understand', () => {
-    const url = new URL(otpauthUrl('Dateos', 'mod@example.test', 'ABC'));
+    const url = new URL(otpauthUrl('NexaHeart', 'mod@example.test', 'ABC'));
     expect(url.protocol).toBe('otpauth:');
     expect(url.searchParams.get('secret')).toBe('ABC');
-    expect(url.searchParams.get('issuer')).toBe('Dateos');
+    expect(url.searchParams.get('issuer')).toBe('NexaHeart');
   });
 });
 

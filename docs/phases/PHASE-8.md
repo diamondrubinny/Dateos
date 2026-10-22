@@ -15,7 +15,7 @@ screenshots in all four, and a marketing description of the project in all four 
 | 4   | Harm detection: a small, conservative Arabic and Russian word list (insults, threats, scam phrases), documented as limited ⚖️                                               |
 | 5   | Admin: default language choice for the instance includes Arabic and Russian (dashboard itself stays Hebrew/English)                                                         |
 | 6   | Screenshots in all four languages (onboarding, discovery, chat, safety, privacy) and showcase strips                                                                        |
-| 7   | `docs/marketing/` in English, Russian, Arabic and Hebrew: what Dateos is, who it is for, advantages, screenshots, how to start; linked from the README                      |
+| 7   | `docs/marketing/` in English, Russian, Arabic and Hebrew: what NexaHeart is, who it is for, advantages, screenshots, how to start; linked from the README                   |
 
 ## Non-goals
 

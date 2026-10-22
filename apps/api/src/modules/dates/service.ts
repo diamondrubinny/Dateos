@@ -1,5 +1,5 @@
-import { checkHarm } from '@dateos/ai';
-import { schema, type Database } from '@dateos/db';
+import { checkHarm } from '@nexaheart/ai';
+import { schema, type Database } from '@nexaheart/db';
 import {
   DATE_MAX_DAYS_AHEAD,
   DATE_MIN_LEAD_MINUTES,
@@ -8,7 +8,7 @@ import {
   ErrorCode,
   type MessageView,
   type ProposeDateInput,
-} from '@dateos/shared';
+} from '@nexaheart/shared';
 import { and, eq, gt, inArray, or, sql } from 'drizzle-orm';
 import { HttpError } from '../../plugins/error-handler.js';
 import { type ChatService, messageFlags } from '../chat/service.js';

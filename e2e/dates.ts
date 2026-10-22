@@ -4,7 +4,7 @@
  * accepts it live, and the proposer opens the safety check-in already filled in.
  */
 import { existsSync } from 'node:fs';
-import { createDb } from '@dateos/db';
+import { createDb } from '@nexaheart/db';
 import { chromium, type Browser } from 'playwright';
 import { messages as adminMessages } from '../apps/admin/src/i18n.ts';
 import { totp } from '../apps/api/src/lib/totp.ts';
@@ -176,8 +176,8 @@ async function open(
     ]);
   }
   await context.addInitScript((l) => {
-    localStorage.setItem('dateos.locale', l);
-    localStorage.setItem('dateos-admin-locale', l);
+    localStorage.setItem('nexaheart.locale', l);
+    localStorage.setItem('nexaheart-admin-locale', l);
   }, locale);
   const page = await context.newPage();
   page.on('pageerror', (e) => problems.push(`pageerror: ${e.message}`));

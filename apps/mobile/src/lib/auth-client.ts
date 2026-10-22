@@ -22,8 +22,8 @@ export const authClient = createAuthClient({
       : [
           expoClient({
             scheme: APP_SCHEME,
-            storagePrefix: 'dateos',
-            cookiePrefix: 'dateos',
+            storagePrefix: 'nexaheart',
+            cookiePrefix: 'nexaheart',
             storage: SecureStore,
           }),
         ]),

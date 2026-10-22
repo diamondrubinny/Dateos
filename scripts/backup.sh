@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Backup of a Dateos instance: the database (pg_dump, custom format) and the object storage
+# Backup of a NexaHeart instance: the database (pg_dump, custom format) and the object storage
 # (photos, voice messages, evidence). Run from the repository root, e.g. daily from cron:
-#   0 3 * * * cd /opt/dateos && BACKUP_PASSPHRASE_FILE=/root/.dateos-backup-key ./scripts/backup.sh
+#   0 3 * * * cd /opt/nexaheart && BACKUP_PASSPHRASE_FILE=/root/.nexaheart-backup-key ./scripts/backup.sh
 #
 #   BACKUP_DIR              where to write (default ./backups)
 #   BACKUP_KEEP_DAYS        delete local backups older than this (default 14). Backups contain
@@ -33,8 +33,8 @@ encrypt() {
 suffix=""
 [ -n "${BACKUP_PASSPHRASE_FILE:-}" ] && suffix=".enc"
 
-db_file="$dir/dateos-db-$stamp.dump$suffix"
-files_file="$dir/dateos-files-$stamp.tar$suffix"
+db_file="$dir/nexaheart-db-$stamp.dump$suffix"
+files_file="$dir/nexaheart-files-$stamp.tar$suffix"
 
 echo "Database → $db_file"
 "${compose[@]}" exec -T postgres pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Fc --no-owner | encrypt > "$db_file"
@@ -51,5 +51,5 @@ if [ -z "$suffix" ]; then
   echo "Warning: backups are not encrypted (set BACKUP_PASSPHRASE_FILE)." >&2
 fi
 
-find "$dir" -name 'dateos-*' -type f -mtime "+$keep" -print -delete
+find "$dir" -name 'nexaheart-*' -type f -mtime "+$keep" -print -delete
 echo "Done."

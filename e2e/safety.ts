@@ -4,7 +4,7 @@
  * report and the selfie, and acts. Captures screenshots and an axe-core audit of every screen.
  */
 import { existsSync } from 'node:fs';
-import { createDb, schema } from '@dateos/db';
+import { createDb, schema } from '@nexaheart/db';
 import { eq } from 'drizzle-orm';
 import { chromium, type Browser, type BrowserContext } from 'playwright';
 import { totp } from '../apps/api/src/lib/totp.ts';
@@ -109,8 +109,8 @@ async function browserFor(
   }
   await context.addInitScript(
     (l) => {
-      localStorage.setItem('dateos.locale', l);
-      localStorage.setItem('dateos-admin-locale', l);
+      localStorage.setItem('nexaheart.locale', l);
+      localStorage.setItem('nexaheart-admin-locale', l);
     },
     locale.slice(0, 2),
   );

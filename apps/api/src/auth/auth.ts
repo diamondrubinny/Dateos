@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { expo } from '@better-auth/expo';
-import { schema, type Database } from '@dateos/db';
+import { schema, type Database } from '@nexaheart/db';
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { eq } from 'drizzle-orm';
@@ -12,7 +12,7 @@ import { magicLinkEmail, type Mailer } from '../lib/mailer.js';
 
 export const AUTH_BASE_PATH = '/v1/auth';
 /** Header the API sets from Fastify's verified client IP; client-supplied values are dropped. */
-export const CLIENT_IP_HEADER = 'x-dateos-client-ip';
+export const CLIENT_IP_HEADER = 'x-nexaheart-client-ip';
 
 const MAGIC_LINK_TTL_SECONDS = 10 * 60;
 /**
@@ -27,7 +27,7 @@ async function allowEmail(redis: Redis, email: string, ip: string): Promise<bool
   const hash = createHash('sha256').update(email.toLowerCase()).digest('hex');
   const ipHash = createHash('sha256').update(ip).digest('hex').slice(0, 16);
   const counts: number[] = [];
-  for (const key of [`dateos:ml:${hash}`, `dateos:ml:${hash}:${ipHash}`]) {
+  for (const key of [`nexaheart:ml:${hash}`, `nexaheart:ml:${hash}:${ipHash}`]) {
     const count = await redis.incr(key);
     if (count === 1) await redis.expire(key, 3_600);
     counts.push(count);
@@ -123,7 +123,7 @@ export function createAuth({ env, secret, db, redis, mailer, onMailError }: Auth
       },
     },
     advanced: {
-      cookiePrefix: 'dateos',
+      cookiePrefix: 'nexaheart',
       useSecureCookies: env.PUBLIC_API_URL.startsWith('https://'),
       ipAddress: { ipAddressHeaders: [CLIENT_IP_HEADER] },
     },

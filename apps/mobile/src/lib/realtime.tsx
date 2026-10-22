@@ -1,4 +1,4 @@
-import type { MessagesPage, MessageView, RealtimeEvent } from '@dateos/shared';
+import type { MessagesPage, MessageView, RealtimeEvent } from '@nexaheart/shared';
 import { useQueryClient, type InfiniteData } from '@tanstack/react-query';
 import { createContext, useContext, useEffect, useRef, type ReactNode } from 'react';
 import { Platform } from 'react-native';

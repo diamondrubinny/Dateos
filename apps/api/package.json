@@ -1,5 +1,5 @@
 {
-  "name": "@dateos/api",
+  "name": "@nexaheart/api",
   "author": "Diamond Rubinny",
   "version": "0.2.0",
   "private": true,
@@ -17,10 +17,10 @@
   },
   "dependencies": {
     "@better-auth/expo": "1.7.12",
-    "@dateos/ai": "workspace:*",
-    "@dateos/db": "workspace:*",
-    "@dateos/shared": "workspace:*",
-    "@dateos/storage": "workspace:*",
+    "@nexaheart/ai": "workspace:*",
+    "@nexaheart/db": "workspace:*",
+    "@nexaheart/shared": "workspace:*",
+    "@nexaheart/storage": "workspace:*",
     "@fastify/cors": "11.3.1",
     "@fastify/helmet": "13.2.0",
     "@fastify/multipart": "10.1.4",

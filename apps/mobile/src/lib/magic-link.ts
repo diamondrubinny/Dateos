@@ -5,7 +5,7 @@ import { authClient } from './auth-client';
 import { base64url, toBase64url } from './pkce';
 import { prefs } from './storage';
 
-const VERIFIER_KEY = 'dateos.signInVerifier';
+const VERIFIER_KEY = 'nexaheart.signInVerifier';
 
 /**
  * Where the emailed link returns to. Web: the web origin (the session is an HttpOnly cookie).

@@ -1,4 +1,4 @@
-import { ErrorCode } from '@dateos/shared';
+import { ErrorCode } from '@nexaheart/shared';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import type { Redis } from 'ioredis';
 import { z } from 'zod';

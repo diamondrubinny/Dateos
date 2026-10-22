@@ -1,4 +1,4 @@
-import { checkinInputSchema, checkinSchema } from '@dateos/shared';
+import { checkinInputSchema, checkinSchema } from '@nexaheart/shared';
 import type { FastifyPluginAsyncZod, ZodTypeProvider } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import type { Auth } from '../../auth/auth.js';

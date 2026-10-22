@@ -1,13 +1,13 @@
-import { profileText, type EmbeddingProvider } from '@dateos/ai';
-import { schema, type Database } from '@dateos/db';
+import { profileText, type EmbeddingProvider } from '@nexaheart/ai';
+import { schema, type Database } from '@nexaheart/db';
 import {
   MODERATION_LOG_RETENTION_DAYS,
   RESOLVED_REPORT_RETENTION_DAYS,
   UNMATCHED_CHAT_RETENTION_DAYS,
   VERIFICATION_RECORD_RETENTION_DAYS,
   type EmbedProfileJob,
-} from '@dateos/shared';
-import type { Storage } from '@dateos/storage';
+} from '@nexaheart/shared';
+import type { Storage } from '@nexaheart/storage';
 import { asc, eq, sql } from 'drizzle-orm';
 
 const { profiles, prompts, profileEmbeddings } = schema;

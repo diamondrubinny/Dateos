@@ -1,4 +1,4 @@
-import { moderationActions, type ModerationAction, type StaffMe } from '@dateos/shared';
+import { moderationActions, type ModerationAction, type StaffMe } from '@nexaheart/shared';
 import { useId, useRef, useState, type FormEvent } from 'react';
 import { api } from '../api';
 import { useAsync } from '../hooks';

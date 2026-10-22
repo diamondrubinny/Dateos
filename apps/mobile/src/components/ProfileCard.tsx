@@ -1,4 +1,4 @@
-import type { PublicProfile } from '@dateos/shared';
+import type { PublicProfile } from '@nexaheart/shared';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';

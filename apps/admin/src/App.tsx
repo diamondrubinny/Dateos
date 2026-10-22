@@ -13,7 +13,7 @@ import { SignIn } from './pages/SignIn';
 import { Venues } from './pages/Venues';
 import { Verifications } from './pages/Verifications';
 
-const LOCALE_KEY = 'dateos-admin-locale';
+const LOCALE_KEY = 'nexaheart-admin-locale';
 
 function initialLocale(): Locale {
   try {
@@ -52,7 +52,7 @@ function Shell({
         {t.skip}
       </a>
       <header className="topbar">
-        <span className="brand">Dateos · {t.appName}</span>
+        <span className="brand">NexaHeart · {t.appName}</span>
         {signedIn ? (
           <nav aria-label={t.appName}>
             <ul>
@@ -133,7 +133,7 @@ export function App() {
   useEffect(() => {
     document.documentElement.lang = locale;
     document.documentElement.dir = locale === 'he' ? 'rtl' : 'ltr';
-    document.title = `Dateos · ${messages[locale].appName}`;
+    document.title = `NexaHeart · ${messages[locale].appName}`;
     try {
       window.localStorage.setItem(LOCALE_KEY, locale);
     } catch {

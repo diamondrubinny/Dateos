@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Dateos installer: creates .env with strong random secrets and the object-storage credentials file.
+# NexaHeart installer: creates .env with strong random secrets and the object-storage credentials file.
 # Usage:
 #   ./install.sh                          first-time setup (local development)
 #   ./install.sh --domain example.org     production: app on example.org, dashboard on
@@ -44,7 +44,7 @@ fi
 COMPOSE=(docker compose -f infra/docker-compose.yml)
 # Postgres and Redis keep the password they were initialised with, so rotating secrets
 # over existing volumes would silently lock the API out of its own data.
-if [[ "$FORCE" == true ]] && docker volume inspect dateos_postgres-data >/dev/null 2>&1; then
+if [[ "$FORCE" == true ]] && docker volume inspect nexaheart_postgres-data >/dev/null 2>&1; then
   if [[ "$RESET_DATA" != true ]]; then
     fail "existing data volumes found. New secrets would not match them. Either keep your current .env, or run './install.sh --force --reset-data' to DELETE all local data and start fresh."
   fi
@@ -70,7 +70,7 @@ TMP_ENV="$(mktemp .env.tmp.XXXXXX)"
 trap 'rm -f "$TMP_ENV"' EXIT
 sed \
   -e "s|^POSTGRES_PASSWORD=.*|POSTGRES_PASSWORD=${POSTGRES_PASSWORD}|" \
-  -e "s|^DATABASE_URL=.*|DATABASE_URL=postgres://dateos:${POSTGRES_PASSWORD}@localhost:5432/dateos|" \
+  -e "s|^DATABASE_URL=.*|DATABASE_URL=postgres://nexaheart:${POSTGRES_PASSWORD}@localhost:5432/nexaheart|" \
   -e "s|^REDIS_PASSWORD=.*|REDIS_PASSWORD=${REDIS_PASSWORD}|" \
   -e "s|^REDIS_URL=.*|REDIS_URL=redis://:${REDIS_PASSWORD}@localhost:6379|" \
   -e "s|^S3_ACCESS_KEY_ID=.*|S3_ACCESS_KEY_ID=${S3_ACCESS_KEY_ID}|" \
@@ -101,7 +101,7 @@ cat > infra/data/seaweedfs/s3.json <<JSON
 {
   "identities": [
     {
-      "name": "dateos-api",
+      "name": "nexaheart-api",
       "credentials": [{ "accessKey": "${S3_ACCESS_KEY_ID}", "secretKey": "${S3_SECRET_ACCESS_KEY}" }],
       "actions": ["Read", "Write", "List", "Tagging", "Admin"]
     }
@@ -113,7 +113,7 @@ JSON
 chmod 700 infra/data infra/data/seaweedfs
 chmod 644 infra/data/seaweedfs/s3.json
 
-printf '\nDateos is configured.\n'
+printf '\nNexaHeart is configured.\n'
 printf '  Secrets written to .env and infra/data/seaweedfs/s3.json (owner-only, git-ignored).\n\n'
 printf 'Next steps:\n'
 if [[ -n "$DOMAIN" ]]; then

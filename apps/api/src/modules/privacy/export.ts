@@ -1,5 +1,5 @@
-import { schema, type Database } from '@dateos/db';
-import type { Storage } from '@dateos/storage';
+import { schema, type Database } from '@nexaheart/db';
+import type { Storage } from '@nexaheart/storage';
 import { asc, desc, eq, or, sql } from 'drizzle-orm';
 import { strToU8, zipSync, type Zippable } from 'fflate';
 
@@ -275,7 +275,7 @@ export async function exportMemberData(
   };
   files['data.json'] = strToU8(JSON.stringify(data, null, 2));
   files['README.txt'] = strToU8(
-    'This archive contains your data from this Dateos community.\n' +
+    'This archive contains your data from this NexaHeart community.\n' +
       'data.json: your account, profile, choices and activity. photos/ and voice/: your files.\n' +
       'Keep it safe: it contains personal information.\n',
   );

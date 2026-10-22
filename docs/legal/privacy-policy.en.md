@@ -8,7 +8,7 @@
 service. Contact: [CONTACT_EMAIL]. [If appointed: our privacy protection officer / data protection
 officer can be reached at …]
 
-[COMMUNITY] runs on Dateos, free open-source software. The authors of the software do not receive your
+[COMMUNITY] runs on NexaHeart, free open-source software. The authors of the software do not receive your
 data.
 
 ## In short

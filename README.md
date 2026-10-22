@@ -1,9 +1,12 @@
 <div align="center">
 
-# Dateos
+<img src="apps/mobile/assets/icon.png" alt="" width="96">
+
+# NexaHeart
 
 **The free, open-source dating platform anyone can run.**
 Native iOS & Android plus web from one codebase, privacy by design, and safety built in from day one.
+<sub>Formerly called Dateos.</sub>
 
 **[English](docs/marketing/en.md) · [עברית](docs/marketing/he.md) · [العربية](docs/marketing/ar.md) · [Русский](docs/marketing/ru.md)**
 
@@ -12,7 +15,7 @@ Native iOS & Android plus web from one codebase, privacy by design, and safety b
 [![WCAG 2.1 AA target](https://img.shields.io/badge/accessibility-WCAG%202.1%20AA%20target-067647.svg)](#accessibility)
 [![Sponsor](https://img.shields.io/badge/sponsor-%F0%9F%92%9C-ea4aaa.svg?logo=githubsponsors)](https://github.com/sponsors/diamondrubinny)
 
-<img src="docs/screenshots/showcase-en.png" alt="Dateos screens: a Discover card with reasons, liking a prompt with a comment, the match screen, Daily Picks and Likes You" width="100%">
+<img src="docs/screenshots/showcase-en.png" alt="NexaHeart screens: a Discover card with reasons, liking a prompt with a comment, the match screen, Daily Picks and Likes You" width="100%">
 
 <sub>Real screenshots of the current web build, captured automatically by <a href="e2e/screenshots.ts">e2e/screenshots.ts</a>. Profile photos are illustrations; no real people appear.</sub>
 
@@ -20,10 +23,10 @@ Native iOS & Android plus web from one codebase, privacy by design, and safety b
 
 ---
 
-## Why Dateos?
+## Why NexaHeart?
 
 Most dating apps make money by keeping you swiping, selling "boosts", and monetising your data.
-Dateos is built the other way around:
+NexaHeart is built the other way around:
 
 - 🆓 **Free for everyone, forever.** No premium tier, no paywalls, no ads, no selling data. MIT licensed.
 - 🏠 **Run your own instance.** A city, a community or an organisation can launch a branded dating app with one install script.
@@ -38,7 +41,7 @@ Dateos is built the other way around:
 
 ## Status
 
-Dateos is in active development. Here is what works today and what comes next. The full plan is in [`docs/PLAN.md`](docs/PLAN.md).
+NexaHeart is in active development. Here is what works today and what comes next. The full plan is in [`docs/PLAN.md`](docs/PLAN.md).
 
 | Area                                                                                                                         | Status       |
 | ---------------------------------------------------------------------------------------------------------------------------- | ------------ |
@@ -130,26 +133,26 @@ pnpm infra:up                # PostgreSQL (PostGIS + pgvector), Redis, SeaweedFS
 docker compose -f infra/docker-compose.yml --env-file .env --profile full --profile dev up -d
                              # + ClamAV malware scanning, + Mailpit (catches sign-in emails)
 pnpm dev                     # API on :4000 and worker (migrations run automatically)
-pnpm --filter @dateos/e2e seed     # optional: fictional demo members around Tel Aviv
-pnpm --filter @dateos/mobile web   # app in the browser on :8081
+pnpm --filter @nexaheart/e2e seed     # optional: fictional demo members around Tel Aviv
+pnpm --filter @nexaheart/mobile web   # app in the browser on :8081
 ```
 
 Open <http://localhost:8081>, sign in with any email, and click the link in Mailpit at <http://localhost:8025>.
-For iOS/Android, run `pnpm --filter @dateos/mobile start` and open the project in a development build
+For iOS/Android, run `pnpm --filter @nexaheart/mobile start` and open the project in a development build
 ([Expo docs](https://docs.expo.dev/develop/development-builds/introduction/)).
 
 <details>
 <summary>More commands</summary>
 
-| Command                                      | What it does                                                                                       |
-| -------------------------------------------- | -------------------------------------------------------------------------------------------------- |
-| `pnpm check`                                 | Format check, lint, typecheck and unit tests                                                       |
-| `pnpm --filter @dateos/api test:integration` | API tests against real Postgres, Redis and S3 (IDOR, chat, WebSocket…), on isolated test resources |
-| `pnpm --filter @dateos/e2e screenshots`      | Walks the whole app in a browser, regenerates screenshots and runs an axe-core WCAG audit          |
-| `pnpm --filter @dateos/e2e chat`             | Two browsers chat live: verifies real-time delivery and every chat safety feature                  |
-| `pnpm --filter @dateos/e2e seed -- --reset`  | Recreates the fictional demo members (refuses to run against non-local databases)                  |
-| `pnpm --filter @dateos/worker reembed`       | Re-computes every profile embedding (after switching the embedding model)                          |
-| `./install.sh --force --reset-data`          | Regenerates secrets **and deletes all local data**                                                 |
+| Command                                         | What it does                                                                                       |
+| ----------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `pnpm check`                                    | Format check, lint, typecheck and unit tests                                                       |
+| `pnpm --filter @nexaheart/api test:integration` | API tests against real Postgres, Redis and S3 (IDOR, chat, WebSocket…), on isolated test resources |
+| `pnpm --filter @nexaheart/e2e screenshots`      | Walks the whole app in a browser, regenerates screenshots and runs an axe-core WCAG audit          |
+| `pnpm --filter @nexaheart/e2e chat`             | Two browsers chat live: verifies real-time delivery and every chat safety feature                  |
+| `pnpm --filter @nexaheart/e2e seed -- --reset`  | Recreates the fictional demo members (refuses to run against non-local databases)                  |
+| `pnpm --filter @nexaheart/worker reembed`       | Re-computes every profile embedding (after switching the embedding model)                          |
+| `./install.sh --force --reset-data`             | Regenerates secrets **and deletes all local data**                                                 |
 
 </details>
 
@@ -208,14 +211,14 @@ Found a vulnerability? Please report it privately; see [SECURITY.md](SECURITY.md
 
 ## Accessibility
 
-Dateos targets **WCAG 2.1 AA** and the Israeli standard **IS 5568**. Every screen in the screenshot flow is scanned with
+NexaHeart targets **WCAG 2.1 AA** and the Israeli standard **IS 5568**. Every screen in the screenshot flow is scanned with
 [axe-core](https://github.com/dequelabs/axe-core) and currently reports **0 violations**. Every control has a screen-reader label
 and role, focus is visible for keyboard users, text scales up to 200%, and every swipe action has a button.
 Further automated checks cover keyboard-only sign-in with visible focus, reflow at 320 px, 200% text, reduced motion and the document language and direction (`pnpm --dir e2e a11y`). Automated checks catch only part of the issues: manual testing with VoiceOver, TalkBack and keyboard is part of the [release checklist](docs/PRODUCTION_CHECKLIST.md).
 
-## 💜 Sponsor Dateos
+## 💜 Sponsor NexaHeart
 
-Dateos will stay free for everyone. Sponsorships fund what a safe dating platform needs and code alone can't provide:
+NexaHeart will stay free for everyone. Sponsorships fund what a safe dating platform needs and code alone can't provide:
 independent **security audits**, **accessibility audits**, **legal review** of the privacy and consent templates, and a public demo.
 
 | Tier                | Monthly    |
@@ -229,7 +232,7 @@ independent **security audits**, **accessibility audits**, **legal review** of t
 
 One-time gifts: **$5**, **$25**, **$100**, **$500** or any amount.
 
-<a href="https://github.com/sponsors/diamondrubinny"><img src="https://img.shields.io/badge/Sponsor_on_GitHub-%F0%9F%92%9C-ea4aaa?style=for-the-badge&logo=githubsponsors" alt="Sponsor Dateos on GitHub"></a>
+<a href="https://github.com/sponsors/diamondrubinny"><img src="https://img.shields.io/badge/Sponsor_on_GitHub-%F0%9F%92%9C-ea4aaa?style=for-the-badge&logo=githubsponsors" alt="Sponsor NexaHeart on GitHub"></a>
 
 What each tier includes, and what sponsorship will **never** buy (user data, moderation influence, ranking changes): [docs/SPONSORS.md](docs/SPONSORS.md).
 Thank you to everyone in [SUPPORTERS.md](SUPPORTERS.md).

@@ -1,4 +1,4 @@
-import type { CoachTipId } from '@dateos/shared';
+import type { CoachTipId } from '@nexaheart/shared';
 import { router, type Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';

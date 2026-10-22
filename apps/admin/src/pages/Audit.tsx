@@ -1,4 +1,4 @@
-import type { AuditEntry } from '@dateos/shared';
+import type { AuditEntry } from '@nexaheart/shared';
 import { useState } from 'react';
 import { api, ApiError } from '../api';
 import { useAsync } from '../hooks';

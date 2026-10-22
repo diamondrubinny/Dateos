@@ -2,7 +2,7 @@
 
 > Status: ✅ done (2026-10-22). 📘 = verify against official docs, ⚖️ = needs legal review.
 
-Goal: a public landing page that explains Dateos to communities and operators, in **English and
+Goal: a public landing page that explains NexaHeart to communities and operators, in **English and
 Hebrew** (right-to-left), with real screenshots, published as a shareable page and kept in the repo.
 
 ## Scope

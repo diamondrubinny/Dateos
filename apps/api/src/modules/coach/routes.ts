@@ -1,6 +1,6 @@
-import { bioIdeas, coachTips } from '@dateos/ai';
-import { schema, type Database } from '@dateos/db';
-import { bioIdeasSchema, coachResponseSchema, ErrorCode, localeSchema } from '@dateos/shared';
+import { bioIdeas, coachTips } from '@nexaheart/ai';
+import { schema, type Database } from '@nexaheart/db';
+import { bioIdeasSchema, coachResponseSchema, ErrorCode, localeSchema } from '@nexaheart/shared';
 import { and, asc, eq } from 'drizzle-orm';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';

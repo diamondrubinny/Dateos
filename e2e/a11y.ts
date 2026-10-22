@@ -63,7 +63,7 @@ async function focusVisible(page: Page): Promise<{ visible: boolean; label: stri
 async function keyboardFlow(browser: Browser, locale: L) {
   const t = T[locale];
   const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
-  await context.addInitScript((l) => localStorage.setItem('dateos.locale', l), locale);
+  await context.addInitScript((l) => localStorage.setItem('nexaheart.locale', l), locale);
   const page = await context.newPage();
   try {
     await page.goto(`${WEB}/welcome`);
@@ -128,7 +128,7 @@ async function layoutChecks(browser: Browser, locale: L) {
       viewport: mode === 'reflow-320' ? { width: 320, height: 640 } : { width: 390, height: 844 },
       reducedMotion: 'reduce',
     });
-    await context.addInitScript((l) => localStorage.setItem('dateos.locale', l), locale);
+    await context.addInitScript((l) => localStorage.setItem('nexaheart.locale', l), locale);
     const page = await context.newPage();
     try {
       for (const path of PUBLIC_SCREENS) {

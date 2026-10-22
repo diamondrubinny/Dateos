@@ -5,9 +5,9 @@ import {
   profileInputSchema,
   profileUpdateSchema,
   promptsInputSchema,
-} from '@dateos/shared';
+} from '@nexaheart/shared';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
-import { ErrorCode } from '@dateos/shared';
+import { ErrorCode } from '@nexaheart/shared';
 import { z } from 'zod';
 import { HttpError } from '../../plugins/error-handler.js';
 import { perUserLimit } from '../../plugins/security.js';

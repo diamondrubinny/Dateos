@@ -13,7 +13,7 @@ import { DevSettings, I18nManager, Platform } from 'react-native';
 import i18n, { isAppLocale, rtlLocales, type AppLocale } from '../i18n';
 import { prefs } from './storage';
 
-const PREF_KEY = 'dateos.locale';
+const PREF_KEY = 'nexaheart.locale';
 
 interface LocaleState {
   locale: AppLocale;

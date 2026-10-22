@@ -22,7 +22,7 @@ const en = {
   setup: {
     title: 'Claim this instance',
     intro:
-      'This Dateos instance has no admin yet. Enter the one-time setup token that the installer printed (it is also in the server’s .env file as SETUP_TOKEN). You will become the first admin.',
+      'This NexaHeart instance has no admin yet. Enter the one-time setup token that the installer printed (it is also in the server’s .env file as SETUP_TOKEN). You will become the first admin.',
     token: 'Setup token',
     submit: 'Become admin',
     invalid: 'That token is not valid.',
@@ -263,7 +263,7 @@ const he: Messages = {
   setup: {
     title: 'הפעלת השרת שלכם',
     intro:
-      'לשרת Dateos הזה עדיין אין מנהל. הזינו את קוד ההקמה החד־פעמי שהמתקין הדפיס (הוא נמצא גם בקובץ ‎.env‎ בשרת בשם SETUP_TOKEN). אתם תהיו המנהלים הראשונים.',
+      'לשרת NexaHeart הזה עדיין אין מנהל. הזינו את קוד ההקמה החד־פעמי שהמתקין הדפיס (הוא נמצא גם בקובץ ‎.env‎ בשרת בשם SETUP_TOKEN). אתם תהיו המנהלים הראשונים.',
     token: 'קוד הקמה',
     submit: 'הפיכה למנהל/ת',
     invalid: 'הקוד אינו תקין.',

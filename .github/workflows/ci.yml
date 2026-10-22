@@ -64,7 +64,7 @@ jobs:
       - run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
-      - run: pnpm --filter @dateos/api test:integration
+      - run: pnpm --filter @nexaheart/api test:integration
 
   installer:
     name: Installer and compose config
@@ -107,7 +107,7 @@ jobs:
           context: .
           file: ${{ matrix.file }}
           push: false
-          tags: dateos-${{ matrix.app }}:ci
+          tags: nexaheart-${{ matrix.app }}:ci
 
   secrets:
     name: Secret scan

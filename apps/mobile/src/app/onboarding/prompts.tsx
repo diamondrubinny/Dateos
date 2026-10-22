@@ -1,4 +1,4 @@
-import { MAX_PROMPTS, promptKeys, type PromptKey } from '@dateos/shared';
+import { MAX_PROMPTS, promptKeys, type PromptKey } from '@nexaheart/shared';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';

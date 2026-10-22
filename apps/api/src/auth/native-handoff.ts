@@ -13,7 +13,7 @@ import type { Redis } from 'ioredis';
 export const NATIVE_CODE_TTL_SECONDS = 120;
 const CHALLENGE = /^[A-Za-z0-9_-]{43}$/;
 const key = (code: string) =>
-  `dateos:native-code:${createHash('sha256').update(code).digest('hex')}`;
+  `nexaheart:native-code:${createHash('sha256').update(code).digest('hex')}`;
 const challengeOf = (verifier: string) => createHash('sha256').update(verifier).digest('base64url');
 
 export interface NativeRedirect {

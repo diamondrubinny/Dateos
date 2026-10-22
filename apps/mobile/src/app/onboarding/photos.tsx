@@ -1,4 +1,4 @@
-import { MAX_PHOTO_BYTES, MAX_PHOTOS, type Photo } from '@dateos/shared';
+import { MAX_PHOTO_BYTES, MAX_PHOTOS, type Photo } from '@nexaheart/shared';
 import * as ImagePicker from 'expo-image-picker';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';

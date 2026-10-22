@@ -1,4 +1,4 @@
-import { schema, type Database } from '@dateos/db';
+import { schema, type Database } from '@nexaheart/db';
 import {
   ageOn,
   ErrorCode,
@@ -6,7 +6,7 @@ import {
   type ModerationAction,
   type ReportDetail,
   type ReportSummary,
-} from '@dateos/shared';
+} from '@nexaheart/shared';
 import { and, asc, desc, eq, lt, sql, type SQL } from 'drizzle-orm';
 import { audit } from '../../lib/audit.js';
 import type { EmailHasher } from '../../lib/banned.js';

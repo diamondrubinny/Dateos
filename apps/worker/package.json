@@ -1,5 +1,5 @@
 {
-  "name": "@dateos/worker",
+  "name": "@nexaheart/worker",
   "author": "Diamond Rubinny",
   "version": "0.2.0",
   "private": true,
@@ -15,10 +15,10 @@
     "reembed": "node --env-file-if-exists=../../.env dist/reembed.js"
   },
   "dependencies": {
-    "@dateos/ai": "workspace:*",
-    "@dateos/db": "workspace:*",
-    "@dateos/shared": "workspace:*",
-    "@dateos/storage": "workspace:*",
+    "@nexaheart/ai": "workspace:*",
+    "@nexaheart/db": "workspace:*",
+    "@nexaheart/shared": "workspace:*",
+    "@nexaheart/storage": "workspace:*",
     "bullmq": "6.3.19",
     "drizzle-orm": "0.45.4",
     "file-type": "22.2.0",

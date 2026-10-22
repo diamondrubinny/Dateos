@@ -1,4 +1,11 @@
-import { ageOn, genders, intentions, MIN_AGE, type Gender, type Intention } from '@dateos/shared';
+import {
+  ageOn,
+  genders,
+  intentions,
+  MIN_AGE,
+  type Gender,
+  type Intention,
+} from '@nexaheart/shared';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';

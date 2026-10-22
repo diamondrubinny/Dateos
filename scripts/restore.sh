@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Restores a backup made by scripts/backup.sh. This REPLACES the current data.
-#   ./scripts/restore.sh backups/dateos-db-<stamp>.dump[.enc] [backups/dateos-files-<stamp>.tar[.enc]]
+#   ./scripts/restore.sh backups/nexaheart-db-<stamp>.dump[.enc] [backups/nexaheart-files-<stamp>.tar[.enc]]
 #   RESTORE_DATABASE  database to restore into (default: POSTGRES_DB). Restore into a new name first
 #                     to test a backup without touching the live data.
 #   BACKUP_PASSPHRASE_FILE  needed for .enc files.

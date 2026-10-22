@@ -51,7 +51,7 @@ async function run(locale: keyof typeof T, browser: Browser) {
     acceptDownloads: true,
   });
   await context.addInitScript((l) => {
-    if (!localStorage.getItem('dateos.locale')) localStorage.setItem('dateos.locale', l);
+    if (!localStorage.getItem('nexaheart.locale')) localStorage.setItem('nexaheart.locale', l);
   }, locale);
   const allowed = new Set([new URL(WEB).host, new URL(API).host]);
   const foreign = new Set<string>();

@@ -13,44 +13,44 @@ export interface StorageItem {
 }
 
 export const storageInventory: StorageItem[] = [
-  // On HTTPS the browser stores it as "__Secure-dateos.session_token" (HttpOnly, Secure, SameSite=Lax).
+  // On HTTPS the browser stores it as "__Secure-nexaheart.session_token" (HttpOnly, Secure, SameSite=Lax).
   {
-    name: 'dateos.session_token',
+    name: 'nexaheart.session_token',
     kind: 'cookie',
     platform: 'web',
     purpose: 'session',
     duration: 'days30',
   },
   {
-    name: 'dateos.locale',
+    name: 'nexaheart.locale',
     kind: 'localStorage',
     platform: 'web',
     purpose: 'language',
     duration: 'untilChanged',
   },
   {
-    name: 'dateos_cookie',
+    name: 'nexaheart_cookie',
     kind: 'secureStore',
     platform: 'native',
     purpose: 'session',
     duration: 'days30',
   },
   {
-    name: 'dateos_session_data',
+    name: 'nexaheart_session_data',
     kind: 'secureStore',
     platform: 'native',
     purpose: 'sessionCache',
     duration: 'untilSignOut',
   },
   {
-    name: 'dateos.locale',
+    name: 'nexaheart.locale',
     kind: 'secureStore',
     platform: 'native',
     purpose: 'language',
     duration: 'untilChanged',
   },
   {
-    name: 'dateos.pushToken',
+    name: 'nexaheart.pushToken',
     kind: 'secureStore',
     platform: 'native',
     purpose: 'pushToken',

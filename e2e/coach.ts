@@ -76,7 +76,7 @@ async function run(locale: 'en' | 'he', browser: Browser) {
       sameSite: 'Lax',
     },
   ]);
-  await context.addInitScript((l) => localStorage.setItem('dateos.locale', l), locale);
+  await context.addInitScript((l) => localStorage.setItem('nexaheart.locale', l), locale);
   const page = await context.newPage();
   try {
     await page.goto(`${WEB}/profile`);

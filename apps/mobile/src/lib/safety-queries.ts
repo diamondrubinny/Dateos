@@ -1,4 +1,4 @@
-import type { ReportInput, VerificationState } from '@dateos/shared';
+import type { ReportInput, VerificationState } from '@nexaheart/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Platform } from 'react-native';
 import { apiFetch, json } from './api';

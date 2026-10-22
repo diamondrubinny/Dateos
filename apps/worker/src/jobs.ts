@@ -1,11 +1,11 @@
-import { schema, type Database } from '@dateos/db';
+import { schema, type Database } from '@nexaheart/db';
 import type {
   DeleteObjectsJob,
   ProcessAudioJob,
   ProcessPhotoJob,
   RealtimeEvent,
-} from '@dateos/shared';
-import { audioMediaKey, mediaKey, type Storage } from '@dateos/storage';
+} from '@nexaheart/shared';
+import { audioMediaKey, mediaKey, type Storage } from '@nexaheart/storage';
 import { and, eq, sql } from 'drizzle-orm';
 import type { Logger } from 'pino';
 import type { Scanner } from './clamav.js';

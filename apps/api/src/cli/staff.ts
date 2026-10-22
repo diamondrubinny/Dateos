@@ -3,12 +3,12 @@
  * Server-side staff management. Roles are never granted over HTTP; an operator with shell
  * access to the server runs:
  *
- *   pnpm --filter @dateos/api staff grant <email> moderator|admin
- *   pnpm --filter @dateos/api staff revoke <email>
- *   pnpm --filter @dateos/api staff reset-mfa <email>
- *   pnpm --filter @dateos/api staff list
+ *   pnpm --filter @nexaheart/api staff grant <email> moderator|admin
+ *   pnpm --filter @nexaheart/api staff revoke <email>
+ *   pnpm --filter @nexaheart/api staff reset-mfa <email>
+ *   pnpm --filter @nexaheart/api staff list
  */
-import { createDb, schema } from '@dateos/db';
+import { createDb, schema } from '@nexaheart/db';
 import { eq, inArray } from 'drizzle-orm';
 import { audit } from '../lib/audit.js';
 

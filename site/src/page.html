@@ -1,8 +1,8 @@
-<title>Dateos</title>
+<title>NexaHeart</title>
 <meta name="claude:viewport-fit-sides" content="cover" />
 <meta
   name="description"
-  content="Dateos is a free, open-source dating app for iPhone, Android and the web that any community can run under its own name. No ads, no paywalls, no selling data."
+  content="NexaHeart is a free, open-source dating app for iPhone, Android and the web that any community can run under its own name. No ads, no paywalls, no selling data."
 />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -740,15 +740,23 @@
 
 <header class="top">
   <div class="wrap">
-    <a class="mark" href="#top" aria-label="Dateos">
-      <svg viewBox="0 0 24 24" aria-hidden="true">
+    <a class="mark" href="#top" aria-label="NexaHeart">
+      <!-- The app icon's mark: a heart with three connected points (apps/mobile/scripts/make-icons.mjs). -->
+      <svg viewBox="160 200 704 650" aria-hidden="true">
         <path
           fill="var(--violet)"
-          d="M12 21s-7.5-4.6-9.6-9.2C.9 8.4 3 4.5 6.7 4.5c2.1 0 3.6 1.2 4.3 2.6h2c.7-1.4 2.2-2.6 4.3-2.6 3.7 0 5.8 3.9 4.3 7.3C19.5 16.4 12 21 12 21Z"
+          d="M512 836 C 300 690 168 560 168 408 C 168 296 254 214 362 214 C 428 214 482 250 512 300 C 542 250 596 214 662 214 C 770 214 856 296 856 408 C 856 560 724 690 512 836 Z"
         />
-        <circle cx="12" cy="11.5" r="2.6" fill="var(--paper)" />
+        <g stroke="var(--paper)" stroke-width="30" stroke-linecap="round">
+          <line x1="398" y1="420" x2="626" y2="420" />
+          <line x1="626" y1="420" x2="512" y2="610" />
+          <line x1="512" y1="610" x2="398" y2="420" />
+        </g>
+        <circle cx="398" cy="420" r="48" fill="var(--paper)" />
+        <circle cx="626" cy="420" r="48" fill="var(--paper)" />
+        <circle cx="512" cy="610" r="48" fill="var(--paper)" />
       </svg>
-      Dateos
+      NexaHeart
     </a>
     <nav aria-label="Main" data-t-label="nav">
       <a href="#tour" data-t="navTour">Tour</a>
@@ -773,7 +781,7 @@
         <p class="eyebrow" data-t="eyebrow">Free · Open source · Version 0.2</p>
         <h1 id="hero-title" data-t="h1">Dating that belongs to <em>your community</em>.</h1>
         <p class="lede" data-t="lede">
-          Dateos is a free, open-source dating app for iPhone, Android and the web. A city, a
+          NexaHeart is a free, open-source dating app for iPhone, Android and the web. A city, a
           university or any community can run it under its own name, on its own server. No ads, no
           paywalls, no selling data.
         </p>
@@ -825,9 +833,9 @@
       <div class="argument">
         <h2 data-t="argTitle">Built for fewer, better conversations.</h2>
         <p data-t="arg1">
-          Most dating apps earn more the longer you keep swiping. Dateos earns nothing, so it can be
-          built for the opposite: people who like each other, real conversations, and a kind goodbye
-          when it isn't a match.
+          Most dating apps earn more the longer you keep swiping. NexaHeart earns nothing, so it can
+          be built for the opposite: people who like each other, real conversations, and a kind
+          goodbye when it isn't a match.
         </p>
         <p data-t="arg2">
           Every feature is free for everyone, including seeing who liked you. The code is public
@@ -871,7 +879,7 @@
           </div>
           <div class="row">
             <dt data-t="fTests">Automated tests</dt>
-            <dd>272</dd>
+            <dd>284</dd>
           </div>
           <div class="row">
             <dt data-t="fLicense">License</dt>
@@ -898,7 +906,7 @@
             <span class="tag" data-t="t1Tag">Matching</span>
             <h3 data-t="t1Title">Matches that explain themselves</h3>
             <p data-t="t1Body">
-              Dateos suggests people who are likely to like each other, and says why: a shared
+              NexaHeart suggests people who are likely to like each other, and says why: a shared
               language, the same idea of a perfect Sunday. Attention is spread fairly, so nobody
               gets buried. The algorithm is published.
             </p>
@@ -928,9 +936,9 @@
             <span class="tag" data-t="t2Tag">Safety</span>
             <h3 data-t="t2Title">Kindness is built into the chat</h3>
             <p data-t="t2Body">
-              Before a hurtful message goes out, Dateos asks "Are you sure?". Offensive messages are
-              hidden, common scam patterns get a warning, and photos stay blurred until you choose
-              to look. A report button is always one tap away.
+              Before a hurtful message goes out, NexaHeart asks "Are you sure?". Offensive messages
+              are hidden, common scam patterns get a warning, and photos stay blurred until you
+              choose to look. A report button is always one tap away.
             </p>
           </div>
           <div class="shots">
@@ -1149,8 +1157,8 @@
           <span>bash</span
           ><button class="copybtn" type="button" id="copy" data-t="copy">Copy</button>
         </div>
-        <pre id="cmd"><code>git clone https://github.com/diamondrubinny/Dateos.git
-cd Dateos
+        <pre id="cmd"><code>git clone https://github.com/diamondrubinny/Dateos.git nexaheart
+cd nexaheart
 ./install.sh --domain example.org</code></pre>
       </div>
     </div>
@@ -1180,8 +1188,8 @@ cd Dateos
       </div>
       <div class="sponsor">
         <p data-t="sponsor">
-          Dateos is free for everyone. Sponsorship pays for security audits, accessibility reviews
-          and legal templates that every community can use.
+          NexaHeart is free for everyone. Sponsorship pays for security audits, accessibility
+          reviews and legal templates that every community can use.
         </p>
         <a class="btn primary" href="https://github.com/sponsors/diamondrubinny" data-t="sponsorBtn"
           >Support the project</a
@@ -1212,7 +1220,7 @@ cd Dateos
         <details>
           <summary data-t="q3">Where is our members' data stored?</summary>
           <p data-t="a3">
-            Only on your server. Nothing goes to the Dateos authors. Emails go through your email
+            Only on your server. Nothing goes to the NexaHeart authors. Emails go through your email
             provider, and optional push notifications through Expo, Apple and Google, without names
             or message text.
           </p>
@@ -1271,9 +1279,9 @@ cd Dateos
       >
     </div>
     <p data-t="fNote">
-      Dateos is created by Diamond Rubinny and released under the MIT license. Screenshots are real
-      captures of version 0.2.0; profile photos are illustrations. Legal texts are drafts, not legal
-      advice. This page uses no cookies and no analytics.
+      NexaHeart is created by Diamond Rubinny and released under the MIT license. Screenshots are
+      real captures of version 0.2.0; profile photos are illustrations. Legal texts are drafts, not
+      legal advice. This page uses no cookies and no analytics.
     </p>
   </div>
 </footer>
@@ -1287,7 +1295,7 @@ cd Dateos
       navInstall: 'התקנה',
       eyebrow: 'חינם · קוד פתוח · גרסה 0.2',
       h1: 'היכרויות ששייכות <em>לקהילה שלכם</em>.',
-      lede: 'Dateos היא אפליקציית היכרויות חינמית בקוד פתוח ל-iPhone, ל-Android ולדפדפן. עירייה, אוניברסיטה או כל קהילה יכולה להפעיל אותה בשם שלה ועל השרת שלה. בלי פרסומות, בלי תשלומים ובלי מכירת מידע.',
+      lede: 'NexaHeart היא אפליקציית היכרויות חינמית בקוד פתוח ל-iPhone, ל-Android ולדפדפן. עירייה, אוניברסיטה או כל קהילה יכולה להפעיל אותה בשם שלה ועל השרת שלה. בלי פרסומות, בלי תשלומים ובלי מכירת מידע.',
       ctaRun: 'להפעיל לקהילה שלכם',
       ctaTour: 'להכיר את האפליקציה',
       langs: 'האפליקציה מדברת עברית, אנגלית, ערבית ורוסית, כולל כתיבה מימין לשמאל.',
@@ -1295,7 +1303,7 @@ cd Dateos
       aDiscover: 'גילוי: פרופיל עם הסיבות להתאמה',
       aMatch: 'מסך "יש התאמה"',
       argTitle: 'בנויה לפחות שיחות, וטובות יותר.',
-      arg1: 'רוב אפליקציות ההיכרויות מרוויחות יותר ככל שממשיכים להחליק. Dateos לא מרוויחה כלום, ולכן אפשר לבנות אותה בדיוק להפך: אנשים שמוצאים חן זה בעיני זה, שיחות אמיתיות, ופרידה מכבדת כשזה לא מתאים.',
+      arg1: 'רוב אפליקציות ההיכרויות מרוויחות יותר ככל שממשיכים להחליק. NexaHeart לא מרוויחה כלום, ולכן אפשר לבנות אותה בדיוק להפך: אנשים שמוצאים חן זה בעיני זה, שיחות אמיתיות, ופרידה מכבדת כשזה לא מתאים.',
       arg2: 'כל הפיצ׳רים חינמיים לכולם, כולל לראות מי עשה לך לייק. הקוד פתוח לציבור ברישיון MIT, כך שכל אחד ואחת יכולים לבדוק מה הוא עושה עם המידע שלכם.',
       factsTitle: 'ערכים להיכרות',
       factsPer: 'לחבר/ת קהילה, לחודש',
@@ -1317,7 +1325,7 @@ cd Dateos
       t1Tag: 'התאמה',
       t1Title: 'התאמות שמסבירות את עצמן',
       t1Body:
-        'Dateos מציעה אנשים שסביר שימצאו חן זה בעיני זה, ואומרת למה: שפה משותפת, אותו רעיון ליום ראשון מושלם. תשומת הלב מתחלקת בהוגנות, כך שאף אחד לא נקבר בתחתית. האלגוריתם מפורסם.',
+        'NexaHeart מציעה אנשים שסביר שימצאו חן זה בעיני זה, ואומרת למה: שפה משותפת, אותו רעיון ליום ראשון מושלם. תשומת הלב מתחלקת בהוגנות, כך שאף אחד לא נקבר בתחתית. האלגוריתם מפורסם.',
       t1a: 'בחירות יומיות, שנבחרו בקפידה',
       t1b: 'לייק לתשובה מסוימת, עם הערה',
       t1c: '"עשו לך לייק" בחינם',
@@ -1325,7 +1333,7 @@ cd Dateos
       t2Tag: 'בטיחות',
       t2Title: 'נימוס מובנה בצ׳אט',
       t2Body:
-        'לפני שהודעה פוגענית יוצאת, Dateos שואלת "בטוח/ה?". הודעות פוגעניות מוסתרות, דפוסי הונאה נפוצים מקבלים אזהרה, ותמונות נשארות מטושטשות עד שבוחרים לראות. כפתור דיווח תמיד במרחק לחיצה.',
+        'לפני שהודעה פוגענית יוצאת, NexaHeart שואלת "בטוח/ה?". הודעות פוגעניות מוסתרות, דפוסי הונאה נפוצים מקבלים אזהרה, ותמונות נשארות מטושטשות עד שבוחרים לראות. כפתור דיווח תמיד במרחק לחיצה.',
       aSure: 'השאלה "בטוח/ה?" לפני הודעה פוגענית',
       aSafety: 'הודעה פוגענית מוסתרת ואזהרת הונאה',
       t3Tag: 'חדש בגרסה 0.2',
@@ -1379,14 +1387,14 @@ cd Dateos
       w3Title: 'מפתחים ומפתחות',
       w3Body: 'קוד מודרני ובדוק ב-TypeScript, ‏React Native ו-PostgreSQL, עם תיעוד לכל שלב.',
       sponsor:
-        'Dateos חינמית לכולם. החסות מממנת ביקורות אבטחה, בדיקות נגישות ותבניות משפטיות שכל קהילה יכולה להשתמש בהן.',
+        'NexaHeart חינמית לכולם. החסות מממנת ביקורות אבטחה, בדיקות נגישות ותבניות משפטיות שכל קהילה יכולה להשתמש בהן.',
       sponsorBtn: 'לתמוך בפרויקט',
       fRepo: 'קוד המקור',
       fHost: 'מדריך התקנה עצמית',
       fPrivacy: 'מדריך פרטיות',
       fSecurity: 'סקירת אבטחה',
       fNote:
-        'Dateos נוצרה על ידי Diamond Rubinny ומשוחררת ברישיון MIT. צילומי המסך אמיתיים מגרסה 0.2.0; תמונות הפרופיל הן איורים. המסמכים המשפטיים הם טיוטות ואינם ייעוץ משפטי. העמוד הזה לא משתמש בעוגיות ולא באנליטיקס.',
+        'NexaHeart נוצרה על ידי Diamond Rubinny ומשוחררת ברישיון MIT. צילומי המסך אמיתיים מגרסה 0.2.0; תמונות הפרופיל הן איורים. המסמכים המשפטיים הם טיוטות ואינם ייעוץ משפטי. העמוד הזה לא משתמש בעוגיות ולא באנליטיקס.',
       nav: 'ראשי',
       navFaq: 'שאלות',
       guide: 'למדריך ההתקנה צעד אחר צעד',
@@ -1396,7 +1404,7 @@ cd Dateos
       q2: 'מה צריך לדעת כדי להפעיל את זה?',
       a2: 'להתחבר לשרת ב-SSH, להדביק פקודות ולערוך קובץ טקסט. המדריך בודק איתכם כל שלב. לקהילה שגדלה, כדאי שמישהו שמרגיש בנוח עם Linux יטפל בעדכונים ובגיבויים.',
       q3: 'איפה נשמר המידע של חברי הקהילה?',
-      a3: 'רק על השרת שלכם. שום דבר לא נשלח ליוצרי Dateos. מיילים עוברים דרך ספק המיילים שלכם, והתראות פוש (רשות) דרך Expo, ‏Apple ו-Google, בלי שמות ובלי תוכן הודעות.',
+      a3: 'רק על השרת שלכם. שום דבר לא נשלח ליוצרי NexaHeart. מיילים עוברים דרך ספק המיילים שלכם, והתראות פוש (רשות) דרך Expo, ‏Apple ו-Google, בלי שמות ובלי תוכן הודעות.',
       q4: 'באילו שפות האפליקציה מדברת?',
       a4: 'עברית, אנגלית, ערבית ורוסית, מימין לשמאל בעברית ובערבית. כל חבר/ת קהילה בוחר/ת שפה, ואתם בוחרים את ברירת המחדל.',
       q5: 'הבינה המלאכותית חובה?',
@@ -1441,7 +1449,7 @@ cd Dateos
       });
       buttons.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.lang === lang)));
       try {
-        localStorage.setItem('dateos.site.lang', lang);
+        localStorage.setItem('nexaheart.site.lang', lang);
       } catch {}
       try {
         history.replaceState(null, '', `#${lang}`);
@@ -1452,7 +1460,7 @@ cd Dateos
 
     let start = 'en';
     try {
-      start = localStorage.getItem('dateos.site.lang') || start;
+      start = localStorage.getItem('nexaheart.site.lang') || start;
     } catch {}
     if (!['en', 'he'].includes(start)) start = 'en';
     if (!location.hash && (navigator.language || '').toLowerCase().startsWith('he')) start = 'he';

@@ -209,7 +209,7 @@ async function run(locale: keyof typeof people) {
   });
   const page = await context.newPage();
   page.on('pageerror', (e) => process.stderr.write(`pageerror: ${e.message}\n`));
-  await page.addInitScript((l) => localStorage.setItem('dateos.locale', l), locale);
+  await page.addInitScript((l) => localStorage.setItem('nexaheart.locale', l), locale);
 
   await page.goto(`${WEB}/`);
   await page.getByRole('button', { name: t.welcome.start }).waitFor();

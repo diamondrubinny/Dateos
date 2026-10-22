@@ -17,8 +17,8 @@ import {
   adminVenueSchema,
   venueInputSchema,
   venueUpdateSchema,
-} from '@dateos/shared';
-import type { Storage, StoredObject } from '@dateos/storage';
+} from '@nexaheart/shared';
+import type { Storage, StoredObject } from '@nexaheart/storage';
 import type { FastifyReply } from 'fastify';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';

@@ -1,10 +1,10 @@
-import { schema, type Database } from '@dateos/db';
+import { schema, type Database } from '@nexaheart/db';
 import {
   CHECKIN_GRACE_MINUTES,
   CHECKIN_RETENTION_DAYS,
   checkinAlertEmail,
   type Locale,
-} from '@dateos/shared';
+} from '@nexaheart/shared';
 import { and, eq, isNull, lte, sql } from 'drizzle-orm';
 
 const { checkins, profiles } = schema;

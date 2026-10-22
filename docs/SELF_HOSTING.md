@@ -1,4 +1,4 @@
-# Run your own Dateos
+# Run your own NexaHeart
 
 New to servers? Follow the step-by-step [installation guide](INSTALL.md) ([עברית](INSTALL.he.md)),
 with checks after each step, troubleshooting, and questions and answers.
@@ -23,7 +23,7 @@ open source; you own the server and the data.
 ## 1. Install
 
 ```bash
-git clone https://github.com/diamondrubinny/dateos.git && cd dateos
+git clone https://github.com/diamondrubinny/Dateos.git nexaheart && cd nexaheart
 ./install.sh --domain example.org
 ```
 
@@ -94,17 +94,17 @@ Your community app is now live at `https://example.org`. Invite moderators: they
 file, and deletes local backups older than 14 days (`BACKUP_KEEP_DAYS`). Run it daily, e.g. from cron:
 
 ```bash
-head -c 32 /dev/urandom | base64 > /root/.dateos-backup-key && chmod 600 /root/.dateos-backup-key
+head -c 32 /dev/urandom | base64 > /root/.nexaheart-backup-key && chmod 600 /root/.nexaheart-backup-key
 # crontab -e
-0 3 * * * cd /opt/dateos && BACKUP_PASSPHRASE_FILE=/root/.dateos-backup-key ./scripts/backup.sh
+0 3 * * * cd /opt/nexaheart && BACKUP_PASSPHRASE_FILE=/root/.nexaheart-backup-key ./scripts/backup.sh
 ```
 
 Copy the encrypted files off the server and keep the passphrase (and `.env`) somewhere else. Test a
 restore regularly, into a separate database first:
 
 ```bash
-RESTORE_DATABASE=dateos_check BACKUP_PASSPHRASE_FILE=/root/.dateos-backup-key \
-  ./scripts/restore.sh backups/dateos-db-<time>.dump.enc
+RESTORE_DATABASE=nexaheart_check BACKUP_PASSPHRASE_FILE=/root/.nexaheart-backup-key \
+  ./scripts/restore.sh backups/nexaheart-db-<time>.dump.enc
 ```
 
 Deleted accounts are still present in old backups until those expire; after restoring an old backup,
@@ -118,7 +118,7 @@ docker compose -f infra/docker-compose.yml --env-file .env --profile app --profi
 ```
 
 Database migrations run automatically when the API starts (`MIGRATE_ON_START=true`). If you run
-several API replicas, set it to `false` and run `pnpm --filter @dateos/db db:migrate` once instead.
+several API replicas, set it to `false` and run `pnpm --filter @nexaheart/db db:migrate` once instead.
 
 ## Push notifications (optional)
 
@@ -135,7 +135,7 @@ from `apps/mobile` with Expo (EAS): set `EXPO_PUBLIC_API_URL=https://api.example
 name, bundle id and icons, then submit with your own developer accounts. 📘 Follow the current Expo and
 store documentation; dating apps get extra review on both stores.
 
-Sign-in links open the app through its scheme (`APP_SCHEME`, `dateos` by default). The session is
+Sign-in links open the app through its scheme (`APP_SCHEME`, `nexaheart` by default). The session is
 never put in that link: the app proves it started the sign-in (PKCE) and exchanges a one-time code, so
 another app that registers the same scheme gets nothing usable. Sign-in therefore needs your own build
 (it does not work in Expo Go).
@@ -143,6 +143,6 @@ another app that registers the same scheme gets nothing usable. Sign-in therefor
 ## Test the whole setup locally
 
 `e2e/instance.ts` runs the full first-run flow in a real browser against the production web server
-configuration (Caddy with local certificates for `dateos.test`): claim, TOTP, branding, logo upload,
+configuration (Caddy with local certificates for `nexaheart.test`): claim, TOTP, branding, logo upload,
 and the branded member app in light and dark mode, plus an axe-core accessibility audit. See the
 comment at the top of the file for the environment it expects.
