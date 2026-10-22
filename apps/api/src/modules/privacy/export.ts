@@ -65,8 +65,20 @@ export async function exportMemberData(
     .orderBy(asc(t.photos.createdAt));
   const clips = await db.select().from(t.audioClips).where(eq(t.audioClips.userId, userId));
   const [location] = await db
-    .execute<{ lat: number; lng: number; updated_at: Date }>(
-      sql`SELECT ST_Y(geo::geometry) AS lat, ST_X(geo::geometry) AS lng, updated_at FROM locations WHERE user_id = ${userId}`,
+    .execute<{
+      lat: number;
+      lng: number;
+      updated_at: Date;
+      travel_city_id: number | null;
+      travel_lat: number | null;
+      travel_lng: number | null;
+      travel_started_at: Date | null;
+      travel_until: Date | null;
+    }>(
+      sql`SELECT ST_Y(geo::geometry) AS lat, ST_X(geo::geometry) AS lng, updated_at,
+                 travel_city_id, ST_Y(travel_geo::geometry) AS travel_lat, ST_X(travel_geo::geometry) AS travel_lng,
+                 travel_started_at, travel_until
+          FROM locations WHERE user_id = ${userId}`,
     )
     .then((r) => r.rows);
   const interactions = await db
@@ -271,6 +283,16 @@ export async function exportMemberData(
           updatedAt: iso(location.updated_at),
         }
       : null,
+    // Travel mode (phase 18c): a public city centre (GeoNames id), kept 30 days after the trip.
+    travel:
+      location?.travel_city_id != null
+        ? {
+            geonamesCityId: location.travel_city_id,
+            cityCentre: { lat: Number(location.travel_lat), lng: Number(location.travel_lng) },
+            startedAt: iso(location.travel_started_at),
+            until: iso(location.travel_until),
+          }
+        : null,
     prompts: prompts.map((p) => ({ ...p, createdAt: iso(p.createdAt) })),
     consents: consents.map((c) => ({ ...c, at: iso(c.at) })),
     photos: photoEntries,

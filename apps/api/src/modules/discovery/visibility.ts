@@ -70,7 +70,9 @@ export function candidateSql(q: CandidateQuery): SQL {
       SELECT p.user_id, p.gender, p.interested_in, p.intention, p.languages,
              date_part('year', age(${today}, p.birth_date))::int AS age,
              pr.age_min, pr.age_max, pr.max_distance_km, pr.intentions AS wants,
-             l.geo, e.embedding, e.model
+             -- Travel mode (phase 18c): a traveller looks from the city they're visiting.
+             CASE WHEN l.travel_until > now() THEN l.travel_geo ELSE l.geo END AS geo,
+             e.embedding, e.model
       FROM profiles p
       -- A paused viewer (sensitive-data consent withdrawn) is not matched either way.
       JOIN "user" mu ON mu.id = p.user_id AND mu.status = 'active'
@@ -83,7 +85,7 @@ export function candidateSql(q: CandidateQuery): SQL {
     )
     SELECT
       c.user_id AS id,
-      ST_Distance(me.geo, cl.geo) / 1000.0 AS km,
+      ST_Distance(me.geo, CASE WHEN cl.travel_until > now() THEN cl.travel_geo ELSE cl.geo END) / 1000.0 AS km,
       CASE WHEN me.embedding IS NOT NULL AND ce.embedding IS NOT NULL AND me.model = ce.model
            THEN 1 - (me.embedding <=> ce.embedding) END AS vibe,
       ce.model,
@@ -110,7 +112,13 @@ export function candidateSql(q: CandidateQuery): SQL {
       AND me.gender = ANY(c.interested_in)
       AND date_part('year', age(${today}, c.birth_date)) BETWEEN me.age_min AND me.age_max
       AND me.age BETWEEN cpr.age_min AND cpr.age_max
-      AND ST_DWithin(me.geo, cl.geo, LEAST(me.max_distance_km, cpr.max_distance_km) * 1000.0)
+      -- Two branches, so each can use its own spatial index (home cells and travel points).
+      AND (
+        (COALESCE(cl.travel_until <= now(), true)
+          AND ST_DWithin(me.geo, cl.geo, LEAST(me.max_distance_km, cpr.max_distance_km) * 1000.0))
+        OR (cl.travel_until > now()
+          AND ST_DWithin(me.geo, cl.travel_geo, LEAST(me.max_distance_km, cpr.max_distance_km) * 1000.0))
+      )
       AND (cardinality(me.wants) = 0 OR c.intention = ANY(me.wants))
       AND (cardinality(cpr.intentions) = 0 OR me.intention = ANY(cpr.intentions))
       AND EXISTS (SELECT 1 FROM photos ph WHERE ph.user_id = c.user_id AND ph.status = 'clean' AND ph.purpose = 'profile')

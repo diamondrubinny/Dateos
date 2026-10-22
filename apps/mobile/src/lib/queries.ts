@@ -18,6 +18,9 @@ import type {
   ProfileUpdate,
   PromptAnswer,
   PauseDuration,
+  Place,
+  TravelInput,
+  TravelState,
 } from '@nexaheart/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Platform } from 'react-native';
@@ -232,3 +235,44 @@ export function useBioIdeas() {
       }),
   });
 }
+
+// ---------------------------------------------------------------- travel mode (phase 18c)
+
+export const travelKey = ['travel'] as const;
+
+export function useTravel() {
+  return useQuery({
+    queryKey: travelKey,
+    queryFn: async () => (await apiFetch<{ travel: TravelState }>('/v1/me/travel')).travel,
+  });
+}
+
+/** City search runs on the community's own server (a bundled list), never a geocoding service. */
+export function usePlaces(query: string) {
+  const q = query.trim();
+  return useQuery({
+    queryKey: ['places', q],
+    queryFn: async () =>
+      (await apiFetch<{ places: Place[] }>(`/v1/places?q=${encodeURIComponent(q)}`)).places,
+    enabled: q.length >= 2,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+function useTravelMutation<TInput>(request: (input: TInput) => Promise<unknown>) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: request,
+    onSuccess: async () => {
+      for (const queryKey of [travelKey, discoveryKeys.discover, discoveryKeys.picks]) {
+        await client.invalidateQueries({ queryKey, refetchType: 'all' });
+      }
+    },
+  });
+}
+export const useStartTravel = () =>
+  useTravelMutation((input: TravelInput) =>
+    apiFetch('/v1/me/travel', { method: 'PUT', body: json(input) }),
+  );
+export const useEndTravel = () =>
+  useTravelMutation(() => apiFetch('/v1/me/travel', { method: 'DELETE' }));

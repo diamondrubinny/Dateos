@@ -1,6 +1,6 @@
 # Phase 18: Take a break, incognito and travel mode (v0.5)
 
-> Status: 18a and 18b ✅ done (2026-10-22); 18c 🔨 building. All recommendations approved.
+> Status: ✅ done (2026-10-22): 18a, 18b and 18c. All recommendations approved.
 > 📘 = verify against official docs, ⚖️ = needs legal review.
 
 Three features from the plan's v0.2–v0.5 list that aren't built yet. They're all free for everyone,
@@ -49,7 +49,7 @@ also be here."
 - ⚖️ Incognito is not a security promise. A screenshot after a like can still leak a profile; the
   app's help text says so.
 
-## 18c. Travel mode
+## 18c. Travel mode ✅
 
 **User story:** "Next week I'm in Haifa / Berlin. I want to meet people there before I arrive."
 
@@ -137,3 +137,21 @@ also be here."
 | Integration                 | ✅ hidden from everyone she hasn't liked (discover, profile, photos, likes); she still browses; her match is untouched; after her like only that person sees her (Likes You, profile) and can match; the profile never mentions incognito; off again → visible |
 | `pnpm --dir e2e visibility` | ✅ 4 languages: off by default, on, saved, off again; 0 axe violations                                                                                                                                                                                         |
 | Screenshots                 | `63-incognito` in 4 languages                                                                                                                                                                                                                                  |
+
+## Results: 18c
+
+| Check                       | Result                                                                                                                                                                                                                                                                                                         |
+| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| City list                   | 5,990 cities: 100,000+ people worldwide, and every town of 15,000+ in Israel (103) and the Palestinian territories (43), e.g. Nazareth, Umm al-Fahm, Rahat; names in en/he/ar/ru from GeoNames' language-tagged alternate names (preferred names first, no historic names, no niqqud, script checked)          |
+| Integration                 | ✅ search in 4 languages and with punctuation; Discover from the city (the traveller sees Haifa, Tel Aviv no longer sees her); "Visiting" instead of a distance; home cell untouched; trip ends by itself; validation; 3 trips a day; ending early deletes; old trips deleted after 30 days; location required |
+| All integration tests       | ✅ 153/153                                                                                                                                                                                                                                                                                                     |
+| `pnpm --dir e2e visibility` | ✅ 4 languages: search, choose, a week, the banner on Discover, the host in Haifa sees "Visiting Haifa"; 0 axe violations                                                                                                                                                                                      |
+| Screenshots                 | `64-travel-mode`, `65-travel-discover`, `66-visiting` in 4 languages                                                                                                                                                                                                                                           |
+
+## Changes while building
+
+- The plan said "about 4,500 cities, ~250 KB": with the towns in Israel and the Palestinian territories
+  (so that Arab towns aren't left out) it's 5,990 cities and ~800 KB, loaded once in memory.
+- Picking names by script alone gave wrong names (e.g. a historic name for Jerusalem), so names come
+  from GeoNames' language-tagged alternate names instead.
+- The daily limit counts every attempt, including invalid ones.

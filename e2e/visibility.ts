@@ -31,7 +31,15 @@ const check = (ok: boolean, message: string) => {
 };
 
 /** A member with a finished profile, so the app doesn't send them back to onboarding. */
-async function member(locale: L) {
+async function member(
+  locale: L,
+  who: {
+    name?: string;
+    gender?: 'woman' | 'man';
+    interestedIn?: string[];
+    at?: { lat: number; lng: number };
+  } = {},
+) {
   const session = await signInHttp(`visibility-${locale}-${Date.now()}@example.test`);
   const call = apiClient(session.header);
   await call('PUT', '/v1/me/consents', {
@@ -43,14 +51,14 @@ async function member(locale: L) {
     ],
   });
   await call('POST', '/v1/me/profile', {
-    displayName: NAMES[locale],
+    displayName: who.name ?? NAMES[locale],
     birthDate: '1994-04-04',
-    gender: 'woman',
-    interestedIn: ['man'],
+    gender: who.gender ?? 'woman',
+    interestedIn: who.interestedIn ?? ['man'],
     intention: 'long_term',
     languages: ['he', 'en'],
   });
-  await call('PUT', '/v1/me/location', { lat: 32.08, lng: 34.78 });
+  await call('PUT', '/v1/me/location', who.at ?? { lat: 32.08, lng: 34.78 });
   await call('PUT', '/v1/me/prompts', {
     prompts: [{ promptKey: 'perfect_sunday', answer: 'Coffee by the sea, then a long walk.' }],
   });
@@ -63,7 +71,8 @@ async function member(locale: L) {
   await call('POST', '/v1/me/photos', form);
   for (let i = 0; i < 60; i += 1) {
     const me = await call<{ photos: { status: string }[] }>('GET', '/v1/me');
-    if (me.photos[0]?.status === 'clean') return { session, call };
+    if (me.photos[0]?.status === 'clean')
+      return { session, call, id: (me as unknown as { user: { id: string } }).user.id };
     await new Promise((r) => setTimeout(r, 500));
   }
   throw new Error('photo was not processed');
@@ -90,6 +99,66 @@ async function open(browser: Browser, session: { name: string; value: string }, 
   const page = await context.newPage();
   page.on('pageerror', (e) => problems.push(`pageerror: ${e.message}`));
   return { context, page };
+}
+
+const HAIFA: Record<L, string> = { en: 'Haifa', he: 'חיפה', ar: 'حيفا', ru: 'Хайфа' };
+const HOSTS: Record<L, string> = { en: 'Dan', he: 'דן', ar: 'سامي', ru: 'Дима' };
+
+async function travel(browser: Browser, locale: L) {
+  const t = T[locale];
+  const traveller = await member(locale);
+  // Someone who lives in Haifa, about 80 km away.
+  const host = await member(locale, {
+    name: HOSTS[locale],
+    gender: 'man',
+    interestedIn: ['woman'],
+    at: { lat: 32.794, lng: 34.9896 },
+  });
+  const A = await open(browser, traveller.session, locale);
+  try {
+    await A.page.goto(`${WEB}/settings`);
+    const section = A.page.getByTestId('travel-mode');
+    await section.scrollIntoViewIfNeeded();
+    await section.getByLabel(t.travel.search).fill(HAIFA[locale]);
+    const city = section.getByRole('radio', { name: new RegExp(`^${HAIFA[locale]}`) }).first();
+    await city.waitFor();
+    check(
+      await section.getByText(t.travel.found.replace('{{count}}', '')).first().isVisible(),
+      'the number of cities found is announced',
+    );
+    await city.click();
+    await section.getByRole('radio', { name: t.travel.duration[7], exact: true }).click();
+    await shot(A.page, `${locale}/64-travel-mode`);
+    await section
+      .getByRole('button', { name: t.travel.startIn.replace('{{city}}', HAIFA[locale]) })
+      .click();
+    await section.getByRole('button', { name: t.travel.end }).waitFor();
+    const trip = await traveller.call<{ travel: { names: { en: string } } | null }>(
+      'GET',
+      '/v1/me/travel',
+    );
+    check(trip.travel?.names.en === 'Haifa', 'travelling to Haifa for a week');
+    await A.page.goto(`${WEB}/discover`);
+    await A.page.getByText(t.travel.active.split('{{city}}')[0]!.trim()).first().waitFor();
+    await shot(A.page, `${locale}/65-travel-discover`);
+  } finally {
+    await A.context.close();
+  }
+  // The host in Haifa sees the traveller, honestly marked as visiting.
+  const B = await open(browser, host.session, locale);
+  try {
+    await B.page.goto(`${WEB}/profile/${traveller.id}`);
+    const badge = B.page.getByTestId('visiting');
+    await badge.waitFor();
+    check(
+      (await badge.innerText()).includes(t.travel.visiting.replace('{{city}}', HAIFA[locale])),
+      'the profile says "Visiting Haifa", not a distance',
+    );
+    await shot(B.page, `${locale}/66-visiting`);
+  } finally {
+    await B.context.close();
+  }
+  await traveller.call('DELETE', '/v1/me/travel');
 }
 
 async function incognito(browser: Browser, locale: L) {
@@ -177,6 +246,8 @@ try {
     await takeABreak(browser, locale);
     await pool.query('DELETE FROM rate_limit');
     await incognito(browser, locale);
+    await pool.query('DELETE FROM rate_limit');
+    await travel(browser, locale);
   }
 } finally {
   await browser.close();

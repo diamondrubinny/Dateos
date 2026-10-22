@@ -6,6 +6,10 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Added
 
+- **Travel mode**: going somewhere? Pick a city (search in any of the four languages) and up to
+  two weeks: Discover shows people around that city, and your profile honestly says "Visiting Haifa"
+  instead of a distance. Your own area is untouched. Cities come from a bundled GeoNames list (CC BY
+  4.0) searched on the community's own server; at most 3 trips a day.
 - **Incognito**: "only people I like can see me". Browse as usual; others see your profile only
   after you like them, matches aren't affected, and nobody is told you're incognito.
 - **Take a break**: in Settings, stop being shown to new people for 24 hours, 3 days, a week or until

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
-import type { PublicProfile } from '@nexaheart/shared';
+import { cityName, type PublicProfile } from '@nexaheart/shared';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
@@ -59,7 +59,7 @@ function IconButton({
 export function ProfileCard({ profile, onLikeItem }: ProfileCardProps) {
   const { t } = useTranslation();
   const colors = useColors();
-  const { direction } = useLocale();
+  const { direction, locale } = useLocale();
   const [index, setIndex] = useState(0);
   // Arrows point outward in both directions: "previous" sits at the start edge.
   const [prevGlyph, nextGlyph] = direction === 'rtl' ? ['›', '‹'] : ['‹', '›'];
@@ -130,7 +130,11 @@ export function ProfileCard({ profile, onLikeItem }: ProfileCardProps) {
           <AppText variant="label" tone="primary">
             {t(`intention.${profile.intention}`)}
           </AppText>
-          {profile.distance ? (
+          {profile.visiting ? (
+            <AppText variant="caption" tone="muted" testID="visiting">
+              ✈️ {t('travel.visiting', { city: cityName(profile.visiting.names, locale) })}
+            </AppText>
+          ) : profile.distance ? (
             <AppText variant="caption" tone="muted">
               {t(`distance.${profile.distance}`)}
             </AppText>

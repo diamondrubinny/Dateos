@@ -147,6 +147,26 @@ export const en = {
     incognitoHint:
       "You can browse as usual. Others see your profile only after you like them; your matches aren't affected. Nobody is told you're incognito. Someone you like could still take a screenshot.",
   },
+  travel: {
+    dataCredit: 'City data: GeoNames (CC BY 4.0)',
+    title: 'Travel mode',
+    hint: 'Going somewhere? For up to two weeks, Discover shows people around a city you choose, and your profile honestly says “Visiting …”. Your own area stays as it is.',
+    search: 'Search for a city',
+    searchHint: 'Cities are searched on this community’s own server.',
+    found: 'Cities found: {{count}}',
+    choose: 'Choose a city',
+    howLong: 'For how long?',
+    duration: {
+      3: '3 days',
+      7: 'A week',
+      14: 'Two weeks',
+    },
+    start: 'Start travel mode',
+    startIn: 'Travel to {{city}}',
+    active: 'Travel mode: {{city}} until {{until}}',
+    end: 'End travel mode',
+    visiting: 'Visiting {{city}}',
+  },
   pause: {
     title: 'Take a break',
     hint: 'Stop being shown to new people for a while. Your matches and chats stay open, so nobody is left without an answer.',

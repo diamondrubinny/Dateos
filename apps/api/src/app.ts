@@ -22,6 +22,7 @@ import { chatRoutes } from './modules/chat/routes.js';
 import { checkinRoutes } from './modules/checkins/routes.js';
 import { dateRoutes } from './modules/dates/routes.js';
 import { eventRoutes } from './modules/events/routes.js';
+import { travelRoutes } from './modules/places/routes.js';
 import { callRoutes, callWebhookRoutes } from './modules/calls/routes.js';
 import { discoveryRoutes } from './modules/discovery/routes.js';
 import { meRoutes } from './modules/me/routes.js';
@@ -126,6 +127,11 @@ export async function buildApp(env: Env, deps: AppDependencies): Promise<Fastify
       venues: services.venues,
     });
     await typed.register(eventRoutes, { auth: services.auth, events: services.events });
+    await typed.register(travelRoutes, {
+      auth: services.auth,
+      cities: services.cities,
+      travel: services.travel,
+    });
     await typed.register(callRoutes, { auth: services.auth, calls: services.calls });
     await typed.register(callWebhookRoutes, { calls: services.calls });
     await typed.register(notificationRoutes, { auth: services.auth, db: services.dbHandle.db });
