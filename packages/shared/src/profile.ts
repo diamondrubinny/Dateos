@@ -2,6 +2,7 @@
 // Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 import { accountNoticeSchema } from './moderation.js';
+import { pauseStateSchema } from './visibility.js';
 import { z } from 'zod';
 
 export const MIN_AGE = 18;
@@ -148,6 +149,8 @@ export type OnboardingStep = (typeof onboardingSteps)[number];
 
 export const meResponseSchema = z.object({
   user: z.object({ id: z.string(), email: z.string(), status: z.string() }),
+  /** "Take a break" (phase 18a). */
+  pause: pauseStateSchema,
   profile: profileInputSchema
     .extend({ bio: z.string().nullable(), age: z.number().int() })
     .nullable(),

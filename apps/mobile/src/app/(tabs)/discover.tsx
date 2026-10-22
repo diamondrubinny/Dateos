@@ -13,18 +13,28 @@ import { DecisionPanel, type DecisionResult } from '../../components/DecisionPan
 import { Loading } from '../../components/Loading';
 import { MatchCelebration } from '../../components/MatchCelebration';
 import { Screen } from '../../components/Screen';
-import { useDiscover } from '../../lib/queries';
+import { OnBreak } from '../../components/OnBreak';
+import { useDiscover, useMe } from '../../lib/queries';
 import { radius, spacing, useColors } from '../../lib/theme';
 
 export default function Discover() {
   const { t } = useTranslation();
   const colors = useColors();
   const feed = useDiscover();
+  const onBreak = Boolean(useMe().data?.pause);
   const [index, setIndex] = useState(0);
   const [matchedWith, setMatchedWith] = useState<string>();
 
   useEffect(() => setIndex(0), [feed.dataUpdatedAt]);
 
+  if (onBreak) {
+    return (
+      <Screen title={t('discover.title')}>
+        <AccountNotices />
+        <OnBreak />
+      </Screen>
+    );
+  }
   if (feed.isPending) return <Loading />;
   const profiles = feed.data ?? [];
   const current = profiles[index];

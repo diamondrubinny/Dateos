@@ -4,6 +4,7 @@
 import {
   consentsInputSchema,
   meResponseSchema,
+  pauseInputSchema,
   preferencesSchema,
   profileInputSchema,
   profileUpdateSchema,
@@ -82,6 +83,28 @@ export const meRoutes: FastifyPluginAsyncZod<{
     { schema: { body: z.object({ consents: consentsInputSchema }), response: { 200: ok } } },
     async (request) => {
       await me.recordConsents(currentUser(request).id, request.body.consents);
+      return { ok: true as const };
+    },
+  );
+
+  // Take a break (phase 18a). A small limit stops scripts from flickering a profile on and off.
+  app.put(
+    '/v1/me/pause',
+    {
+      schema: { body: pauseInputSchema, response: { 200: ok } },
+      config: perUserLimit(30, 24 * 60 * 60 * 1000),
+    },
+    async (request) => {
+      await me.pause(currentUser(request).id, request.body.duration);
+      return { ok: true as const };
+    },
+  );
+
+  app.delete(
+    '/v1/me/pause',
+    { schema: { response: { 200: ok } }, config: perUserLimit(30, 24 * 60 * 60 * 1000) },
+    async (request) => {
+      await me.resume(currentUser(request).id);
       return { ok: true as const };
     },
   );

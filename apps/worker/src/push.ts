@@ -30,6 +30,7 @@ const texts = {
     checkin: 'Time to check in: let us know you are OK',
     event: 'Update about a community event you are going to',
     call: 'You have an incoming call',
+    visible: 'Your break is over: new people can see your profile again',
   },
   he: {
     message: 'יש לך הודעה חדשה',
@@ -37,6 +38,7 @@ const texts = {
     checkin: 'הגיע הזמן לאשר שהכול בסדר',
     event: 'עדכון על אירוע קהילה שנרשמת אליו',
     call: 'יש לך שיחה נכנסת',
+    visible: 'ההפסקה הסתיימה: אנשים חדשים יכולים לראות שוב את הפרופיל שלך',
   },
   ar: {
     message: 'لديك رسالة جديدة',
@@ -44,6 +46,7 @@ const texts = {
     checkin: 'حان وقت التأكيد: أخبرنا أنك بخير',
     event: 'تحديث حول فعالية مجتمعية سجّلت حضورك فيها',
     call: 'لديك مكالمة واردة',
+    visible: 'انتهت الاستراحة: يمكن لأشخاص جدد رؤية ملفك الشخصي مرة أخرى',
   },
   ru: {
     message: 'У вас новое сообщение',
@@ -51,6 +54,7 @@ const texts = {
     checkin: 'Пора отметиться: сообщите, что всё в порядке',
     event: 'Новости о мероприятии сообщества, на которое вы идёте',
     call: 'Вам звонят',
+    visible: 'Перерыв закончился: новые люди снова видят ваш профиль',
   },
 } as const;
 
@@ -69,6 +73,7 @@ export async function sendPush(ctx: PushContext, job: PushJob): Promise<PushResu
   if (ctx.provider === 'disabled') return 'disabled';
   if (job.kind === 'checkin') return sendToDevices(ctx, job); // safety: no match or presence check
   if (job.kind === 'event') return sendToDevices(ctx, job); // not about a conversation
+  if (job.kind === 'visible') return sendToDevices(ctx, job); // about the member's own profile
   // Still a valid conversation? (Unmatch, block or suspension since the job was queued.)
   const active = await ctx.db.execute<{ ok: boolean }>(sql`
     SELECT EXISTS (

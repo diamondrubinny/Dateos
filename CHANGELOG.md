@@ -4,6 +4,13 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ## Unreleased
 
+### Added
+
+- **Take a break**: in Settings, stop being shown to new people for 24 hours, 3 days, a week or until
+  you come back. Discover, Daily Picks and Likes You show a calm "You're taking a break" card instead;
+  matches, chats and calls carry on, so nobody is ghosted, and likes sent to you wait for your
+  return. The profile comes back by itself (with a content-free notification).
+
 ### Changed
 
 - **License: AGPL-3.0-or-later with a credit that must stay** (see [NOTICE](NOTICE)). Every copy,

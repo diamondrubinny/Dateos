@@ -8,11 +8,20 @@ import { Banner } from '../../components/Banner';
 import { Loading } from '../../components/Loading';
 import { PersonRow } from '../../components/PersonRow';
 import { Screen } from '../../components/Screen';
-import { usePicks } from '../../lib/queries';
+import { OnBreak } from '../../components/OnBreak';
+import { usePicks, useMe } from '../../lib/queries';
 
 export default function Picks() {
   const { t } = useTranslation();
   const picks = usePicks();
+  const onBreak = Boolean(useMe().data?.pause);
+  if (onBreak) {
+    return (
+      <Screen title={t('picks.title')} subtitle={t('picks.subtitle')}>
+        <OnBreak />
+      </Screen>
+    );
+  }
   if (picks.isPending) return <Loading />;
   return (
     <Screen title={t('picks.title')} subtitle={t('picks.subtitle')}>
