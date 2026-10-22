@@ -23,6 +23,9 @@ import { deleteObjects, processAudio, processPhoto, type JobContext } from './jo
 import { sendPush } from './push.js';
 import { cleanupPrivacy, handleInactiveAccounts } from './privacy-jobs.js';
 import { processCheckins } from './checkin-jobs.js';
+import { processEvents } from './event-jobs.js';
+import { processCalls } from './call-jobs.js';
+import { RoomServiceClient } from 'livekit-server-sdk';
 import nodemailer from 'nodemailer';
 import { sql } from 'drizzle-orm';
 import {
@@ -82,6 +85,12 @@ async function main(): Promise<void> {
       ? { auth: { user: env.SMTP_USER, pass: env.SMTP_PASSWORD } }
       : {}),
   });
+
+  const liveKitApi = env.LIVEKIT_API_URL ?? env.LIVEKIT_URL?.replace(/^ws/, 'http') ?? undefined;
+  const liveKitRooms =
+    liveKitApi && env.LIVEKIT_API_KEY && env.LIVEKIT_API_SECRET
+      ? new RoomServiceClient(liveKitApi, env.LIVEKIT_API_KEY, env.LIVEKIT_API_SECRET)
+      : null;
 
   const connection = new Redis(env.REDIS_URL, { maxRetriesPerRequest: null });
   const worker = new Worker(
@@ -149,13 +158,38 @@ async function main(): Promise<void> {
               await sendPush(pushContext, { userId, kind: 'checkin', matchId: checkinId });
             },
           });
+        case 'calls':
+          return processCalls({
+            db,
+            deleteRoom: liveKitRooms
+              ? async (room) => {
+                  try {
+                    await liveKitRooms.deleteRoom(room);
+                  } catch (error) {
+                    if ((error as { status?: number }).status !== 404) throw error;
+                  }
+                }
+              : null,
+            publish: ctx.publish!,
+          });
+        case 'events':
+          return processEvents({
+            db,
+            remind: async (userId, eventId) => {
+              await sendPush(pushContext, { userId, kind: 'event', matchId: eventId });
+            },
+          });
         default:
           throw new Error(`Unknown job: ${job.name}`);
       }
     },
     { connection, concurrency: env.WORKER_CONCURRENCY },
   );
-  profileWorker.on('completed', (job, result) => log.info({ job: job.name, result }, 'job done'));
+  profileWorker.on('completed', (job, result) => {
+    // The call sweep runs every 15 s: only log when it did something.
+    const quiet = job.name === 'calls' && result?.missed === 0 && result?.ended === 0;
+    if (!quiet) log.info({ job: job.name, result }, 'job done');
+  });
   profileWorker.on('failed', (job, error) =>
     log.error({ job: job?.name, err: error }, 'job failed'),
   );
@@ -180,6 +214,10 @@ async function main(): Promise<void> {
   );
   // Safety check-ins: reminders, alerts to trusted contacts, retention (every minute).
   await scheduler.upsertJobScheduler('checkins', { every: 60_000 }, { name: 'checkins' });
+  // Video dates: missed invitations, the time limit (every 15 seconds; a cheap indexed query).
+  await scheduler.upsertJobScheduler('calls', { every: 15_000 }, { name: 'calls' });
+  // Community events: day-before reminders and retention (every 10 minutes).
+  await scheduler.upsertJobScheduler('events', { every: 600_000 }, { name: 'events' });
 
   log.info(
     { scanningEnabled, embeddings: embeddings.model, push: env.PUSH_PROVIDER },

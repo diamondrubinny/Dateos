@@ -50,6 +50,10 @@
 
 <img src="../screenshots/showcase-date-planner-he.png" alt="בחירת מקום ציבורי ושעה, אישור הדייט, וצ׳ק-אין שכבר ממולא" width="100%">
 
+**אירועי קהילה**
+
+<img src="../screenshots/showcase-events-he.png" alt="אירועים קרובים עם מספר המגיעים, עמוד אירוע והרשמה" width="100%">
+
 **פרטיות שאפשר לבדוק**
 
 <img src="../screenshots/showcase-privacy-he.png" alt="עמוד הפרטיות והעוגיות והורדת המידע" width="60%">

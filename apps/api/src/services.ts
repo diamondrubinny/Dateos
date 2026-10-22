@@ -30,6 +30,9 @@ import { VerificationService } from './modules/safety/verification.js';
 import { CheckinService } from './modules/checkins/service.js';
 import { DateService } from './modules/dates/service.js';
 import { VenueService } from './modules/dates/venues.js';
+import { EventService } from './modules/events/service.js';
+import { CallService } from './modules/calls/service.js';
+import { createLiveKitMedia, type CallMedia } from './lib/livekit.js';
 
 export interface Services {
   dbHandle: DbHandle;
@@ -54,6 +57,8 @@ export interface Services {
   checkins: CheckinService;
   venues: VenueService;
   dates: DateService;
+  events: EventService;
+  calls: CallService;
   ai: AiGate;
   /** Health checks and shutdown hooks for the resources above. */
   dependencies: Dependency[];
@@ -69,6 +74,8 @@ export interface ServiceOverrides {
   textModel?: TextModel | null;
   /** Clock for TOTP checks (tests). */
   now?: () => number;
+  /** Media server for calls (tests use a fake; null = calls unavailable). */
+  callMedia?: CallMedia | null;
 }
 
 export function createServices(
@@ -126,6 +133,20 @@ export function createServices(
     messageReceived: (userId, matchId) => notifyQueue.push({ userId, kind: 'message', matchId }),
   });
 
+  const calls = new CallService(
+    dbHandle.db,
+    chat,
+    realtime,
+    overrides.callMedia !== undefined ? overrides.callMedia : createLiveKitMedia(env),
+    () => instance.callSettings(),
+    (userId, matchId) => notifyQueue.push({ userId, kind: 'call', matchId }),
+    overrides.now,
+  );
+  chat.setCallAvailability((matchId, viewerId, otherId) =>
+    calls.available(matchId, viewerId, otherId),
+  );
+  discovery.onMatchClosed((matchId) => calls.endForMatch(matchId));
+
   return {
     dbHandle,
     redis,
@@ -143,6 +164,12 @@ export function createServices(
     chat,
     venues,
     dates: new DateService(dbHandle.db, chat, venues, overrides.now),
+    calls,
+    events: new EventService(
+      dbHandle.db,
+      (userId, eventId) => notifyQueue.push({ userId, kind: 'event', matchId: eventId }),
+      overrides.now,
+    ),
     reports: new ReportService(
       dbHandle.db,
       discovery,

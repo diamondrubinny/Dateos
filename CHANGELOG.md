@@ -14,6 +14,16 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Added
 
+- **Video dates**: matches can have a video or voice-only call in the app, through the community's own
+  LiveKit server (`docker compose --profile video`, `./install.sh --domain … --video`). Off until an
+  admin turns it on (dashboard → Branding → Video dates, with a maximum length). Calls unlock with the
+  chat, the other person always chooses to join, cameras are off on join, there is no recording or
+  screen sharing, and reporting, blocking or a suspension hangs up at once. Limits against unwanted
+  calls; a line in the chat ("Video call · 14 min"); audio and video are never stored.
+- **Community events**: the team publishes meetups at the community's places (dashboard → Events,
+  with capacity); members see upcoming events and how many are going (never who), say they're going,
+  get a reminder the day before and a notice if it's cancelled. Who's going is deleted 30 days after
+  the event.
 - **Date planner**: in a chat, propose a date at a public place from a list your community's admins
   curate (no maps service, no coordinates), pick a day and time and add a note; the other person
   accepts or says "not this time", live. An accepted date opens a safety check-in already filled in.
@@ -21,6 +31,8 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Fixed
 
+- Link, number, date and time fields in the dashboard had no styling (the Branding page's donation
+  link included).
 - Arabic and Russian were missing from the native apps' language list (iOS and Android).
 - The chat header cut off its last action in Arabic and Russian; it now wraps.
 

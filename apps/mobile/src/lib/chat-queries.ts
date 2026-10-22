@@ -132,7 +132,10 @@ export const settingsKey = ['chat-settings'] as const;
 export function useChatSettings() {
   return useQuery({
     queryKey: settingsKey,
-    queryFn: () => apiFetch<{ acceptVoice: boolean; pushDevices: number }>('/v1/me/settings'),
+    queryFn: () =>
+      apiFetch<{ acceptVoice: boolean; acceptCalls: boolean; pushDevices: number }>(
+        '/v1/me/settings',
+      ),
   });
 }
 

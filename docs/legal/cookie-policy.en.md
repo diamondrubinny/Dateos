@@ -10,20 +10,22 @@ the inventory must list it.]
 
 ## Web app
 
-| Name                                                                     | Type                                   | Purpose                          | Duration                                                          |
-| ------------------------------------------------------------------------ | -------------------------------------- | -------------------------------- | ----------------------------------------------------------------- |
-| `nexaheart.session_token` (on HTTPS: `__Secure-nexaheart.session_token`) | Cookie: HttpOnly, Secure, SameSite=Lax | Keeps you signed in              | 30 days, renewed while you use the app; removed when you sign out |
-| `nexaheart.locale`                                                       | Browser storage                        | Remembers the language you chose | Until you change it                                               |
-| `nexaheart-admin-locale` (moderation dashboard only)                     | Browser storage                        | Language of the dashboard        | Until changed                                                     |
+| Name                                                                     | Type                                   | Purpose                                                                 | Duration                                                          |
+| ------------------------------------------------------------------------ | -------------------------------------- | ----------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| `nexaheart.session_token` (on HTTPS: `__Secure-nexaheart.session_token`) | Cookie: HttpOnly, Secure, SameSite=Lax | Keeps you signed in                                                     | 30 days, renewed while you use the app; removed when you sign out |
+| `nexaheart.locale`                                                       | Browser storage                        | Remembers the language you chose                                        | Until you change it                                               |
+| `nexaheart.callNotice`                                                   | Browser storage                        | Remembers that you read the notice before your first call (video dates) | Until changed                                                     |
+| `nexaheart-admin-locale` (moderation dashboard only)                     | Browser storage                        | Language of the dashboard                                               | Until changed                                                     |
 
 ## iPhone and Android apps
 
-| Name                     | Where                       | Purpose                                         | Duration                            |
-| ------------------------ | --------------------------- | ----------------------------------------------- | ----------------------------------- |
-| `nexaheart_cookie`       | Device keychain (encrypted) | Keeps you signed in                             | 30 days, renewed while used         |
-| `nexaheart_session_data` | Device keychain             | A copy of your session so the app opens quickly | Until you sign out                  |
-| `nexaheart.locale`       | Device keychain             | Your language                                   | Until changed                       |
-| `nexaheart.pushToken`    | Device keychain             | Only if you turn on notifications               | Until you sign out or turn them off |
+| Name                     | Where                       | Purpose                                                   | Duration                            |
+| ------------------------ | --------------------------- | --------------------------------------------------------- | ----------------------------------- |
+| `nexaheart_cookie`       | Device keychain (encrypted) | Keeps you signed in                                       | 30 days, renewed while used         |
+| `nexaheart_session_data` | Device keychain             | A copy of your session so the app opens quickly           | Until you sign out                  |
+| `nexaheart.locale`       | Device keychain             | Your language                                             | Until changed                       |
+| `nexaheart.pushToken`    | Device keychain             | Only if you turn on notifications                         | Until you sign out or turn them off |
+| `nexaheart.callNotice`   | Device keychain             | Remembers that you read the notice before your first call | Until changed                       |
 
 ## Your control
 

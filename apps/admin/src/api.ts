@@ -1,4 +1,7 @@
 import type {
+  AdminEvent,
+  EventInput,
+  EventUpdate,
   AdminVenue,
   VenueInput,
   VenueUpdate,
@@ -62,6 +65,9 @@ export interface AdminInstanceSettings {
   sponsorUrl: string | null;
   logoUrl: string | null;
   setupCompleted: boolean;
+  callsConfigured: boolean;
+  callsEnabled: boolean;
+  callMaxMinutes: number;
 }
 
 async function upload(path: string, file: File): Promise<void> {
@@ -93,6 +99,12 @@ export const api = {
   uploadLogo: (file: File) => upload('/v1/admin/instance/logo', file),
   removeLogo: () => request<{ ok: true }>('DELETE', '/v1/admin/instance/logo'),
   venues: () => request<{ venues: AdminVenue[] }>('GET', '/v1/admin/venues'),
+  events: () => request<{ events: AdminEvent[] }>('GET', '/v1/admin/events'),
+  createEvent: (input: EventInput) => request<AdminEvent>('POST', '/v1/admin/events', input),
+  updateEvent: (id: string, patch: EventUpdate) =>
+    request<AdminEvent>('PATCH', `/v1/admin/events/${encodeURIComponent(id)}`, patch),
+  cancelEvent: (id: string) =>
+    request<AdminEvent>('POST', `/v1/admin/events/${encodeURIComponent(id)}/cancel`),
   createVenue: (input: Omit<VenueInput, 'active'>) =>
     request<AdminVenue>('POST', '/v1/admin/venues', input),
   updateVenue: (id: string, patch: VenueUpdate) =>

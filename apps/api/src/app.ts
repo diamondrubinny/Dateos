@@ -18,6 +18,8 @@ import websocket from '@fastify/websocket';
 import { chatRoutes } from './modules/chat/routes.js';
 import { checkinRoutes } from './modules/checkins/routes.js';
 import { dateRoutes } from './modules/dates/routes.js';
+import { eventRoutes } from './modules/events/routes.js';
+import { callRoutes, callWebhookRoutes } from './modules/calls/routes.js';
 import { discoveryRoutes } from './modules/discovery/routes.js';
 import { meRoutes } from './modules/me/routes.js';
 import { exportMemberData } from './modules/privacy/export.js';
@@ -96,6 +98,7 @@ export async function buildApp(env: Env, deps: AppDependencies): Promise<Fastify
       auth: services.auth,
       reports: services.reports,
       verification: services.verification,
+      onReported: (reporterId, targetId) => services.calls.endBetween(reporterId, targetId),
     });
     await typed.register(adminRoutes, {
       auth: services.auth,
@@ -106,6 +109,7 @@ export async function buildApp(env: Env, deps: AppDependencies): Promise<Fastify
       instance: services.instance,
       storage: services.storage,
       venues: services.venues,
+      events: services.events,
     });
     await typed.register(coachRoutes, {
       auth: services.auth,
@@ -118,6 +122,9 @@ export async function buildApp(env: Env, deps: AppDependencies): Promise<Fastify
       dates: services.dates,
       venues: services.venues,
     });
+    await typed.register(eventRoutes, { auth: services.auth, events: services.events });
+    await typed.register(callRoutes, { auth: services.auth, calls: services.calls });
+    await typed.register(callWebhookRoutes, { calls: services.calls });
     await typed.register(notificationRoutes, { auth: services.auth, db: services.dbHandle.db });
     await typed.register(setupRoutes, { auth: services.auth, instance: services.instance });
     await app.register(websocket, { options: { maxPayload: 4096 } });

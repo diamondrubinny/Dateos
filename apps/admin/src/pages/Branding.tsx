@@ -217,6 +217,8 @@ export function Branding({ wizard, onFinish }: { wizard: boolean; onFinish?: () 
             </div>
           </section>
 
+          {wizard ? null : <VideoDates settings={settings.data} onSaved={settings.reload} />}
+
           <section className="card" aria-labelledby="logo-title">
             <h2 id="logo-title">{t.branding.logo}</h2>
             <p className="help">{t.branding.logoHint}</p>
@@ -251,5 +253,81 @@ export function Branding({ wizard, onFinish }: { wizard: boolean; onFinish?: () 
         </div>
       </div>
     </section>
+  );
+}
+
+/** Video dates (phase 15): off until an admin turns them on, and only if LiveKit is configured. */
+function VideoDates({
+  settings,
+  onSaved,
+}: {
+  settings: AdminInstanceSettings;
+  onSaved: () => void;
+}) {
+  const { t } = useLocale();
+  const [enabled, setEnabled] = useState(settings.callsEnabled);
+  const [minutes, setMinutes] = useState(String(settings.callMaxMinutes));
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<Error>();
+  const [saved, setSaved] = useState(false);
+  const value = Number(minutes);
+  const validMinutes = Number.isInteger(value) && value >= 5 && value <= 120;
+  const off = !settings.callsConfigured;
+
+  async function save(event: FormEvent) {
+    event.preventDefault();
+    if (busy || off || !validMinutes) return;
+    setBusy(true);
+    setError(undefined);
+    setSaved(false);
+    try {
+      await api.saveSettings({ callsEnabled: enabled, callMaxMinutes: value });
+      setSaved(true);
+      onSaved();
+    } catch (err) {
+      setError(err as Error);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <form className="card" aria-labelledby="calls-title" onSubmit={save}>
+      <h2 id="calls-title">{t.branding.callsTitle}</h2>
+      <p className="help" id="calls-hint">
+        {off ? t.branding.callsNotConfigured : t.branding.callsHint}
+      </p>
+      <div className="checkbox">
+        <input
+          id="calls-enabled"
+          type="checkbox"
+          checked={enabled}
+          disabled={off}
+          aria-describedby="calls-hint"
+          onChange={(e) => setEnabled(e.target.checked)}
+        />
+        <label htmlFor="calls-enabled">{t.branding.callsEnable}</label>
+      </div>
+      <label htmlFor="calls-max">{t.branding.callsMax}</label>
+      <input
+        id="calls-max"
+        type="number"
+        inputMode="numeric"
+        min={5}
+        max={120}
+        dir="ltr"
+        disabled={off}
+        value={minutes}
+        aria-invalid={!validMinutes}
+        onChange={(e) => setMinutes(e.target.value)}
+      />
+      <p role="status" className={saved ? 'alert alert-ok' : 'visually-hidden'}>
+        {saved ? t.branding.callsSaved : ''}
+      </p>
+      {error ? <ErrorBox error={error} /> : null}
+      <button type="submit" className="button primary" disabled={busy || off || !validMinutes}>
+        {t.branding.callsSave}
+      </button>
+    </form>
   );
 }

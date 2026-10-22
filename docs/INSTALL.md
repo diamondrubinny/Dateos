@@ -198,6 +198,16 @@ Off by default. They need your own build of the mobile app (Expo EAS) and `PUSH_
 `.env`. Notifications carry no names or message text, but they pass through Expo, Apple and Google, so
 mention that in your privacy policy ⚖️. See [SELF_HOSTING.md](SELF_HOSTING.md#push-notifications-optional).
 
+### Video dates
+
+Off by default. Matches can then call each other (video or voice) through LiveKit on your server. On
+a new server, add `--video` to the install command (`./install.sh --domain example.org --video`); on a
+server that is already running, follow the manual steps in
+[SELF_HOSTING.md](SELF_HOSTING.md#video-dates-optional) (never re-run the installer with `--force` on a
+server with data). Then point `rtc.example.org` at the server, open TCP 7881 and UDP 7882, add
+`--profile video` to your alias, and turn them on in the dashboard (Branding → Video dates). Calls are
+never recorded.
+
 ### App Store and Google Play apps
 
 Not required: the web app works on phones and can be added to the home screen. For store apps, build

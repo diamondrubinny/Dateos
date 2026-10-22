@@ -85,6 +85,19 @@ jobs:
           docker compose -f infra/docker-compose.yml --env-file .env --profile app config --quiet
           docker run --rm -e DOMAIN=example.org -v "$PWD/infra/web/Caddyfile:/etc/caddy/Caddyfile:ro" \
             caddy:2.11.7-alpine caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
+          docker run --rm -e DOMAIN=example.org -e RTC_DOMAIN=rtc.example.org \
+            -v "$PWD/infra/web/Caddyfile:/etc/caddy/Caddyfile:ro" \
+            caddy:2.11.7-alpine caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
+      - name: Video dates (--video) and LiveKit config
+        run: |
+          ./install.sh --force --domain example.org --video
+          grep -q '^LIVEKIT_URL=wss://rtc.example.org$' .env
+          grep -qE '^LIVEKIT_API_SECRET=.{48}$' .env
+          docker compose -f infra/docker-compose.yml --env-file .env --profile app --profile video config --quiet
+          # LiveKit parses the generated config (public IP discovery off: CI has no stable address).
+          docker run --rm \
+            -e LIVEKIT_CONFIG="$(sed 's/use_external_ip: true/use_external_ip: false/' infra/data/livekit/livekit.yaml)" \
+            livekit/livekit-server:v1.13.10 ports | grep -q '7881 - ICE/TCP'
 
   docker:
     name: Docker image (${{ matrix.app }})

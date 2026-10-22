@@ -1,5 +1,10 @@
 import { schema, type Database } from '@nexaheart/db';
-import { chatSettingsSchema, ErrorCode, pushTokenInputSchema } from '@nexaheart/shared';
+import {
+  chatSettingsInputSchema,
+  chatSettingsSchema,
+  ErrorCode,
+  pushTokenInputSchema,
+} from '@nexaheart/shared';
 import { and, eq } from 'drizzle-orm';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';
@@ -24,24 +29,35 @@ export const notificationRoutes: FastifyPluginAsyncZod<{ auth: Auth; db: Databas
     async (request) => {
       const userId = currentUser(request).id;
       const [prefs] = await db
-        .select({ acceptVoice: preferences.acceptVoice })
+        .select({ acceptVoice: preferences.acceptVoice, acceptCalls: preferences.acceptCalls })
         .from(preferences)
         .where(eq(preferences.userId, userId));
       const devices = await db
         .select({ token: pushTokens.token })
         .from(pushTokens)
         .where(eq(pushTokens.userId, userId));
-      return { acceptVoice: prefs?.acceptVoice ?? true, pushDevices: devices.length };
+      return {
+        acceptVoice: prefs?.acceptVoice ?? true,
+        acceptCalls: prefs?.acceptCalls ?? true,
+        pushDevices: devices.length,
+      };
     },
   );
 
   app.put(
     '/v1/me/settings',
-    { schema: { body: chatSettingsSchema, response: { 200: ok } } },
+    { schema: { body: chatSettingsInputSchema, response: { 200: ok } } },
     async (request) => {
       const updated = await db
         .update(preferences)
-        .set({ acceptVoice: request.body.acceptVoice })
+        .set({
+          ...(request.body.acceptVoice !== undefined
+            ? { acceptVoice: request.body.acceptVoice }
+            : {}),
+          ...(request.body.acceptCalls !== undefined
+            ? { acceptCalls: request.body.acceptCalls }
+            : {}),
+        })
         .where(eq(preferences.userId, currentUser(request).id))
         .returning({ userId: preferences.userId });
       if (updated.length === 0)

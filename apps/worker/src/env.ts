@@ -46,6 +46,23 @@ export const workerEnvSchema = z.object({
     .optional()
     .transform((v) => (v ? v : undefined)),
   SMTP_FROM: z.string().default('NexaHeart <no-reply@localhost>'),
+  /** Video dates (phase 15): how the worker reaches LiveKit's API to end calls (optional). */
+  LIVEKIT_URL: z
+    .string()
+    .optional()
+    .transform((v) => (v ? v : undefined)),
+  LIVEKIT_API_URL: z
+    .string()
+    .optional()
+    .transform((v) => (v ? v : undefined)),
+  LIVEKIT_API_KEY: z
+    .string()
+    .optional()
+    .transform((v) => (v ? v : undefined)),
+  LIVEKIT_API_SECRET: z
+    .string()
+    .optional()
+    .transform((v) => (v ? v : undefined)),
   WORKER_CONCURRENCY: z.coerce.number().int().min(1).max(16).default(2),
 });
 

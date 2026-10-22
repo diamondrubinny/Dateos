@@ -11,6 +11,7 @@ import { ApiRequestError } from '../lib/api';
 import { authClient } from '../lib/auth-client';
 import { LocaleProvider, useLocale } from '../lib/locale';
 import { RealtimeProvider } from '../lib/realtime';
+import { IncomingCall } from '../components/IncomingCall';
 import { useInstance } from '../lib/queries';
 import { useColors } from '../lib/theme';
 
@@ -29,6 +30,12 @@ function Navigator() {
       };
       if (data.type === 'checkin') {
         router.push('/checkin');
+      } else if (
+        data.type === 'event' &&
+        typeof data.matchId === 'string' &&
+        /^[0-9a-f-]{36}$/.test(data.matchId)
+      ) {
+        router.push({ pathname: '/events/[id]', params: { id: data.matchId } });
       } else if (typeof data.matchId === 'string' && /^[0-9a-f-]{36}$/.test(data.matchId)) {
         router.push({ pathname: '/chat/[id]', params: { id: data.matchId } });
       }
@@ -43,6 +50,7 @@ function Navigator() {
     <RouterLocaleProvider direction={direction}>
       <RealtimeProvider enabled={Boolean(session.data)}>
         <StatusBar style="auto" />
+        {session.data ? <IncomingCall /> : null}
         <Stack
           screenOptions={{
             headerShown: false,

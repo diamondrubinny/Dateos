@@ -13,6 +13,7 @@ import { LanguageSwitch } from '../components/LanguageSwitch';
 import { RequireSession } from '../components/RequireSession';
 import { Screen } from '../components/Screen';
 import { authClient } from '../lib/auth-client';
+import { useSetAcceptCalls } from '../lib/call-queries';
 import { useChatSettings, useSetAcceptVoice } from '../lib/chat-queries';
 import { useLocale } from '../lib/locale';
 import { disablePush, enablePush, pushEnabledOnThisDevice } from '../lib/push';
@@ -36,6 +37,7 @@ function SettingsContent() {
   const [locationRemoved, setLocationRemoved] = useState(false);
   const chatSettings = useChatSettings();
   const setAcceptVoice = useSetAcceptVoice();
+  const setAcceptCalls = useSetAcceptCalls();
   const { locale } = useLocale();
   const [push, setPush] = useState(false);
   const [pushNote, setPushNote] = useState<string>();
@@ -122,6 +124,16 @@ function SettingsContent() {
           setAcceptVoice.mutate(v, { onError: () => setError(t('common.genericError')) })
         }
       />
+      {instance.data?.calls ? (
+        <Checkbox
+          label={t('call.acceptLabel')}
+          hint={t('call.acceptHint')}
+          checked={chatSettings.data?.acceptCalls ?? true}
+          onChange={(v) =>
+            setAcceptCalls.mutate(v, { onError: () => setError(t('common.genericError')) })
+          }
+        />
+      ) : null}
 
       <AppText variant="heading">{t('settings.privacy')}</AppText>
       <Checkbox

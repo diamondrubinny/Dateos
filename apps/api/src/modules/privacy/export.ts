@@ -142,6 +142,18 @@ export async function exportMemberData(
     .from(t.checkins)
     .where(eq(t.checkins.userId, userId))
     .orderBy(desc(t.checkins.createdAt));
+  // Community events you said you're going to.
+  const rsvpRows = await db
+    .select({
+      title: t.events.title,
+      startsAt: t.events.startsAt,
+      status: t.events.status,
+      at: t.eventRsvps.createdAt,
+    })
+    .from(t.eventRsvps)
+    .innerJoin(t.events, eq(t.events.id, t.eventRsvps.eventId))
+    .where(eq(t.eventRsvps.userId, userId))
+    .orderBy(asc(t.eventRsvps.createdAt));
   // Date ideas in your chats. The other person's own note is theirs, so only yours is included.
   const datePlanRows = await db
     .select({
@@ -158,6 +170,19 @@ export async function exportMemberData(
     .innerJoin(t.matches, eq(t.matches.id, t.datePlans.matchId))
     .where(or(eq(t.matches.userA, userId), eq(t.matches.userB, userId)))
     .orderBy(asc(t.datePlans.createdAt));
+  const callRows = await db
+    .select({
+      matchId: t.calls.matchId,
+      callerId: t.calls.callerId,
+      video: t.calls.video,
+      status: t.calls.status,
+      createdAt: t.calls.createdAt,
+      answeredAt: t.calls.answeredAt,
+      endedAt: t.calls.endedAt,
+    })
+    .from(t.calls)
+    .where(or(eq(t.calls.callerId, userId), eq(t.calls.calleeId, userId)))
+    .orderBy(asc(t.calls.createdAt));
   const devices = await db
     .select({
       platform: t.pushTokens.platform,
@@ -224,6 +249,7 @@ export async function exportMemberData(
           maxDistanceKm: preferences.maxDistanceKm,
           intentions: preferences.intentions,
           acceptVoice: preferences.acceptVoice,
+          acceptCalls: preferences.acceptCalls,
         }
       : null,
     approximateLocation: location
@@ -259,6 +285,7 @@ export async function exportMemberData(
       checkAt: iso(c.checkAt),
       alertedAt: iso(c.alertedAt),
     })),
+    eventsYouAreGoingTo: rsvpRows.map((r) => ({ ...r, startsAt: iso(r.startsAt), at: iso(r.at) })),
     dateIdeas: datePlanRows.map(({ proposerId, note, ...d }) => ({
       ...d,
       proposedByYou: proposerId === userId,
@@ -266,6 +293,13 @@ export async function exportMemberData(
       startsAt: iso(d.startsAt),
       respondedAt: iso(d.respondedAt),
       createdAt: iso(d.createdAt),
+    })),
+    callsNoAudioOrVideoIsStored: callRows.map(({ callerId, ...c }) => ({
+      ...c,
+      startedByYou: callerId === userId,
+      createdAt: iso(c.createdAt),
+      answeredAt: iso(c.answeredAt),
+      endedAt: iso(c.endedAt),
     })),
     pushDevices: devices.map((d) => ({
       ...d,

@@ -18,7 +18,9 @@ export const safetyRoutes: FastifyPluginAsyncZod<{
   auth: Auth;
   reports: ReportService;
   verification: VerificationService;
-}> = async (app, { auth, reports, verification }) => {
+  /** Reporting someone hangs up any call with them (phase 15). */
+  onReported?: (reporterId: string, targetId: string) => Promise<void>;
+}> = async (app, { auth, reports, verification, onReported }) => {
   await app.register(multipart, {
     limits: { fileSize: MAX_PHOTO_BYTES, files: 1, fields: 0, parts: 1 },
   });
@@ -31,7 +33,9 @@ export const safetyRoutes: FastifyPluginAsyncZod<{
       config: perUserLimit(20, 24 * 60 * 60 * 1000),
     },
     async (request, reply) => {
-      const result = await reports.create(currentUser(request).id, request.body);
+      const reporterId = currentUser(request).id;
+      const result = await reports.create(reporterId, request.body);
+      await onReported?.(reporterId, request.body.targetId).catch(() => undefined);
       return reply.status(201).send(result);
     },
   );

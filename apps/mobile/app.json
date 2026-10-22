@@ -12,7 +12,8 @@
       "bundleIdentifier": "org.nexaheart.app",
       "infoPlist": {
         "NSPhotoLibraryUsageDescription": "Choose photos for your dating profile.",
-        "NSCameraUsageDescription": "Take a photo for your dating profile."
+        "NSCameraUsageDescription": "NexaHeart uses the camera for your profile photos and, only when you turn it on, in a video date.",
+        "NSMicrophoneUsageDescription": "NexaHeart uses the microphone only while you record a voice message or are in a call."
       }
     },
     "android": {
@@ -23,7 +24,8 @@
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "blockedPermissions": ["android.permission.SYSTEM_ALERT_WINDOW"]
     },
     "web": {
       "favicon": "./assets/favicon.png",
@@ -66,11 +68,19 @@
       [
         "expo-audio",
         {
-          "microphonePermission": "NexaHeart uses the microphone only while you record a voice message."
+          "microphonePermission": "NexaHeart uses the microphone only while you record a voice message or are in a call."
         }
       ],
       ["expo-notifications", {}],
-      "expo-sharing"
+      "expo-sharing",
+      [
+        "@config-plugins/react-native-webrtc",
+        {
+          "cameraPermission": "NexaHeart uses the camera for your profile photos and, only when you turn it on, in a video date.",
+          "microphonePermission": "NexaHeart uses the microphone only while you record a voice message or are in a call."
+        }
+      ],
+      "@livekit/react-native-expo-plugin"
     ],
     "experiments": {
       "typedRoutes": true
