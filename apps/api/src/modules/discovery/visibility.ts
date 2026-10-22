@@ -42,6 +42,14 @@ export interface CandidateRow {
   impressions_24h: number;
 }
 
+/**
+ * Not taking a break (phase 18a). A break that has ended counts as over at once, before the worker
+ * clears it. `alias` is a fixed table alias in our own SQL, never user input.
+ */
+export function notOnBreak(alias: 'u' | 'mu'): SQL {
+  return sql.raw(`(${alias}.paused_at IS NULL OR ${alias}.paused_until <= now())`);
+}
+
 /** Both users are active and not separated by a block or an unmatch. */
 export function notSeparated(a: SQL, b: SQL): SQL {
   return sql`NOT EXISTS (
@@ -66,6 +74,8 @@ export function candidateSql(q: CandidateQuery): SQL {
       FROM profiles p
       -- A paused viewer (sensitive-data consent withdrawn) is not matched either way.
       JOIN "user" mu ON mu.id = p.user_id AND mu.status = 'active'
+        -- ...and neither is a member taking a break.
+        AND ${notOnBreak('mu')}
       JOIN preferences pr ON pr.user_id = p.user_id
       JOIN locations l ON l.user_id = p.user_id
       LEFT JOIN profile_embeddings e ON e.user_id = p.user_id
@@ -92,7 +102,7 @@ export function candidateSql(q: CandidateQuery): SQL {
       (SELECT count(*) FROM impressions im WHERE im.candidate_id = c.user_id AND im.created_at > now() - interval '24 hours')::int AS impressions_24h
     FROM me
     JOIN profiles c ON c.user_id <> me.user_id
-    JOIN "user" u ON u.id = c.user_id AND u.status = 'active'
+    JOIN "user" u ON u.id = c.user_id AND u.status = 'active' AND ${notOnBreak('u')}
     JOIN preferences cpr ON cpr.user_id = c.user_id
     JOIN locations cl ON cl.user_id = c.user_id
     LEFT JOIN profile_embeddings ce ON ce.user_id = c.user_id

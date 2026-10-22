@@ -1,12 +1,12 @@
 # Phase 18: Take a break, incognito and travel mode (v0.5)
 
-> Status: 📝 plan, waiting for approval.
+> Status: 18a ✅ done (2026-10-22); 18b and 18c 🔨 building. All recommendations approved.
 > 📘 = verify against official docs, ⚖️ = needs legal review.
 
 Three features from the plan's v0.2–v0.5 list that aren't built yet. They're all free for everyone,
 like every other feature. Each one gives the member more control over **who sees them and when**.
 
-## 18a. Take a break (pause my profile)
+## 18a. Take a break (pause my profile) ✅
 
 **User story:** "I'm on holiday / busy / talking to someone I like. I want to stop being shown
 without losing my matches or deleting the account."
@@ -112,7 +112,7 @@ also be here."
   - Rate limits; IDOR.
 - e2e: the three settings in 4 languages, the banners and the badge; axe 0 violations.
 
-## Decisions (to approve)
+## Decisions (approved 2026-10-22: all recommendations)
 
 1. During a break, chats and calls with existing matches continue. **Recommended: yes.**
 2. Incognito is free for everyone, like everything else. **Recommended: yes.**
@@ -120,3 +120,12 @@ also be here."
    alternative is an admin-defined list.
 4. Travellers show a "Visiting {city}" badge. **Recommended: yes** (honest, prevents disappointment).
 5. Order: 18a → 18b → 18c, one PR each.
+
+## Results: 18a
+
+| Check                              | Result                                                                                                                                                                                                                      |
+| ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Integration (`visibility.test.ts`) | ✅ hidden from new people in discover, picks, likes, profile and photo URLs and likes; matches and chats carry on; the break ends by itself (once, with a push) and never overrides a withdrawn consent; validation; export |
+| All integration tests              | ✅ 148/148                                                                                                                                                                                                                  |
+| `pnpm --dir e2e visibility`        | ✅ 4 languages: Settings → a week's break → the calm card on Discover, Picks and Likes → "Come back now"; 0 axe violations                                                                                                  |
+| Screenshots                        | `61-take-a-break`, `62-on-break` in 4 languages                                                                                                                                                                             |

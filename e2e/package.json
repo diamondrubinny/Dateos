@@ -21,6 +21,7 @@
     "events": "tsx events.ts",
     "calls": "tsx calls.ts",
     "credit": "tsx credit.ts",
+    "visibility": "tsx visibility.ts",
     "load": "node --env-file=../.env --import tsx load.ts"
   },
   "dependencies": {

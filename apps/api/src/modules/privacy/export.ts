@@ -27,6 +27,8 @@ export async function exportMemberData(
       email: t.user.email,
       status: t.user.status,
       createdAt: t.user.createdAt,
+      pausedAt: t.user.pausedAt,
+      pausedUntil: t.user.pausedUntil,
     })
     .from(t.user)
     .where(eq(t.user.id, userId));
@@ -233,7 +235,12 @@ export async function exportMemberData(
     note:
       'All personal data this community holds about you. Messages written by other people are not included. ' +
       'Your location is stored only as an approximate ~1 km grid cell.',
-    account: { ...account, createdAt: iso(account.createdAt) },
+    account: {
+      ...account,
+      createdAt: iso(account.createdAt),
+      pausedAt: iso(account.pausedAt),
+      pausedUntil: iso(account.pausedUntil),
+    },
     profile: profile
       ? {
           displayName: profile.displayName,

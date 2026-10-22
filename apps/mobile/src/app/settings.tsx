@@ -29,6 +29,7 @@ import {
 } from '../lib/queries';
 import { radius, spacing, useColors } from '../lib/theme';
 import { PoweredBy } from '../components/PoweredBy';
+import { TakeABreak } from '../components/TakeABreak';
 
 function SettingsContent() {
   const { t } = useTranslation();
@@ -138,6 +139,8 @@ function SettingsContent() {
           }
         />
       ) : null}
+
+      <TakeABreak />
 
       <AppText variant="heading">{t('settings.privacy')}</AppText>
       <Checkbox

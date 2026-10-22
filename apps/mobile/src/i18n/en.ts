@@ -141,6 +141,23 @@ export const en = {
     settings: 'Settings',
     age: '{{age}} years old',
   },
+  pause: {
+    title: 'Take a break',
+    hint: 'Stop being shown to new people for a while. Your matches and chats stay open, so nobody is left without an answer.',
+    howLong: 'For how long?',
+    duration: {
+      '24h': '24 hours',
+      '3d': '3 days',
+      '7d': 'A week',
+      indefinite: 'Until I come back',
+    },
+    start: 'Take a break',
+    onBreakTitle: 'You’re taking a break.',
+    until: 'New people will see you again on {{when}}.',
+    untilBack: 'New people won’t see you until you come back.',
+    onBreakBody: 'Your matches and chats are still here. Likes sent to you will wait for you.',
+    comeBack: 'Come back now',
+  },
   settings: {
     sensitiveLabel: 'Use my gender and interests for matching',
     sensitiveHint: 'Turning this off hides your profile until you turn it on again.',

@@ -9,11 +9,20 @@ import { Banner } from '../../components/Banner';
 import { Loading } from '../../components/Loading';
 import { PersonRow } from '../../components/PersonRow';
 import { Screen } from '../../components/Screen';
-import { useLikes } from '../../lib/queries';
+import { OnBreak } from '../../components/OnBreak';
+import { useLikes, useMe } from '../../lib/queries';
 
 export default function Likes() {
   const { t } = useTranslation();
   const likes = useLikes();
+  const onBreak = Boolean(useMe().data?.pause);
+  if (onBreak) {
+    return (
+      <Screen title={t('likes.title')} subtitle={t('likes.subtitle')}>
+        <OnBreak />
+      </Screen>
+    );
+  }
   if (likes.isPending) return <Loading />;
 
   const describe = (like: LikeReceived) => {

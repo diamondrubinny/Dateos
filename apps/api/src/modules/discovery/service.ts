@@ -28,7 +28,7 @@ import { and, asc, desc, eq, inArray, isNull, or, sql } from 'drizzle-orm';
 import { audit } from '../../lib/audit.js';
 import { HttpError } from '../../plugins/error-handler.js';
 import { photoUrl } from '../me/service.js';
-import { notSeparated, queryCandidates, type CandidateRow } from './visibility.js';
+import { notOnBreak, notSeparated, queryCandidates, type CandidateRow } from './visibility.js';
 
 const {
   profiles,
@@ -243,7 +243,9 @@ export class DiscoveryService {
         WHERE u.id = ${targetId} AND u.status = 'active'
           AND ${notSeparated(sql`${viewerId}`, sql`${targetId}`)}
           AND (
-            EXISTS (SELECT 1 FROM interactions i WHERE i.actor_id = ${targetId} AND i.target_id = ${viewerId} AND i.kind = 'like')
+            -- Someone who liked me, unless they're taking a break; a match always stays visible.
+            (EXISTS (SELECT 1 FROM interactions i WHERE i.actor_id = ${targetId} AND i.target_id = ${viewerId} AND i.kind = 'like')
+             AND ${notOnBreak('u')})
             OR EXISTS (SELECT 1 FROM matches m WHERE m.unmatched_at IS NULL
                        AND ((m.user_a = ${viewerId} AND m.user_b = ${targetId}) OR (m.user_a = ${targetId} AND m.user_b = ${viewerId})))
           )
@@ -270,7 +272,7 @@ export class DiscoveryService {
     input: InteractionInput,
   ): Promise<{ matched: boolean; matchId: string | null }> {
     if (input.targetId === actorId) throw notFound();
-    // A paused member (consent for sensitive data withdrawn) is not matched with anyone.
+    // A paused member (consent for sensitive data withdrawn, or taking a break) is not matched.
     if (!(await this.isActive(actorId))) {
       throw new HttpError(403, ErrorCode.Forbidden, 'Your profile is paused.');
     }
@@ -348,9 +350,10 @@ export class DiscoveryService {
     return result;
   }
 
+  /** Active and not taking a break: may like, pass and see who liked them. */
   private async isActive(userId: string): Promise<boolean> {
     const { rows } = await this.db.execute(
-      sql`SELECT 1 FROM "user" WHERE id = ${userId} AND status = 'active'`,
+      sql`SELECT 1 FROM "user" u WHERE u.id = ${userId} AND u.status = 'active' AND ${notOnBreak('u')}`,
     );
     return rows.length > 0;
   }
@@ -368,7 +371,7 @@ export class DiscoveryService {
     }>(sql`
       SELECT i.actor_id, i.comment, i.item_type, i.item_id, p.prompt_key, i.created_at
       FROM interactions i
-      JOIN "user" u ON u.id = i.actor_id AND u.status = 'active'
+      JOIN "user" u ON u.id = i.actor_id AND u.status = 'active' AND ${notOnBreak('u')}
       LEFT JOIN prompts p ON i.item_type = 'prompt' AND p.id = i.item_id AND p.user_id = ${viewerId}
       WHERE i.target_id = ${viewerId} AND i.kind = 'like'
         AND NOT EXISTS (SELECT 1 FROM interactions mine WHERE mine.actor_id = ${viewerId} AND mine.target_id = i.actor_id)

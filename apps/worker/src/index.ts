@@ -16,6 +16,7 @@ import {
   type ProcessAudioJob,
   type ProcessPhotoJob,
   creditLine,
+  PAUSE_SWEEP_SECONDS,
 } from '@nexaheart/shared';
 import { createStorage } from '@nexaheart/storage';
 import { Queue, Worker } from 'bullmq';
@@ -28,6 +29,7 @@ import { sendPush } from './push.js';
 import { cleanupPrivacy, handleInactiveAccounts } from './privacy-jobs.js';
 import { processCheckins } from './checkin-jobs.js';
 import { processEvents } from './event-jobs.js';
+import { processPauses } from './pause-jobs.js';
 import { processCalls } from './call-jobs.js';
 import { RoomServiceClient } from 'livekit-server-sdk';
 import nodemailer from 'nodemailer';
@@ -176,6 +178,13 @@ async function main(): Promise<void> {
               : null,
             publish: ctx.publish!,
           });
+        case 'pauses':
+          return processPauses({
+            db,
+            tellVisible: async (userId) => {
+              await sendPush(pushContext, { userId, kind: 'visible', matchId: userId });
+            },
+          });
         case 'events':
           return processEvents({
             db,
@@ -222,6 +231,12 @@ async function main(): Promise<void> {
   await scheduler.upsertJobScheduler('calls', { every: 15_000 }, { name: 'calls' });
   // Community events: day-before reminders and retention (every 10 minutes).
   await scheduler.upsertJobScheduler('events', { every: 600_000 }, { name: 'events' });
+  // Take a break: end breaks whose time is up and tell the member (every 5 minutes).
+  await scheduler.upsertJobScheduler(
+    'pauses',
+    { every: PAUSE_SWEEP_SECONDS * 1000 },
+    { name: 'pauses' },
+  );
 
   log.info(
     { scanningEnabled, embeddings: embeddings.model, push: env.PUSH_PROVIDER },

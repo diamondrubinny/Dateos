@@ -66,6 +66,7 @@ NexaHeart is in active development. Here is what works today and what comes next
 | Community events: meetups at the community's places, a count of people going (never who), a waiting list when full                                                      | ✅ Available |
 | Four languages: English, Hebrew, Arabic, Russian (right-to-left for Hebrew and Arabic)                                                                                  | ✅ Available |
 | Video dates: video or voice calls between matches through your own LiveKit, end-to-end encrypted (with a safety code), live captions made on the device, never recorded | ✅ Available |
+| Take a break: hide from new people for a day, a few days, a week or until you come back; matches and chats carry on                                                     | ✅ Available |
 
 ## Screenshots
 

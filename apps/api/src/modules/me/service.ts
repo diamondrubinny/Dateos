@@ -11,6 +11,8 @@ import {
   SENSITIVE_CONSENT_VERSION,
   type ConsentInput,
   type MeResponse,
+  pauseEndsAt,
+  type PauseDuration,
   type OnboardingStep,
   type Preferences,
   type ProfileInput,
@@ -58,10 +60,20 @@ export class MeService {
 
   async getMe(userId: string): Promise<MeResponse> {
     const [account] = await this.db
-      .select({ id: user.id, email: user.email, status: user.status })
+      .select({
+        id: user.id,
+        email: user.email,
+        status: user.status,
+        pausedAt: user.pausedAt,
+        pausedUntil: user.pausedUntil,
+      })
       .from(user)
       .where(eq(user.id, userId));
     if (!account) throw new HttpError(404, ErrorCode.NotFound, 'Resource not found.');
+    // A break that has ended is over even before the worker clears it.
+    const onBreak =
+      account.pausedAt !== null &&
+      (account.pausedUntil === null || account.pausedUntil > new Date());
 
     const [profile] = await this.db.select().from(profiles).where(eq(profiles.userId, userId));
     const [prefs] = await this.db.select().from(preferences).where(eq(preferences.userId, userId));
@@ -110,7 +122,13 @@ export class MeService {
       .orderBy(asc(moderationLog.createdAt));
 
     return {
-      user: account,
+      user: { id: account.id, email: account.email, status: account.status },
+      pause: onBreak
+        ? {
+            since: account.pausedAt!.toISOString(),
+            until: account.pausedUntil?.toISOString() ?? null,
+          }
+        : null,
       profile: profile
         ? {
             displayName: profile.displayName,
@@ -153,6 +171,24 @@ export class MeService {
         createdAt: w.createdAt.toISOString(),
       })),
     };
+  }
+
+  /**
+   * "Take a break" (phase 18a): hidden from new people until `duration` ends, or until the member
+   * comes back. Matches and chats carry on. Choosing again replaces the end time.
+   */
+  async pause(userId: string, duration: PauseDuration, now = new Date()): Promise<void> {
+    await this.db
+      .update(user)
+      .set({ pausedAt: now, pausedUntil: pauseEndsAt(duration, now) })
+      .where(eq(user.id, userId));
+  }
+
+  async resume(userId: string): Promise<void> {
+    await this.db
+      .update(user)
+      .set({ pausedAt: null, pausedUntil: null })
+      .where(eq(user.id, userId));
   }
 
   /** Creates the profile. Birth date is final: an underage date suspends the account. */

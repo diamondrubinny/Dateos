@@ -71,6 +71,10 @@ export const user = pgTable('user', {
   inactivityNoticeAt: timestamp('inactivity_notice_at', { withTimezone: true }),
   /** Last sign-in or session refresh (at most daily); used only for the optional inactivity rule. */
   lastSeenAt: timestamp('last_seen_at', { withTimezone: true }).notNull().defaultNow(),
+  /** "Take a break" (phase 18a): hidden from new people since then. */
+  pausedAt: timestamp('paused_at', { withTimezone: true }),
+  /** When the break ends by itself; null with pausedAt set means "until I turn it back on". */
+  pausedUntil: timestamp('paused_until', { withTimezone: true }),
   ...timestamps,
 });
 

@@ -17,6 +17,7 @@ import type {
   ProfileInput,
   ProfileUpdate,
   PromptAnswer,
+  PauseDuration,
 } from '@nexaheart/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Platform } from 'react-native';
@@ -77,6 +78,29 @@ export const useSetConsents = () =>
   );
 export const useDeletePhoto = () =>
   useMeMutation((id: string) => apiFetch(`/v1/me/photos/${id}`, { method: 'DELETE' }));
+/** Take a break (phase 18a): the feeds change too, so they refresh with /v1/me. */
+function useBreakMutation<TInput>(request: (input: TInput) => Promise<unknown>) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: request,
+    onSuccess: async () => {
+      for (const queryKey of [
+        keys.me,
+        discoveryKeys.discover,
+        discoveryKeys.picks,
+        discoveryKeys.likes,
+      ]) {
+        await client.invalidateQueries({ queryKey, refetchType: 'all' });
+      }
+    },
+  });
+}
+export const usePause = () =>
+  useBreakMutation((duration: PauseDuration) =>
+    apiFetch('/v1/me/pause', { method: 'PUT', body: json({ duration }) }),
+  );
+export const useResume = () =>
+  useBreakMutation(() => apiFetch('/v1/me/pause', { method: 'DELETE' }));
 export const useDeleteAccount = () =>
   useMutation({ mutationFn: () => apiFetch('/v1/me', { method: 'DELETE' }) });
 
