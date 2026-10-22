@@ -3,7 +3,8 @@
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 /**
  * Who sees me (phase 18), end to end in every language: take a break from Settings, see the calm
- * "You're taking a break" card instead of Discover, Picks and Likes, then come back.
+ * "You're taking a break" card instead of Discover, Picks and Likes, then come back; turn incognito
+ * on and off.
  * Usage: pnpm --dir e2e visibility
  */
 import { existsSync } from 'node:fs';
@@ -91,6 +92,37 @@ async function open(browser: Browser, session: { name: string; value: string }, 
   return { context, page };
 }
 
+async function incognito(browser: Browser, locale: L) {
+  const t = T[locale];
+  const { session, call } = await member(locale);
+  const { context, page } = await open(browser, session, locale);
+  try {
+    await page.goto(`${WEB}/settings`);
+    const box = page.getByRole('checkbox', { name: t.visibility.incognitoLabel });
+    await box.scrollIntoViewIfNeeded();
+    check((await box.getAttribute('aria-checked')) === 'false', 'incognito is off by default');
+    await box.click();
+    await page.waitForFunction(
+      (label) =>
+        document.querySelector(`[aria-label="${label}"]`)?.getAttribute('aria-checked') === 'true',
+      t.visibility.incognitoLabel,
+    );
+    const me = await call<{ incognito: boolean }>('GET', '/v1/me');
+    check(me.incognito, 'incognito is saved');
+    await page.getByText(t.visibility.title).scrollIntoViewIfNeeded();
+    await shot(page, `${locale}/63-incognito`);
+    await box.click();
+    await page.waitForFunction(
+      (label) =>
+        document.querySelector(`[aria-label="${label}"]`)?.getAttribute('aria-checked') === 'false',
+      t.visibility.incognitoLabel,
+    );
+    check(!(await call<{ incognito: boolean }>('GET', '/v1/me')).incognito, 'and turned off again');
+  } finally {
+    await context.close();
+  }
+}
+
 async function takeABreak(browser: Browser, locale: L) {
   const t = T[locale];
   const { session, call } = await member(locale);
@@ -143,6 +175,8 @@ try {
     // Each language signs a new member in; the per-IP sign-in limit is real, so clear it locally.
     await pool.query('DELETE FROM rate_limit');
     await takeABreak(browser, locale);
+    await pool.query('DELETE FROM rate_limit');
+    await incognito(browser, locale);
   }
 } finally {
   await browser.close();

@@ -141,6 +141,12 @@ export const en = {
     settings: 'Settings',
     age: '{{age}} years old',
   },
+  visibility: {
+    title: 'Who can see me',
+    incognitoLabel: 'Incognito: only people I like can see me',
+    incognitoHint:
+      "You can browse as usual. Others see your profile only after you like them; your matches aren't affected. Nobody is told you're incognito. Someone you like could still take a screenshot.",
+  },
   pause: {
     title: 'Take a break',
     hint: 'Stop being shown to new people for a while. Your matches and chats stay open, so nobody is left without an answer.',

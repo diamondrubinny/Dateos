@@ -4,6 +4,7 @@
 import {
   consentsInputSchema,
   meResponseSchema,
+  incognitoInputSchema,
   pauseInputSchema,
   preferencesSchema,
   profileInputSchema,
@@ -105,6 +106,19 @@ export const meRoutes: FastifyPluginAsyncZod<{
     { schema: { response: { 200: ok } }, config: perUserLimit(30, 24 * 60 * 60 * 1000) },
     async (request) => {
       await me.resume(currentUser(request).id);
+      return { ok: true as const };
+    },
+  );
+
+  // Incognito (phase 18b).
+  app.put(
+    '/v1/me/incognito',
+    {
+      schema: { body: incognitoInputSchema, response: { 200: ok } },
+      config: perUserLimit(30, 24 * 60 * 60 * 1000),
+    },
+    async (request) => {
+      await me.setIncognito(currentUser(request).id, request.body.on);
       return { ok: true as const };
     },
   );

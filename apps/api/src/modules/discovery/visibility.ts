@@ -115,6 +115,10 @@ export function candidateSql(q: CandidateQuery): SQL {
       AND (cardinality(cpr.intentions) = 0 OR me.intention = ANY(cpr.intentions))
       AND EXISTS (SELECT 1 FROM photos ph WHERE ph.user_id = c.user_id AND ph.status = 'clean' AND ph.purpose = 'profile')
       AND ${notSeparated(sql`me.user_id`, sql`c.user_id`)}
+      -- Incognito (phase 18b): seen only by people they liked. Matches stay visible through canView.
+      AND (NOT u.incognito OR EXISTS (
+        SELECT 1 FROM interactions inc
+        WHERE inc.actor_id = c.user_id AND inc.target_id = me.user_id AND inc.kind = 'like'))
       ${q.targetId ? sql`AND c.user_id = ${q.targetId}` : sql``}
       ${q.excludeDecided ? sql`AND NOT EXISTS (SELECT 1 FROM interactions i WHERE i.actor_id = me.user_id AND i.target_id = c.user_id)` : sql``}
       -- One array parameter keeps the statement text stable, so it can be prepared once.

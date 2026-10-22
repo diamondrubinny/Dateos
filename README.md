@@ -67,6 +67,7 @@ NexaHeart is in active development. Here is what works today and what comes next
 | Four languages: English, Hebrew, Arabic, Russian (right-to-left for Hebrew and Arabic)                                                                                  | ✅ Available |
 | Video dates: video or voice calls between matches through your own LiveKit, end-to-end encrypted (with a safety code), live captions made on the device, never recorded | ✅ Available |
 | Take a break: hide from new people for a day, a few days, a week or until you come back; matches and chats carry on                                                     | ✅ Available |
+| Incognito: only people you liked can see you; nobody is told                                                                                                            | ✅ Available |
 
 ## Screenshots
 

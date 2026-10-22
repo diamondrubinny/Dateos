@@ -66,6 +66,7 @@ export class MeService {
         status: user.status,
         pausedAt: user.pausedAt,
         pausedUntil: user.pausedUntil,
+        incognito: user.incognito,
       })
       .from(user)
       .where(eq(user.id, userId));
@@ -129,6 +130,7 @@ export class MeService {
             until: account.pausedUntil?.toISOString() ?? null,
           }
         : null,
+      incognito: account.incognito,
       profile: profile
         ? {
             displayName: profile.displayName,
@@ -189,6 +191,11 @@ export class MeService {
       .update(user)
       .set({ pausedAt: null, pausedUntil: null })
       .where(eq(user.id, userId));
+  }
+
+  /** Incognito (phase 18b): only people this member liked can see them. */
+  async setIncognito(userId: string, on: boolean): Promise<void> {
+    await this.db.update(user).set({ incognito: on }).where(eq(user.id, userId));
   }
 
   /** Creates the profile. Birth date is final: an underage date suspends the account. */

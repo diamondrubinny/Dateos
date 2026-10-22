@@ -34,3 +34,7 @@ export type PauseState = z.infer<typeof pauseStateSchema>;
 
 /** The worker checks for ended breaks this often (the API already treats them as over). */
 export const PAUSE_SWEEP_SECONDS = 300;
+
+/** Incognito (phase 18b): only people I liked can see me. Nobody is ever told who is incognito. */
+export const incognitoInputSchema = z.object({ on: z.boolean() });
+export type IncognitoInput = z.infer<typeof incognitoInputSchema>;
