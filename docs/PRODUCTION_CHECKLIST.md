@@ -15,8 +15,9 @@
   "Download my data" share sheet, voice recording 📘.
 - ☐ Video dates (if enabled): `pnpm --dir e2e calls` against your domain, then a real call between an
   iPhone and an Android phone on mobile data (camera and microphone permissions, switching cameras,
-  speaker vs earpiece, the app in the background, a lost connection) 📘. Check that TCP 7881 and UDP 7882
-  are reachable from outside.
+  speaker vs earpiece, the app in the background, a lost connection) 📘. Both phones show "Private call" and the
+  same safety code; captions work on each phone in your languages (on-device recognition) or say
+  they're unavailable. Check that TCP 7881 and UDP 7882 are reachable from outside.
 
 ## 2. Roles and permissions
 

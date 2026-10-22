@@ -43,29 +43,29 @@ NexaHeart is built the other way around:
 
 NexaHeart is in active development. Here is what works today and what comes next. The full plan is in [`docs/PLAN.md`](docs/PLAN.md).
 
-| Area                                                                                                                         | Status       |
-| ---------------------------------------------------------------------------------------------------------------------------- | ------------ |
-| Passwordless email sign-in (magic link), sessions, rate limits                                                               | ✅ Available |
-| Profile, preferences, prompts, versioned consents                                                                            | ✅ Available |
-| Photo upload with malware scan (ClamAV), EXIF/GPS stripping, re-encoding                                                     | ✅ Available |
-| Account deletion (all data and files)                                                                                        | ✅ Available |
-| iOS / Android / web app: onboarding, profile, settings (Hebrew + English, RTL)                                               | ✅ Available |
-| Approximate location (~1 km grid, bucketed distances)                                                                        | ✅ Available |
-| Discovery, reciprocal AI matching, Daily Picks, "why you might click"                                                        | ✅ Available |
-| Like / pass / like a photo or prompt with a comment, Likes You, matches                                                      | ✅ Available |
-| Unmatch and block                                                                                                            | ✅ Available |
-| Real-time chat (WebSocket), read receipts, typing, icebreakers                                                               | ✅ Available |
-| "Are you sure?", hidden offensive messages, scam warnings, blurred photos                                                    | ✅ Available |
-| Voice messages, push notifications                                                                                           | ✅ Available |
-| Report (with chat evidence), moderation dashboard with mandatory TOTP, audit                                                 | ✅ Available |
-| Photo verification (live selfie, human review, no face recognition), badge                                                   | ✅ Available |
-| Your own instance: setup token claim, branding wizard, HTTPS web server (Caddy)                                              | ✅ Available |
-| Download my data, retention jobs, explicit consent for sensitive data                                                        | ✅ Available |
-| Safety check-in with SOS to a trusted contact, "close kindly" and reply reminders (anti-ghosting)                            | ✅ Available |
-| Date planner: propose a date in a public place your community curates, accept it in the chat, turn it into a safety check-in | ✅ Available |
-| Community events: meetups at the community's places, a count of people going (never who), a waiting list when full           | ✅ Available |
-| Four languages: English, Hebrew, Arabic, Russian (right-to-left for Hebrew and Arabic)                                       | ✅ Available |
-| Video dates: video or voice calls between matches through your own LiveKit, camera off on join, never recorded               | ✅ Available |
+| Area                                                                                                                                                                    | Status       |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ |
+| Passwordless email sign-in (magic link), sessions, rate limits                                                                                                          | ✅ Available |
+| Profile, preferences, prompts, versioned consents                                                                                                                       | ✅ Available |
+| Photo upload with malware scan (ClamAV), EXIF/GPS stripping, re-encoding                                                                                                | ✅ Available |
+| Account deletion (all data and files)                                                                                                                                   | ✅ Available |
+| iOS / Android / web app: onboarding, profile, settings (Hebrew + English, RTL)                                                                                          | ✅ Available |
+| Approximate location (~1 km grid, bucketed distances)                                                                                                                   | ✅ Available |
+| Discovery, reciprocal AI matching, Daily Picks, "why you might click"                                                                                                   | ✅ Available |
+| Like / pass / like a photo or prompt with a comment, Likes You, matches                                                                                                 | ✅ Available |
+| Unmatch and block                                                                                                                                                       | ✅ Available |
+| Real-time chat (WebSocket), read receipts, typing, icebreakers                                                                                                          | ✅ Available |
+| "Are you sure?", hidden offensive messages, scam warnings, blurred photos                                                                                               | ✅ Available |
+| Voice messages, push notifications                                                                                                                                      | ✅ Available |
+| Report (with chat evidence), moderation dashboard with mandatory TOTP, audit                                                                                            | ✅ Available |
+| Photo verification (live selfie, human review, no face recognition), badge                                                                                              | ✅ Available |
+| Your own instance: setup token claim, branding wizard, HTTPS web server (Caddy)                                                                                         | ✅ Available |
+| Download my data, retention jobs, explicit consent for sensitive data                                                                                                   | ✅ Available |
+| Safety check-in with SOS to a trusted contact, "close kindly" and reply reminders (anti-ghosting)                                                                       | ✅ Available |
+| Date planner: propose a date in a public place your community curates, accept it in the chat, turn it into a safety check-in                                            | ✅ Available |
+| Community events: meetups at the community's places, a count of people going (never who), a waiting list when full                                                      | ✅ Available |
+| Four languages: English, Hebrew, Arabic, Russian (right-to-left for Hebrew and Arabic)                                                                                  | ✅ Available |
+| Video dates: video or voice calls between matches through your own LiveKit, end-to-end encrypted (with a safety code), live captions made on the device, never recorded | ✅ Available |
 
 ## Screenshots
 

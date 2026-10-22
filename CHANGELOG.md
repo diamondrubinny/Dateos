@@ -14,6 +14,12 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Added
 
+- **Private calls**: video dates are end-to-end encrypted. The two devices agree on the key
+  (X25519), so even the community's own server can't see or hear a call; a 4-emoji safety code lets
+  both people check that nobody is in the middle. Nothing is sent before the key exists.
+- **Live captions in calls**: turn on "Show captions" to read what the other person says. Their own
+  device makes the captions, on the device only (never a cloud service), only while you ask and
+  their microphone is on; the text travels inside the encrypted call and is never stored.
 - **Waiting lists for community events**: a full event offers "Join the waiting list"; members see
   their place in line (never who else waits); when someone can't go after all or an admin adds places,
   the next people in line are moved to "going" and notified. The dashboard shows how many are waiting.

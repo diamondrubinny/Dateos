@@ -18,6 +18,9 @@ import {
   type TestContext,
 } from './setup.js';
 
+/** A well-formed X25519 public key (base64url); the server never interprets it. */
+const PK = 'q1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v';
+
 /** Real tokens and webhook signatures; only the room API calls are recorded instead of sent. */
 const rooms = { created: [] as string[], deleted: [] as string[] };
 const real = createLiveKitMedia(TEST_LIVEKIT as unknown as Env)!;
@@ -189,7 +192,9 @@ describe.skipIf(!integrationEnabled)('video dates (integration)', () => {
       expect((await api(ctx, eve, 'GET', url)).statusCode).toBe(404);
     }
     for (const action of ['join', 'decline', 'end']) {
-      expect((await api(ctx, eve, 'POST', `/v1/calls/${id}/${action}`)).statusCode).toBe(404);
+      expect(
+        (await api(ctx, eve, 'POST', `/v1/calls/${id}/${action}`, { publicKey: PK })).statusCode,
+      ).toBe(404);
     }
     expect((await call(dan)).statusCode).toBe(409);
     // Dan is told (live and with a content-free push) and sees the call line in the chat.
@@ -213,25 +218,33 @@ describe.skipIf(!integrationEnabled)('video dates (integration)', () => {
       TEST_LIVEKIT.LIVEKIT_API_SECRET,
     );
 
-    const caller = await api(ctx, noa, 'POST', `/v1/calls/${voice.id}/join`);
+    const caller = await api(ctx, noa, 'POST', `/v1/calls/${voice.id}/join`, { publicKey: PK });
     expect(caller.statusCode).toBe(200);
     expect(caller.json().url).toBe(TEST_LIVEKIT.LIVEKIT_URL);
     expect(caller.json().call.status).toBe('ringing'); // the caller waiting doesn't answer it
     const claims = await verifier.verify(caller.json().token);
     const row = await callRow(voice.id);
     expect(claims.sub).toBe('caller');
+    // End-to-end encryption: the device's public key travels in the token, nothing else.
+    expect(claims.attributes).toEqual({ pk: PK });
+    expect(caller.json().room).toBe(row.room);
     expect(JSON.stringify(claims)).not.toContain(noa.id);
     expect(claims.video).toMatchObject({
       roomJoin: true,
       room: row.room,
-      canPublishData: false,
+      canPublishData: true,
       canPublishSources: ['microphone'],
     });
     expect(Number(claims.exp) - Number(claims.nbf ?? claims.iat)).toBeLessThanOrEqual(120);
     expect(rooms.created).toEqual([row.room]);
     expect(String(row.room)).toMatch(/^[0-9a-f]{32}$/);
 
-    const callee = await api(ctx, dan, 'POST', `/v1/calls/${voice.id}/join`);
+    for (const publicKey of ['', 'not-a-key', 'x'.repeat(44), 'abc+/='.repeat(7) + 'a']) {
+      const bad = await api(ctx, dan, 'POST', `/v1/calls/${voice.id}/join`, { publicKey });
+      expect(bad.statusCode).toBe(400);
+    }
+    expect((await api(ctx, dan, 'POST', `/v1/calls/${voice.id}/join`)).statusCode).toBe(400);
+    const callee = await api(ctx, dan, 'POST', `/v1/calls/${voice.id}/join`, { publicKey: PK });
     expect(callee.json().call).toMatchObject({ status: 'active' });
     expect(callee.json().call.endsAt).toBe(
       new Date(Date.parse(callee.json().call.answeredAt) + 30 * 60_000).toISOString(),
@@ -241,7 +254,9 @@ describe.skipIf(!integrationEnabled)('video dates (integration)', () => {
 
     ctx.clock.value += 1000;
     const video = (await call(dan, true)).json();
-    const token = (await api(ctx, noa, 'POST', `/v1/calls/${video.id}/join`)).json().token;
+    const token = (
+      await api(ctx, noa, 'POST', `/v1/calls/${video.id}/join`, { publicKey: PK })
+    ).json().token;
     expect((await verifier.verify(token)).video?.canPublishSources?.sort()).toEqual([
       'camera',
       'microphone',
@@ -257,7 +272,9 @@ describe.skipIf(!integrationEnabled)('video dates (integration)', () => {
     const declined = await api(ctx, dan, 'POST', `/v1/calls/${first.id}/decline`);
     expect(declined.json()).toMatchObject({ status: 'declined' });
     expect(rooms.deleted).toContain((await callRow(first.id)).room);
-    expect((await api(ctx, dan, 'POST', `/v1/calls/${first.id}/join`)).statusCode).toBe(409);
+    expect(
+      (await api(ctx, dan, 'POST', `/v1/calls/${first.id}/join`, { publicKey: PK })).statusCode,
+    ).toBe(409);
 
     // The caller hangs up before an answer: missed.
     await say(dan, 'Sorry, call me later');
@@ -270,7 +287,9 @@ describe.skipIf(!integrationEnabled)('video dates (integration)', () => {
     await say(dan, 'Now is fine');
     const third = (await call(noa)).json();
     ctx.clock.value += 46_000;
-    expect((await api(ctx, dan, 'POST', `/v1/calls/${third.id}/join`)).statusCode).toBe(409);
+    expect(
+      (await api(ctx, dan, 'POST', `/v1/calls/${third.id}/join`, { publicKey: PK })).statusCode,
+    ).toBe(409);
     expect(await sweep()).toEqual({ missed: 1, ended: 0 });
     expect((await callRow(third.id)).status).toBe('missed');
 
@@ -278,7 +297,7 @@ describe.skipIf(!integrationEnabled)('video dates (integration)', () => {
     await say(dan, 'Try again?');
     ctx.clock.value += 3_600_000;
     const fourth = (await call(noa)).json();
-    await api(ctx, dan, 'POST', `/v1/calls/${fourth.id}/join`);
+    await api(ctx, dan, 'POST', `/v1/calls/${fourth.id}/join`, { publicKey: PK });
     ctx.clock.value += 29 * 60_000;
     expect(await sweep()).toEqual({ missed: 0, ended: 0 });
     ctx.clock.value += 61_000;
@@ -319,7 +338,7 @@ describe.skipIf(!integrationEnabled)('video dates (integration)', () => {
       await api(ctx, dan, 'POST', '/v1/interactions', { targetId: eve.id, kind: 'like' })
     ).json().matchId as string;
     const live = (await call(dan)).json();
-    await api(ctx, noa, 'POST', `/v1/calls/${live.id}/join`);
+    await api(ctx, noa, 'POST', `/v1/calls/${live.id}/join`, { publicKey: PK });
     for (let i = 0; i < 3; i += 1) {
       await api(ctx, dan, 'POST', `/v1/matches/${other}/messages`, {
         text: `Hey ${i}`,
@@ -339,7 +358,7 @@ describe.skipIf(!integrationEnabled)('video dates (integration)', () => {
     await unlock();
     const live = async () => {
       const c = (await call(noa)).json();
-      await api(ctx, dan, 'POST', `/v1/calls/${c.id}/join`);
+      await api(ctx, dan, 'POST', `/v1/calls/${c.id}/join`, { publicKey: PK });
       return c.id as string;
     };
 
@@ -361,7 +380,9 @@ describe.skipIf(!integrationEnabled)('video dates (integration)', () => {
     await api(ctx, noa, 'POST', '/v1/blocks', { userId: dan.id });
     await new Promise((r) => setTimeout(r, 50)); // listeners run after the response
     expect((await callRow(blocked)).status).toBe('ended');
-    expect((await api(ctx, dan, 'POST', `/v1/calls/${blocked}/join`)).statusCode).toBe(404);
+    expect(
+      (await api(ctx, dan, 'POST', `/v1/calls/${blocked}/join`, { publicKey: PK })).statusCode,
+    ).toBe(404);
 
     // A moderator suspends someone mid-call (with Eve, a new match).
     const eve = await createMember(ctx, { name: 'Eve', gender: 'woman', interestedIn: ['man'] });
@@ -374,7 +395,7 @@ describe.skipIf(!integrationEnabled)('video dates (integration)', () => {
       await say(eve, `Hi ${i}`);
     }
     const c = (await api(ctx, eve, 'POST', `/v1/matches/${matchId}/calls`, { video: true })).json();
-    await api(ctx, dan, 'POST', `/v1/calls/${c.id}/join`);
+    await api(ctx, dan, 'POST', `/v1/calls/${c.id}/join`, { publicKey: PK });
     const filed = await api(ctx, eve, 'POST', '/v1/reports', {
       targetId: dan.id,
       category: 'harassment',
@@ -386,7 +407,7 @@ describe.skipIf(!integrationEnabled)('video dates (integration)', () => {
     const again = (
       await api(ctx, eve, 'POST', `/v1/matches/${matchId}/calls`, { video: true })
     ).json();
-    await api(ctx, dan, 'POST', `/v1/calls/${again.id}/join`);
+    await api(ctx, dan, 'POST', `/v1/calls/${again.id}/join`, { publicKey: PK });
     const mod = await admin();
     const resolved = await ctx.app.inject({
       method: 'POST',
@@ -437,7 +458,7 @@ describe.skipIf(!integrationEnabled)('video dates (integration)', () => {
     await enable();
     await unlock();
     const c = (await call(noa)).json();
-    await api(ctx, dan, 'POST', `/v1/calls/${c.id}/join`);
+    await api(ctx, dan, 'POST', `/v1/calls/${c.id}/join`, { publicKey: PK });
     ctx.clock.value += 14 * 60_000;
     await api(ctx, dan, 'POST', `/v1/calls/${c.id}/end`);
     const line = (await api(ctx, noa, 'GET', `/v1/matches/${matchId}/messages`))

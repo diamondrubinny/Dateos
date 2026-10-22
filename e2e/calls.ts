@@ -8,6 +8,7 @@
  */
 import { existsSync } from 'node:fs';
 import { createDb } from '@nexaheart/db';
+import { RoomServiceClient } from 'livekit-server-sdk';
 import { chromium, type Browser, type Page } from 'playwright';
 import { ar } from '../apps/mobile/src/i18n/ar.ts';
 import { en } from '../apps/mobile/src/i18n/en.ts';
@@ -31,6 +32,12 @@ import {
 const envFile = new URL('../.env', import.meta.url);
 if (existsSync(envFile)) process.loadEnvFile(envFile);
 const ADMIN = process.env.ADMIN_URL ?? 'http://localhost:5174';
+/** LiveKit's own view of the room: whether each published track is end-to-end encrypted. */
+const rooms = new RoomServiceClient(
+  (process.env.LIVEKIT_API_URL ?? process.env.LIVEKIT_URL ?? '').replace(/^ws/, 'http'),
+  process.env.LIVEKIT_API_KEY ?? '',
+  process.env.LIVEKIT_API_SECRET ?? '',
+);
 
 const T = { en, he, ar, ru } as const;
 type L = keyof typeof T;
@@ -94,7 +101,50 @@ async function member(
 }
 type Member = Awaited<ReturnType<typeof member>>;
 
-async function open(browser: Browser, who: Member, locale: L) {
+/**
+ * A stand-in for the browser's on-device speech recognition (the standard API with
+ * `processLocally`), so the test doesn't download a real language pack. Plain JavaScript text:
+ * a bundled function would reference build helpers that don't exist in the page. `downloadable`
+ * starts without the language pack (like a real Chrome) and gets it when the app asks to install.
+ */
+function fakeOnDeviceSpeech(words: string, mode: 'downloadable' | 'unavailable'): string {
+  return `(() => {
+    let state = ${JSON.stringify(mode)};
+    class FakeRecognition {
+      static available(o) { return Promise.resolve(o && o.processLocally ? state : 'unavailable'); }
+      static install(o) {
+        if (!o || !o.processLocally || state === 'unavailable') return Promise.resolve(false);
+        state = 'available';
+        return Promise.resolve(true);
+      }
+      constructor() {
+        this.processLocally = false; this.lang = ''; this.continuous = false;
+        this.interimResults = false; this.onresult = null; this.onerror = null; this.onend = null;
+        this.timers = [];
+      }
+      start() {
+        if (!this.processLocally) throw new Error('cloud recognition is not allowed');
+        const say = (isFinal, at) => this.timers.push(setTimeout(() => this.onresult && this.onresult({
+          resultIndex: 0,
+          results: [Object.assign([{ transcript: ${JSON.stringify(words)} }], { isFinal })],
+        }), at));
+        say(false, 400);
+        say(true, 900);
+      }
+      abort() { this.timers.forEach(clearTimeout); }
+    }
+    window.SpeechRecognition = FakeRecognition;
+  })();`;
+}
+
+const WORDS: Record<L, string> = {
+  en: 'So nice to finally hear your voice',
+  he: 'כל כך נחמד לשמוע סוף סוף את הקול שלך',
+  ar: 'من الجميل أن أسمع صوتك أخيرًا',
+  ru: 'Так приятно наконец услышать твой голос',
+};
+
+async function open(browser: Browser, who: Member, locale: L, speech?: string) {
   const context = await browser.newContext({
     viewport: { width: 390, height: 844 },
     deviceScaleFactor: 2,
@@ -113,8 +163,13 @@ async function open(browser: Browser, who: Member, locale: L) {
     },
   ]);
   await context.addInitScript((l) => localStorage.setItem('nexaheart.locale', l), locale);
+  if (speech) await context.addInitScript({ content: speech });
   const page = await context.newPage();
   page.on('pageerror', (e) => problems.push(`pageerror: ${e.message}`));
+  if (process.env.E2E_DEBUG)
+    page.on('console', (m) =>
+      process.stdout.write(`    [${who.name}] ${m.type()}: ${m.text().slice(0, 300)}\n`),
+    );
   return { context, page };
 }
 
@@ -201,7 +256,14 @@ async function run(locale: L, browser: Browser, pool: ReturnType<typeof createDb
   }
 
   const A = await open(browser, a, locale);
-  const B = await open(browser, b, locale);
+  // Bob's browser can make captions on the device after downloading the language pack, except in
+  // the Russian run (no on-device recognition at all).
+  const B = await open(
+    browser,
+    b,
+    locale,
+    fakeOnDeviceSpeech(WORDS[locale], locale === 'ru' ? 'unavailable' : 'downloadable'),
+  );
   try {
     // Bob waits in the app; Alice opens the chat and invites him to a video date.
     await B.page.goto(`${WEB}/matches`);
@@ -231,6 +293,16 @@ async function run(locale: L, browser: Browser, pool: ReturnType<typeof createDb
       .getByText(fill(t.call.connectedWith, { name: aName }))
       .waitFor({ timeout: 20_000 });
     check(true, 'both people are connected through LiveKit');
+    // End-to-end encryption: both sides say so and show the same safety code.
+    await A.page.getByText(t.call.private).waitFor({ timeout: 15_000 });
+    await B.page.getByText(t.call.private).waitFor({ timeout: 15_000 });
+    const code = async (page: Page) =>
+      page
+        .getByLabel(new RegExp(`^${t.call.safetyCode.split('{{')[0]!.trim()}`))
+        .first()
+        .getAttribute('aria-label');
+    const [codeA, codeB] = [await code(A.page), await code(B.page)];
+    check(Boolean(codeA) && codeA === codeB, `both see the same safety code (${codeA})`);
     check(!(await videoPlaying(B.page)), 'nobody is seen before turning the camera on');
 
     // Alice turns her camera on; Bob sees her (fake camera frames) and is told so.
@@ -249,6 +321,49 @@ async function run(locale: L, browser: Browser, pool: ReturnType<typeof createDb
     check(true, 'mute and unmute');
     await shot(B.page, `${locale}/54-call-video`);
     await shot(A.page, `${locale}/55-call-self`);
+    // The server only ever forwarded encrypted frames: LiveKit marks every track GCM-encrypted.
+    const { rows: roomRows } = await pool.query('SELECT room FROM calls WHERE match_id = $1', [
+      matchId,
+    ]);
+    const tracks = (await rooms.listParticipants(String(roomRows[0]?.room))).flatMap(
+      (p) => p.tracks,
+    );
+    check(
+      tracks.length >= 3 && tracks.every((track) => track.encryption === 1),
+      `all ${tracks.length} tracks are end-to-end encrypted (GCM)`,
+    );
+
+    // Captions: Maya asks; Bob's device transcribes Bob on the device and tells him so.
+    await A.page.getByRole('button', { name: t.call.captionsOn }).click();
+    if (locale === 'ru') {
+      await B.page.getByRole('button', { name: t.call.unmute }).click();
+      await A.page
+        .getByText(fill(t.call.captionsUnavailable, { name: bName }))
+        .waitFor({ timeout: 15_000 });
+      await B.page.getByText(fill(t.call.captionsCantSend, { name: aName })).waitFor();
+      check(true, 'no on-device recognition: no captions, and both are told');
+    } else {
+      // Bob is still muted from the step above: a muted microphone means no captions either.
+      await A.page.getByText(fill(t.call.captionsWaiting, { name: bName })).waitFor();
+      await A.page.waitForTimeout(1500);
+      check(
+        !(await A.page.getByText(WORDS[locale]).isVisible()) &&
+          !(await B.page.getByText(fill(t.call.captionsSending, { name: aName })).isVisible()),
+        'nothing is transcribed while the microphone is muted',
+      );
+      await B.page.getByRole('button', { name: t.call.unmute }).click();
+      // The language pack isn't on the device yet: Bob chooses to download it (once).
+      await B.page.getByRole('button', { name: t.call.captionsInstall }).click();
+      await B.page.getByText(fill(t.call.captionsSending, { name: aName })).waitFor();
+      await A.page.getByText(WORDS[locale]).last().waitFor({ timeout: 15_000 });
+      check(true, 'captions made on the other device arrive, inside the encrypted call');
+      await shot(A.page, `${locale}/59-call-captions`);
+      await A.page.getByRole('button', { name: t.call.captionsOff }).click();
+      await B.page
+        .getByText(fill(t.call.captionsSending, { name: aName }))
+        .waitFor({ state: 'hidden' });
+      check(true, 'hiding captions stops the transcription on the other device');
+    }
 
     // Alice hangs up: the room is closed, Bob's screen shows that the call ended.
     await A.page.getByRole('button', { name: t.call.end }).click();

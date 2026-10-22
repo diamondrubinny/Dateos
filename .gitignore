@@ -12,3 +12,6 @@ infra/data/
 # Instance backups (personal data)
 backups/
 sbom.cdx.json
+
+# Copied from livekit-client at build time (apps/mobile/scripts/copy-e2ee-worker.mjs)
+apps/mobile/public/livekit-e2ee-worker.mjs

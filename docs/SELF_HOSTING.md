@@ -131,8 +131,10 @@ but they still pass through Expo, Apple and Google: mention this in your privacy
 ## Video dates (optional)
 
 Members who matched can have a video or voice-only call in the app. Calls go through
-[LiveKit](https://livekit.io) (Apache-2.0) on your own server: audio and video are forwarded, never
-recorded or stored, and members never see each other's IP addresses.
+[LiveKit](https://livekit.io) (Apache-2.0) on your own server and are **end-to-end encrypted**: the
+two devices agree on the key, so the server forwards audio, video and captions it can't read. Nothing
+is recorded or stored, and members never see each other's IP addresses. Very old browsers without
+support for encrypted calls are asked to use the app or an up-to-date browser.
 
 1. Run the installer with `--video` (or add the values by hand): it sets `LIVEKIT_URL=wss://rtc.<domain>`
    and `RTC_DOMAIN=rtc.<domain>` in `.env` and writes `infra/data/livekit/livekit.yaml` with the

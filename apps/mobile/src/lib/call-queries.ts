@@ -20,8 +20,8 @@ export function useStartCall(matchId: string) {
 }
 
 /** A short-lived token for this call's room (asked for again on every join). */
-export const joinCall = (id: string) =>
-  apiFetch<CallJoin>(`/v1/calls/${id}/join`, { method: 'POST' });
+export const joinCall = (id: string, publicKey: string) =>
+  apiFetch<CallJoin>(`/v1/calls/${id}/join`, { method: 'POST', body: json({ publicKey }) });
 export const declineCall = (id: string) =>
   apiFetch<CallView>(`/v1/calls/${id}/decline`, { method: 'POST' });
 export const endCall = (id: string) =>

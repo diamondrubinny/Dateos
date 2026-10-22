@@ -700,6 +700,29 @@ export const en = {
     cameraOff: 'Turn camera off',
     flip: 'Switch camera',
     end: 'End call',
+    private: 'Private call: end-to-end encrypted',
+    safetyCode: 'Safety code: {{code}}',
+    safetyHint:
+      '{{name}} sees the same code. If you compare it out loud and it matches, nobody else can listen in.',
+    securing: 'Securing the call…',
+    notPrivate:
+      'This call can’t be made private, so nothing is being sent. Please end it and try again.',
+    unsupportedTitle: 'This browser can’t make private calls',
+    unsupported:
+      'Calls are end-to-end encrypted, and this browser doesn’t support that. Use the NexaHeart app, or an up-to-date Chrome, Edge, Firefox or Safari.',
+    captionsOn: 'Show captions',
+    captionsOff: 'Hide captions',
+    captionsLabel: 'Captions: what {{name}} says',
+    captionsWaiting: 'Asking {{name}}’s device for captions…',
+    captionsUnavailable:
+      'Captions aren’t available on {{name}}’s device. They are made on the device only, never in the cloud.',
+    captionsSending:
+      'Captions are on: {{name}} sees your words as text. They are made on this device and not stored. Mute to pause them.',
+    captionsCantSend:
+      '{{name}} asked for captions, but this device can’t make them on the device, so none are sent.',
+    captionsInstall: 'Allow captions on this device',
+    captionsInstallHint:
+      '{{name}} asked for captions. This browser can make them on the device after downloading a language pack once (no audio is sent).',
     acceptLabel: 'Accept video and voice calls',
     acceptHint:
       'Matches can invite you to a call after you both wrote a few messages. You always choose whether to join.',
