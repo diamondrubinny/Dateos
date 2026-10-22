@@ -48,6 +48,10 @@ people, with safety and privacy built in.
 
 <img src="../screenshots/showcase-date-planner-en.png" alt="Choosing a public place and a time, accepting the date, and the check-in already filled in" width="100%">
 
+**Community events**
+
+<img src="../screenshots/showcase-events-en.png" alt="Upcoming events with how many people are going, an event page, and saying you're going" width="100%">
+
 **Privacy you can check**
 
 <img src="../screenshots/showcase-privacy-en.png" alt="The Privacy and cookies page and Download my data" width="60%">

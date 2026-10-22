@@ -18,6 +18,7 @@
     "a11y": "tsx a11y.ts",
     "checkin": "tsx checkin.ts",
     "dates": "tsx dates.ts",
+    "events": "tsx events.ts",
     "load": "node --env-file=../.env --import tsx load.ts"
   },
   "dependencies": {

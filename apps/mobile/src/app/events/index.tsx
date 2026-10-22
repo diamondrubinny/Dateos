@@ -1,0 +1,34 @@
+import { useTranslation } from 'react-i18next';
+import { AppText } from '../../components/AppText';
+import { Banner } from '../../components/Banner';
+import { EventList } from '../../components/EventCard';
+import { Loading } from '../../components/Loading';
+import { RequireSession } from '../../components/RequireSession';
+import { Screen } from '../../components/Screen';
+import { useEvents } from '../../lib/event-queries';
+
+function EventsScreen() {
+  const { t } = useTranslation();
+  const events = useEvents();
+  if (events.isPending) return <Loading />;
+  return (
+    <Screen back title={t('events.title')}>
+      <AppText variant="body">{t('events.intro')}</AppText>
+      {events.error ? <Banner tone="error" message={t('common.genericError')} /> : null}
+      {events.data && events.data.length === 0 ? (
+        <AppText variant="body" tone="muted">
+          {t('events.empty')}
+        </AppText>
+      ) : null}
+      <EventList events={events.data ?? []} />
+    </Screen>
+  );
+}
+
+export default function EventsRoute() {
+  return (
+    <RequireSession>
+      <EventsScreen />
+    </RequireSession>
+  );
+}

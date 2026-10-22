@@ -25,21 +25,25 @@ const texts = {
     message: 'You have a new message',
     match: "It's a match! Say hello",
     checkin: 'Time to check in: let us know you are OK',
+    event: 'Update about a community event you are going to',
   },
   he: {
     message: 'יש לך הודעה חדשה',
     match: 'יש התאמה! כדאי להגיד שלום',
     checkin: 'הגיע הזמן לאשר שהכול בסדר',
+    event: 'עדכון על אירוע קהילה שנרשמת אליו',
   },
   ar: {
     message: 'لديك رسالة جديدة',
     match: 'هناك توافق! قل مرحبًا',
     checkin: 'حان وقت التأكيد: أخبرنا أنك بخير',
+    event: 'تحديث حول فعالية مجتمعية سجّلت حضورك فيها',
   },
   ru: {
     message: 'У вас новое сообщение',
     match: 'Это взаимно! Напишите привет',
     checkin: 'Пора отметиться: сообщите, что всё в порядке',
+    event: 'Новости о мероприятии сообщества, на которое вы идёте',
   },
 } as const;
 
@@ -57,6 +61,7 @@ export type PushResult = 'disabled' | 'inactive' | 'online' | 'throttled' | 'no-
 export async function sendPush(ctx: PushContext, job: PushJob): Promise<PushResult> {
   if (ctx.provider === 'disabled') return 'disabled';
   if (job.kind === 'checkin') return sendToDevices(ctx, job); // safety: no match or presence check
+  if (job.kind === 'event') return sendToDevices(ctx, job); // not about a conversation
   // Still a valid conversation? (Unmatch, block or suspension since the job was queued.)
   const active = await ctx.db.execute<{ ok: boolean }>(sql`
     SELECT EXISTS (

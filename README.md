@@ -63,6 +63,7 @@ NexaHeart is in active development. Here is what works today and what comes next
 | Download my data, retention jobs, explicit consent for sensitive data                                                        | ✅ Available |
 | Safety check-in with SOS to a trusted contact, "close kindly" and reply reminders (anti-ghosting)                            | ✅ Available |
 | Date planner: propose a date in a public place your community curates, accept it in the chat, turn it into a safety check-in | ✅ Available |
+| Community events: the team publishes meetups at the community's places; members see how many are going, never who            | ✅ Available |
 | Four languages: English, Hebrew, Arabic, Russian (right-to-left for Hebrew and Arabic)                                       | ✅ Available |
 | Video dates, safety check-in, date planner                                                                                   | 🗓️ Later     |
 
@@ -97,6 +98,10 @@ NexaHeart is in active development. Here is what works today and what comes next
 **Plan a date in a place the community trusts**
 
 <img src="docs/screenshots/showcase-date-planner-en.png" alt="Choosing a curated public place and a time, the date card with Accept and Not this time, the agreed date, and the safety check-in already filled in" width="100%">
+
+**Community events**
+
+<img src="docs/screenshots/showcase-events-en.png" alt="Upcoming community events with how many people are going, an event with its place and description, and the member going" width="100%">
 
 **Privacy**
 

@@ -292,6 +292,26 @@ export const en = {
       other: 'Other',
     },
   },
+  events: {
+    title: 'Community events',
+    profileButton: 'Community events',
+    intro:
+      'Meet people in a group, at places your community chose. Only the number of people going is shown, never who.',
+    empty: 'No upcoming events right now. Check back soon.',
+    entry: 'Upcoming community events: {{count}}',
+    entryMine: 'You’re going to: {{count}}',
+    goingCount: 'Going: {{count}}',
+    youreGoing: 'You’re going · Going: {{count}}',
+    full: 'Full',
+    fullNow: 'This event just filled up.',
+    cancelled: 'Cancelled',
+    cancelledBody: 'This event was cancelled by the community’s team.',
+    going: 'I’m going',
+    notGoing: 'I can’t go after all',
+    privacy:
+      'Nobody can see who else is going: only the number. You’ll get a reminder the day before.',
+    gone: 'This event is no longer available.',
+  },
   ghosting: {
     waiting: 'Waiting for your reply',
     closeKindly: 'Close kindly',

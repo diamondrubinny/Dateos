@@ -30,6 +30,7 @@ import {
   genders,
   checkinStatuses,
   dateStatuses,
+  eventStatuses,
   venueCategories,
   intentions,
   interactionKinds,
@@ -734,5 +735,45 @@ export const datePlans = pgTable(
       .on(t.matchId)
       .where(sql`${t.status} = 'proposed'`),
     index('date_plans_proposer_idx').on(t.proposerId, t.createdAt),
+  ],
+);
+
+// ---------------------------------------------------------------------------
+// Community events (phase 14)
+// ---------------------------------------------------------------------------
+
+export const eventStatus = pgEnum('event_status', eventStatuses);
+
+/** Published by the instance's admins, always at one of its places. No personal data. */
+export const events = pgTable(
+  'events',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    title: varchar('title', { length: 80 }).notNull(),
+    description: varchar('description', { length: 1000 }).notNull().default(''),
+    venueId: uuid('venue_id').references(() => venues.id, { onDelete: 'set null' }),
+    startsAt: timestamp('starts_at', { withTimezone: true }).notNull(),
+    endsAt: timestamp('ends_at', { withTimezone: true }).notNull(),
+    capacity: integer('capacity'),
+    status: eventStatus('status').notNull().default('scheduled'),
+    ...timestamps,
+  },
+  (t) => [index('events_upcoming_idx').on(t.status, t.endsAt)],
+);
+
+/** Who said they're going. Deleted RSVP_RETENTION_DAYS after the event, or with the account. ⚖️ */
+export const eventRsvps = pgTable(
+  'event_rsvps',
+  {
+    eventId: uuid('event_id')
+      .notNull()
+      .references(() => events.id, { onDelete: 'cascade' }),
+    userId: ownerId(),
+    remindedAt: timestamp('reminded_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex('event_rsvps_uq').on(t.eventId, t.userId),
+    index('event_rsvps_user_idx').on(t.userId),
   ],
 );

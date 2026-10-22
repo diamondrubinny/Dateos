@@ -142,6 +142,18 @@ export async function exportMemberData(
     .from(t.checkins)
     .where(eq(t.checkins.userId, userId))
     .orderBy(desc(t.checkins.createdAt));
+  // Community events you said you're going to.
+  const rsvpRows = await db
+    .select({
+      title: t.events.title,
+      startsAt: t.events.startsAt,
+      status: t.events.status,
+      at: t.eventRsvps.createdAt,
+    })
+    .from(t.eventRsvps)
+    .innerJoin(t.events, eq(t.events.id, t.eventRsvps.eventId))
+    .where(eq(t.eventRsvps.userId, userId))
+    .orderBy(asc(t.eventRsvps.createdAt));
   // Date ideas in your chats. The other person's own note is theirs, so only yours is included.
   const datePlanRows = await db
     .select({
@@ -259,6 +271,7 @@ export async function exportMemberData(
       checkAt: iso(c.checkAt),
       alertedAt: iso(c.alertedAt),
     })),
+    eventsYouAreGoingTo: rsvpRows.map((r) => ({ ...r, startsAt: iso(r.startsAt), at: iso(r.at) })),
     dateIdeas: datePlanRows.map(({ proposerId, note, ...d }) => ({
       ...d,
       proposedByYou: proposerId === userId,

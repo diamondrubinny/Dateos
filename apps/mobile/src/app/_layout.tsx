@@ -29,6 +29,12 @@ function Navigator() {
       };
       if (data.type === 'checkin') {
         router.push('/checkin');
+      } else if (
+        data.type === 'event' &&
+        typeof data.matchId === 'string' &&
+        /^[0-9a-f-]{36}$/.test(data.matchId)
+      ) {
+        router.push({ pathname: '/events/[id]', params: { id: data.matchId } });
       } else if (typeof data.matchId === 'string' && /^[0-9a-f-]{36}$/.test(data.matchId)) {
         router.push({ pathname: '/chat/[id]', params: { id: data.matchId } });
       }

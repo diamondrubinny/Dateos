@@ -41,6 +41,10 @@
 
 <img src="../screenshots/showcase-date-planner-ru.png" alt="Выбор общественного места и времени, согласие на свидание и уже заполненная проверка безопасности" width="100%">
 
+**События сообщества**
+
+<img src="../screenshots/showcase-events-ru.png" alt="Ближайшие события с числом участников, страница события и запись" width="100%">
+
 **Приватность, которую можно проверить**
 
 <img src="../screenshots/showcase-privacy-ru.png" alt="Страница «Приватность и cookie» и скачивание своих данных" width="60%">

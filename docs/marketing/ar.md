@@ -42,6 +42,10 @@
 
 <img src="../screenshots/showcase-date-planner-ar.png" alt="اختيار مكان عام ووقت، وقبول الموعد، وتسجيل الأمان المُعبّأ مسبقًا" width="100%">
 
+**فعاليات المجتمع**
+
+<img src="../screenshots/showcase-events-ar.png" alt="الفعاليات القادمة مع عدد الحضور، وصفحة الفعالية، وتسجيل الحضور" width="100%">
+
 **خصوصية يمكنك التحقق منها**
 
 <img src="../screenshots/showcase-privacy-ar.png" alt="صفحة الخصوصية وملفات تعريف الارتباط، وتنزيل البيانات" width="60%">

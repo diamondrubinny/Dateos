@@ -17,6 +17,9 @@ import {
   adminVenueSchema,
   venueInputSchema,
   venueUpdateSchema,
+  adminEventSchema,
+  eventInputSchema,
+  eventUpdateSchema,
 } from '@nexaheart/shared';
 import type { Storage, StoredObject } from '@nexaheart/storage';
 import type { FastifyReply } from 'fastify';
@@ -31,6 +34,7 @@ import type { InstanceService } from '../instance/service.js';
 import type { PhotoService } from '../photos/service.js';
 import type { VerificationService } from '../safety/verification.js';
 import type { VenueService } from '../dates/venues.js';
+import type { EventService } from '../events/service.js';
 import { isStaffRole, type StaffMfaService } from './mfa.js';
 import type { ModerationService } from './moderation.js';
 
@@ -54,7 +58,11 @@ export const adminRoutes: FastifyPluginAsyncZod<{
   instance: InstanceService;
   storage: Storage;
   venues: VenueService;
-}> = async (app, { auth, mfa, moderation, verification, photos, instance, storage, venues }) => {
+  events: EventService;
+}> = async (
+  app,
+  { auth, mfa, moderation, verification, photos, instance, storage, venues, events },
+) => {
   await app.register(multipart, {
     limits: { fileSize: MAX_PHOTO_BYTES, files: 1, fields: 0, parts: 1 },
   });
@@ -284,6 +292,49 @@ export const adminRoutes: FastifyPluginAsyncZod<{
       const staff = currentUser(request);
       adminOnly(staff.role);
       return venues.update(staff.id, request.params.id, request.body);
+    },
+  );
+
+  // Community events (phase 14): every staff member can see them, only admins change them.
+  app.get(
+    '/v1/admin/events',
+    { schema: { response: { 200: z.object({ events: z.array(adminEventSchema) }) } } },
+    async () => ({ events: await events.listForStaff() }),
+  );
+  app.post(
+    '/v1/admin/events',
+    {
+      config: perUserLimit(100, 60 * 60 * 1000),
+      schema: { body: eventInputSchema, response: { 201: adminEventSchema } },
+    },
+    async (request, reply) => {
+      const staff = currentUser(request);
+      adminOnly(staff.role);
+      return reply.status(201).send(await events.create(staff.id, request.body));
+    },
+  );
+  app.patch(
+    '/v1/admin/events/:id',
+    {
+      config: perUserLimit(200, 60 * 60 * 1000),
+      schema: { params: idParams, body: eventUpdateSchema, response: { 200: adminEventSchema } },
+    },
+    async (request) => {
+      const staff = currentUser(request);
+      adminOnly(staff.role);
+      return events.update(staff.id, request.params.id, request.body);
+    },
+  );
+  app.post(
+    '/v1/admin/events/:id/cancel',
+    {
+      config: perUserLimit(100, 60 * 60 * 1000),
+      schema: { params: idParams, response: { 200: adminEventSchema } },
+    },
+    async (request) => {
+      const staff = currentUser(request);
+      adminOnly(staff.role);
+      return events.cancel(staff.id, request.params.id);
     },
   );
 };

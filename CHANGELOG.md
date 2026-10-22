@@ -14,6 +14,10 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Added
 
+- **Community events**: the team publishes meetups at the community's places (dashboard → Events,
+  with capacity); members see upcoming events and how many are going (never who), say they're going,
+  get a reminder the day before and a notice if it's cancelled. Who's going is deleted 30 days after
+  the event.
 - **Date planner**: in a chat, propose a date at a public place from a list your community's admins
   curate (no maps service, no coordinates), pick a day and time and add a note; the other person
   accepts or says "not this time", live. An accepted date opens a safety check-in already filled in.
@@ -21,6 +25,8 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Fixed
 
+- Link, number, date and time fields in the dashboard had no styling (the Branding page's donation
+  link included).
 - Arabic and Russian were missing from the native apps' language list (iOS and Android).
 - The chat header cut off its last action in Arabic and Russian; it now wraps.
 

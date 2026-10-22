@@ -30,6 +30,7 @@ import { VerificationService } from './modules/safety/verification.js';
 import { CheckinService } from './modules/checkins/service.js';
 import { DateService } from './modules/dates/service.js';
 import { VenueService } from './modules/dates/venues.js';
+import { EventService } from './modules/events/service.js';
 
 export interface Services {
   dbHandle: DbHandle;
@@ -54,6 +55,7 @@ export interface Services {
   checkins: CheckinService;
   venues: VenueService;
   dates: DateService;
+  events: EventService;
   ai: AiGate;
   /** Health checks and shutdown hooks for the resources above. */
   dependencies: Dependency[];
@@ -143,6 +145,11 @@ export function createServices(
     chat,
     venues,
     dates: new DateService(dbHandle.db, chat, venues, overrides.now),
+    events: new EventService(
+      dbHandle.db,
+      (userId, eventId) => notifyQueue.push({ userId, kind: 'event', matchId: eventId }),
+      overrides.now,
+    ),
     reports: new ReportService(
       dbHandle.db,
       discovery,

@@ -23,6 +23,7 @@ import { deleteObjects, processAudio, processPhoto, type JobContext } from './jo
 import { sendPush } from './push.js';
 import { cleanupPrivacy, handleInactiveAccounts } from './privacy-jobs.js';
 import { processCheckins } from './checkin-jobs.js';
+import { processEvents } from './event-jobs.js';
 import nodemailer from 'nodemailer';
 import { sql } from 'drizzle-orm';
 import {
@@ -149,6 +150,13 @@ async function main(): Promise<void> {
               await sendPush(pushContext, { userId, kind: 'checkin', matchId: checkinId });
             },
           });
+        case 'events':
+          return processEvents({
+            db,
+            remind: async (userId, eventId) => {
+              await sendPush(pushContext, { userId, kind: 'event', matchId: eventId });
+            },
+          });
         default:
           throw new Error(`Unknown job: ${job.name}`);
       }
@@ -180,6 +188,8 @@ async function main(): Promise<void> {
   );
   // Safety check-ins: reminders, alerts to trusted contacts, retention (every minute).
   await scheduler.upsertJobScheduler('checkins', { every: 60_000 }, { name: 'checkins' });
+  // Community events: day-before reminders and retention (every 10 minutes).
+  await scheduler.upsertJobScheduler('events', { every: 600_000 }, { name: 'events' });
 
   log.info(
     { scanningEnabled, embeddings: embeddings.model, push: env.PUSH_PROVIDER },
