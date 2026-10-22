@@ -33,6 +33,7 @@ export function instanceInfo(env: Env): InstanceInfo {
     operatorName: null,
     contactEmail: null,
     setupRequired: false,
+    calls: false,
   };
 }
 
@@ -94,4 +95,7 @@ export const adminSettingsSchema = z.object({
   sponsorUrl: z.string().nullable(),
   logoUrl: z.string().nullable(),
   setupCompleted: z.boolean(),
+  callsConfigured: z.boolean(),
+  callsEnabled: z.boolean(),
+  callMaxMinutes: z.number().int(),
 });

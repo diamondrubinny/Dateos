@@ -15,6 +15,7 @@ import { buildApp } from '../../src/app.js';
 import { loadEnv, type Env } from '../../src/config/env.js';
 import type { MailMessage, Mailer } from '../../src/lib/mailer.js';
 import type { MediaQueue, ProfileQueue } from '../../src/lib/queue.js';
+import type { CallMedia } from '../../src/lib/livekit.js';
 import { createServices, type Services } from '../../src/services.js';
 
 export const integrationEnabled = process.env.INTEGRATION === '1';
@@ -58,9 +59,18 @@ async function isolatedResources(databaseUrl: string, redisUrl: string) {
   return { DATABASE_URL: db.toString(), REDIS_URL: redis.toString() };
 }
 
+/** LiveKit settings for suites that test calls (the media server itself is faked). */
+export const TEST_LIVEKIT = {
+  LIVEKIT_URL: 'wss://rtc.example.test',
+  LIVEKIT_API_KEY: 'test-livekit-key',
+  LIVEKIT_API_SECRET: 'test-livekit-secret-0123456789abcdef',
+};
+
 export interface SetupOptions {
   /** Text AI model for this suite (default: none). */
   textModel?: TextModel | null;
+  /** Media server for calls (default: none, calls unavailable). */
+  callMedia?: CallMedia | null;
 }
 
 export async function setupIntegration(options: SetupOptions = {}): Promise<TestContext> {
@@ -81,6 +91,7 @@ export async function setupIntegration(options: SetupOptions = {}): Promise<Test
     S3_ENDPOINT: process.env.S3_ENDPOINT ?? 'http://localhost:8333',
     S3_BUCKET_QUARANTINE: 'nexaheart-test-quarantine',
     S3_BUCKET_MEDIA: 'nexaheart-test-media',
+    ...(options.callMedia ? TEST_LIVEKIT : {}),
   });
   await runMigrations(env.DATABASE_URL);
 
@@ -114,6 +125,7 @@ export async function setupIntegration(options: SetupOptions = {}): Promise<Test
       today: () => today.value,
       now: () => clock.value,
       textModel: options.textModel ?? null,
+      callMedia: options.callMedia ?? null,
     },
   );
   await services.storage.ensureBuckets();

@@ -185,6 +185,8 @@ export const instanceSchema = z.object({
   contactEmail: z.string().nullable(),
   /** True until someone claims the instance with the setup token. */
   setupRequired: z.boolean(),
+  /** Video dates are configured (LiveKit) and turned on by the community's admins. */
+  calls: z.boolean(),
 });
 export type InstanceInfo = z.infer<typeof instanceSchema>;
 

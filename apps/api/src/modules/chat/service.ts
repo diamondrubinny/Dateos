@@ -1,6 +1,7 @@
 import { checkHarm, detectScamSignals, type IcebreakerProvider } from '@nexaheart/ai';
 import { schema, type Database } from '@nexaheart/db';
 import {
+  type CallView,
   type Conversation,
   ErrorCode,
   harmCategories,
@@ -30,6 +31,7 @@ const {
   audioClips,
   preferences,
   datePlans,
+  calls,
 } = schema;
 
 type MessageRow = typeof messages.$inferSelect & {
@@ -37,11 +39,12 @@ type MessageRow = typeof messages.$inferSelect & {
   audioStatus: string | null;
   audioDurationMs: number | null;
   plan: typeof datePlans.$inferSelect | null;
+  call: typeof calls.$inferSelect | null;
 };
 
 /** A receiver sees media only after it passed scanning; senders see their own uploads. */
 const visibleTo = (viewerId: string) =>
-  sql`(${messages.kind} IN ('text', 'date') OR ${messages.senderId} = ${viewerId} OR ${photos.status} = 'clean' OR ${audioClips.status} = 'clean')`;
+  sql`(${messages.kind} IN ('text', 'date', 'call') OR ${messages.senderId} = ${viewerId} OR ${photos.status} = 'clean' OR ${audioClips.status} = 'clean')`;
 
 const mediaStatus = (status: string | null) =>
   status === 'clean'
@@ -49,6 +52,28 @@ const mediaStatus = (status: string | null) =>
     : status === 'rejected'
       ? ('rejected' as const)
       : ('pending' as const);
+
+/** A call as one of its two participants sees it. */
+export function callView(call: typeof calls.$inferSelect, viewerId: string): CallView {
+  const endsAt = call.answeredAt
+    ? new Date(call.answeredAt.getTime() + call.maxMinutes * 60_000)
+    : null;
+  return {
+    id: call.id,
+    matchId: call.matchId,
+    status: call.status,
+    video: call.video,
+    mine: call.callerId === viewerId,
+    createdAt: call.createdAt.toISOString(),
+    answeredAt: call.answeredAt?.toISOString() ?? null,
+    endedAt: call.endedAt?.toISOString() ?? null,
+    endsAt: call.status === 'active' && endsAt ? endsAt.toISOString() : null,
+    durationSeconds:
+      call.answeredAt && call.endedAt
+        ? Math.max(0, Math.round((call.endedAt.getTime() - call.answeredAt.getTime()) / 1000))
+        : null,
+  };
+}
 
 export function audioUrl(audioId: string): string {
   return `/v1/audio/${audioId}`;
@@ -113,6 +138,7 @@ export function toView(row: MessageRow, viewerId: string): MessageView {
             respondedAt: row.plan.respondedAt?.toISOString() ?? null,
           }
         : null,
+    call: row.kind === 'call' && row.call ? callView(row.call, viewerId) : null,
     hidden: !mine && harm.length > 0,
     harm,
     scam: mine ? [] : scam,
@@ -177,12 +203,15 @@ export class ChatService {
         audioStatus: audioClips.status,
         audioDurationMs: audioClips.durationMs,
         datePlanId: messages.datePlanId,
+        callId: messages.callId,
         plan: datePlans,
+        call: calls,
       })
       .from(messages)
       .leftJoin(photos, eq(photos.id, messages.photoId))
       .leftJoin(audioClips, eq(audioClips.id, messages.audioId))
       .leftJoin(datePlans, eq(datePlans.id, messages.datePlanId))
+      .leftJoin(calls, eq(calls.id, messages.callId))
       .where(where);
   }
 
@@ -194,10 +223,24 @@ export class ChatService {
   }
 
   /** Tells both people about a new message, with a content-free push to the receiver. */
-  async deliverMessage(messageId: string, senderId: string, otherId: string): Promise<void> {
+  async deliverMessage(
+    messageId: string,
+    senderId: string,
+    otherId: string,
+    { push = true }: { push?: boolean } = {},
+  ): Promise<void> {
     const [row] = await this.rows(eq(messages.id, messageId));
-    if (row) await this.deliver(row, senderId, otherId);
+    if (row) await this.deliver(row, senderId, otherId, push);
   }
+
+  /** Calls (phase 15) tell the chat whether a call can be started; set once at startup. */
+  setCallAvailability(
+    check: (matchId: string, viewerId: string, otherId: string) => Promise<boolean>,
+  ) {
+    this.callsAvailable = check;
+  }
+  private callsAvailable: (matchId: string, viewerId: string, otherId: string) => Promise<boolean> =
+    async () => false;
 
   /** A message changed (for example a date card was accepted); clients reload the chat. */
   async announceUpdated(matchId: string, messageId: string, userIds: string[]): Promise<void> {
@@ -215,6 +258,11 @@ export class ChatService {
       .where(and(eq(messages.matchId, matchId), eq(messages.kind, 'text')))
       .groupBy(messages.senderId);
     return new Map(rows.map((r) => [r.senderId, r.n]));
+  }
+
+  /** Images, voice messages and calls unlock after both people wrote a few messages. */
+  async mediaUnlocked(matchId: string, a: string, b: string): Promise<boolean> {
+    return this.imagesUnlocked(matchId, a, b);
   }
 
   private async imagesUnlocked(matchId: string, a: string, b: string): Promise<boolean> {
@@ -249,6 +297,7 @@ export class ChatService {
       otherReadAt: read?.at.toISOString() ?? null,
       imagesUnlocked: await this.imagesUnlocked(matchId, viewerId, otherId),
       otherAcceptsVoice: await this.acceptsVoice(otherId),
+      callsAvailable: await this.callsAvailable(matchId, viewerId, otherId),
     };
   }
 
@@ -353,8 +402,8 @@ export class ChatService {
     return toView(row!, senderId);
   }
 
-  private async deliver(row: MessageRow, senderId: string, otherId: string) {
-    this.notifier?.messageReceived(otherId, row.matchId).catch(() => undefined);
+  private async deliver(row: MessageRow, senderId: string, otherId: string, push = true) {
+    if (push) this.notifier?.messageReceived(otherId, row.matchId).catch(() => undefined);
     await Promise.all([
       this.realtime.publish(senderId, {
         type: 'message.new',

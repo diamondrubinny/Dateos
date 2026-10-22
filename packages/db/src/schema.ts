@@ -28,6 +28,7 @@ import {
   verificationPoses,
   EMBEDDING_DIM,
   genders,
+  callStatuses,
   checkinStatuses,
   dateStatuses,
   eventStatuses,
@@ -178,6 +179,8 @@ export const preferences = pgTable(
       .default(sql`'{}'::intention[]`),
     /** Receiver control: people can turn voice messages off (e.g. if they cannot hear them). */
     acceptVoice: boolean('accept_voice').notNull().default(true),
+    /** Receiver control: people can turn video and voice calls off (phase 15). */
+    acceptCalls: boolean('accept_calls').notNull().default(true),
     ...timestamps,
   },
   (t) => [check('preferences_age_range', sql`${t.ageMin} >= 18 AND ${t.ageMin} <= ${t.ageMax}`)],
@@ -381,7 +384,7 @@ export const impressions = pgTable(
 // Chat (phase 3)
 // ---------------------------------------------------------------------------
 
-export const messageKind = pgEnum('message_kind', ['text', 'image', 'voice', 'date']);
+export const messageKind = pgEnum('message_kind', ['text', 'image', 'voice', 'date', 'call']);
 
 /** Voice messages. Same lifecycle as photos: quarantine → scan → re-encode → clean. */
 export const audioClips = pgTable(
@@ -422,6 +425,8 @@ export const messages = pgTable(
     datePlanId: uuid('date_plan_id').references((): AnyPgColumn => datePlans.id, {
       onDelete: 'cascade',
     }),
+    /** A call line (kind 'call'). Deleting the call deletes its message. */
+    callId: uuid('call_id').references((): AnyPgColumn => calls.id, { onDelete: 'cascade' }),
     /** Safety labels, e.g. harm:insult, scam:money. Receivers see harmful messages hidden. */
     flags: text('flags')
       .array()
@@ -615,6 +620,9 @@ export const instanceSettings = pgTable(
     sponsorUrl: varchar('sponsor_url', { length: 300 }),
     logoPhotoId: uuid('logo_photo_id').references(() => photos.id, { onDelete: 'set null' }),
     setupCompletedAt: timestamp('setup_completed_at', { withTimezone: true }),
+    /** Video dates (phase 15): off until an admin turns them on (and LiveKit is configured). */
+    callsEnabled: boolean('calls_enabled').notNull().default(false),
+    callMaxMinutes: smallint('call_max_minutes').notNull().default(60),
     updatedBy: text('updated_by').references(() => user.id, { onDelete: 'set null' }),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
@@ -775,5 +783,51 @@ export const eventRsvps = pgTable(
   (t) => [
     uniqueIndex('event_rsvps_uq').on(t.eventId, t.userId),
     index('event_rsvps_user_idx').on(t.userId),
+  ],
+);
+
+// ---------------------------------------------------------------------------
+// Video dates (phase 15)
+// ---------------------------------------------------------------------------
+
+export const callStatus = pgEnum('call_status', callStatuses);
+
+/**
+ * A 1:1 call between the two people of a match. Audio and video are never stored: this is only
+ * who called, when, and how long it lasted. Deleted with the match (chat purge) or the account.
+ */
+export const calls = pgTable(
+  'calls',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    matchId: uuid('match_id')
+      .notNull()
+      .references(() => matches.id, { onDelete: 'cascade' }),
+    callerId: text('caller_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    calleeId: text('callee_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    video: boolean('video').notNull(),
+    status: callStatus('status').notNull().default('ringing'),
+    /** Random LiveKit room name (never derived from ids). */
+    room: varchar('room', { length: 64 }).notNull(),
+    maxMinutes: smallint('max_minutes').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    answeredAt: timestamp('answered_at', { withTimezone: true }),
+    endedAt: timestamp('ended_at', { withTimezone: true }),
+  },
+  (t) => [
+    uniqueIndex('calls_room_uq').on(t.room),
+    // At most one open call per chat.
+    uniqueIndex('calls_open_uq')
+      .on(t.matchId)
+      .where(sql`${t.status} IN ('ringing', 'active')`),
+    index('calls_caller_idx').on(t.callerId, t.createdAt),
+    index('calls_callee_idx').on(t.calleeId, t.createdAt),
+    index('calls_open_idx')
+      .on(t.status)
+      .where(sql`${t.status} IN ('ringing', 'active')`),
   ],
 );

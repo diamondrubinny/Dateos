@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { MAX_CALL_MAX_MINUTES, MIN_CALL_MAX_MINUTES } from './calls.js';
 import { localeSchema } from './common.js';
 
 /** WCAG 2.x relative luminance of a #RRGGBB color. */
@@ -87,6 +88,8 @@ export const instanceSettingsInputSchema = z
       .url({ protocol: /^https$/ })
       .max(300)
       .nullable(),
+    callsEnabled: z.boolean(),
+    callMaxMinutes: z.number().int().min(MIN_CALL_MAX_MINUTES).max(MAX_CALL_MAX_MINUTES),
   })
   .partial();
 export type InstanceSettingsInput = z.infer<typeof instanceSettingsInputSchema>;

@@ -59,7 +59,17 @@ export class DiscoveryService {
     private readonly onMatch?: (userId: string, matchId: string) => Promise<void>,
   ) {}
 
+  private closedListeners: ((matchId: string) => Promise<void>)[] = [];
+
+  /** Runs when a match ends for any reason (unmatch, block, suspension): calls are hung up. */
+  onMatchClosed(listener: (matchId: string) => Promise<void>): void {
+    this.closedListeners.push(listener);
+  }
+
   private notify(userIds: string[], event: RealtimeEvent) {
+    if (event.type === 'match.closed') {
+      for (const listener of this.closedListeners) listener(event.matchId).catch(() => undefined);
+    }
     if (!this.realtime) return;
     for (const id of userIds) this.realtime.publish(id, event).catch(() => undefined);
   }

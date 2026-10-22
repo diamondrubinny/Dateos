@@ -26,24 +26,28 @@ const texts = {
     match: "It's a match! Say hello",
     checkin: 'Time to check in: let us know you are OK',
     event: 'Update about a community event you are going to',
+    call: 'You have an incoming call',
   },
   he: {
     message: 'יש לך הודעה חדשה',
     match: 'יש התאמה! כדאי להגיד שלום',
     checkin: 'הגיע הזמן לאשר שהכול בסדר',
     event: 'עדכון על אירוע קהילה שנרשמת אליו',
+    call: 'יש לך שיחה נכנסת',
   },
   ar: {
     message: 'لديك رسالة جديدة',
     match: 'هناك توافق! قل مرحبًا',
     checkin: 'حان وقت التأكيد: أخبرنا أنك بخير',
     event: 'تحديث حول فعالية مجتمعية سجّلت حضورك فيها',
+    call: 'لديك مكالمة واردة',
   },
   ru: {
     message: 'У вас новое сообщение',
     match: 'Это взаимно! Напишите привет',
     checkin: 'Пора отметиться: сообщите, что всё в порядке',
     event: 'Новости о мероприятии сообщества, на которое вы идёте',
+    call: 'Вам звонят',
   },
 } as const;
 

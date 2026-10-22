@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { publicProfileSchema } from './discovery.js';
 import { localeSchema } from './common.js';
+import { callSchema, type CallStatus } from './calls.js';
 import { datePlanSchema } from './dates.js';
 
 export const MAX_MESSAGE_LENGTH = 2000;
@@ -34,7 +35,7 @@ export const messageViewSchema = z.object({
   id: z.uuid(),
   matchId: z.uuid(),
   mine: z.boolean(),
-  kind: z.enum(['text', 'image', 'voice', 'date']),
+  kind: z.enum(['text', 'image', 'voice', 'date', 'call']),
   body: z.string().nullable(),
   image: z
     .object({ url: z.string().nullable(), status: z.enum(['pending', 'clean', 'rejected']) })
@@ -48,6 +49,8 @@ export const messageViewSchema = z.object({
     .nullable(),
   /** A date card (kind 'date'); its status changes are announced with message.updated. */
   date: datePlanSchema.nullable(),
+  /** A call line (kind 'call'); status changes are announced with message.updated. */
+  call: callSchema.nullable(),
   /** Receiver-side safety: hidden until the person chooses to show it. */
   hidden: z.boolean(),
   harm: z.array(z.enum(harmCategories)),
@@ -64,6 +67,8 @@ export const messagesPageSchema = z.object({
   imagesUnlocked: z.boolean(),
   /** False when the other person turned voice messages off. */
   otherAcceptsVoice: z.boolean(),
+  /** Whether a call can be started now: community feature on, chat unlocked, receiver accepts. */
+  callsAvailable: z.boolean(),
 });
 export type MessagesPage = z.infer<typeof messagesPageSchema>;
 
@@ -90,7 +95,9 @@ export type RealtimeEvent =
   | { type: 'message.read'; matchId: string; at: string }
   | { type: 'typing'; matchId: string }
   | { type: 'match.new'; matchId: string }
-  | { type: 'match.closed'; matchId: string };
+  | { type: 'match.closed'; matchId: string }
+  | { type: 'call.incoming'; matchId: string; callId: string; video: boolean }
+  | { type: 'call.updated'; matchId: string; callId: string; status: CallStatus };
 
 /** Client → server WebSocket messages. */
 export const clientEventSchema = z.discriminatedUnion('type', [
@@ -104,7 +111,10 @@ export function realtimeChannel(userId: string): string {
 }
 export const REALTIME_PATTERN = 'nexaheart:rt:user:*';
 
-export const chatSettingsSchema = z.object({ acceptVoice: z.boolean() });
+export const chatSettingsSchema = z.object({ acceptVoice: z.boolean(), acceptCalls: z.boolean() });
+export const chatSettingsInputSchema = chatSettingsSchema
+  .partial()
+  .refine((v) => v.acceptVoice !== undefined || v.acceptCalls !== undefined, 'Nothing to change');
 
 /** Expo push tokens look like ExponentPushToken[xxxxxxxx]. 📘 Expo push documentation. */
 export const pushTokenInputSchema = z.object({

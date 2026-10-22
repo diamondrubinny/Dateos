@@ -1,6 +1,7 @@
 import { createHash, timingSafeEqual } from 'node:crypto';
 import { schema, type Database } from '@nexaheart/db';
 import {
+  DEFAULT_CALL_MAX_MINUTES,
   deriveBrand,
   ErrorCode,
   type InstanceInfo,
@@ -14,6 +15,7 @@ import { audit } from '../../lib/audit.js';
 import { HttpError } from '../../plugins/error-handler.js';
 import type { AuthUser } from '../../auth/session.js';
 import type { PhotoService } from '../photos/service.js';
+import { liveKitConfigured } from '../../lib/livekit.js';
 
 const { instanceSettings, photos, user } = schema;
 
@@ -32,6 +34,10 @@ export interface AdminInstanceSettings {
   sponsorUrl: string | null;
   logoUrl: string | null;
   setupCompleted: boolean;
+  /** Video dates: whether LiveKit is configured on the server, and the admins' choices. */
+  callsConfigured: boolean;
+  callsEnabled: boolean;
+  callMaxMinutes: number;
 }
 
 export class InstanceService {
@@ -88,6 +94,7 @@ export class InstanceService {
       operatorName: row?.operatorName ?? null,
       contactEmail: row?.contactEmail ?? null,
       setupRequired: Boolean(noAdmin.rows[0]?.none),
+      calls: liveKitConfigured(env) && Boolean(row?.callsEnabled),
     };
     this.cache = { value, at: Date.now() };
     return value;
@@ -116,6 +123,18 @@ export class InstanceService {
       sponsorUrl: info.sponsorUrl,
       logoUrl: info.logoUrl,
       setupCompleted: Boolean(row?.setupCompletedAt),
+      callsConfigured: liveKitConfigured(this.env),
+      callsEnabled: row?.callsEnabled ?? false,
+      callMaxMinutes: row?.callMaxMinutes ?? DEFAULT_CALL_MAX_MINUTES,
+    };
+  }
+
+  /** Read fresh (not cached): turning calls off must take effect at once. */
+  async callSettings(): Promise<{ enabled: boolean; maxMinutes: number }> {
+    const row = await this.row();
+    return {
+      enabled: liveKitConfigured(this.env) && Boolean(row?.callsEnabled),
+      maxMinutes: row?.callMaxMinutes ?? DEFAULT_CALL_MAX_MINUTES,
     };
   }
 

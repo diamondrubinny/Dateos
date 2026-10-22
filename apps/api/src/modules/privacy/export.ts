@@ -170,6 +170,19 @@ export async function exportMemberData(
     .innerJoin(t.matches, eq(t.matches.id, t.datePlans.matchId))
     .where(or(eq(t.matches.userA, userId), eq(t.matches.userB, userId)))
     .orderBy(asc(t.datePlans.createdAt));
+  const callRows = await db
+    .select({
+      matchId: t.calls.matchId,
+      callerId: t.calls.callerId,
+      video: t.calls.video,
+      status: t.calls.status,
+      createdAt: t.calls.createdAt,
+      answeredAt: t.calls.answeredAt,
+      endedAt: t.calls.endedAt,
+    })
+    .from(t.calls)
+    .where(or(eq(t.calls.callerId, userId), eq(t.calls.calleeId, userId)))
+    .orderBy(asc(t.calls.createdAt));
   const devices = await db
     .select({
       platform: t.pushTokens.platform,
@@ -236,6 +249,7 @@ export async function exportMemberData(
           maxDistanceKm: preferences.maxDistanceKm,
           intentions: preferences.intentions,
           acceptVoice: preferences.acceptVoice,
+          acceptCalls: preferences.acceptCalls,
         }
       : null,
     approximateLocation: location
@@ -279,6 +293,13 @@ export async function exportMemberData(
       startsAt: iso(d.startsAt),
       respondedAt: iso(d.respondedAt),
       createdAt: iso(d.createdAt),
+    })),
+    callsNoAudioOrVideoIsStored: callRows.map(({ callerId, ...c }) => ({
+      ...c,
+      startedByYou: callerId === userId,
+      createdAt: iso(c.createdAt),
+      answeredAt: iso(c.answeredAt),
+      endedAt: iso(c.endedAt),
     })),
     pushDevices: devices.map((d) => ({
       ...d,

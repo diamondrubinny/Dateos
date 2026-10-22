@@ -98,6 +98,10 @@ export async function purgeClosedChats(
   await db.execute(sql`
     DELETE FROM date_plans d USING matches ma
     WHERE ma.id = d.match_id AND ma.unmatched_at < now() - interval '${days} days'`);
+  // And the call log of those chats (who called when; there is never any audio or video).
+  await db.execute(sql`
+    DELETE FROM calls c USING matches ma
+    WHERE ma.id = c.match_id AND ma.unmatched_at < now() - interval '${days} days'`);
   if (images.rows.length > 0) {
     const ids = sql.join(
       images.rows.map((r) => sql`${r.id}::uuid`),
