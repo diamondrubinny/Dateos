@@ -62,6 +62,9 @@ export function ffmpegArgs(
     '-dn',
     '-map_metadata',
     '-1',
+    // Ogg Opus keeps its tags on the stream, which some ffmpeg versions (6.0) copy without this.
+    '-map_metadata:s:a',
+    '-1',
     '-map_chapters',
     '-1',
     '-ac',

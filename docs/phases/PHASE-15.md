@@ -96,16 +96,16 @@ Report evidence copies the call lines (time and duration) as text, never media.
 
 ### Threats and controls
 
-| Threat                                  | Control                                                                                                                                                                                                  |
-| --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Unwanted or repeated calls (harassment) | Unlocked chats only, receiver opt-out, invitation must be accepted, rate limits, cooldown after declines, block ends everything                                                                          |
-| Indecent exposure                       | Camera off on join, one-tap end and report, moderators see the call log; no AI scanning of video (privacy)                                                                                               |
-| A stolen or replayed token              | 2-minute token, one room, identity bound to the member, at most 2 participants, the room is deleted when the call ends                                                                                   |
-| Revealing where someone is (IP address) | SFU: peers only ever see the server; IP addresses only in the server's short-lived logs (the existing 50 MB log limits)                                                                                  |
-| The operator watching calls             | Not recorded (no egress service is installed). Media is decrypted in the server's memory while being forwarded: said plainly in the privacy policy ⚖️. Optional end-to-end encryption is a later step 📘 |
-| Forged webhooks                         | LiveKit's signed webhooks only; an unknown room or call is ignored                                                                                                                                       |
-| Server overload (DoS)                   | Rate limits, a maximum number of calls running at once, the time limit                                                                                                                                   |
-| Recording by the other person           | Can't be prevented technically: a clear notice before the first call, and reporting ⚖️ (recording laws differ between countries)                                                                         |
+| Threat                                  | Control                                                                                                                                                                                                                                               |
+| --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Unwanted or repeated calls (harassment) | Unlocked chats only, receiver opt-out, invitation must be accepted, rate limits, cooldown after declines, block ends everything                                                                                                                       |
+| Indecent exposure                       | Camera off on join, one-tap end and report, moderators see the call log; no AI scanning of video (privacy)                                                                                                                                            |
+| A stolen or replayed token              | 2-minute token, one room, identity bound to the member, at most 2 participants, the room is deleted when the call ends                                                                                                                                |
+| Revealing where someone is (IP address) | SFU: peers only ever see the server; IP addresses only in the server's short-lived logs (the existing 50 MB log limits)                                                                                                                               |
+| The operator watching calls             | Not recorded (no egress service is installed). Media is decrypted in the server's memory while being forwarded: said plainly in the privacy policy ⚖️. Since [phase 16](PHASE-16.md) calls are end-to-end encrypted, so the server can't decrypt them |
+| Forged webhooks                         | LiveKit's signed webhooks only; an unknown room or call is ignored                                                                                                                                                                                    |
+| Server overload (DoS)                   | Rate limits, a maximum number of calls running at once, the time limit                                                                                                                                                                                |
+| Recording by the other person           | Can't be prevented technically: a clear notice before the first call, and reporting ⚖️ (recording laws differ between countries)                                                                                                                      |
 
 ### Privacy
 
@@ -195,5 +195,5 @@ Report evidence copies the call lines (time and duration) as text, never media.
 
 - No ringing sound or full-screen call notification when the app is closed (CallKit / ConnectionService
   would be a separate step); the push notification and the in-app invitation are the only signals.
-- No live captions (would need speech recognition on the device).
-- No end-to-end encryption yet: media is decrypted in the server's memory while being forwarded.
+- ~~No live captions~~: added in [phase 16](PHASE-16.md), made on the device only.
+- ~~No end-to-end encryption yet~~: calls are end-to-end encrypted since [phase 16](PHASE-16.md).

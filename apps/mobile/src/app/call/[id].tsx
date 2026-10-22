@@ -1,7 +1,7 @@
 import type { CallJoin } from '@nexaheart/shared';
 import { useQueryClient } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Platform, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -13,12 +13,19 @@ import { RemoteImage } from '../../components/RemoteImage';
 import { RequireSession } from '../../components/RequireSession';
 import { VideoSurface } from '../../components/VideoSurface';
 import { ApiRequestError } from '../../lib/api';
+import { newCallKeyPair, toBase64Url } from '../../lib/call-crypto';
+import { encryptionSupported } from '../../lib/call-encryption';
 import { callKey, endCall, formatClock, joinCall, useCall } from '../../lib/call-queries';
 import { useConversations } from '../../lib/chat-queries';
 import { useRealtime } from '../../lib/realtime';
 import { prefs } from '../../lib/storage';
 import { radius, spacing, useColors } from '../../lib/theme';
 import { useCallRoom } from '../../lib/use-call-room';
+import { useCaptions } from '../../lib/use-captions';
+import { useLocale } from '../../lib/locale';
+
+/** Speech recognition language for each app language. */
+const SPEECH_LANG = { he: 'he-IL', en: 'en-US', ar: 'ar-SA', ru: 'ru-RU' } as const;
 
 /** Shown once per device before the first call. */
 export const CALL_NOTICE_KEY = 'nexaheart.callNotice';
@@ -36,10 +43,21 @@ function CallScreen() {
   const [join, setJoin] = useState<CallJoin>();
   const [error, setError] = useState<string>();
   const [now, setNow] = useState(Date.now());
+  // A fresh key pair for this join: the secret half never leaves the device.
+  const keyPair = useMemo(() => newCallKeyPair(), []);
+  const supported = useMemo(() => encryptionSupported(), []);
   const room = useCallRoom(
-    join ? { url: join.url, token: join.token, video: join.call.video } : undefined,
+    join
+      ? { url: join.url, token: join.token, room: join.room, video: join.call.video, keyPair }
+      : undefined,
   );
   const joined = useRef(false);
+  const { locale } = useLocale();
+  const captions = useCaptions(room.room, {
+    lang: SPEECH_LANG[locale as keyof typeof SPEECH_LANG] ?? 'en-US',
+    micOn: room.micOn,
+    secure: room.secure,
+  });
 
   useEffect(() => {
     void prefs.get(CALL_NOTICE_KEY).then((v) => setNotice(v ? 'seen' : 'show'));
@@ -62,10 +80,10 @@ function CallScreen() {
 
   // Join once the notice was seen and the call can still be joined.
   useEffect(() => {
-    if (notice !== 'seen' || joined.current || !call.data) return;
+    if (notice !== 'seen' || joined.current || !call.data || !supported) return;
     if (call.data.status !== 'ringing' && call.data.status !== 'active') return;
     joined.current = true;
-    joinCall(id)
+    joinCall(id, toBase64Url(keyPair.publicKey))
       .then(setJoin)
       .catch((e) =>
         setError(
@@ -74,7 +92,7 @@ function CallScreen() {
             : t('common.genericError'),
         ),
       );
-  }, [notice, call.data, id, t]);
+  }, [notice, call.data, id, t, keyPair, supported]);
 
   // Leaving the screen hangs up (the server also notices when the connection drops).
   useEffect(
@@ -137,6 +155,20 @@ function CallScreen() {
             }}
           />
           <Button variant="ghost" label={t('common.back')} onPress={back} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (!supported) {
+    return (
+      <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
+        <View style={styles.pad}>
+          <AppText variant="title" accessibilityRole="header">
+            {t('call.unsupportedTitle')}
+          </AppText>
+          <AppText variant="body">{t('call.unsupported')}</AppText>
+          <Button label={t('call.backToChat')} onPress={back} />
         </View>
       </SafeAreaView>
     );
@@ -233,6 +265,20 @@ function CallScreen() {
         {room.localVideo ? (
           <VideoSurface track={room.localVideo} mirror style={styles.local} />
         ) : null}
+        {captions.showing && (captions.lines.length > 0 || captions.interim) ? (
+          <View style={styles.captions} accessibilityLabel={t('call.captionsLabel', { name })}>
+            {captions.lines.map((line, i) => (
+              <AppText key={`${i}-${line}`} variant="body" tone="onPrimary" userContent>
+                {line}
+              </AppText>
+            ))}
+            {captions.interim ? (
+              <AppText variant="body" tone="onPrimary" userContent style={styles.interim}>
+                {captions.interim}
+              </AppText>
+            ) : null}
+          </View>
+        ) : null}
       </View>
 
       <View style={styles.panel}>
@@ -247,6 +293,65 @@ function CallScreen() {
         <AppText variant="caption" center accessibilityLiveRegion="polite">
           {limitNote}
         </AppText>
+        {room.secure && room.safety ? (
+          <View style={styles.privacy} accessibilityRole="text">
+            <AppText variant="caption" tone="success" center>
+              🔒 {t('call.private')}
+            </AppText>
+            {/* Each emoji in its own box with its number, so the order is clear in any reading
+                direction (people reading Hebrew or Arabic compare with people reading English). */}
+            <View
+              style={styles.code}
+              accessibilityRole="text"
+              accessibilityLabel={t('call.safetyCode', { code: room.safety.join(' ') })}
+            >
+              {room.safety.map((emoji, i) => (
+                <View key={i} style={[styles.codeItem, { borderColor: colors.border }]}>
+                  <AppText variant="caption" tone="muted" center>
+                    {i + 1}
+                  </AppText>
+                  <AppText variant="heading" center>
+                    {emoji}
+                  </AppText>
+                </View>
+              ))}
+            </View>
+            <AppText variant="caption" tone="muted" center>
+              {t('call.safetyHint', { name })}
+            </AppText>
+          </View>
+        ) : room.status === 'connected' && !room.encryptionFailed ? (
+          <AppText variant="caption" tone="muted" center>
+            {t('call.securing')}
+          </AppText>
+        ) : null}
+        {room.encryptionFailed ? <Banner tone="error" message={t('call.notPrivate')} /> : null}
+        {captions.showing && captions.their === 'waiting' ? (
+          <AppText variant="caption" tone="muted" center accessibilityLiveRegion="polite">
+            {t('call.captionsWaiting', { name })}
+          </AppText>
+        ) : null}
+        {captions.showing && captions.their === 'unavailable' ? (
+          <Banner tone="info" message={t('call.captionsUnavailable', { name })} />
+        ) : null}
+        {captions.sending ? (
+          <Banner tone="info" message={t('call.captionsSending', { name })} />
+        ) : null}
+        {captions.cantSend ? (
+          <Banner tone="info" message={t('call.captionsCantSend', { name })} />
+        ) : null}
+        {captions.canInstall ? (
+          <View style={styles.privacy}>
+            <AppText variant="caption" center>
+              {t('call.captionsInstallHint', { name })}
+            </AppText>
+            <Button
+              variant="secondary"
+              label={t('call.captionsInstall')}
+              onPress={captions.install}
+            />
+          </View>
+        ) : null}
         {room.permissionDenied ? <Banner tone="error" message={t('call.permission')} /> : null}
         {room.audioBlocked ? (
           <Button label={t('call.enableSound')} onPress={room.startAudio} />
@@ -262,6 +367,13 @@ function CallScreen() {
               variant="secondary"
               label={room.cameraOn ? t('call.cameraOff') : t('call.cameraOn')}
               onPress={room.toggleCamera}
+            />
+          ) : null}
+          {room.secure ? (
+            <Button
+              variant="secondary"
+              label={captions.showing ? t('call.captionsOff') : t('call.captionsOn')}
+              onPress={captions.toggle}
             />
           ) : null}
           {call.data.video && room.cameraOn && Platform.OS !== 'web' ? (
@@ -305,7 +417,7 @@ const styles = StyleSheet.create({
   avatar: { width: 120, height: 120, borderRadius: 60 },
   local: {
     position: 'absolute',
-    bottom: spacing.md,
+    top: spacing.md,
     end: spacing.md,
     width: 110,
     height: 150,
@@ -314,5 +426,26 @@ const styles = StyleSheet.create({
     borderColor: '#FFFFFF',
   },
   panel: { padding: spacing.md, gap: spacing.sm },
+  privacy: { gap: 2 },
+  code: { flexDirection: 'row', justifyContent: 'center', gap: spacing.sm },
+  codeItem: {
+    minWidth: 48,
+    paddingVertical: 2,
+    borderWidth: 1,
+    borderRadius: radius.md,
+    alignItems: 'center',
+  },
+  // Captions sit over the video, on a dark band (readable on any picture).
+  captions: {
+    position: 'absolute',
+    start: spacing.sm,
+    end: spacing.sm,
+    bottom: spacing.sm,
+    padding: spacing.sm,
+    borderRadius: radius.md,
+    backgroundColor: 'rgba(0,0,0,0.75)',
+    gap: 2,
+  },
+  interim: { opacity: 0.85 },
   controls: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: spacing.sm },
 });

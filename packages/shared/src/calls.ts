@@ -17,6 +17,14 @@ export const MIN_CALL_MAX_MINUTES = 5;
 export const MAX_CALL_MAX_MINUTES = 120;
 
 export const startCallSchema = z.object({ video: z.boolean() });
+
+/**
+ * Joining (phase 16b): the device's X25519 public key for this call, base64url. It reaches the
+ * other person inside their view of the call; the secret half never leaves the device.
+ */
+export const joinCallSchema = z.object({
+  publicKey: z.string().regex(/^[A-Za-z0-9_-]{43}$/, 'An X25519 public key, base64url'),
+});
 export type StartCallInput = z.infer<typeof startCallSchema>;
 
 /** A call as one participant sees it (in the chat line and the call screen). */
@@ -40,6 +48,8 @@ export const callJoinSchema = z.object({
   /** Public LiveKit address (wss://...). */
   url: z.string(),
   token: z.string(),
+  /** The LiveKit room name (part of the end-to-end key derivation). */
+  room: z.string(),
   call: callSchema,
 });
 export type CallJoin = z.infer<typeof callJoinSchema>;

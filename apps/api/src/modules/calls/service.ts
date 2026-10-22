@@ -220,7 +220,7 @@ export class CallService {
     return callView(await this.load(callId, userId), userId);
   }
 
-  async join(callId: string, userId: string): Promise<CallJoin> {
+  async join(callId: string, userId: string, publicKey: string): Promise<CallJoin> {
     if (!this.media) throw unavailable();
     let call = await this.load(callId, userId);
     if (!OPEN.includes(call.status) || this.expired(call)) {
@@ -238,8 +238,9 @@ export class CallService {
       role,
       video: call.video,
       ttlSeconds: CALL_TOKEN_SECONDS,
+      publicKey,
     });
-    return { url: this.media.url, token, call: callView(call, userId) };
+    return { url: this.media.url, token, room: call.room, call: callView(call, userId) };
   }
 
   /** Only the person being called can decline. */

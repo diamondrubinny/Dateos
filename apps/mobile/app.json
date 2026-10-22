@@ -80,7 +80,18 @@
           "microphonePermission": "NexaHeart uses the microphone only while you record a voice message or are in a call."
         }
       ],
-      "@livekit/react-native-expo-plugin"
+      "@livekit/react-native-expo-plugin",
+      [
+        "expo-speech-recognition",
+        {
+          "speechRecognitionPermission": "NexaHeart turns your own words into captions for the other person in a call, only when they turn captions on. It runs on your phone; the audio is never sent anywhere.",
+          "microphonePermission": "NexaHeart uses the microphone only while you record a voice message or are in a call.",
+          "androidSpeechServicePackages": [
+            "com.google.android.as",
+            "com.google.android.googlequicksearchbox"
+          ]
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

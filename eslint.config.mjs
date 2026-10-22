@@ -12,6 +12,8 @@ export default tseslint.config(
       '**/.turbo/**',
       '**/.expo/**',
       'apps/mobile/expo-env.d.ts',
+      // Copied from livekit-client at build time (third-party code).
+      'apps/mobile/public/livekit-e2ee-worker.mjs',
     ],
   },
   js.configs.recommended,

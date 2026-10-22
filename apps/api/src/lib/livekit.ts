@@ -23,6 +23,8 @@ export interface CallMedia {
     role: CallRole;
     video: boolean;
     ttlSeconds: number;
+    /** End-to-end encryption: shown to the other person as this participant's `pk` attribute. */
+    publicKey: string;
   }): Promise<string>;
   /** Verifies LiveKit's signature; null for anything unsigned or forged. */
   receiveWebhook(body: string, authorization: string | undefined): Promise<CallWebhookEvent | null>;
@@ -60,14 +62,19 @@ export function createLiveKitMedia(env: Env): CallMedia | null {
         if ((error as { status?: number }).status !== 404) throw error;
       }
     },
-    async joinToken({ room, role, video, ttlSeconds }) {
-      const token = new AccessToken(key, secret, { identity: role, ttl: ttlSeconds });
+    async joinToken({ room, role, video, ttlSeconds, publicKey }) {
+      const token = new AccessToken(key, secret, {
+        identity: role,
+        ttl: ttlSeconds,
+        attributes: { pk: publicKey },
+      });
       token.addGrant({
         roomJoin: true,
         room,
         canPublish: true,
         canSubscribe: true,
-        canPublishData: false,
+        // Captions (phase 16c) travel as text in the call, end-to-end encrypted like the media.
+        canPublishData: true,
         canUpdateOwnMetadata: false,
         // No screen sharing; a voice call can't turn into a video call.
         canPublishSources: video

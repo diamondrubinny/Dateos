@@ -1,4 +1,10 @@
-import { callJoinSchema, callSchema, ErrorCode, startCallSchema } from '@nexaheart/shared';
+import {
+  callJoinSchema,
+  callSchema,
+  ErrorCode,
+  joinCallSchema,
+  startCallSchema,
+} from '@nexaheart/shared';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import type { Auth } from '../../auth/auth.js';
@@ -34,8 +40,9 @@ export const callRoutes: FastifyPluginAsyncZod<{ auth: Auth; calls: CallService 
   );
   app.post(
     '/v1/calls/:id/join',
-    { config: limit, schema: { params, response: { 200: callJoinSchema } } },
-    async (request) => calls.join(request.params.id, currentUser(request).id),
+    { config: limit, schema: { params, body: joinCallSchema, response: { 200: callJoinSchema } } },
+    async (request) =>
+      calls.join(request.params.id, currentUser(request).id, request.body.publicKey),
   );
   app.post(
     '/v1/calls/:id/decline',
