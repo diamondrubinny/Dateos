@@ -26,6 +26,7 @@ import {
   useInstance,
   useMe,
   useSetConsents,
+  useSetIncognito,
 } from '../lib/queries';
 import { radius, spacing, useColors } from '../lib/theme';
 import { PoweredBy } from '../components/PoweredBy';
@@ -43,6 +44,7 @@ function SettingsContent() {
   const chatSettings = useChatSettings();
   const setAcceptVoice = useSetAcceptVoice();
   const setAcceptCalls = useSetAcceptCalls();
+  const setIncognito = useSetIncognito();
   const { locale } = useLocale();
   const [push, setPush] = useState(false);
   const [pushNote, setPushNote] = useState<string>();
@@ -140,6 +142,15 @@ function SettingsContent() {
         />
       ) : null}
 
+      <AppText variant="heading">{t('visibility.title')}</AppText>
+      <Checkbox
+        label={t('visibility.incognitoLabel')}
+        hint={t('visibility.incognitoHint')}
+        checked={me.data?.incognito ?? false}
+        onChange={(v) =>
+          setIncognito.mutate(v, { onError: () => setError(t('common.genericError')) })
+        }
+      />
       <TakeABreak />
 
       <AppText variant="heading">{t('settings.privacy')}</AppText>

@@ -134,6 +134,52 @@ describe.skipIf(!integrationEnabled)('who sees me: take a break (integration)', 
     expect(await discoverIds(ctx, omer)).not.toContain(noa.id);
   });
 
+  it('incognito: only people I liked see me, matches stay, and nobody is told', async () => {
+    const noa = await woman();
+    const dan = await man();
+    const omer = await man('Omer');
+    const gil = await man('Gil');
+    // Gil and Noa matched before she went incognito.
+    await api(ctx, gil, 'POST', '/v1/interactions', { targetId: noa.id, kind: 'like' });
+    await api(ctx, noa, 'POST', '/v1/interactions', { targetId: gil.id, kind: 'like' });
+
+    expect((await api(ctx, noa, 'PUT', '/v1/me/incognito', { on: true })).statusCode).toBe(200);
+    expect((await me(noa)).incognito).toBe(true);
+    for (const viewer of [dan, omer]) {
+      expect(await discoverIds(ctx, viewer)).not.toContain(noa.id);
+      expect((await api(ctx, viewer, 'GET', `/v1/profiles/${noa.id}`)).statusCode).toBe(404);
+      expect((await api(ctx, viewer, 'GET', `/v1/photos/${noa.photoId}`)).statusCode).toBe(404);
+      expect(
+        (await api(ctx, viewer, 'POST', '/v1/interactions', { targetId: noa.id, kind: 'like' }))
+          .statusCode,
+      ).toBe(404);
+    }
+    // She still browses as usual.
+    expect(await discoverIds(ctx, noa)).toEqual(expect.arrayContaining([dan.id, omer.id]));
+    // Her match is untouched.
+    expect((await api(ctx, gil, 'GET', `/v1/profiles/${noa.id}`)).statusCode).toBe(200);
+    expect((await api(ctx, gil, 'GET', '/v1/matches')).json().matches).toHaveLength(1);
+
+    // She likes Dan: now Dan (only Dan) can see her, in Likes You and on her profile.
+    await api(ctx, noa, 'POST', '/v1/interactions', { targetId: dan.id, kind: 'like' });
+    const likes = (await api(ctx, dan, 'GET', '/v1/likes')).json().likes;
+    expect(likes.map((l: { profile: { id: string } }) => l.profile.id)).toEqual([noa.id]);
+    const profile = await api(ctx, dan, 'GET', `/v1/profiles/${noa.id}`);
+    expect(profile.statusCode).toBe(200);
+    expect(JSON.stringify(profile.json())).not.toMatch(/incognito/i);
+    expect(await discoverIds(ctx, omer)).not.toContain(noa.id);
+    // Dan can answer, and they match.
+    expect(
+      (await api(ctx, dan, 'POST', '/v1/interactions', { targetId: noa.id, kind: 'like' })).json()
+        .matched,
+    ).toBe(true);
+
+    // Turning it off: visible to everyone again.
+    await api(ctx, noa, 'PUT', '/v1/me/incognito', { on: false });
+    expect(await discoverIds(ctx, omer)).toContain(noa.id);
+    expect((await api(ctx, noa, 'PUT', '/v1/me/incognito', { on: 'yes' })).statusCode).toBe(400);
+  });
+
   it('validates the duration and keeps the break in "Download my data"', async () => {
     const noa = await woman();
     expect((await pause(noa, '1y')).statusCode).toBe(400);

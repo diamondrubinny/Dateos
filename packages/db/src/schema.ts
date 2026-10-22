@@ -75,6 +75,8 @@ export const user = pgTable('user', {
   pausedAt: timestamp('paused_at', { withTimezone: true }),
   /** When the break ends by itself; null with pausedAt set means "until I turn it back on". */
   pausedUntil: timestamp('paused_until', { withTimezone: true }),
+  /** Incognito (phase 18b): only people this member liked can see them. */
+  incognito: boolean('incognito').notNull().default(false),
   ...timestamps,
 });
 

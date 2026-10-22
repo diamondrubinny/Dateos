@@ -141,6 +141,13 @@
       "when": 1792707129024,
       "tag": "0019_take_a_break",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1792708014023,
+      "tag": "0020_incognito",
+      "breakpoints": true
     }
   ]
 }

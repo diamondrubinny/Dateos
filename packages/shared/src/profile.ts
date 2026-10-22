@@ -151,6 +151,8 @@ export const meResponseSchema = z.object({
   user: z.object({ id: z.string(), email: z.string(), status: z.string() }),
   /** "Take a break" (phase 18a). */
   pause: pauseStateSchema,
+  /** Only people I liked can see me (phase 18b). */
+  incognito: z.boolean(),
   profile: profileInputSchema
     .extend({ bio: z.string().nullable(), age: z.number().int() })
     .nullable(),

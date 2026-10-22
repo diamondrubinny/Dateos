@@ -6,6 +6,8 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Added
 
+- **Incognito**: "only people I like can see me". Browse as usual; others see your profile only
+  after you like them, matches aren't affected, and nobody is told you're incognito.
 - **Take a break**: in Settings, stop being shown to new people for 24 hours, 3 days, a week or until
   you come back. Discover, Daily Picks and Likes You show a calm "You're taking a break" card instead;
   matches, chats and calls carry on, so nobody is ghosted, and likes sent to you wait for your

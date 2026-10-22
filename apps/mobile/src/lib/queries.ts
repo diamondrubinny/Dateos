@@ -78,7 +78,7 @@ export const useSetConsents = () =>
   );
 export const useDeletePhoto = () =>
   useMeMutation((id: string) => apiFetch(`/v1/me/photos/${id}`, { method: 'DELETE' }));
-/** Take a break (phase 18a): the feeds change too, so they refresh with /v1/me. */
+/** Take a break and incognito (phase 18): the feeds change too, so they refresh with /v1/me. */
 function useBreakMutation<TInput>(request: (input: TInput) => Promise<unknown>) {
   const client = useQueryClient();
   return useMutation({
@@ -98,6 +98,10 @@ function useBreakMutation<TInput>(request: (input: TInput) => Promise<unknown>) 
 export const usePause = () =>
   useBreakMutation((duration: PauseDuration) =>
     apiFetch('/v1/me/pause', { method: 'PUT', body: json({ duration }) }),
+  );
+export const useSetIncognito = () =>
+  useBreakMutation((on: boolean) =>
+    apiFetch('/v1/me/incognito', { method: 'PUT', body: json({ on }) }),
   );
 export const useResume = () =>
   useBreakMutation(() => apiFetch('/v1/me/pause', { method: 'DELETE' }));

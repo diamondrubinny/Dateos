@@ -1,6 +1,6 @@
 # Phase 18: Take a break, incognito and travel mode (v0.5)
 
-> Status: 18a ✅ done (2026-10-22); 18b and 18c 🔨 building. All recommendations approved.
+> Status: 18a and 18b ✅ done (2026-10-22); 18c 🔨 building. All recommendations approved.
 > 📘 = verify against official docs, ⚖️ = needs legal review.
 
 Three features from the plan's v0.2–v0.5 list that aren't built yet. They're all free for everyone,
@@ -30,7 +30,7 @@ without losing my matches or deleting the account."
   - Visibility: `paused_until IS NULL OR paused_until <= now()` joins the single visibility query
     (`candidateSql`). No extra code path, so no place can forget it.
 
-## 18b. Incognito
+## 18b. Incognito ✅
 
 **User story:** "I want to choose who sees me, for example because a colleague or a relative might
 also be here."
@@ -129,3 +129,11 @@ also be here."
 | All integration tests              | ✅ 148/148                                                                                                                                                                                                                  |
 | `pnpm --dir e2e visibility`        | ✅ 4 languages: Settings → a week's break → the calm card on Discover, Picks and Likes → "Come back now"; 0 axe violations                                                                                                  |
 | Screenshots                        | `61-take-a-break`, `62-on-break` in 4 languages                                                                                                                                                                             |
+
+## Results: 18b
+
+| Check                       | Result                                                                                                                                                                                                                                                         |
+| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Integration                 | ✅ hidden from everyone she hasn't liked (discover, profile, photos, likes); she still browses; her match is untouched; after her like only that person sees her (Likes You, profile) and can match; the profile never mentions incognito; off again → visible |
+| `pnpm --dir e2e visibility` | ✅ 4 languages: off by default, on, saved, off again; 0 axe violations                                                                                                                                                                                         |
+| Screenshots                 | `63-incognito` in 4 languages                                                                                                                                                                                                                                  |

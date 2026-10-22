@@ -29,6 +29,7 @@ export async function exportMemberData(
       createdAt: t.user.createdAt,
       pausedAt: t.user.pausedAt,
       pausedUntil: t.user.pausedUntil,
+      incognito: t.user.incognito,
     })
     .from(t.user)
     .where(eq(t.user.id, userId));
