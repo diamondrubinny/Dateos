@@ -6,8 +6,9 @@ import {
   type EventInput,
   type EventUpdate,
   MAX_EVENT_HOURS,
+  MAX_EVENT_WAITLIST,
 } from '@nexaheart/shared';
-import { and, asc, desc, eq, gt, or, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gt, inArray, or, sql } from 'drizzle-orm';
 import { audit } from '../../lib/audit.js';
 import { HttpError } from '../../plugins/error-handler.js';
 
@@ -19,8 +20,15 @@ const invalid = (message: string) => new HttpError(422, ErrorCode.ValidationErro
 type EventRow = typeof events.$inferSelect;
 type VenueRow = typeof venues.$inferSelect;
 
+type Tx = Parameters<Parameters<Database['transaction']>[0]>[0];
+
 /** What members and staff both see of an event. */
-function baseView(e: EventRow, v: VenueRow | null, going: number): Omit<CommunityEvent, 'mine'> {
+function baseView(
+  e: EventRow,
+  v: VenueRow | null,
+  going: number,
+  waitingCount: number,
+): Omit<CommunityEvent, 'mine' | 'waitingAhead'> {
   return {
     id: e.id,
     title: e.title,
@@ -41,12 +49,23 @@ function baseView(e: EventRow, v: VenueRow | null, going: number): Omit<Communit
     capacity: e.capacity,
     going,
     full: e.capacity !== null && going >= e.capacity,
+    waitingCount,
   };
 }
 
-const toView = (e: EventRow, v: VenueRow | null, going: number, mine: boolean): CommunityEvent => ({
-  ...baseView(e, v, going),
-  mine,
+interface Row {
+  event: EventRow;
+  venue: VenueRow | null;
+  going: number;
+  waitingCount: number;
+  mine: boolean;
+  waitingAhead: number | null;
+}
+
+const toView = (r: Row): CommunityEvent => ({
+  ...baseView(r.event, r.venue, r.going, r.waitingCount),
+  mine: r.mine,
+  waitingAhead: r.waitingAhead,
 });
 
 /**
@@ -62,12 +81,28 @@ export class EventService {
   ) {}
 
   private query(viewerId: string | null) {
-    const going = sql<number>`(SELECT count(*)::int FROM event_rsvps r WHERE r.event_id = ${events.id})`;
+    const count = (status: 'going' | 'waiting') =>
+      sql<number>`(SELECT count(*)::int FROM event_rsvps r WHERE r.event_id = ${events.id} AND r.status = ${status})`;
     const mine = viewerId
-      ? sql<boolean>`EXISTS (SELECT 1 FROM event_rsvps r WHERE r.event_id = ${events.id} AND r.user_id = ${viewerId})`
+      ? sql<boolean>`EXISTS (SELECT 1 FROM event_rsvps r WHERE r.event_id = ${events.id} AND r.user_id = ${viewerId} AND r.status = 'going')`
       : sql<boolean>`false`;
+    // The viewer's place in the queue: people who joined earlier (ties by id), or null.
+    const waitingAhead = viewerId
+      ? sql<number | null>`(SELECT (SELECT count(*)::int FROM event_rsvps o
+            WHERE o.event_id = me.event_id AND o.status = 'waiting'
+              AND (o.created_at, o.user_id) < (me.created_at, me.user_id))
+          FROM event_rsvps me
+          WHERE me.event_id = ${events.id} AND me.user_id = ${viewerId} AND me.status = 'waiting')`
+      : sql<number | null>`NULL::int`;
     return this.db
-      .select({ event: events, venue: venues, going, mine })
+      .select({
+        event: events,
+        venue: venues,
+        going: count('going'),
+        waitingCount: count('waiting'),
+        mine,
+        waitingAhead,
+      })
       .from(events)
       .leftJoin(venues, eq(venues.id, events.venueId));
   }
@@ -86,13 +121,15 @@ export class EventService {
       )
       .orderBy(asc(events.startsAt))
       .limit(50);
-    return rows.map((r) => toView(r.event, r.venue, r.going, r.mine));
+    return rows.map(toView);
   }
 
   async get(id: string, viewerId: string): Promise<CommunityEvent> {
     const [row] = await this.query(viewerId).where(eq(events.id, id));
-    if (!row || (row.event.status === 'cancelled' && !row.mine)) throw notFound();
-    return toView(row.event, row.venue, row.going, row.mine);
+    if (!row || (row.event.status === 'cancelled' && !row.mine && row.waitingAhead === null)) {
+      throw notFound();
+    }
+    return toView(row);
   }
 
   /**
@@ -100,33 +137,104 @@ export class EventService {
    * at the same time. Saying it twice is harmless.
    */
   async rsvp(id: string, userId: string): Promise<CommunityEvent> {
+    await this.answer(id, userId, false);
+    return this.get(id, userId);
+  }
+
+  /**
+   * The waiting list of a full event (phase 16). If a place is free after all, the member is simply
+   * going. Joining twice is harmless; at most MAX_EVENT_WAITLIST people wait.
+   */
+  async joinWaitlist(id: string, userId: string): Promise<CommunityEvent> {
+    await this.answer(id, userId, true);
+    return this.get(id, userId);
+  }
+
+  private async answer(id: string, userId: string, wait: boolean): Promise<void> {
     await this.db.transaction(async (tx) => {
       const [event] = await tx.select().from(events).where(eq(events.id, id)).for('update');
       if (!event || event.status === 'cancelled') throw notFound();
       if (event.endsAt.getTime() <= this.now()) {
         throw new HttpError(409, ErrorCode.Conflict, 'This event has ended.');
       }
-      const [{ going, mine }] = (
-        await tx.execute<{ going: number; mine: boolean }>(sql`
-          SELECT count(*)::int AS going, bool_or(user_id = ${userId}) AS mine
+      const [{ going, waiting, mine }] = (
+        await tx.execute<{ going: number; waiting: number; mine: string | null }>(sql`
+          SELECT count(*) FILTER (WHERE status = 'going')::int AS going,
+                 count(*) FILTER (WHERE status = 'waiting')::int AS waiting,
+                 max(status::text) FILTER (WHERE user_id = ${userId}) AS mine
           FROM event_rsvps WHERE event_id = ${id}`)
-      ).rows as [{ going: number; mine: boolean | null }];
-      if (mine) return;
-      if (event.capacity !== null && going >= event.capacity) {
-        throw new HttpError(409, ErrorCode.Conflict, 'This event is full.');
+      ).rows as [{ going: number; waiting: number; mine: string | null }];
+      if (mine === 'going' || (mine === 'waiting' && wait)) return;
+      const full = event.capacity !== null && going >= event.capacity;
+      if (!full) {
+        await tx
+          .insert(eventRsvps)
+          .values({ eventId: id, userId, status: 'going' })
+          .onConflictDoUpdate({
+            target: [eventRsvps.eventId, eventRsvps.userId],
+            set: { status: 'going' },
+          });
+        return;
       }
-      await tx.insert(eventRsvps).values({ eventId: id, userId }).onConflictDoNothing();
+      if (!wait) {
+        throw new HttpError(409, ErrorCode.Conflict, 'This event is full. Join the waiting list.');
+      }
+      if (waiting >= MAX_EVENT_WAITLIST) {
+        throw new HttpError(409, ErrorCode.Conflict, 'The waiting list is full.');
+      }
+      await tx
+        .insert(eventRsvps)
+        .values({ eventId: id, userId, status: 'waiting', createdAt: new Date(this.now()) })
+        .onConflictDoNothing();
     });
+  }
+
+  /** "I can't go after all" or "leave the waiting list". A freed place goes to the next person. */
+  async cancelRsvp(id: string, userId: string): Promise<CommunityEvent> {
+    const promoted = await this.db.transaction(async (tx) => {
+      const [event] = await tx.select().from(events).where(eq(events.id, id)).for('update');
+      if (!event) throw notFound();
+      const removed = await tx
+        .delete(eventRsvps)
+        .where(and(eq(eventRsvps.eventId, id), eq(eventRsvps.userId, userId)))
+        .returning({ status: eventRsvps.status });
+      return removed[0]?.status === 'going' ? this.promote(tx, event) : [];
+    });
+    await this.tellPromoted(id, promoted);
     return this.get(id, userId);
   }
 
-  async cancelRsvp(id: string, userId: string): Promise<CommunityEvent> {
-    const [event] = await this.db.select({ id: events.id }).from(events).where(eq(events.id, id));
-    if (!event) throw notFound();
-    await this.db
-      .delete(eventRsvps)
-      .where(and(eq(eventRsvps.eventId, id), eq(eventRsvps.userId, userId)));
-    return this.get(id, userId);
+  /**
+   * Fills free places from the waiting list, first come first served, while the event hasn't
+   * started. Runs inside the transaction that holds the event's row lock.
+   */
+  private async promote(tx: Tx, event: EventRow): Promise<string[]> {
+    if (event.status !== 'scheduled' || event.startsAt.getTime() <= this.now()) return [];
+    const [{ going }] = (
+      await tx.execute<{ going: number }>(sql`
+        SELECT count(*)::int AS going FROM event_rsvps
+        WHERE event_id = ${event.id} AND status = 'going'`)
+    ).rows as [{ going: number }];
+    const free = event.capacity === null ? MAX_EVENT_WAITLIST : event.capacity - going;
+    if (free <= 0) return [];
+    const next = await tx
+      .select({ userId: eventRsvps.userId })
+      .from(eventRsvps)
+      .where(and(eq(eventRsvps.eventId, event.id), eq(eventRsvps.status, 'waiting')))
+      .orderBy(asc(eventRsvps.createdAt), asc(eventRsvps.userId))
+      .limit(free);
+    if (next.length === 0) return [];
+    const ids = next.map((n) => n.userId);
+    await tx
+      .update(eventRsvps)
+      .set({ status: 'going' })
+      .where(and(eq(eventRsvps.eventId, event.id), inArray(eventRsvps.userId, ids)));
+    return ids;
+  }
+
+  /** A content-free push: "Update about a community event you are going to". */
+  private async tellPromoted(eventId: string, userIds: string[]): Promise<void> {
+    for (const userId of userIds) await this.notify(userId, eventId).catch(() => undefined);
   }
 
   // ------------------------------------------------------------------ staff
@@ -136,17 +244,21 @@ export class EventService {
       .where(gt(events.endsAt, new Date(this.now() - 30 * 86_400_000)))
       .orderBy(desc(events.startsAt))
       .limit(200);
-    return rows.map((r) => this.toAdmin(r.event, r.venue, r.going));
+    return rows.map((r) => this.toAdmin(r));
   }
 
-  private toAdmin(e: EventRow, v: VenueRow | null, going: number): AdminEvent {
-    return { ...baseView(e, v, going), venueId: e.venueId, createdAt: e.createdAt.toISOString() };
+  private toAdmin(r: Row): AdminEvent {
+    return {
+      ...baseView(r.event, r.venue, r.going, r.waitingCount),
+      venueId: r.event.venueId,
+      createdAt: r.event.createdAt.toISOString(),
+    };
   }
 
   private async staffView(id: string): Promise<AdminEvent> {
     const [row] = await this.query(null).where(eq(events.id, id));
     if (!row) throw notFound();
-    return this.toAdmin(row.event, row.venue, row.going);
+    return this.toAdmin(row);
   }
 
   private async requireActiveVenue(venueId: string) {
@@ -200,17 +312,23 @@ export class EventService {
     const endsAt = patch.endsAt ? new Date(patch.endsAt) : current.endsAt;
     if (patch.startsAt || patch.endsAt) this.checkWindow(startsAt, endsAt);
     if (patch.venueId) await this.requireActiveVenue(patch.venueId);
-    await this.db
-      .update(events)
-      .set({
-        ...(patch.title !== undefined ? { title: patch.title } : {}),
-        ...(patch.description !== undefined ? { description: patch.description } : {}),
-        ...(patch.venueId !== undefined ? { venueId: patch.venueId } : {}),
-        ...(patch.capacity !== undefined ? { capacity: patch.capacity } : {}),
-        startsAt,
-        endsAt,
-      })
-      .where(eq(events.id, id));
+    // More places (or no limit any more) go to the waiting list straight away.
+    const promoted = await this.db.transaction(async (tx) => {
+      const [updated] = await tx
+        .update(events)
+        .set({
+          ...(patch.title !== undefined ? { title: patch.title } : {}),
+          ...(patch.description !== undefined ? { description: patch.description } : {}),
+          ...(patch.venueId !== undefined ? { venueId: patch.venueId } : {}),
+          ...(patch.capacity !== undefined ? { capacity: patch.capacity } : {}),
+          startsAt,
+          endsAt,
+        })
+        .where(eq(events.id, id))
+        .returning();
+      return patch.capacity !== undefined && updated ? this.promote(tx, updated) : [];
+    });
+    await this.tellPromoted(id, promoted);
     await audit(this.db, {
       actorId,
       action: 'event.update',

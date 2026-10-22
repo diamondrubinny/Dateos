@@ -25,7 +25,9 @@ function tone(seconds: number, args: string[], ext: string): Buffer {
   return readFileSync(out);
 }
 
-describe('voice message pipeline (real ffmpeg)', () => {
+// Real ffmpeg runs take 1–2 s each on an idle machine; with every package's tests running at once they
+// can pass vitest's 5 s default, so these get room for real work.
+describe('voice message pipeline (real ffmpeg)', { timeout: 30_000 }, () => {
   it('accepts WebM/Opus (Chrome), Ogg (Firefox) and M4A (iOS/Android) and outputs clean M4A', async () => {
     for (const [args, ext] of [
       [['-c:a', 'libopus'], 'webm'],

@@ -229,4 +229,101 @@ describe.skipIf(!integrationEnabled)('community events (integration)', () => {
     expect((await q('SELECT count(*)::int AS n FROM events')).rows[0].n).toBe(1);
     expect((await run(22 + 24 * 366)).eventsDeleted).toBe(1);
   });
+
+  // ------------------------------------------------------------------ waiting list (phase 16)
+
+  it('waiting list: first come first served, a count only, places go to the next person', async () => {
+    const id = await publish({ capacity: 2 });
+    const [eve, ann, liv] = await Promise.all(
+      ['Eve', 'Ann', 'Liv'].map((name) =>
+        createMember(ctx, { name, gender: 'woman', interestedIn: ['man'] }),
+      ),
+    );
+    await api(ctx, noa, 'POST', `/v1/events/${id}/rsvp`);
+    await api(ctx, dan, 'POST', `/v1/events/${id}/rsvp`);
+    // Full: "I'm going" is refused, joining the waiting list works, in order.
+    expect((await api(ctx, eve!, 'POST', `/v1/events/${id}/rsvp`)).statusCode).toBe(409);
+    for (const [i, m] of [eve!, ann!, liv!].entries()) {
+      ctx.clock.value += 1000;
+      expect((await api(ctx, m, 'POST', `/v1/events/${id}/waitlist`)).json()).toMatchObject({
+        going: 2,
+        full: true,
+        mine: false,
+        waitingCount: i + 1,
+        waitingAhead: i,
+      });
+    }
+    // Joining twice keeps the place in the queue.
+    expect((await api(ctx, eve!, 'POST', `/v1/events/${id}/waitlist`)).json().waitingAhead).toBe(0);
+    expect((await api(ctx, noa, 'GET', `/v1/events/${id}`)).json()).toMatchObject({
+      waitingCount: 3,
+      waitingAhead: null,
+    });
+    // No identities, for members or staff.
+    const all = JSON.stringify([
+      (await api(ctx, liv!, 'GET', `/v1/events/${id}`)).json(),
+      (await asStaff(admin, 'GET', '/v1/admin/events')).json(),
+    ]);
+    expect(all).not.toContain(eve!.id);
+    expect(all).not.toContain('Eve');
+
+    // Leaving the waiting list frees nothing; someone going leaving promotes the first in line.
+    await api(ctx, ann!, 'DELETE', `/v1/events/${id}/rsvp`);
+    ctx.jobs.push.length = 0;
+    await api(ctx, dan, 'DELETE', `/v1/events/${id}/rsvp`);
+    expect(ctx.jobs.push).toEqual([{ userId: eve!.id, kind: 'event', matchId: id }]);
+    expect((await api(ctx, eve!, 'GET', `/v1/events/${id}`)).json()).toMatchObject({
+      going: 2,
+      mine: true,
+      waitingAhead: null,
+      waitingCount: 1,
+    });
+    expect((await api(ctx, liv!, 'GET', `/v1/events/${id}`)).json().waitingAhead).toBe(0);
+
+    // More places from the admin go to the waiting list at once.
+    ctx.jobs.push.length = 0;
+    const raised = await asStaff(admin, 'PATCH', `/v1/admin/events/${id}`, { capacity: 5 });
+    expect(raised.json()).toMatchObject({ going: 3, waitingCount: 0 });
+    expect(ctx.jobs.push).toEqual([{ userId: liv!.id, kind: 'event', matchId: id }]);
+    // A place that is free after all: the waiting list just means going.
+    expect((await api(ctx, dan, 'POST', `/v1/events/${id}/waitlist`)).json()).toMatchObject({
+      mine: true,
+      waitingAhead: null,
+    });
+  });
+
+  it('waiting list: no promotion once the event started; reminders only for people going; cancel tells everyone', async () => {
+    const id = await publish({ capacity: 2, startsAt: inHours(20), endsAt: inHours(22) });
+    // Published now: the admin's two-factor session doesn't last the 21 hours this test skips.
+    const other = await publish({ capacity: 2, startsAt: inHours(48), endsAt: inHours(50) });
+    const eve = await createMember(ctx, { name: 'Eve', gender: 'woman', interestedIn: ['man'] });
+    await api(ctx, noa, 'POST', `/v1/events/${id}/rsvp`);
+    await api(ctx, dan, 'POST', `/v1/events/${id}/rsvp`);
+    await api(ctx, eve, 'POST', `/v1/events/${id}/waitlist`);
+    const reminded: string[] = [];
+    await processEvents({
+      db: ctx.services.dbHandle.db,
+      remind: async (userId) => void reminded.push(userId),
+      now: () => new Date(ctx.clock.value),
+    });
+    expect(reminded.sort()).toEqual([noa.id, dan.id].sort());
+
+    // Once it started, a freed place stays free (nobody gets a surprise "you're going").
+    ctx.clock.value += 21 * 3_600_000;
+    await api(ctx, dan, 'DELETE', `/v1/events/${id}/rsvp`);
+    expect((await api(ctx, eve, 'GET', `/v1/events/${id}`)).json()).toMatchObject({
+      mine: false,
+      waitingAhead: 0,
+    });
+
+    await api(ctx, noa, 'POST', `/v1/events/${other}/rsvp`);
+    await api(ctx, dan, 'POST', `/v1/events/${other}/rsvp`);
+    await api(ctx, eve, 'POST', `/v1/events/${other}/waitlist`);
+    ctx.jobs.push.length = 0;
+    const fresh = await staff('admin');
+    await asStaff(fresh, 'POST', `/v1/admin/events/${other}/cancel`);
+    expect(ctx.jobs.push.map((j) => j.userId).sort()).toEqual([noa.id, dan.id, eve.id].sort());
+    // Eve still sees the cancelled event she was waiting for.
+    expect((await api(ctx, eve, 'GET', `/v1/events/${other}`)).json().status).toBe('cancelled');
+  });
 });

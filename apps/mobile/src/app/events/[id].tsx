@@ -33,9 +33,10 @@ function EventScreen() {
     );
   }
   const cancelled = e.status === 'cancelled';
-  const answer = (going: boolean) => {
+  const waiting = e.waitingAhead !== null;
+  const answer = (action: 'going' | 'waitlist' | 'leave') => {
     setError(undefined);
-    rsvp.mutate(going, {
+    rsvp.mutate(action, {
       onError: (err) =>
         setError(
           err instanceof ApiRequestError && err.status === 409
@@ -76,18 +77,38 @@ function EventScreen() {
       ) : null}
       <AppText
         variant="label"
-        tone={cancelled ? 'danger' : e.mine ? 'primary' : 'default'}
+        tone={cancelled ? 'danger' : e.mine || waiting ? 'primary' : 'default'}
         accessibilityLiveRegion="polite"
       >
         {eventStatus(e, t)}
       </AppText>
       {error ? <Banner tone="error" message={error} /> : null}
-      {!cancelled && !e.mine ? (
+      {!cancelled && !e.mine && !waiting && !e.full ? (
         <Button
           label={t('events.going')}
-          disabled={e.full}
           loading={rsvp.isPending}
-          onPress={() => answer(true)}
+          onPress={() => answer('going')}
+        />
+      ) : null}
+      {!cancelled && !e.mine && !waiting && e.full ? (
+        <Button
+          label={t('events.waitlistJoin')}
+          hint={t('events.waitlistHint')}
+          loading={rsvp.isPending}
+          onPress={() => answer('waitlist')}
+        />
+      ) : null}
+      {!cancelled && (e.full || waiting) && !e.mine ? (
+        <AppText variant="caption" tone="muted">
+          {t('events.waitlistHint')}
+        </AppText>
+      ) : null}
+      {!cancelled && waiting ? (
+        <Button
+          variant="secondary"
+          label={t('events.waitlistLeave')}
+          loading={rsvp.isPending}
+          onPress={() => answer('leave')}
         />
       ) : null}
       {!cancelled && e.mine ? (
@@ -95,7 +116,7 @@ function EventScreen() {
           variant="secondary"
           label={t('events.notGoing')}
           loading={rsvp.isPending}
-          onPress={() => answer(false)}
+          onPress={() => answer('leave')}
         />
       ) : null}
       <Banner tone="info" message={t('events.privacy')} />

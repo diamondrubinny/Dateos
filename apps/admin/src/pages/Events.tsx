@@ -163,6 +163,12 @@ export function Events({ isAdmin }: { isAdmin: boolean }) {
                         {e.capacity === null
                           ? e.going
                           : format(t.events.ofCapacity, { n: e.going, capacity: e.capacity })}
+                        {e.waitingCount > 0 ? (
+                          <span className="muted">
+                            {' · '}
+                            {format(t.events.waitingCount, { n: e.waitingCount })}
+                          </span>
+                        ) : null}
                       </td>
                       <td>
                         <Badge

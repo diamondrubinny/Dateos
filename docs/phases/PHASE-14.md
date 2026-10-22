@@ -69,6 +69,6 @@ with axe; screenshots.
 
 ## Known limitations
 
-- No waiting list: when an event is full, members can't say they're going.
+- ~~No waiting list~~: added in [phase 16](PHASE-16.md).
 - Times are entered in the staff member's own time zone; a community spread across time zones
   would need a time zone per event.

@@ -311,6 +311,12 @@ export const en = {
     notGoing: 'I can’t go after all',
     privacy:
       'Nobody can see who else is going: only the number. You’ll get a reminder the day before.',
+    waitlistJoin: 'Join the waiting list',
+    waitlistLeave: 'Leave the waiting list',
+    waiting: 'On the waiting list · Ahead of you: {{count}}',
+    fullWaiting: 'Full · Waiting: {{count}}',
+    waitlistHint:
+      'If a place opens up, it goes to the next person in line, who gets a notification.',
     gone: 'This event is no longer available.',
   },
   ghosting: {
