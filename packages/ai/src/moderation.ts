@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
+// Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 /**
  * Local, explainable message checks (English, Hebrew, and a smaller Arabic and Russian list). Lexicon and pattern based on purpose:
  * no message text leaves the server, results are predictable, and every rule can be reviewed.

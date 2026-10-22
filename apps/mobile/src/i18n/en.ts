@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
+// Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 export const en = {
   common: {
     continue: 'Continue',
@@ -166,7 +169,8 @@ export const en = {
       'This permanently deletes your profile, photos and data. It cannot be undone.',
     deleteConfirm: 'Delete permanently',
     deleted: 'Your account was deleted.',
-    credit: 'NexaHeart is free, open-source software created by Diamond Rubinny (MIT license).',
+    credit:
+      'NexaHeart is free, open-source software created by Diamond Rubinny (AGPL-3.0 license).',
   },
   cookies: {
     title: 'Privacy & cookies',

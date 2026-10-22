@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
+# Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 # Build from the repo root: docker build -f apps/worker/Dockerfile .
 FROM node:22-trixie-slim AS base
 ENV PNPM_HOME=/pnpm PATH=/pnpm:$PATH
@@ -18,6 +21,10 @@ RUN apt-get update \
   && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 COPY --from=build --chown=node:node /out ./
+# The license and its additional terms (the "Powered by NexaHeart" credit) travel with the image.
+COPY --from=build /repo/LICENSE /repo/NOTICE ./
+LABEL org.opencontainers.image.licenses="AGPL-3.0-or-later" \
+  org.opencontainers.image.url="https://nexaheart.com"
 USER node
 
 CMD ["node", "dist/index.js"]

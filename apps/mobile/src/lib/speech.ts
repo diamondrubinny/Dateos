@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
+// Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 /**
  * Web: captions from the browser's speech recognition, **on the device only** (phase 16c). Many
  * browsers send audio to a cloud service for speech recognition, so we use only the standard

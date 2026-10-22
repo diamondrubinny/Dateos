@@ -1,4 +1,7 @@
-import { DEFAULT_TAGLINE, localeSchema } from '@nexaheart/shared';
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
+// Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
+import { DEFAULT_TAGLINE, localeSchema, UPSTREAM_SOURCE_URL } from '@nexaheart/shared';
 import { z } from 'zod';
 
 const booleanString = z.enum(['true', 'false']).transform((value) => value === 'true');
@@ -97,6 +100,8 @@ export const envSchema = z.object({
   OPENAI_EXTERNAL: booleanString.default(true),
 
   INSTANCE_NAME: z.string().max(40).default('NexaHeart'),
+  /** Where the app's "Open source" link points. A modified version must point to its own source. */
+  SOURCE_CODE_URL: z.url().default(UPSTREAM_SOURCE_URL),
   INSTANCE_TAGLINE: z.string().max(120).default(DEFAULT_TAGLINE),
   INSTANCE_PRIMARY_COLOR: z
     .string()

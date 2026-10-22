@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
+// Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 /**
  * Safety check-in and anti-ghosting end to end, in every language: a member sets up a check-in
  * from the app, presses SOS (the trusted contact's email is checked in Mailpit), ends it with

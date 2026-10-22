@@ -1,0 +1,40 @@
+NexaHeart
+Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors
+https://nexaheart.com
+
+This program is free software: you can redistribute it and/or modify it under the terms of the
+GNU Affero General Public License as published by the Free Software Foundation, either version 3
+of the License, or (at your option) any later version, with the additional terms below. It is
+distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied
+warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public
+License (the LICENSE file) for more details.
+
+ADDITIONAL TERMS UNDER SECTION 7 OF THE GNU AFFERO GENERAL PUBLIC LICENSE, VERSION 3
+
+These terms apply to NexaHeart and to every work based on it, in source or object form, including
+modified versions and services that let people use it over a network.
+
+1. Attribution (section 7(b)).
+   a. Every user interface of the program, and of any work based on it, must keep a reasonably
+      visible credit reading "Powered by NexaHeart · Open source", or its translation into the
+      language of the interface. "NexaHeart" must link to https://nexaheart.com and "Open source"
+      to the Corresponding Source of the version in use. "User interface" includes at least the
+      app's welcome, sign-in and settings screens, its legal pages, and the moderation dashboard.
+   b. Emails the program sends must end with the same credit and the address nexaheart.com.
+   c. The credit may follow the community's own name, logo and colours, but must not be hidden,
+      made unreadable or removed.
+   d. The copyright, license and attribution notices at the top of each source file, and this
+      NOTICE file, must be kept.
+
+2. Origin (section 7(c)). Modified versions must not be presented as the official NexaHeart
+   project or as endorsed by its authors, and must be marked as modified in their source.
+
+3. Names and logos (section 7(e)). This license grants no right to use the name or logo of
+   NexaHeart, or the names of its authors, except as needed to show the credit above and to
+   describe the origin of the work truthfully.
+
+EARLIER VERSIONS
+
+Versions of NexaHeart published before this NOTICE was added (22 October 2026) were released under
+the MIT license, and copies of those versions remain available under it. Every version from that
+date on is licensed as stated above.

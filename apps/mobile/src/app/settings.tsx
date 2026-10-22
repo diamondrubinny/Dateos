@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
+// Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 import { SENSITIVE_CONSENT_VERSION } from '@nexaheart/shared';
 import { Link, router } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
@@ -25,6 +28,7 @@ import {
   useSetConsents,
 } from '../lib/queries';
 import { radius, spacing, useColors } from '../lib/theme';
+import { PoweredBy } from '../components/PoweredBy';
 
 function SettingsContent() {
   const { t } = useTranslation();
@@ -225,6 +229,7 @@ function SettingsContent() {
       <AppText variant="caption" tone="muted" center>
         {t('settings.credit')}
       </AppText>
+      <PoweredBy />
     </Screen>
   );
 }

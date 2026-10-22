@@ -1,4 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
+// Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 import type { Locale } from './common.js';
+import { creditHtml, creditLine } from './credit.js';
 
 export interface CheckinAlert {
   instanceName: string;
@@ -138,6 +142,8 @@ export function checkinAlertEmail(a: CheckinAlert): {
     fill(t.call),
     '',
     fill(t.footer),
+    '',
+    creditLine(a.locale),
   ].join('\n');
   const dir = a.locale === 'he' || a.locale === 'ar' ? 'rtl' : 'ltr';
   const html =
@@ -147,6 +153,7 @@ export function checkinAlertEmail(a: CheckinAlert): {
     `<p>${escapeHtml(fill(t.shared))}</p><ul>` +
     rows.map(([k, v]) => `<li>${escapeHtml(k)}: ${escapeHtml(v)}</li>`).join('') +
     `</ul><p>${escapeHtml(fill(t.call))}</p>` +
-    `<p style="color:#555;font-size:13px">${escapeHtml(fill(t.footer))}</p></div>`;
+    `<p style="color:#555;font-size:13px">${escapeHtml(fill(t.footer))}</p>` +
+    `${creditHtml(a.locale)}</div>`;
   return { subject, text, html };
 }

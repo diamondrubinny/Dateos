@@ -10,6 +10,13 @@ Thanks for helping build a free, safe, privacy-first dating platform.
   another user's resources (IDOR/BOLA).
 - UI must work in Hebrew (RTL) and English, with a screen reader, and without swipe gestures.
 
+## License of contributions
+
+NexaHeart is licensed under the [AGPL-3.0-or-later](LICENSE) with the additional terms in
+[NOTICE](NOTICE). By opening a pull request you agree that your contribution is licensed the same
+way. New source files start with the license header; `node scripts/check-credit.mjs --fix` adds it,
+and `pnpm lint` fails without it. Never remove the "Powered by NexaHeart" credit.
+
 ## Development
 
 ```bash

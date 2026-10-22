@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
+// Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 import { createHash, timingSafeEqual } from 'node:crypto';
 import { schema, type Database } from '@nexaheart/db';
 import {
@@ -16,6 +19,7 @@ import { HttpError } from '../../plugins/error-handler.js';
 import type { AuthUser } from '../../auth/session.js';
 import type { PhotoService } from '../photos/service.js';
 import { liveKitConfigured } from '../../lib/livekit.js';
+import { poweredBy } from '../../lib/credit.js';
 
 const { instanceSettings, photos, user } = schema;
 
@@ -95,6 +99,7 @@ export class InstanceService {
       contactEmail: row?.contactEmail ?? null,
       setupRequired: Boolean(noAdmin.rows[0]?.none),
       calls: liveKitConfigured(env) && Boolean(row?.callsEnabled),
+      poweredBy: poweredBy(env),
     };
     this.cache = { value, at: Date.now() };
     return value;

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
+// Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 import type { Translations } from './en';
 
 export const he: Translations = {
@@ -164,7 +167,7 @@ export const he: Translations = {
     deleteConfirmBody: 'הפעולה תמחק לצמיתות את הפרופיל, התמונות והמידע שלך. אי אפשר לבטל אותה.',
     deleteConfirm: 'מחיקה לצמיתות',
     deleted: 'החשבון נמחק.',
-    credit: 'NexaHeart היא תוכנה חינמית בקוד פתוח שנוצרה על ידי Diamond Rubinny (רישיון MIT).',
+    credit: 'NexaHeart היא תוכנה חינמית בקוד פתוח שנוצרה על ידי Diamond Rubinny (רישיון AGPL-3.0).',
   },
   cookies: {
     title: 'פרטיות ועוגיות',

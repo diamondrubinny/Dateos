@@ -6,6 +6,16 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Changed
 
+- **License: AGPL-3.0-or-later with a credit that must stay** (see [NOTICE](NOTICE)). Every copy,
+  including forks and rebranded communities, shows "Powered by NexaHeart · Open source" (linking to
+  nexaheart.com) on the app's welcome, sign-in, settings and legal screens, in the dashboard, on the
+  website and in every email; operators keep their own name and logo next to it. A modified version
+  run for others must link to its own source (`SOURCE_CODE_URL`). Every source file carries the
+  license header, and `pnpm lint` fails without the credit. Versions published before 22 October 2026
+  stay MIT.
+
+### Changed
+
 - **New name: NexaHeart** (formerly Dateos, a name already used by a company in the UK). Packages are
   `@nexaheart/*`; the app's link scheme, cookies, storage keys and defaults for new installations use
   `nexaheart`. Nothing was released under the old name, so no migration is needed.

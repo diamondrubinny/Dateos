@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
+// Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 import { createDb } from '@nexaheart/db';
 import { hashingProvider, ollamaProvider } from '@nexaheart/ai';
 import {
@@ -12,6 +15,7 @@ import {
   type EmbedProfileJob,
   type ProcessAudioJob,
   type ProcessPhotoJob,
+  creditLine,
 } from '@nexaheart/shared';
 import { createStorage } from '@nexaheart/storage';
 import { Queue, Worker } from 'bullmq';
@@ -223,6 +227,7 @@ async function main(): Promise<void> {
     { scanningEnabled, embeddings: embeddings.model, push: env.PUSH_PROVIDER },
     'worker started',
   );
+  log.info(creditLine());
 
   const shutdown = async () => {
     log.info('shutting down');
