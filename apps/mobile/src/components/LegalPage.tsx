@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
+// Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 import { useTranslation } from 'react-i18next';
 import { Linking, StyleSheet, View } from 'react-native';
 import { useInstance } from '../lib/queries';
@@ -5,6 +8,7 @@ import { radius, spacing, useColors } from '../lib/theme';
 import { AppText } from './AppText';
 import { Banner } from './Banner';
 import { Screen } from './Screen';
+import { PoweredBy } from './PoweredBy';
 
 export const LEGAL_UPDATED = '2026-10-21';
 
@@ -44,6 +48,7 @@ export function LegalPage({ title, body }: { title: string; body: string }) {
       <AppText variant="caption" tone="muted">
         {t('legal.updated', { date: LEGAL_UPDATED })}
       </AppText>
+      <PoweredBy />
     </Screen>
   );
 }

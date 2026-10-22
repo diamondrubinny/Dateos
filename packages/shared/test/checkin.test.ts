@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
+// Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 import { describe, expect, it } from 'vitest';
 import { checkinInputSchema, maskEmail, waitingForMyReply } from '../src/checkin.js';
 
@@ -65,6 +68,11 @@ describe('check-in alert email', () => {
     expect(mail.html).toContain('Café &#60;b&#62;Puaa&#60;/b&#62;');
     expect(mail.html).not.toContain('<b>');
     expect(mail.text + mail.html).not.toMatch(/https?:\/\//);
+    // The software credit, as plain text (license term, see NOTICE).
+    expect(mail.text.trimEnd().endsWith('Powered by NexaHeart · Open source · nexaheart.com')).toBe(
+      true,
+    );
+    expect(mail.html).toContain('Powered by NexaHeart · Open source · nexaheart.com');
   });
   it('has an urgent SOS version in every language', async () => {
     const { checkinAlertEmail } = await import('../src/checkin-email.js');

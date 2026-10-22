@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
+// Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 /**
  * Builds the marketing site into site/dist: resized WebP screenshots for each language from
  * docs/screenshots, and index.html (the page wrapped in a full document with meta tags).
@@ -58,6 +61,7 @@ const html = `<!doctype html>
 <html lang="en" dir="ltr">
 <head>
 <meta charset="utf-8">
+<meta name="generator" content="NexaHeart (https://nexaheart.com)">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 ${head}
 ${og}

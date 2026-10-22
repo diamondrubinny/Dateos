@@ -1,3 +1,8 @@
+/*
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ * Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
+ * Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
+ */
 :root {
   --bg: #f7f6fb;
   --surface: #ffffff;
@@ -591,4 +596,17 @@ input[type='password'] {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 9rem), 1fr));
   gap: 0 1rem;
+}
+
+/* The software credit (license term, see NOTICE). */
+.powered-by {
+  text-align: center;
+  padding: 1.5rem 1rem 2rem;
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+.powered-by a {
+  color: var(--muted);
+  display: inline-block;
+  padding: 0.5rem 0.25rem;
 }

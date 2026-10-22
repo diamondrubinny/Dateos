@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
+// Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 import {
   deriveBrand,
   type InstanceInfo,
@@ -10,6 +13,7 @@ import { z } from 'zod';
 import type { Auth } from '../../auth/auth.js';
 import { currentUser, requireUser } from '../../auth/session.js';
 import type { Env } from '../../config/env.js';
+import { poweredBy } from '../../lib/credit.js';
 import { perUserLimit } from '../../plugins/security.js';
 import type { InstanceService } from './service.js';
 
@@ -34,6 +38,7 @@ export function instanceInfo(env: Env): InstanceInfo {
     contactEmail: null,
     setupRequired: false,
     calls: false,
+    poweredBy: poweredBy(env),
   };
 }
 

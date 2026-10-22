@@ -54,10 +54,10 @@
     "web": "node scripts/copy-e2ee-worker.mjs && expo start --web",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "build:web": "node scripts/copy-e2ee-worker.mjs && expo export --platform web",
+    "build:web": "node scripts/copy-e2ee-worker.mjs && expo export --platform web && node scripts/web-credit.mjs",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },
   "private": true,
-  "license": "MIT"
+  "license": "AGPL-3.0-or-later"
 }

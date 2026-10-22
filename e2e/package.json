@@ -3,7 +3,7 @@
   "author": "Diamond Rubinny",
   "version": "0.2.0",
   "private": true,
-  "license": "MIT",
+  "license": "AGPL-3.0-or-later",
   "type": "module",
   "scripts": {
     "serve:web": "node serve-web.mjs",
@@ -20,6 +20,7 @@
     "dates": "tsx dates.ts",
     "events": "tsx events.ts",
     "calls": "tsx calls.ts",
+    "credit": "tsx credit.ts",
     "load": "node --env-file=../.env --import tsx load.ts"
   },
   "dependencies": {

@@ -176,3 +176,11 @@ another app that registers the same scheme gets nothing usable. Sign-in therefor
 configuration (Caddy with local certificates for `nexaheart.test`): claim, TOTP, branding, logo upload,
 and the branded member app in light and dark mode, plus an axe-core accessibility audit. See the
 comment at the top of the file for the environment it expects.
+
+## License and the "Powered by NexaHeart" credit
+
+NexaHeart is licensed under the AGPL-3.0-or-later with the additional terms in [NOTICE](../NOTICE).
+Your community keeps its own name, logo and colours; the app, the dashboard and the emails also show
+a small "Powered by NexaHeart · Open source" credit, which must stay. If you change the code and run
+it for others, publish your version's source and set `SOURCE_CODE_URL` in `.env` to it, so the
+"Open source" link points there (AGPL section 13) ⚖️.

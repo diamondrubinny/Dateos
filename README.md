@@ -11,7 +11,7 @@ Native iOS & Android plus web from one codebase, privacy by design, and safety b
 **[English](docs/marketing/en.md) · [עברית](docs/marketing/he.md) · [العربية](docs/marketing/ar.md) · [Русский](docs/marketing/ru.md)**
 
 [![CI](https://github.com/diamondrubinny/Dateos/actions/workflows/ci.yml/badge.svg)](https://github.com/diamondrubinny/Dateos/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/license-MIT-7C3AED.svg)](LICENSE)
+[![License: AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-7C3AED.svg)](LICENSE)
 [![WCAG 2.1 AA target](https://img.shields.io/badge/accessibility-WCAG%202.1%20AA%20target-067647.svg)](#accessibility)
 [![Sponsor](https://img.shields.io/badge/sponsor-%F0%9F%92%9C-ea4aaa.svg?logo=githubsponsors)](https://github.com/sponsors/diamondrubinny)
 
@@ -28,7 +28,7 @@ Native iOS & Android plus web from one codebase, privacy by design, and safety b
 Most dating apps make money by keeping you swiping, selling "boosts", and monetising your data.
 NexaHeart is built the other way around:
 
-- 🆓 **Free for everyone, forever.** No premium tier, no paywalls, no ads, no selling data. MIT licensed.
+- 🆓 **Free for everyone, forever.** No premium tier, no paywalls, no ads, no selling data. Open source (AGPL-3.0).
 - 🏠 **Run your own instance.** A city, a community or an organisation can launch a branded dating app with one install script.
 - 🛡️ **Safety first.** Photos are scanned for malware and stripped of location data. Location is only ever approximate. Under-18 sign-ups are blocked.
 - 🔒 **Privacy by design.** Passwordless sign-in, minimal data, versioned consent, and full account deletion from inside the app.
@@ -276,6 +276,14 @@ Security, privacy and accessibility are requirements, not extras.
 
 ## License
 
-[MIT](LICENSE) © 2026 Diamond Rubinny and contributors.
+[AGPL-3.0-or-later](LICENSE) with additional terms in [NOTICE](NOTICE) © 2026 Diamond Rubinny and
+contributors.
+
+Every copy of NexaHeart, including forks and rebranded communities, keeps the credit **"Powered by
+NexaHeart · Open source"** (linking to [nexaheart.com](https://nexaheart.com)) in its screens and
+emails, alongside the community's own name and logo. This is an additional term of the license
+(section 7(b)). If you run a modified version for others, the "Open source" link must point to your
+source code (`SOURCE_CODE_URL`, AGPL section 13). Versions published before 22 October 2026 were MIT
+licensed.
 
 Created and maintained by **Diamond Rubinny** ([@diamondrubinny](https://github.com/diamondrubinny)).

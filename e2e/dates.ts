@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
+// Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 /**
  * Date planner end to end, in every language: an admin adds a place in the dashboard (English and
  * Hebrew, which the dashboard supports), a member proposes a date from the chat, the other person

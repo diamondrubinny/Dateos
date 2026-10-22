@@ -1,4 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
+// Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 import { runMigrations } from '@nexaheart/db';
+import { creditLine } from '@nexaheart/shared';
 import { buildApp } from './app.js';
 import { loadEnv } from './config/env.js';
 import { createRedis } from './lib/dependencies.js';
@@ -36,6 +40,7 @@ async function main(): Promise<void> {
   process.once('SIGINT', shutdown);
 
   await app.listen({ host: env.HOST, port: env.PORT });
+  app.log.info(creditLine());
 }
 
 main().catch((error: unknown) => {

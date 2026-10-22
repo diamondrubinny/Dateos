@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
+// Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 import { accountNoticeSchema } from './moderation.js';
 import { z } from 'zod';
 
@@ -187,6 +190,13 @@ export const instanceSchema = z.object({
   setupRequired: z.boolean(),
   /** Video dates are configured (LiveKit) and turned on by the community's admins. */
   calls: z.boolean(),
+  /** The software credit every interface shows (license term, see NOTICE). */
+  poweredBy: z.object({
+    name: z.literal('NexaHeart'),
+    url: z.literal('https://nexaheart.com'),
+    license: z.string(),
+    sourceUrl: z.string(),
+  }),
 });
 export type InstanceInfo = z.infer<typeof instanceSchema>;
 

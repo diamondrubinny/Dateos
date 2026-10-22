@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
+# Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 # NexaHeart installer: creates .env with strong random secrets and the object-storage credentials file.
 # Usage:
 #   ./install.sh                          first-time setup (local development)
@@ -159,6 +162,7 @@ chmod 700 infra/data infra/data/seaweedfs
 chmod 644 infra/data/seaweedfs/s3.json
 
 printf '\nNexaHeart is configured.\n'
+printf '  Powered by NexaHeart · Open source · https://nexaheart.com (AGPL-3.0-or-later, see NOTICE).\n'
 printf '  Secrets written to .env and infra/data/seaweedfs/s3.json (owner-only, git-ignored).\n\n'
 printf 'Next steps:\n'
 if [[ -n "$DOMAIN" ]]; then

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
+// Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 import type { Translations } from './en';
 
 export const ar: Translations = {
@@ -167,7 +170,7 @@ export const ar: Translations = {
       'سيؤدي هذا إلى حذف ملفك الشخصي وصورك وبياناتك نهائيًا. لا يمكن التراجع عن ذلك.',
     deleteConfirm: 'حذف نهائي',
     deleted: 'تم حذف حسابك.',
-    credit: 'NexaHeart برنامج مجاني ومفتوح المصدر أنشأه Diamond Rubinny (ترخيص MIT).',
+    credit: 'NexaHeart برنامج مجاني ومفتوح المصدر أنشأه Diamond Rubinny (ترخيص AGPL-3.0).',
   },
   cookies: {
     title: 'الخصوصية وملفات تعريف الارتباط',

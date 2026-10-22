@@ -1,3 +1,8 @@
+<!--
+  SPDX-License-Identifier: AGPL-3.0-or-later
+  Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
+  Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
+-->
 <title>NexaHeart</title>
 <meta name="claude:viewport-fit-sides" content="cover" />
 <meta
@@ -676,6 +681,10 @@
     display: grid;
     gap: 1rem;
   }
+  footer .powered-by {
+    margin-top: 1rem;
+    text-align: center;
+  }
   footer .links {
     display: flex;
     flex-wrap: wrap;
@@ -839,7 +848,7 @@
         </p>
         <p data-t="arg2">
           Every feature is free for everyone, including seeing who liked you. The code is public
-          under the MIT license, so anyone can check what it does with your data.
+          under the AGPL-3.0 license, so anyone can check what it does with your data.
         </p>
       </div>
       <div class="label">
@@ -883,7 +892,7 @@
           </div>
           <div class="row">
             <dt data-t="fLicense">License</dt>
-            <dd>MIT</dd>
+            <dd>AGPL-3.0</dd>
           </div>
         </dl>
         <p class="note" data-t="factsNote">
@@ -1320,9 +1329,14 @@ cd nexaheart
       >
     </div>
     <p data-t="fNote">
-      NexaHeart is created by Diamond Rubinny and released under the MIT license. Screenshots are
-      real captures of version 0.2.0; profile photos are illustrations. Legal texts are drafts, not
-      legal advice. This page uses no cookies and no analytics.
+      NexaHeart is created by Diamond Rubinny and released under the AGPL-3.0 license. Screenshots
+      are real captures of version 0.2.0; profile photos are illustrations. Legal texts are drafts,
+      not legal advice. This page uses no cookies and no analytics.
+    </p>
+    <p class="powered-by">
+      <a href="https://nexaheart.com" data-t="fPoweredBy">Powered by NexaHeart</a>
+      <span aria-hidden="true">·</span>
+      <a href="https://github.com/diamondrubinny/Dateos" data-t="fOpenSource">Open source</a>
     </p>
   </div>
 </footer>
@@ -1345,7 +1359,7 @@ cd nexaheart
       aMatch: 'מסך "יש התאמה"',
       argTitle: 'בנויה לפחות שיחות, וטובות יותר.',
       arg1: 'רוב אפליקציות ההיכרויות מרוויחות יותר ככל שממשיכים להחליק. NexaHeart לא מרוויחה כלום, ולכן אפשר לבנות אותה בדיוק להפך: אנשים שמוצאים חן זה בעיני זה, שיחות אמיתיות, ופרידה מכבדת כשזה לא מתאים.',
-      arg2: 'כל הפיצ׳רים חינמיים לכולם, כולל לראות מי עשה לך לייק. הקוד פתוח לציבור ברישיון MIT, כך שכל אחד ואחת יכולים לבדוק מה הוא עושה עם המידע שלכם.',
+      arg2: 'כל הפיצ׳רים חינמיים לכולם, כולל לראות מי עשה לך לייק. הקוד פתוח לציבור ברישיון AGPL-3.0, כך שכל אחד ואחת יכולים לבדוק מה הוא עושה עם המידע שלכם.',
       factsTitle: 'ערכים להיכרות',
       factsPer: 'לחבר/ת קהילה, לחודש',
       factsCost: 'עלות: 0',
@@ -1440,11 +1454,13 @@ cd nexaheart
         'NexaHeart חינמית לכולם. החסות מממנת ביקורות אבטחה, בדיקות נגישות ותבניות משפטיות שכל קהילה יכולה להשתמש בהן.',
       sponsorBtn: 'לתמוך בפרויקט',
       fRepo: 'קוד המקור',
+      fPoweredBy: 'מופעל על ידי NexaHeart',
+      fOpenSource: 'קוד פתוח',
       fHost: 'מדריך התקנה עצמית',
       fPrivacy: 'מדריך פרטיות',
       fSecurity: 'סקירת אבטחה',
       fNote:
-        'NexaHeart נוצרה על ידי Diamond Rubinny ומשוחררת ברישיון MIT. צילומי המסך אמיתיים מגרסה 0.2.0; תמונות הפרופיל הן איורים. המסמכים המשפטיים הם טיוטות ואינם ייעוץ משפטי. העמוד הזה לא משתמש בעוגיות ולא באנליטיקס.',
+        'NexaHeart נוצרה על ידי Diamond Rubinny ומשוחררת ברישיון AGPL-3.0. צילומי המסך אמיתיים מגרסה 0.2.0; תמונות הפרופיל הן איורים. המסמכים המשפטיים הם טיוטות ואינם ייעוץ משפטי. העמוד הזה לא משתמש בעוגיות ולא באנליטיקס.',
       nav: 'ראשי',
       navFaq: 'שאלות',
       guide: 'למדריך ההתקנה צעד אחר צעד',

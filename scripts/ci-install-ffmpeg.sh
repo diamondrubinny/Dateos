@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
+# Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 # CI only: installs ffmpeg and ffprobe on the GitHub runner. The Ubuntu package mirror sometimes
 # hangs without failing, which left whole CI runs stuck for an hour; each apt attempt is time-boxed
 # and retried. If apt still fails, a pinned static build (ffmpeg 6.0, from the ffmpeg-static

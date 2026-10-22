@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
+# Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 # Restores a backup made by scripts/backup.sh. This REPLACES the current data.
 #   ./scripts/restore.sh backups/nexaheart-db-<stamp>.dump[.enc] [backups/nexaheart-files-<stamp>.tar[.enc]]
 #   RESTORE_DATABASE  database to restore into (default: POSTGRES_DB). Restore into a new name first

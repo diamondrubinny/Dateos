@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
+// Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 /**
  * Two real accounts chat live in two browsers (WebSocket, no reloads). Asserts the safety
  * features end to end and captures screenshots + an axe-core audit for each locale.

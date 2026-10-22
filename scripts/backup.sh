@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
+# Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 # Backup of a NexaHeart instance: the database (pg_dump, custom format) and the object storage
 # (photos, voice messages, evidence). Run from the repository root, e.g. daily from cron:
 #   0 3 * * * cd /opt/nexaheart && BACKUP_PASSPHRASE_FILE=/root/.nexaheart-backup-key ./scripts/backup.sh

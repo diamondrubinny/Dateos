@@ -1,5 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
+// Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 import { schema, type Database } from '@nexaheart/db';
-import { AUDIT_LOG_RETENTION_DAYS, INACTIVITY_NOTICE_DAYS } from '@nexaheart/shared';
+import { AUDIT_LOG_RETENTION_DAYS, creditLine, INACTIVITY_NOTICE_DAYS } from '@nexaheart/shared';
 import type { Storage } from '@nexaheart/storage';
 import { eq, inArray, sql } from 'drizzle-orm';
 
@@ -82,7 +85,8 @@ export async function handleInactiveAccounts(
       `Your ${ctx.instanceName} account has not been used for ${ctx.months} months.\n\n` +
         `To keep it, simply sign in before ${deadline}. Otherwise your account and all its data ` +
         'will be deleted on that date.\n\n' +
-        'Want a copy first? Sign in and choose Settings → Download my data.\n',
+        'Want a copy first? Sign in and choose Settings → Download my data.\n\n' +
+        `${creditLine()}\n`,
     );
     await ctx.db
       .update(schema.user)

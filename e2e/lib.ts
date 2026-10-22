@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
+// Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import AxeBuilder from '@axe-core/playwright';
@@ -67,7 +70,7 @@ export async function signInHttp(
   return { name, value, header: pair! };
 }
 
-async function resetSignInLimits(): Promise<void> {
+export async function resetSignInLimits(): Promise<void> {
   const envFile = new URL('../.env', import.meta.url);
   if (!process.env.DATABASE_URL && existsSync(envFile)) process.loadEnvFile(envFile);
   const { createDb } = await import('@nexaheart/db');

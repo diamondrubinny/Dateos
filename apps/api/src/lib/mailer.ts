@@ -1,4 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
+// Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 import nodemailer from 'nodemailer';
+import { creditHtml, creditLine } from '@nexaheart/shared';
 import type { Env } from '../config/env.js';
 
 export interface MailMessage {
@@ -52,6 +56,9 @@ export function magicLinkEmail(instanceName: string, url: string): Omit<MailMess
       '',
       `Sign in to ${instanceName}: ${url}`,
       'The link expires in 10 minutes. If you did not ask to sign in, ignore this email.',
+      '',
+      creditLine('he'),
+      creditLine('en'),
     ].join('\n'),
     html: `<!doctype html><html><body style="font-family:system-ui,sans-serif;line-height:1.5">
 <div dir="rtl" lang="he"><h1 style="font-size:20px">כניסה ל-${name}</h1>
@@ -61,6 +68,9 @@ export function magicLinkEmail(instanceName: string, url: string): Omit<MailMess
 <div dir="ltr" lang="en"><h1 style="font-size:20px">Sign in to ${name}</h1>
 <p><a href="${link}" style="display:inline-block;padding:12px 20px;background:#7C3AED;color:#fff;border-radius:8px;text-decoration:none">Sign in</a></p>
 <p>The link expires in 10 minutes. If you did not ask to sign in, ignore this email.</p></div>
+<hr>
+${creditHtml('he')}
+${creditHtml('en')}
 </body></html>`,
   };
 }

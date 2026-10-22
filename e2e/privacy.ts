@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
+// Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 /**
  * Privacy end to end: the "Privacy & cookies" page from the welcome screen, a real sign-in through
  * the UI, "Download my data" from Settings (the ZIP is opened and checked), and a comparison of what
@@ -5,6 +8,7 @@
  * other than this instance's own web app and API.
  */
 import { readFileSync } from 'node:fs';
+import { CREDIT_TEXT } from '@nexaheart/shared';
 import { strFromU8, unzipSync } from 'fflate';
 import { chromium, type Browser } from 'playwright';
 import { en } from '../apps/mobile/src/i18n/en.ts';
@@ -111,6 +115,13 @@ async function run(locale: keyof typeof T, browser: Browser) {
     }
 
     await page.goto(`${WEB}/settings`);
+    // The software credit stays on the signed-in settings screen too (license term, see NOTICE).
+    const credit = page.getByTestId('powered-by');
+    await credit.scrollIntoViewIfNeeded();
+    check(
+      (await credit.innerText()).includes(CREDIT_TEXT[locale].poweredBy),
+      'settings shows the software credit',
+    );
     const button = page.getByRole('button', { name: t.settings.download });
     await button.scrollIntoViewIfNeeded();
     const [download] = await Promise.all([page.waitForEvent('download'), button.click()]);

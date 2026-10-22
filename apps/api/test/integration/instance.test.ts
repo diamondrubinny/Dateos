@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
+// Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 import sharp from 'sharp';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { totp } from '../../src/lib/totp.js';
@@ -72,6 +75,15 @@ describe.skipIf(!integrationEnabled)('instance setup & branding (integration)', 
     });
     expect(ok.statusCode).toBe(200);
   }
+
+  it('always returns the software credit, whatever the branding', async () => {
+    expect((await instance()).poweredBy).toEqual({
+      name: 'NexaHeart',
+      url: 'https://nexaheart.com',
+      license: 'AGPL-3.0-or-later',
+      sourceUrl: 'https://github.com/diamondrubinny/Dateos',
+    });
+  });
 
   it('lets the token holder claim a fresh instance exactly once', async () => {
     expect((await instance()).setupRequired).toBe(true);

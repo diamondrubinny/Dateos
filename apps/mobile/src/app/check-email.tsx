@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
+// Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -8,6 +11,7 @@ import { Button } from '../components/Button';
 import { Screen } from '../components/Screen';
 import { radius, spacing, useColors } from '../lib/theme';
 import { requestMagicLink } from '../lib/magic-link';
+import { PoweredBy } from '../components/PoweredBy';
 
 const COOLDOWN_SECONDS = 30;
 
@@ -57,6 +61,7 @@ export default function CheckEmail() {
         label={t('checkEmail.differentEmail')}
         onPress={() => router.replace('/sign-in')}
       />
+      <PoweredBy />
     </Screen>
   );
 }

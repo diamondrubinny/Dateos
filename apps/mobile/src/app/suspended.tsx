@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
+// Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -11,6 +14,7 @@ import { Screen } from '../components/Screen';
 import { authClient } from '../lib/auth-client';
 import { useDeleteAccount } from '../lib/queries';
 import { radius, spacing, useColors } from '../lib/theme';
+import { PoweredBy } from '../components/PoweredBy';
 
 /**
  * Suspended members can read why, download their data (right of access) and delete their account
@@ -67,6 +71,7 @@ function SuspendedScreen() {
           onPress={() => setConfirming(true)}
         />
       )}
+      <PoweredBy />
     </Screen>
   );
 }

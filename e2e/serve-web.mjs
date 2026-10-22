@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
+// Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 // Minimal static server for the exported web app (SPA fallback to index.html). Dev/e2e use only.
 import { createReadStream, existsSync, statSync } from 'node:fs';
 import { createServer } from 'node:http';

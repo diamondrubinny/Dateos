@@ -33,7 +33,7 @@ Replace `example.org` with your own domain everywhere in this guide.
       required. Any transactional email provider, or your organisation's mail server.
 - [ ] About an hour, and an email address for yourself (you become the first admin).
 
-The software is free (MIT license). You pay only for the server, the domain and the email service.
+The software is free and open source (AGPL-3.0 license). You pay only for the server, the domain and the email service.
 
 ## Step 1: Prepare the server
 
@@ -272,7 +272,7 @@ RESTORE_DATABASE=nexaheart_check BACKUP_PASSPHRASE_FILE=/root/.nexaheart-backup-
 ## Questions and answers
 
 **How much does it cost?**
-The software is free and open source (MIT license), with no paid tier. Your costs are the server, the
+The software is free and open source (AGPL-3.0 license), with no paid tier. Your costs are the server, the
 domain and the email service, and they depend on the providers you choose.
 
 **What do I need to know to run it?**
@@ -310,7 +310,9 @@ larger server and watch memory and disk use with your provider's monitoring.
 
 **Can I use my own name and logo?**
 Yes, that's the point: name, tagline, colour, logo and default language are set in the dashboard.
-The license only asks you to keep the MIT copyright notice in the source code.
+The license asks you to keep the small "Powered by NexaHeart · Open source" credit in the app, the
+dashboard and the emails, and the notices in the source code (see [NOTICE](../NOTICE)). If you change
+the code, set `SOURCE_CODE_URL` in `.env` to where your version's source is published.
 
 **Is it legal to run a dating app for my community?**
 That depends on your country and your audience, so ask a lawyer ⚖️. The repository includes drafts
