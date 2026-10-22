@@ -1,5 +1,8 @@
 # Run your own Dateos
 
+New to servers? Follow the step-by-step [installation guide](INSTALL.md) ([עברית](INSTALL.he.md)),
+with checks after each step, troubleshooting, and questions and answers.
+
 From an empty server to a live, branded dating site in about 15 minutes. Everything is free and
 open source; you own the server and the data.
 

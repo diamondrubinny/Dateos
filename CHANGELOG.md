@@ -6,6 +6,8 @@ All notable changes to Dateos. Versions follow [Semantic Versioning](https://sem
 
 ### Added
 
+- **Installation guide** in English and Hebrew (`docs/INSTALL.md`, `docs/INSTALL.he.md`): steps with
+  checks, troubleshooting, and questions and answers; also on the marketing site.
 - **Marketing site** in English and Hebrew (`site/`), with real screenshots, light and dark, no
   cookies or analytics.
 - **Safety check-in**: share where you'll be and when you expect to be done; a trusted contact is

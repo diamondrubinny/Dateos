@@ -231,7 +231,8 @@ Thank you to everyone in [SUPPORTERS.md](SUPPORTERS.md).
 
 ## Running a public instance
 
-**Run your own community in three commands** on any server with Docker (guide: [`docs/SELF_HOSTING.md`](docs/SELF_HOSTING.md)):
+**Run your own community in three commands** on any server with Docker. Step-by-step guide with
+questions and answers: [English](docs/INSTALL.md) · [עברית](docs/INSTALL.he.md) (short reference: [`docs/SELF_HOSTING.md`](docs/SELF_HOSTING.md)):
 
 ```bash
 ./install.sh --domain example.org          # secrets, production settings, one-time setup token

@@ -633,6 +633,39 @@
     font-size: var(--step--1);
   }
 
+  .faq {
+    display: grid;
+    gap: 0.75rem;
+    margin-top: 2rem;
+    max-width: 52rem;
+  }
+  .faq details {
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: var(--paper);
+  }
+  .faq details[open] {
+    background: var(--panel);
+  }
+  .faq summary {
+    cursor: pointer;
+    font-weight: 500;
+    padding: 1rem 1.2rem;
+    list-style-position: inside;
+  }
+  .faq summary::marker {
+    color: var(--violet);
+  }
+  .faq details p {
+    padding: 0 1.2rem 1.1rem;
+    color: var(--muted);
+    max-width: 46rem;
+  }
+  .guide-link {
+    margin-top: 1.2rem;
+    font-weight: 500;
+  }
+
   footer {
     border-top: 1px solid var(--line);
     padding-block: 2.5rem;
@@ -721,6 +754,7 @@
       <a href="#tour" data-t="navTour">Tour</a>
       <a href="#operators" data-t="navOps">For operators</a>
       <a href="#install" data-t="navInstall">Install</a>
+      <a href="#faq" data-t="navFaq">Questions</a>
       <a href="https://github.com/diamondrubinny/Dateos">GitHub</a>
       <div class="lang" role="group" aria-label="Language / שפה">
         <button type="button" id="lang-en" data-lang="en" aria-pressed="true" lang="en">EN</button>
@@ -1101,6 +1135,14 @@
           <li data-t="i2">A setup page to claim the instance and pick your brand</li>
           <li data-t="i3">A production checklist before you invite members</li>
         </ul>
+        <p class="guide-link">
+          <a
+            href="https://github.com/diamondrubinny/Dateos/blob/main/docs/INSTALL.md"
+            data-href-he="https://github.com/diamondrubinny/Dateos/blob/main/docs/INSTALL.he.md"
+            data-t="guide"
+            >Read the step-by-step installation guide</a
+          >
+        </p>
       </div>
       <div class="terminal">
         <div class="bar">
@@ -1145,6 +1187,67 @@ cd Dateos
           >Support the project</a
         >
       </div>
+    </div>
+  </section>
+
+  <section class="section" id="faq" aria-labelledby="faq-title" style="padding-top: 0">
+    <div class="wrap">
+      <h2 id="faq-title" data-t="faqTitle">Questions and answers</h2>
+      <div class="faq">
+        <details>
+          <summary data-t="q1">How much does it cost?</summary>
+          <p data-t="a1">
+            The software is free and open source, with no paid tier. You pay only for your server,
+            your domain and an email sending service, at the prices of the providers you choose.
+          </p>
+        </details>
+        <details>
+          <summary data-t="q2">What do I need to know to run it?</summary>
+          <p data-t="a2">
+            How to connect to a server over SSH, paste commands and edit a text file. The guide
+            checks each step with you. For a growing community, someone comfortable with Linux
+            should look after updates and backups.
+          </p>
+        </details>
+        <details>
+          <summary data-t="q3">Where is our members' data stored?</summary>
+          <p data-t="a3">
+            Only on your server. Nothing goes to the Dateos authors. Emails go through your email
+            provider, and optional push notifications through Expo, Apple and Google, without names
+            or message text.
+          </p>
+        </details>
+        <details>
+          <summary data-t="q4">Which languages does the app speak?</summary>
+          <p data-t="a4">
+            English, Hebrew, Arabic and Russian, right to left for Hebrew and Arabic. Each member
+            picks a language; you choose the default.
+          </p>
+        </details>
+        <details>
+          <summary data-t="q5">Is AI required?</summary>
+          <p data-t="a5">
+            No. By default there is no AI model at all. The optional local AI runs on your own
+            server, and a cloud AI service is used only if you set one up and each member agrees.
+          </p>
+        </details>
+        <details>
+          <summary data-t="q6">Is it legal to run a dating app for our community?</summary>
+          <p data-t="a6">
+            It depends on your country and audience, so ask a lawyer. The repository includes draft
+            legal texts and a privacy guide listing every kind of data, as a starting point, not as
+            legal advice.
+          </p>
+        </details>
+      </div>
+      <p class="guide-link">
+        <a
+          href="https://github.com/diamondrubinny/Dateos/blob/main/docs/INSTALL.md#questions-and-answers"
+          data-href-he="https://github.com/diamondrubinny/Dateos/blob/main/docs/INSTALL.he.md#שאלות-ותשובות"
+          data-t="faqMore"
+          >More questions in the installation guide</a
+        >
+      </p>
     </div>
   </section>
 </main>
@@ -1285,6 +1388,22 @@ cd Dateos
       fNote:
         'Dateos נוצרה על ידי Diamond Rubinny ומשוחררת ברישיון MIT. צילומי המסך אמיתיים מגרסה 0.2.0; תמונות הפרופיל הן איורים. המסמכים המשפטיים הם טיוטות ואינם ייעוץ משפטי. העמוד הזה לא משתמש בעוגיות ולא באנליטיקס.',
       nav: 'ראשי',
+      navFaq: 'שאלות',
+      guide: 'למדריך ההתקנה צעד אחר צעד',
+      faqTitle: 'שאלות ותשובות',
+      q1: 'כמה זה עולה?',
+      a1: 'התוכנה חינמית ובקוד פתוח, בלי מסלול בתשלום. משלמים רק על השרת, הדומיין ושירות לשליחת מיילים, לפי המחירים של הספקים שתבחרו.',
+      q2: 'מה צריך לדעת כדי להפעיל את זה?',
+      a2: 'להתחבר לשרת ב-SSH, להדביק פקודות ולערוך קובץ טקסט. המדריך בודק איתכם כל שלב. לקהילה שגדלה, כדאי שמישהו שמרגיש בנוח עם Linux יטפל בעדכונים ובגיבויים.',
+      q3: 'איפה נשמר המידע של חברי הקהילה?',
+      a3: 'רק על השרת שלכם. שום דבר לא נשלח ליוצרי Dateos. מיילים עוברים דרך ספק המיילים שלכם, והתראות פוש (רשות) דרך Expo, ‏Apple ו-Google, בלי שמות ובלי תוכן הודעות.',
+      q4: 'באילו שפות האפליקציה מדברת?',
+      a4: 'עברית, אנגלית, ערבית ורוסית, מימין לשמאל בעברית ובערבית. כל חבר/ת קהילה בוחר/ת שפה, ואתם בוחרים את ברירת המחדל.',
+      q5: 'הבינה המלאכותית חובה?',
+      a5: 'לא. כברירת מחדל אין שום מודל. הבינה המלאכותית המקומית (רשות) רצה על השרת שלכם, ושירות AI בענן משמש רק אם הגדרתם אחד וכל חבר/ת קהילה הסכימו.',
+      q6: 'מותר להפעיל אפליקציית היכרויות לקהילה שלנו?',
+      a6: 'זה תלוי במדינה ובקהל, ולכן שאלו עורך/ת דין. במאגר יש טיוטות של מסמכים משפטיים ומדריך פרטיות שמפרט כל סוג מידע, כנקודת פתיחה ולא כייעוץ משפטי.',
+      faqMore: 'עוד שאלות במדריך ההתקנה',
     };
     const en = { copied: 'Copied', nav: 'Main' };
     // English is the page's own text; capture it so switching back restores it exactly.
@@ -1313,6 +1432,10 @@ cd Dateos
       document
         .querySelectorAll('[data-t-label]')
         .forEach((el) => el.setAttribute('aria-label', t[el.dataset.tLabel]));
+      document.querySelectorAll('a[data-href-he]').forEach((a) => {
+        if (!a.dataset.hrefEn) a.dataset.hrefEn = a.getAttribute('href');
+        a.href = lang === 'he' ? a.dataset.hrefHe : a.dataset.hrefEn;
+      });
       document.querySelectorAll('img[data-shot]').forEach((img) => {
         img.src = `img/${lang}/${img.dataset.shot}.webp`;
       });
