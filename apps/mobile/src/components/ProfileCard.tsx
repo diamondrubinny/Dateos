@@ -191,6 +191,37 @@ export function ProfileCard({ profile, onLikeItem }: ProfileCardProps) {
           <AboutSection about={profile.about} name={profile.displayName} mine={mine} />
         ) : null}
 
+        {profile.friendTakes.length > 0 ? (
+          <View style={styles.takes} testID="friend-takes">
+            <AppText variant="heading">
+              {t('takes.onProfile', { name: profile.displayName })}
+            </AppText>
+            <View
+              style={styles.takes}
+              role="list"
+              accessibilityLabel={t('takes.onProfile', { name: profile.displayName })}
+            >
+              {profile.friendTakes.map((take, i) => (
+                <View
+                  key={i}
+                  role="listitem"
+                  style={[styles.take, { backgroundColor: colors.primarySoft }]}
+                >
+                  <AppText variant="body" userContent>
+                    {t('ghosting.quote', { message: take.text })}
+                  </AppText>
+                  <AppText variant="caption" tone="muted" userContent>
+                    {t('takes.byline', {
+                      name: take.name,
+                      relation: t(`takes.relations.${take.relation}`),
+                    })}
+                  </AppText>
+                </View>
+              ))}
+            </View>
+          </View>
+        ) : null}
+
         {profile.voicePrompt ? (
           <View
             style={[
@@ -248,6 +279,8 @@ export function ProfileCard({ profile, onLikeItem }: ProfileCardProps) {
 }
 
 const styles = StyleSheet.create({
+  takes: { gap: spacing.sm },
+  take: { padding: spacing.md, borderRadius: radius.md, gap: spacing.xs },
   verified: { paddingHorizontal: spacing.sm, paddingVertical: 2, borderRadius: radius.lg },
   card: { borderRadius: radius.lg, borderWidth: 1, overflow: 'hidden' },
   photoWrap: { width: '100%', aspectRatio: 4 / 5 },

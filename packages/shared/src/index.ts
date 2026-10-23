@@ -20,3 +20,4 @@ export * from './visibility.js';
 export * from './about.js';
 export * from './after-match.js';
 export * from './trust.js';
+export * from './friends.js';

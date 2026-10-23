@@ -88,7 +88,7 @@ function ChatScreen() {
   useEffect(
     () =>
       realtime.subscribe((event) => {
-        if (event.matchId !== matchId) return;
+        if (!('matchId' in event) || event.matchId !== matchId) return;
         if (event.type === 'typing') {
           setTyping(true);
           setTimeout(() => setTyping(false), 3_000);

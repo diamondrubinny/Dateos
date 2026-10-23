@@ -6,6 +6,7 @@ import {
   meResponseSchema,
   aboutSchema,
   dealbreakersSchema,
+  friendModeSchema,
   incognitoInputSchema,
   pauseInputSchema,
   preferencesSchema,
@@ -135,6 +136,18 @@ export const meRoutes: FastifyPluginAsyncZod<{
       await me.setDealbreakers(currentUser(request).id, request.body);
       return { ok: true as const };
     },
+  );
+
+  // Friends mode (phase 22).
+  app.get(
+    '/v1/me/friend-mode',
+    { schema: { response: { 200: friendModeSchema } } },
+    async (request) => me.friendMode(currentUser(request).id),
+  );
+  app.put(
+    '/v1/me/friend-mode',
+    { schema: { body: friendModeSchema, response: { 200: friendModeSchema } } },
+    async (request) => me.setFriendMode(currentUser(request).id, request.body),
   );
 
   // "Met in person" badge (phase 20, off by default).

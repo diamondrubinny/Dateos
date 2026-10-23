@@ -25,7 +25,8 @@
     "about": "tsx about.ts",
     "after-match": "tsx after-match.ts",
     "trust": "tsx trust.ts",
-    "load": "node --env-file=../.env --import tsx load.ts"
+    "load": "node --env-file=../.env --import tsx load.ts",
+    "friends": "tsx friends.ts"
   },
   "dependencies": {
     "@axe-core/playwright": "4.14.0",

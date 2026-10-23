@@ -33,6 +33,7 @@ import { processPauses } from './pause-jobs.js';
 import { processTrips } from './travel-jobs.js';
 import { processAvailability } from './availability-jobs.js';
 import { processSignupRetention } from './signup-jobs.js';
+import { processFriendRetention } from './friend-jobs.js';
 import { processCalls } from './call-jobs.js';
 import { RoomServiceClient } from 'livekit-server-sdk';
 import nodemailer from 'nodemailer';
@@ -194,6 +195,8 @@ async function main(): Promise<void> {
           return processAvailability(db);
         case 'signup-retention':
           return processSignupRetention(db);
+        case 'friend-retention':
+          return processFriendRetention(db);
         case 'events':
           return processEvents({
             db,
@@ -253,6 +256,12 @@ async function main(): Promise<void> {
     'signup-retention',
     { every: 86_400_000 },
     { name: 'signup-retention' },
+  );
+  // Messages of double chats closed 30 days ago, and used or expired friend links (daily).
+  await scheduler.upsertJobScheduler(
+    'friend-retention',
+    { every: 86_400_000 },
+    { name: 'friend-retention' },
   );
   // Take a break: end breaks whose time is up and tell the member (every 5 minutes).
   await scheduler.upsertJobScheduler(

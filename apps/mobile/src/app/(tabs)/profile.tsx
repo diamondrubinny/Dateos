@@ -87,6 +87,11 @@ function ProfileContent() {
         />
         <Button
           variant="secondary"
+          label={t('takes.title')}
+          onPress={() => router.push('/takes')}
+        />
+        <Button
+          variant="secondary"
           label={t('home.editPhotos')}
           onPress={() => router.push('/onboarding/photos?edit=1')}
         />

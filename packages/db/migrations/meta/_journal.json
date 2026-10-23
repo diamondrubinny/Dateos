@@ -183,6 +183,13 @@
       "when": 1792716103433,
       "tag": "0025_trust_safety",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1792718850208,
+      "tag": "0026_friends",
+      "breakpoints": true
     }
   ]
 }

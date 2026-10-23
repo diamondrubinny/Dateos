@@ -24,6 +24,10 @@ import {
   CLOSED_CARD_DAYS,
   type ClosedConversation,
   YOUR_TURN_LIMIT,
+  type MatchMode,
+  MAX_SHOWN_TAKES,
+  type PublicTake,
+  type TakeRelation,
 } from '@nexaheart/shared';
 import type { Realtime } from '../../lib/realtime.js';
 import { and, asc, desc, eq, gt, inArray, isNull, or, sql } from 'drizzle-orm';
@@ -49,6 +53,7 @@ const {
   dailyPicks,
   locations,
   profileAbout,
+  preferences,
   consents,
   user,
 } = schema;
@@ -79,6 +84,20 @@ export class DiscoveryService {
   /** Runs when a match ends for any reason (unmatch, block, suspension): calls are hung up. */
   onMatchClosed(listener: (matchId: string) => Promise<void>): void {
     this.closedListeners.push(listener);
+  }
+
+  private separationListeners: ((a: string, b: string | null) => Promise<void>)[] = [];
+
+  /**
+   * Runs after a block (both ids) or when an account loses access (one id, the other null), so
+   * group features can close too (phase 22: double dates and pairs).
+   */
+  onSeparation(listener: (a: string, b: string | null) => Promise<void>): void {
+    this.separationListeners.push(listener);
+  }
+
+  private separated(a: string, b: string | null) {
+    for (const listener of this.separationListeners) listener(a, b).catch(() => undefined);
   }
 
   private notify(userIds: string[], event: RealtimeEvent) {
@@ -117,7 +136,12 @@ export class DiscoveryService {
 
   private async candidates(
     viewerId: string,
-    options: { excludeIds?: string[]; targetId?: string; excludeDecided?: boolean },
+    options: {
+      excludeIds?: string[];
+      targetId?: string;
+      excludeDecided?: boolean;
+      mode?: MatchMode;
+    },
   ) {
     // drizzle's node-postgres database exposes its pool as $client.
     const pool = (this.db as unknown as { $client: Pool }).$client;
@@ -180,6 +204,33 @@ export class DiscoveryService {
       'discover',
     );
     return this.toProfiles(viewerId, ranked);
+  }
+
+  /** Dating candidates of a member (phase 22: double dates intersect two of these lists). */
+  async candidateIds(viewerId: string): Promise<Set<string>> {
+    return new Set((await this.candidates(viewerId, {})).map((r) => r.id));
+  }
+
+  /** Whether the viewer may see the target as a dating candidate (both ways, every rule). */
+  async isCandidate(viewerId: string, targetId: string): Promise<boolean> {
+    return (await this.candidates(viewerId, { targetId })).length > 0;
+  }
+
+  /** Friends mode (phase 22): its own deck, only people who turned friends mode on too. */
+  async discoverFriends(viewerId: string, limit: number): Promise<PublicProfile[]> {
+    if (!(await this.friendModeOn(viewerId))) return [];
+    const ranked = this.score(
+      await this.candidates(viewerId, { excludeDecided: true, mode: 'friend' }),
+    ).slice(0, limit);
+    return this.toProfiles(viewerId, ranked);
+  }
+
+  private async friendModeOn(userId: string): Promise<boolean> {
+    const [row] = await this.db
+      .select({ on: preferences.friendMode })
+      .from(preferences)
+      .where(eq(preferences.userId, userId));
+    return Boolean(row?.on);
   }
 
   /** Up to DAILY_PICKS_COUNT people, chosen once per day and kept stable for that day. */
@@ -261,10 +312,31 @@ export class DiscoveryService {
              AND ${notOnBreak('u')} AND ${notContactHidden(sql`${viewerId}`, sql`${targetId}`)})
             OR EXISTS (SELECT 1 FROM matches m WHERE m.unmatched_at IS NULL
                        AND ((m.user_a = ${viewerId} AND m.user_b = ${targetId}) OR (m.user_a = ${targetId} AND m.user_b = ${viewerId})))
+            -- Double dates (phase 22): my friend in my pair, and the four of an open double.
+            OR EXISTS (SELECT 1 FROM pairs pa WHERE pa.ended_at IS NULL
+                       AND ((pa.user_a = ${viewerId} AND pa.user_b = ${targetId}) OR (pa.user_a = ${targetId} AND pa.user_b = ${viewerId})))
+            OR EXISTS (SELECT 1 FROM double_matches dm WHERE dm.closed_at IS NULL
+                       AND dm.members @> ARRAY[${viewerId}, ${targetId}]::text[])
           )
       ) AS ok`);
     if (relation.rows[0]?.ok) return true;
-    return (await this.candidates(viewerId, { targetId })).length > 0;
+    return (
+      (await this.candidates(viewerId, { targetId })).length > 0 ||
+      (await this.candidates(viewerId, { targetId, mode: 'friend' })).length > 0
+    );
+  }
+
+  /**
+   * May the viewer like the target in this mode: they're a candidate in that mode, or they
+   * already liked the viewer in that mode (Likes You), or they're matched.
+   */
+  private async canLikeIn(viewerId: string, targetId: string, mode: MatchMode): Promise<boolean> {
+    if ((await this.candidates(viewerId, { targetId, mode })).length > 0) return true;
+    const { rows } = await this.db.execute(sql`
+      SELECT 1 FROM interactions i JOIN "user" u ON u.id = i.actor_id AND u.status = 'active'
+      WHERE i.actor_id = ${targetId} AND i.target_id = ${viewerId} AND i.kind = 'like'
+        AND i.mode = ${mode} AND ${notSeparated(sql`${viewerId}`, sql`${targetId}`)}`);
+    return rows.length > 0;
   }
 
   async profile(viewerId: string, targetId: string): Promise<PublicProfile> {
@@ -289,7 +361,12 @@ export class DiscoveryService {
     if (!(await this.isActive(actorId))) {
       throw new HttpError(403, ErrorCode.Forbidden, 'Your profile is paused.');
     }
+    const mode: MatchMode = input.mode ?? 'date';
     if (!(await this.canView(actorId, input.targetId))) throw notFound();
+    // A like belongs to one mode (phase 22): friends mode never reaches the dating deck.
+    if (input.kind === 'like' && !(await this.canLikeIn(actorId, input.targetId, mode))) {
+      throw notFound();
+    }
     // Focus mode (phase 20): with too many people waiting for your reply, answer them first.
     if (input.kind === 'like' && (await this.waitingForReply(actorId)) >= YOUR_TURN_LIMIT) {
       throw new HttpError(409, ErrorCode.YourTurn, 'Reply to the people waiting for you first.');
@@ -333,6 +410,7 @@ export class DiscoveryService {
           itemType: input.itemType ?? null,
           itemId: input.itemId ?? null,
           comment: input.comment ?? null,
+          mode,
         })
         .onConflictDoNothing()
         .returning({ id: interactions.id });
@@ -348,12 +426,14 @@ export class DiscoveryService {
             eq(interactions.actorId, input.targetId),
             eq(interactions.targetId, actorId),
             eq(interactions.kind, 'like'),
+            // Both likes in the same mode: a friend like and a dating like aren't a match.
+            eq(interactions.mode, mode),
           ),
         );
       if (!reverse) return { matched: false, matchId: null };
 
       const [a, b] = [actorId, input.targetId].sort() as [string, string];
-      await tx.insert(matches).values({ userA: a, userB: b }).onConflictDoNothing();
+      await tx.insert(matches).values({ userA: a, userB: b, mode }).onConflictDoNothing();
       const [match] = await tx
         .select({ id: matches.id })
         .from(matches)
@@ -406,7 +486,7 @@ export class DiscoveryService {
       FROM interactions i
       JOIN "user" u ON u.id = i.actor_id AND u.status = 'active' AND ${notOnBreak('u')}
       LEFT JOIN prompts p ON i.item_type = 'prompt' AND p.id = i.item_id AND p.user_id = ${viewerId}
-      WHERE i.target_id = ${viewerId} AND i.kind = 'like'
+      WHERE i.target_id = ${viewerId} AND i.kind = 'like' AND i.mode = 'date'
         AND NOT EXISTS (SELECT 1 FROM interactions mine WHERE mine.actor_id = ${viewerId} AND mine.target_id = i.actor_id)
         AND ${notSeparated(sql`${viewerId}`, sql`i.actor_id`)}
         AND ${notContactHidden(sql`${viewerId}`, sql`i.actor_id`)}
@@ -448,6 +528,7 @@ export class DiscoveryService {
         userA: matches.userA,
         userB: matches.userB,
         createdAt: matches.createdAt,
+        mode: matches.mode,
       })
       .from(matches)
       .where(
@@ -474,7 +555,9 @@ export class DiscoveryService {
     );
     return rows.flatMap((r) => {
       const profile = profilesById.get(r.userA === viewerId ? r.userB : r.userA);
-      return profile ? [{ id: r.id, createdAt: r.createdAt.toISOString(), profile }] : [];
+      return profile
+        ? [{ id: r.id, createdAt: r.createdAt.toISOString(), mode: r.mode as MatchMode, profile }]
+        : [];
     });
   }
 
@@ -570,6 +653,7 @@ export class DiscoveryService {
     });
     for (const m of closed)
       this.notify([blockerId, blockedId], { type: 'match.closed', matchId: m.id });
+    this.separated(blockerId, blockedId);
   }
 
   /**
@@ -586,6 +670,9 @@ export class DiscoveryService {
         WHERE (m.user_a = ${viewerId} AND m.user_b = ${targetId}) OR (m.user_a = ${targetId} AND m.user_b = ${viewerId})
       ) OR EXISTS (
         SELECT 1 FROM interactions i WHERE i.actor_id = ${targetId} AND i.target_id = ${viewerId}
+      ) OR EXISTS (
+        -- A double chat they were in together (phase 22), even after it closed.
+        SELECT 1 FROM double_matches dm WHERE dm.members @> ARRAY[${viewerId}, ${targetId}]::text[]
       ) AS ok`);
     return Boolean(result.rows[0]?.ok);
   }
@@ -600,6 +687,7 @@ export class DiscoveryService {
       )
       .returning({ id: matches.id, userA: matches.userA, userB: matches.userB });
     for (const m of ended) this.notify([m.userA, m.userB], { type: 'match.closed', matchId: m.id });
+    this.separated(userId, null);
   }
 
   // ---------------------------------------------------------------- presentation
@@ -643,6 +731,26 @@ export class DiscoveryService {
         WHERE d.status = 'accepted' AND d.proposer_met AND d.receiver_met
           AND (m.user_a = u.id OR m.user_b = u.id))`);
     const metIds = new Set(met.rows.map((r) => r.user_id));
+    // Friends' takes (phase 22): approved by the owner, newest first, at most MAX_SHOWN_TAKES.
+    const takesById = new Map<string, PublicTake[]>();
+    for (const take of await this.db
+      .select({
+        ownerId: schema.friendTakes.ownerId,
+        name: schema.friendTakes.name,
+        relation: schema.friendTakes.relation,
+        text: schema.friendTakes.text,
+      })
+      .from(schema.friendTakes)
+      .where(
+        and(inArray(schema.friendTakes.ownerId, ids), eq(schema.friendTakes.status, 'approved')),
+      )
+      .orderBy(desc(schema.friendTakes.decidedAt))) {
+      const list = takesById.get(take.ownerId) ?? [];
+      if (list.length < MAX_SHOWN_TAKES) {
+        list.push({ name: take.name, relation: take.relation as TakeRelation, text: take.text });
+      }
+      takesById.set(take.ownerId, list);
+    }
     const aboutById = new Map(
       (await this.db.select().from(profileAbout).where(inArray(profileAbout.userId, ids))).map(
         (a) => [a.userId, a],
@@ -686,6 +794,7 @@ export class DiscoveryService {
           about: toAbout(aboutById.get(p.userId)),
           voicePrompt: toVoicePrompt(aboutById.get(p.userId), cleanVoice),
           metInPerson: metIds.has(p.userId),
+          friendTakes: takesById.get(p.userId) ?? [],
           verified: p.verifiedAt !== null,
           reasons: item.result?.reasons ?? [],
         },

@@ -13,6 +13,7 @@ import { StyleSheet, View } from 'react-native';
 import { Button } from '../../components/Button';
 import { CheckinEntry } from '../../components/CheckinEntry';
 import { EventsEntry } from '../../components/EventCard';
+import { DoubleChats } from '../../components/DoubleChats';
 import { useConversations } from '../../lib/chat-queries';
 import { useClosedConversations, useDismissClosed } from '../../lib/checkin-queries';
 import { radius, spacing, useColors } from '../../lib/theme';
@@ -44,6 +45,7 @@ export default function Matches() {
           />
         </View>
       ))}
+      <DoubleChats />
       {conversations.data?.length === 0 ? (
         <AppText variant="body" tone="muted">
           {t('matches.empty')}
@@ -71,11 +73,13 @@ export default function Matches() {
             key={c.matchId}
             profile={c.profile}
             detail={
-              c.unread > 0
-                ? t('chat.unread', { count: c.unread })
-                : waitingForMyReply(last)
-                  ? t('ghosting.waiting')
-                  : undefined
+              c.mode === 'friend' && c.unread === 0
+                ? t('friends.label')
+                : c.unread > 0
+                  ? t('chat.unread', { count: c.unread })
+                  : waitingForMyReply(last)
+                    ? t('ghosting.waiting')
+                    : undefined
             }
             quote={preview}
             plainQuote

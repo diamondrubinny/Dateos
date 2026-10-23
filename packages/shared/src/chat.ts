@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
+import { matchModeSchema } from './friends.js';
 import { z } from 'zod';
 import { publicProfileSchema } from './discovery.js';
 import { localeSchema } from './common.js';
@@ -86,6 +87,8 @@ export const conversationSchema = z.object({
   lastMessage: messageViewSchema.nullable(),
   unread: z.number().int(),
   createdAt: z.string(),
+  /** Friends mode (phase 22): the inbox labels friend chats. */
+  mode: matchModeSchema,
 });
 export type Conversation = z.infer<typeof conversationSchema>;
 
@@ -102,7 +105,11 @@ export type RealtimeEvent =
   | { type: 'match.new'; matchId: string }
   | { type: 'match.closed'; matchId: string }
   | { type: 'call.incoming'; matchId: string; callId: string; video: boolean }
-  | { type: 'call.updated'; matchId: string; callId: string; status: CallStatus };
+  | { type: 'call.updated'; matchId: string; callId: string; status: CallStatus }
+  /** Double dates (phase 22): a new group chat of four, a message in it, or it closed. */
+  | { type: 'double.new'; doubleId: string }
+  | { type: 'double.message'; doubleId: string }
+  | { type: 'double.closed'; doubleId: string };
 
 /** Client → server WebSocket messages. */
 export const clientEventSchema = z.discriminatedUnion('type', [

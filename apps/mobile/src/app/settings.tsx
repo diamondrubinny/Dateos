@@ -114,6 +114,11 @@ function SettingsContent() {
       />
       <Button
         variant="secondary"
+        label={t('friends.modeTitle')}
+        onPress={() => router.push('/friend-mode')}
+      />
+      <Button
+        variant="secondary"
         label={me.data?.verified ? `✓ ${t('verify.approved')}` : t('verify.entry')}
         onPress={() => router.push('/verify')}
       />

@@ -194,6 +194,26 @@ export async function exportMemberData(
     .innerJoin(t.matches, eq(t.matches.id, t.datePlans.matchId))
     .where(or(eq(t.matches.userA, userId), eq(t.matches.userB, userId)))
     .orderBy(asc(t.datePlans.createdAt));
+  // Friends (phase 22): takes about you, your pairs, and your own messages in double chats.
+  const takeRows = await db
+    .select({
+      name: t.friendTakes.name,
+      relation: t.friendTakes.relation,
+      text: t.friendTakes.text,
+      status: t.friendTakes.status,
+      createdAt: t.friendTakes.createdAt,
+    })
+    .from(t.friendTakes)
+    .where(eq(t.friendTakes.ownerId, userId));
+  const pairRows = await db
+    .select({ createdAt: t.pairs.createdAt, endedAt: t.pairs.endedAt })
+    .from(t.pairs)
+    .where(or(eq(t.pairs.userA, userId), eq(t.pairs.userB, userId)));
+  const doubleSent = await db
+    .select({ text: t.doubleMessages.body, at: t.doubleMessages.createdAt })
+    .from(t.doubleMessages)
+    .where(eq(t.doubleMessages.senderId, userId))
+    .orderBy(asc(t.doubleMessages.createdAt));
   // Hide me from my contacts (phase 21): how many, not who (the matches are other members).
   const [contactHideCount] = await db
     .select({ n: sql<number>`count(*)::int` })
@@ -303,6 +323,12 @@ export async function exportMemberData(
           acceptVoice: preferences.acceptVoice,
           acceptCalls: preferences.acceptCalls,
           showMetInPersonBadge: preferences.showMetBadge,
+          friendsMode: {
+            on: preferences.friendMode,
+            ageMin: preferences.friendAgeMin,
+            ageMax: preferences.friendAgeMax,
+            genders: preferences.friendGenders,
+          },
           dealbreakers: {
             smokingOk: preferences.smokingOk,
             childrenOk: preferences.childrenOk,
@@ -384,6 +410,12 @@ export async function exportMemberData(
         };
       },
     ),
+    friendsTakesAboutYou: takeRows.map((r) => ({ ...r, createdAt: iso(r.createdAt) })),
+    doubleDatePairs: pairRows.map((p) => ({
+      createdAt: iso(p.createdAt),
+      endedAt: iso(p.endedAt),
+    })),
+    doubleChatMessagesYouSent: doubleSent.map((m) => ({ ...m, at: iso(m.at) })),
     peopleHiddenFromYourContacts: contactHideCount?.n ?? 0,
     invitesYouCreated: invitesMade.map((i) => ({
       ...i,

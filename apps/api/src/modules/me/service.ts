@@ -24,6 +24,9 @@ import {
   type ProfileUpdate,
   type PromptAnswer,
   type PromptKey,
+  type Gender,
+  defaultFriendMode,
+  type FriendMode,
 } from '@nexaheart/shared';
 import { checkHarm } from '@nexaheart/ai';
 import { and, asc, desc, eq, isNull, ne } from 'drizzle-orm';
@@ -281,6 +284,38 @@ export class MeService {
       .update(preferences)
       .set({ showMetBadge: on, updatedAt: new Date() })
       .where(eq(preferences.userId, userId));
+  }
+
+  /** Friends mode (phase 22): a separate deck, with its own ages and optional genders. */
+  async friendMode(userId: string): Promise<FriendMode> {
+    const [row] = await this.db
+      .select({
+        on: preferences.friendMode,
+        ageMin: preferences.friendAgeMin,
+        ageMax: preferences.friendAgeMax,
+        genders: preferences.friendGenders,
+      })
+      .from(preferences)
+      .where(eq(preferences.userId, userId));
+    return row ? { ...row, genders: row.genders as Gender[] } : defaultFriendMode;
+  }
+
+  async setFriendMode(userId: string, input: FriendMode): Promise<FriendMode> {
+    const updated = await this.db
+      .update(preferences)
+      .set({
+        friendMode: input.on,
+        friendAgeMin: input.ageMin,
+        friendAgeMax: input.ageMax,
+        friendGenders: input.genders,
+        updatedAt: new Date(),
+      })
+      .where(eq(preferences.userId, userId))
+      .returning({ id: preferences.userId });
+    if (updated.length === 0) {
+      throw new HttpError(409, ErrorCode.Conflict, 'Set your preferences first.');
+    }
+    return this.friendMode(userId);
   }
 
   /** Incognito (phase 18b): only people this member liked can see them. */

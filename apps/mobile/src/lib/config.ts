@@ -7,3 +7,14 @@ export const API_URL = (process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:400
   '',
 );
 export const APP_SCHEME = 'nexaheart';
+
+/**
+ * The community's web app, for links people send to friends (phase 22: a friend's take, a pair
+ * invitation). In the browser it's this site; native builds set EXPO_PUBLIC_WEB_URL.
+ */
+export function webUrl(): string {
+  if (typeof window !== 'undefined' && window.location?.origin?.startsWith('http')) {
+    return window.location.origin;
+  }
+  return (process.env.EXPO_PUBLIC_WEB_URL ?? 'http://localhost:8081').replace(/\/$/, '');
+}

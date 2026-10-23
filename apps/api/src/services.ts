@@ -37,6 +37,8 @@ import { EventService } from './modules/events/service.js';
 import { CityIndex } from './modules/places/cities.js';
 import { TravelService } from './modules/places/service.js';
 import { CallService } from './modules/calls/service.js';
+import { PairService } from './modules/friends/pairs.js';
+import { TakeService } from './modules/friends/takes.js';
 import { TrustService } from './modules/trust/service.js';
 import { createLiveKitMedia, type CallMedia } from './lib/livekit.js';
 
@@ -60,6 +62,8 @@ export interface Services {
   staffMfa: StaffMfaService;
   moderation: ModerationService;
   trust: TrustService;
+  takes: TakeService;
+  pairs: PairService;
   instance: InstanceService;
   checkins: CheckinService;
   venues: VenueService;
@@ -154,6 +158,16 @@ export function createServices(
     signup: trust,
   });
   const venues = new VenueService(dbHandle.db);
+  // Friends (phase 22).
+  const takes = new TakeService(dbHandle.db, overrides.now);
+  const pairs = new PairService(
+    dbHandle.db,
+    discovery,
+    (userId, event) => realtime.publish(userId, event),
+    today,
+    overrides.now,
+  );
+  discovery.onSeparation((a, b) => (b ? pairs.closeForBlock(a, b) : pairs.closeForUser(a)));
   const chat = new ChatService(
     dbHandle.db,
     realtime,
@@ -224,6 +238,8 @@ export function createServices(
     moderation: new ModerationService(dbHandle.db, discovery, hashEmail, today),
     instance,
     trust,
+    takes,
+    pairs,
     checkins: new CheckinService(
       dbHandle.db,
       mailer,
