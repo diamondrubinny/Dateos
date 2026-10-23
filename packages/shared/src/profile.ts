@@ -73,6 +73,8 @@ export const consentKinds = [
   'religion',
   /** Accessibility needs (phase 25): can reveal health data, GDPR Art. 9(2)(a) ⚖️. */
   'accessibility',
+  /** Partner communities (phase 28b): a card, gender and who someone wants go to partners ⚖️. */
+  'federation',
 ] as const;
 export const consentKindSchema = z.enum(consentKinds);
 export type ConsentKind = z.infer<typeof consentKindSchema>;

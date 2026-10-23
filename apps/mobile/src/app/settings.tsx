@@ -16,6 +16,7 @@ import { LanguageSwitch } from '../components/LanguageSwitch';
 import { MoreOptions } from '../components/MoreOptions';
 import { RequireSession } from '../components/RequireSession';
 import { Screen } from '../components/Screen';
+import { useFederatedStatus } from '../lib/federated-queries';
 import { authClient } from '../lib/auth-client';
 import { useSetAcceptCalls } from '../lib/call-queries';
 import { useChatSettings, useSetAcceptVoice, useSetAllowTranscripts } from '../lib/chat-queries';
@@ -100,6 +101,7 @@ function SettingsContent() {
   // App stores restrict donation links inside native apps, so sponsorship is offered on the web only.
   const sponsorUrl = Platform.OS === 'web' ? instance.data?.sponsorUrl : null;
   const linkStyle = [styles.link, { color: colors.primary }];
+  const partners = useFederatedStatus();
 
   return (
     <Screen back title={t('settings.title')}>
@@ -127,6 +129,13 @@ function SettingsContent() {
           label={t('friends.modeTitle')}
           onPress={() => router.push('/friend-mode')}
         />
+        {partners.data?.available ? (
+          <Button
+            variant="secondary"
+            label={t('partners.title')}
+            onPress={() => router.push('/partners')}
+          />
+        ) : null}
         <Button
           variant="secondary"
           label={me.data?.verified ? `✓ ${t('verify.approved')}` : t('verify.entry')}

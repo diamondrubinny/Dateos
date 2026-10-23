@@ -14,8 +14,10 @@ import { Button } from '../../components/Button';
 import { CheckinEntry } from '../../components/CheckinEntry';
 import { EventsEntry } from '../../components/EventCard';
 import { DoubleChats } from '../../components/DoubleChats';
+import { PartnerMatches } from '../../components/PartnerMatches';
 import { useConversations } from '../../lib/chat-queries';
 import { useClosedConversations, useDismissClosed } from '../../lib/checkin-queries';
+import { useFederatedMatches } from '../../lib/federated-queries';
 import { radius, spacing, useColors } from '../../lib/theme';
 
 export default function Matches() {
@@ -24,6 +26,7 @@ export default function Matches() {
   const conversations = useConversations();
   const closed = useClosedConversations();
   const dismiss = useDismissClosed();
+  const partnerMatches = useFederatedMatches();
   if (conversations.isPending) return <Loading />;
   return (
     <Screen title={t('matches.title')}>
@@ -46,7 +49,8 @@ export default function Matches() {
         </View>
       ))}
       <DoubleChats />
-      {conversations.data?.length === 0 ? (
+      <PartnerMatches />
+      {conversations.data?.length === 0 && !partnerMatches.data?.length ? (
         <AppText variant="body" tone="muted">
           {t('matches.empty')}
         </AppText>

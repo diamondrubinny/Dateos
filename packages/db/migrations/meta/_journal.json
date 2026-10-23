@@ -232,6 +232,13 @@
       "when": 1792791059607,
       "tag": "0032_federation",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1792792987796,
+      "tag": "0033_federated_discovery",
+      "breakpoints": true
     }
   ]
 }

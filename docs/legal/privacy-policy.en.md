@@ -67,6 +67,12 @@ You must be 18 or older; accounts with a birth date under 18 are suspended immed
   [EMAIL_PROVIDER] (email). If you turn on notifications: Expo, Apple or Google deliver them, with no
   names or message text. [If enabled: external AI provider [AI_PROVIDER], only if you turn on "AI
   features that use an external provider"; it receives your bio and prompt text only.]
+- **Partner communities**, only if you join them in the app: other NexaHeart communities this one
+  connected with, each run by its own operator under an agreement with us ⚖️. They receive your card
+  (first name, age, gender, what you're looking for, bio, prompts, photos, languages, verified) under
+  a code name, and, when you search, your gender, who you're interested in and your age range. Your
+  likes go to them, and a match is kept by both. Never your email, location, religion,
+  accessibility needs, voice or messages. Leaving tells them to forget you.
 - **Authorities**, only when the law requires it.
 
 We do not sell or rent personal data and do not use it for advertising.

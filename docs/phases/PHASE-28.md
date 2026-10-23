@@ -1,6 +1,6 @@
 # Phase 28 (proposal): Communities that connect
 
-> Status: ✅ **28a done** (2026-10-23); 28b (discovery across communities) next. The owner delegated the decisions; chosen:
+> Status: ✅ **28a** and **28b done** (2026-10-23); 28c (chat across communities) next. The owner delegated the decisions; chosen:
 > **A (partnerships)**; **discovery and matching first**, chat across communities later (28c);
 > members **off by default**, and federation itself off on a server until its admin turns it on.
 > 📘 = verify against official docs, ⚖️ = needs legal review.
@@ -134,3 +134,94 @@ Each step is its own PR, with two-server integration tests and e2e in four langu
   admin; an invitation that the other side refuses is removed instead of left half-made.
 - **Still to check:** ⚖️ the agreement template between operators; 📘 key rotation (not built: a
   new key means ending and re-inviting partners).
+
+## 28b in detail (this step)
+
+**Who takes part.** Only members who turn on Settings → "Partner communities". Turning it on is an
+explicit consent (`federation`, versioned ⚖️) that lists the partners by name and says exactly what
+they receive. It works both ways: you can see partners' members only if you can be seen. Turning it
+off tells every partner to forget you and deletes your likes and matches there.
+
+**Pseudonyms.** A member is known to each partner only by a random alias (22 characters), made the
+first time they're shown to or act toward that partner: different for every partner, so two
+partners can't link the same person, never the real id, and a new one after leaving and coming back.
+
+**Discovery** (`POST /v1/federation/discover`, signed). The viewer's server sends the viewer's alias,
+gender, who they want, age and age range, and the aliases to leave out (already liked, passed or
+blocked). The partner returns up to 20 of its members who took part and pass **both ways** (gender,
+interest, ages), are active, not paused, not incognito, onboarded, with a clean photo, and haven't
+blocked this viewer. A card: alias, first name, age, gender, intention, bio, prompts, photos (ids
+only), languages, verified. **Never:** email, location or distance, religion, lifestyle, accessibility
+needs, voice, friends' takes, badges.
+
+**Photos** go through the viewer's own server (`GET /v1/federated/photos/:partner/:photo` → signed
+`GET /v1/federation/photos/:photo`): the member's phone never talks to another community, and the
+partner checks the photo belongs to someone taking part.
+
+**Likes and matches.** A like is sent signed (`POST /v1/federation/likes`, from alias to alias). The
+receiving server matches it against its own member's earlier like; on a match both servers record it,
+with the other person's first name and one photo. Matches appear in Matches under "From partner
+communities". **Chat across communities is the next step (28c)**; until then the match says so.
+
+**Blocks and unmatching.** A block hides the person here and ends any match on both sides
+(`POST /v1/federation/unmatch`); the blocked alias is left out of every later discovery both ways.
+
+**Ending.** Ending a partnership (either side) or withdrawing deletes the aliases, likes, passes and
+matches with that partner.
+
+### API (members)
+
+| Method | Path                                       | What                                                          |
+| ------ | ------------------------------------------ | ------------------------------------------------------------- |
+| GET    | `/v1/federated/status`                     | joined or not; partners' names and privacy links              |
+| POST   | `/v1/federated/join`, `/leave`             | the consent (versioned), and leaving (partners forget you)    |
+| GET    | `/v1/federated/deck`                       | cards from every active partner (needs the consent)           |
+| POST   | `/v1/federated/interactions`               | `{ partnerId, alias, kind: like/pass/block }` → `{ matched }` |
+| GET    | `/v1/federated/matches`                    | matches from partner communities                              |
+| DELETE | `/v1/federated/matches/:id`                | unmatch (tells the partner)                                   |
+| GET    | `/v1/federated/photos/:partnerId/:photoId` | a partner's photo, through this server                        |
+
+### Tests
+
+Two complete servers in one integration test (each with its own database and Redis), talking to
+each other through the signed API: discovery both ways with the filters, photos, a mutual like
+becoming a match on both sides, a pass and a block leaving people out, unmatch, withdrawing, and
+ending the partnership. e2e in the app in four languages.
+
+## 28b results
+
+- **Built:** the `federation` consent (versioned ⚖️; the generic consent route refuses it, so leaving
+  always tells partners); `federation_aliases`, `federation_decisions` and `federation_matches`
+  (migration `0033_federated_discovery`); the signed endpoints `discover`, `likes`, `unmatch`,
+  `forget` and `photos/:id`; the members' API (table above); in the app: **Partner communities**
+  (what's shared and with whom, join and leave), a **Partner communities** deck in Discover (the
+  card says which community; like, pass, block with a confirmation) and **From partner
+  communities** in Matches (unmatch; "chat is coming"); four languages. The data export includes
+  the aliases, decisions and matches.
+- **Kept out of discovery across communities:** anyone who hasn't joined, paused, on a break,
+  incognito, without a clean photo, or who blocked the viewer; people the viewer already decided on.
+- **Ends on the other side too:** a block or unmatch (`unmatch`), leaving and deleting the account
+  (`forget`), a suspension (matches end), and ending the partnership (everything with that partner
+  is deleted on both servers).
+- **Safety of what comes back:** a partner's answers are untrusted: every card and like answer is
+  checked against a schema with length limits, answers are capped (512 KB, photos 6 MB, only
+  `image/*`, served back as `image/webp` with `nosniff`), and a slow partner is skipped after 4 s.
+  Likes count toward the same daily limit as likes here.
+- **Tests:**
+  - Integration: 5 new with **two complete servers** in one test (each its own database, Redis
+    and buckets; requests go through the real signed API): both-way filters (gender, interest,
+    ages), only members who joined, nothing but the card, a pseudonym, photos through the home
+    server, incognito hidden; a mutual like is a match on both sides, already decided is refused,
+    a pass leaves out, a block ends the match on both and hides both ways; unmatch tells the
+    partner; leaving, deleting the account and ending the partnership delete what crossed on both
+    servers; unsigned requests, a malformed signed request, the generic consent route and an old
+    consent version are refused. All 234 integration tests pass.
+  - e2e `pnpm --dir e2e federated-discovery` between **two real servers** (each with its own
+    database and worker), in English, Hebrew, Arabic and Russian: join (needs the consent ticked),
+    the deck with the photo through community A, a like back is a match on both servers, unmatch
+    reaches B, leaving makes B forget her; axe 0 violations. Screenshots `102-partners-join`,
+    `103-partners-deck`, `104-partners-match`.
+- **Found and fixed:** "No matches yet" showed next to a match from a partner community.
+- **Still to check:** ⚖️ the consent text and the privacy policy lines (special-category data sent
+  to another operator, possibly abroad); ⚖️ a partner that can't be reached when someone leaves keeps
+  what it had until 28d adds retries; 📘 real devices.

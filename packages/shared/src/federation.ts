@@ -2,6 +2,16 @@
 // Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 import { z } from 'zod';
+import { publicPhotoSchema } from './discovery.js';
+import {
+  genderSchema,
+  intentionSchema,
+  MAX_AGE,
+  MAX_PHOTOS,
+  MAX_PROMPTS,
+  MIN_AGE,
+  promptKeySchema,
+} from './profile.js';
 
 /**
  * Communities that connect (phase 28): partnerships between two servers whose admins agreed, with
@@ -72,3 +82,148 @@ export const partnerInviteSchema = z
   .object({ url: z.url(), agreementConfirmed: z.literal(true) })
   .strict();
 export const partnerAcceptSchema = z.object({ agreementConfirmed: z.literal(true) }).strict();
+
+// ---------------------------------------------------------------------------------------------
+// 28b: discovery and matching across communities. Only members who joined (the `federation`
+// consent) take part; each is known to each partner by a random alias, never the real id.
+// ---------------------------------------------------------------------------------------------
+
+/** Version of the in-app text for the `federation` consent; bump it when the wording changes. */
+export const FEDERATION_CONSENT_VERSION = '1';
+/** Cards a partner returns per discovery request, at most. */
+export const FEDERATED_DECK_SIZE = 20;
+/** Aliases a discovery request may ask to leave out, at most. */
+export const FEDERATED_EXCLUDE_MAX = 2000;
+
+export const federationAliasSchema = z.string().regex(/^[A-Za-z0-9_-]{22}$/);
+
+/** What a viewer's server sends with a discovery request: only what the filter needs. */
+export const federatedViewerSchema = z
+  .object({
+    alias: federationAliasSchema,
+    gender: genderSchema,
+    interestedIn: z.array(genderSchema).min(1).max(8),
+    age: z.number().int().min(MIN_AGE).max(MAX_AGE),
+    ageMin: z.number().int().min(MIN_AGE).max(MAX_AGE),
+    ageMax: z.number().int().min(MIN_AGE).max(MAX_AGE),
+    intention: intentionSchema,
+    /** Intentions wanted; empty means any. */
+    wants: z.array(intentionSchema).max(8),
+  })
+  .strict();
+export type FederatedViewer = z.infer<typeof federatedViewerSchema>;
+
+export const federatedDiscoverRequestSchema = z
+  .object({
+    viewer: federatedViewerSchema,
+    exclude: z.array(federationAliasSchema).max(FEDERATED_EXCLUDE_MAX),
+  })
+  .strict();
+export type FederatedDiscoverRequest = z.infer<typeof federatedDiscoverRequestSchema>;
+
+/** A member's card as it crosses to a partner. Never: email, location, religion, needs, voice. */
+export const federatedCardSchema = z.object({
+  alias: federationAliasSchema,
+  displayName: z.string().min(1).max(40),
+  age: z.number().int().min(MIN_AGE).max(MAX_AGE),
+  gender: genderSchema,
+  intention: intentionSchema,
+  bio: z.string().max(500).nullable(),
+  languages: z.array(z.string().max(12)).max(10),
+  prompts: z
+    .array(z.object({ promptKey: promptKeySchema, answer: z.string().max(300) }))
+    .max(MAX_PROMPTS),
+  photos: z
+    .array(
+      z.object({
+        id: z.uuid(),
+        width: z.number().int().positive().max(10_000).nullable(),
+        height: z.number().int().positive().max(10_000).nullable(),
+      }),
+    )
+    .min(1)
+    .max(MAX_PHOTOS),
+  verified: z.boolean(),
+});
+export type FederatedCard = z.infer<typeof federatedCardSchema>;
+
+export const federatedDiscoverResponseSchema = z.object({
+  cards: z.array(federatedCardSchema).max(FEDERATED_DECK_SIZE),
+});
+
+/** Who liked whom, and (for the match list) the liker's name and one photo. */
+export const federatedLikeSchema = z
+  .object({
+    from: federationAliasSchema,
+    to: federationAliasSchema,
+    name: z.string().min(1).max(40),
+    photoId: z.uuid(),
+  })
+  .strict();
+export type FederatedLike = z.infer<typeof federatedLikeSchema>;
+
+export const federatedLikeResponseSchema = z.object({
+  matched: z.boolean(),
+  /** On a match: the liked person's name and one photo. */
+  name: z.string().min(1).max(40).nullable(),
+  photoId: z.uuid().nullable(),
+});
+
+export const federatedPairSchema = z
+  .object({ from: federationAliasSchema, to: federationAliasSchema })
+  .strict();
+export const federatedForgetSchema = z.object({ alias: federationAliasSchema }).strict();
+
+// Members' API (on their own server).
+
+export const federatedStatusSchema = z.object({
+  /** Federation is on here and at least one partnership is active. */
+  available: z.boolean(),
+  /** This member joined (the `federation` consent). */
+  joined: z.boolean(),
+  consentVersion: z.string(),
+  partners: z.array(
+    z.object({ id: z.uuid(), name: z.string(), privacyUrl: z.string().nullable() }),
+  ),
+});
+export type FederatedStatus = z.infer<typeof federatedStatusSchema>;
+
+export const federatedJoinSchema = z.object({ version: z.string().min(1).max(32) }).strict();
+
+/** A partner's member as shown in the app: the card plus where it comes from. */
+export const federatedProfileSchema = z.object({
+  partnerId: z.uuid(),
+  community: z.string(),
+  alias: federationAliasSchema,
+  displayName: z.string(),
+  age: z.number().int(),
+  gender: genderSchema,
+  intention: intentionSchema,
+  bio: z.string().nullable(),
+  languages: z.array(z.string()),
+  prompts: z.array(z.object({ promptKey: promptKeySchema, answer: z.string() })),
+  photos: z.array(publicPhotoSchema),
+  verified: z.boolean(),
+});
+export type FederatedProfile = z.infer<typeof federatedProfileSchema>;
+
+export const federatedInteractionKinds = ['like', 'pass', 'block'] as const;
+export const federatedInteractionSchema = z
+  .object({
+    partnerId: z.uuid(),
+    alias: federationAliasSchema,
+    kind: z.enum(federatedInteractionKinds),
+  })
+  .strict();
+export type FederatedInteraction = z.infer<typeof federatedInteractionSchema>;
+
+export const federatedMatchSchema = z.object({
+  id: z.uuid(),
+  partnerId: z.uuid(),
+  community: z.string(),
+  alias: federationAliasSchema,
+  displayName: z.string(),
+  photo: publicPhotoSchema.nullable(),
+  createdAt: z.string(),
+});
+export type FederatedMatch = z.infer<typeof federatedMatchSchema>;

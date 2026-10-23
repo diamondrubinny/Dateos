@@ -101,6 +101,37 @@ export async function exportMemberData(
     })
     .from(t.matches)
     .where(or(eq(t.matches.userA, userId), eq(t.matches.userB, userId)));
+  // Partner communities (phase 28b): your alias there, your decisions and matches.
+  const partnerName = t.federationPartners.name;
+  const federatedAliases = await db
+    .select({
+      community: partnerName,
+      alias: t.federationAliases.alias,
+      since: t.federationAliases.createdAt,
+    })
+    .from(t.federationAliases)
+    .innerJoin(t.federationPartners, eq(t.federationPartners.id, t.federationAliases.partnerId))
+    .where(eq(t.federationAliases.userId, userId));
+  const federatedDecisions = await db
+    .select({
+      community: partnerName,
+      theirAlias: t.federationDecisions.alias,
+      kind: t.federationDecisions.kind,
+      at: t.federationDecisions.createdAt,
+    })
+    .from(t.federationDecisions)
+    .innerJoin(t.federationPartners, eq(t.federationPartners.id, t.federationDecisions.partnerId))
+    .where(eq(t.federationDecisions.userId, userId));
+  const federatedMatches = await db
+    .select({
+      community: partnerName,
+      theirAlias: t.federationMatches.alias,
+      name: t.federationMatches.name,
+      at: t.federationMatches.createdAt,
+    })
+    .from(t.federationMatches)
+    .innerJoin(t.federationPartners, eq(t.federationPartners.id, t.federationMatches.partnerId))
+    .where(eq(t.federationMatches.userId, userId));
   const sent = await db
     .select({
       matchId: t.messages.matchId,
@@ -417,6 +448,12 @@ export async function exportMemberData(
     photos: photoEntries,
     voiceMessages: voiceEntries,
     likesAndPasses: interactions.map((i) => ({ ...i, at: iso(i.at) })),
+    partnerCommunities: {
+      note: 'Partners know you only by these aliases, one per community.',
+      aliases: federatedAliases.map((a) => ({ ...a, since: iso(a.since) })),
+      decisions: federatedDecisions.map((d) => ({ ...d, at: iso(d.at) })),
+      matches: federatedMatches.map((m) => ({ ...m, at: iso(m.at) })),
+    },
     matches: matches.map((m) => ({
       id: m.id,
       otherMemberId: m.userA === userId ? m.userB : m.userA,

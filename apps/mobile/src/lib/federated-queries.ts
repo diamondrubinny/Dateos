@@ -1,0 +1,121 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
+// Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
+import type {
+  FederatedInteraction,
+  FederatedMatch,
+  FederatedProfile,
+  FederatedStatus,
+  PublicProfile,
+} from '@nexaheart/shared';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { apiFetch, json } from './api';
+
+/** Partner communities (phase 28b): joining, the deck, decisions and matches. */
+export const federatedKeys = {
+  status: ['federated-status'] as const,
+  deck: ['federated-deck'] as const,
+  matches: ['federated-matches'] as const,
+};
+
+export function useFederatedStatus() {
+  return useQuery({
+    queryKey: federatedKeys.status,
+    queryFn: () => apiFetch<FederatedStatus>('/v1/federated/status'),
+  });
+}
+
+function useAfterMembership() {
+  const client = useQueryClient();
+  return async (status: FederatedStatus) => {
+    client.setQueryData(federatedKeys.status, status);
+    await client.invalidateQueries({ queryKey: federatedKeys.deck, refetchType: 'all' });
+    await client.invalidateQueries({ queryKey: federatedKeys.matches, refetchType: 'all' });
+  };
+}
+
+export function useJoinFederated() {
+  const after = useAfterMembership();
+  return useMutation({
+    mutationFn: (version: string) =>
+      apiFetch<FederatedStatus>('/v1/federated/join', {
+        method: 'POST',
+        body: json({ version }),
+      }),
+    onSuccess: after,
+  });
+}
+
+export function useLeaveFederated() {
+  const after = useAfterMembership();
+  return useMutation({
+    mutationFn: () => apiFetch<FederatedStatus>('/v1/federated/leave', { method: 'POST' }),
+    onSuccess: after,
+  });
+}
+
+export function useFederatedDeck(enabled: boolean) {
+  return useQuery({
+    queryKey: federatedKeys.deck,
+    enabled,
+    queryFn: () => apiFetch<FederatedProfile[]>('/v1/federated/deck'),
+  });
+}
+
+export function useFederatedDecide() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (input: FederatedInteraction) =>
+      apiFetch<{ matched: boolean }>('/v1/federated/interactions', {
+        method: 'POST',
+        body: json(input),
+      }),
+    onSuccess: async (result, input) => {
+      if (result.matched || input.kind === 'block') {
+        await client.invalidateQueries({ queryKey: federatedKeys.matches });
+      }
+    },
+  });
+}
+
+export function useFederatedMatches(enabled = true) {
+  return useQuery({
+    queryKey: federatedKeys.matches,
+    enabled,
+    queryFn: () => apiFetch<FederatedMatch[]>('/v1/federated/matches'),
+  });
+}
+
+export function useFederatedUnmatch() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) =>
+      apiFetch<{ ok: true }>(`/v1/federated/matches/${id}`, { method: 'DELETE' }),
+    onSuccess: () => client.invalidateQueries({ queryKey: federatedKeys.matches }),
+  });
+}
+
+/** A partner's card in the shape the profile card shows (nothing more than the card itself). */
+export function asPublicProfile(p: FederatedProfile): PublicProfile {
+  return {
+    id: `${p.partnerId}:${p.alias}`,
+    displayName: p.displayName,
+    age: p.age,
+    gender: p.gender,
+    intention: p.intention,
+    bio: p.bio,
+    languages: p.languages,
+    prompts: p.prompts.map((pr, i) => ({ id: `${p.alias}-${i}`, ...pr })),
+    photos: p.photos,
+    distance: null,
+    about: null,
+    voicePrompt: null,
+    accessNeeds: [],
+    metInPerson: false,
+    atEvent: false,
+    friendTakes: [],
+    visiting: null,
+    verified: p.verified,
+    reasons: [],
+  };
+}
