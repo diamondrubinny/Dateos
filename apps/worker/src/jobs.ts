@@ -13,9 +13,15 @@ import { and, eq, sql } from 'drizzle-orm';
 import type { Logger } from 'pino';
 import type { Scanner } from './clamav.js';
 import { InvalidAudioError, transcodeVoice } from './audio.js';
-import { InvalidImageError, processImage } from './image.js';
+import {
+  BANNED_PHOTO_DISTANCE,
+  InvalidImageError,
+  perceptualHash,
+  processImage,
+  SAME_PHOTO_DISTANCE,
+} from './image.js';
 
-const { photos, audioClips, auditLogs } = schema;
+const { photos, audioClips, auditLogs, reports } = schema;
 
 export interface JobContext {
   db: Database;
@@ -110,6 +116,20 @@ export async function processPhoto(ctx: JobContext, { photoId }: ProcessPhotoJob
     return 'rejected';
   }
 
+  // Profile photos only (phase 21): a banned account's photo is refused, a copy of another
+  // member's photo opens a case for the moderators.
+  const phash = row.purpose === 'profile' ? await perceptualHash(processed.data) : null;
+  if (phash !== null && (await matchesBannedPhoto(ctx, phash))) {
+    await reject(ctx, photoId, row.userId, 'banned_photo', row.quarantineKey);
+    await autoReport(
+      ctx,
+      row.userId,
+      'high',
+      'Automatic: a new profile photo matches a photo of a banned account. It was not published.',
+    );
+    return 'rejected';
+  }
+
   const key = mediaKey(row.userId, photoId);
   await ctx.storage.put(ctx.storage.buckets.media, key, processed.data, 'image/webp');
   const updated = await ctx.db
@@ -120,6 +140,7 @@ export async function processPhoto(ctx: JobContext, { photoId }: ProcessPhotoJob
       quarantineKey: null,
       width: processed.width,
       height: processed.height,
+      phash,
     })
     .where(and(eq(photos.id, photoId), eq(photos.userId, row.userId)))
     .returning({ id: photos.id });
@@ -129,7 +150,82 @@ export async function processPhoto(ctx: JobContext, { photoId }: ProcessPhotoJob
   }
   await ctx.storage.delete(ctx.storage.buckets.quarantine, [row.quarantineKey]);
   if (updated.length > 0) await notifyChatImage(ctx, photoId);
+  if (updated.length > 0 && phash !== null) {
+    const others = await sameProfilePhotoOwners(ctx, row.userId, phash);
+    if (others.length > 0) {
+      await autoReport(
+        ctx,
+        row.userId,
+        'normal',
+        `Automatic: a profile photo looks the same as a photo of ${others.length === 1 ? 'another account' : `${others.length} other accounts`} (${others.join(', ')}). Could be a shared photo or a copied profile.`,
+      );
+    }
+  }
   return updated.length === 0 ? 'orphaned' : 'clean';
+}
+
+/** Hamming distance between two signed 64-bit hashes, in SQL. */
+const distance = (column: ReturnType<typeof sql>, hash: bigint) =>
+  sql`bit_count((${column} # ${hash.toString()}::bigint)::bit(64))`;
+
+async function matchesBannedPhoto(ctx: JobContext, hash: bigint): Promise<boolean> {
+  const { rows } = await ctx.db.execute(sql`
+    SELECT 1 FROM banned_photo_hashes b
+    WHERE ${distance(sql`b.hash`, hash)} <= ${BANNED_PHOTO_DISTANCE} LIMIT 1`);
+  return rows.length > 0;
+}
+
+/** Other accounts with a clean profile photo that looks the same (at most five, for the case). */
+async function sameProfilePhotoOwners(
+  ctx: JobContext,
+  userId: string,
+  hash: bigint,
+): Promise<string[]> {
+  const { rows } = await ctx.db.execute<{ user_id: string }>(sql`
+    SELECT DISTINCT p.user_id FROM photos p
+    WHERE p.phash IS NOT NULL AND p.user_id <> ${userId} AND p.status = 'clean'
+      AND p.purpose = 'profile' AND ${distance(sql`p.phash`, hash)} <= ${SAME_PHOTO_DISTANCE}
+    LIMIT 5`);
+  return rows.map((r) => r.user_id);
+}
+
+/**
+ * Opens a report with no reporter (the system), unless one is already open for this member:
+ * moderators see it in the usual queue, with the same tools and audit trail.
+ */
+async function autoReport(
+  ctx: JobContext,
+  reportedId: string,
+  priority: 'high' | 'normal',
+  details: string,
+): Promise<void> {
+  const [open] = await ctx.db
+    .select({ id: reports.id })
+    .from(reports)
+    .where(
+      and(
+        eq(reports.reportedId, reportedId),
+        eq(reports.status, 'open'),
+        eq(reports.automatic, true),
+        eq(reports.category, 'fake_profile'),
+      ),
+    );
+  if (open) return;
+  await ctx.db.insert(reports).values({
+    reporterId: null,
+    reportedId,
+    category: 'fake_profile',
+    priority,
+    details,
+    automatic: true,
+  });
+  await ctx.db.insert(auditLogs).values({
+    actorId: null,
+    action: 'report.automatic',
+    targetType: 'user',
+    targetId: reportedId,
+    meta: { reason: priority === 'high' ? 'banned_photo' : 'same_photo' },
+  });
 }
 
 export async function deleteObjects(ctx: JobContext, job: DeleteObjectsJob): Promise<void> {

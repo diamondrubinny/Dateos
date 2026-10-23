@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@better-auth/expo": "1.7.12",
+    "@better-auth/passkey": "1.7.12",
     "@fastify/cors": "11.3.1",
     "@fastify/helmet": "13.2.0",
     "@fastify/multipart": "10.1.4",
@@ -26,6 +27,7 @@
     "@nexaheart/db": "workspace:*",
     "@nexaheart/shared": "workspace:*",
     "@nexaheart/storage": "workspace:*",
+    "@simplewebauthn/server": "13.3.3",
     "better-auth": "1.7.12",
     "bullmq": "6.3.19",
     "drizzle-orm": "0.45.4",

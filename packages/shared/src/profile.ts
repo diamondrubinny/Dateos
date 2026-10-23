@@ -5,6 +5,7 @@ import { accountNoticeSchema } from './moderation.js';
 import { aboutSchema, dealbreakersSchema } from './about.js';
 import { pauseStateSchema } from './visibility.js';
 import { z } from 'zod';
+import { signupModes } from './trust.js';
 
 export const MIN_AGE = 18;
 export const MAX_AGE = 100;
@@ -204,7 +205,13 @@ export const instanceSchema = z.object({
   primaryColor: z.string(),
   locales: z.array(z.string()),
   defaultLocale: z.string(),
-  auth: z.object({ magicLink: z.boolean(), google: z.boolean(), apple: z.boolean() }),
+  auth: z.object({
+    magicLink: z.boolean(),
+    google: z.boolean(),
+    apple: z.boolean(),
+    /** Sign in with a passkey (phase 21; the web app for now). */
+    passkey: z.boolean(),
+  }),
   sponsorUrl: z.string().nullable(),
   legal: z.object({ termsVersion: z.string(), privacyVersion: z.string() }),
   /** Contrast-checked brand colors for light and dark mode. */
@@ -220,6 +227,8 @@ export const instanceSchema = z.object({
   setupRequired: z.boolean(),
   /** Video dates are configured (LiveKit) and turned on by the community's admins. */
   calls: z.boolean(),
+  /** Who may open a new account (phase 21): open, with an invite code, or through a waitlist. */
+  signup: z.enum(signupModes),
   /** The software credit every interface shows (license term, see NOTICE). */
   poweredBy: z.object({
     name: z.literal('NexaHeart'),

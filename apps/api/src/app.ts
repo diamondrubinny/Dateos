@@ -33,6 +33,7 @@ import { adminRoutes } from './modules/admin/routes.js';
 import { safetyRoutes } from './modules/safety/routes.js';
 import { notificationRoutes } from './modules/notifications/routes.js';
 import { coachRoutes } from './modules/coach/routes.js';
+import { signupRoutes, trustRoutes } from './modules/trust/routes.js';
 import type { Services } from './services.js';
 
 export interface AppDependencies {
@@ -114,7 +115,10 @@ export async function buildApp(env: Env, deps: AppDependencies): Promise<Fastify
       storage: services.storage,
       venues: services.venues,
       events: services.events,
+      trust: services.trust,
     });
+    await typed.register(signupRoutes, { trust: services.trust });
+    await typed.register(trustRoutes, { auth: services.auth, trust: services.trust });
     await typed.register(coachRoutes, {
       auth: services.auth,
       db: services.dbHandle.db,

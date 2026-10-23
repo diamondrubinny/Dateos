@@ -22,6 +22,7 @@ const {
   reportEvidence,
   moderationLog,
   bannedEmails,
+  bannedPhotoHashes,
   user,
   session,
   profiles,
@@ -147,6 +148,7 @@ export class ModerationService {
       ...summary,
       details: report!.details,
       reporter: { id: report!.reporterId, displayName: reporterName },
+      automatic: report!.automatic,
       evidence: evidence.map((e) => ({
         id: e.id,
         from: e.fromReported ? ('reported' as const) : ('reporter' as const),
@@ -251,6 +253,11 @@ export class ModerationService {
           .insert(bannedEmails)
           .values({ emailHash: this.hashEmail(target.email), userId: report.reportedId })
           .onConflictDoNothing();
+        // Their photos can't come back on a new account (phase 21).
+        await tx.execute(sql`
+          INSERT INTO banned_photo_hashes (hash, user_id)
+          SELECT DISTINCT phash, user_id FROM photos
+          WHERE user_id = ${report.reportedId} AND phash IS NOT NULL`);
       }
       await audit(tx, {
         actorId: staff.id,
@@ -283,6 +290,7 @@ export class ModerationService {
         .set({ status: 'active', suspendedReason: null })
         .where(eq(user.id, userId));
       await tx.delete(bannedEmails).where(eq(bannedEmails.userId, userId));
+      await tx.delete(bannedPhotoHashes).where(eq(bannedPhotoHashes.userId, userId));
       await tx
         .insert(moderationLog)
         .values({ targetId: userId, staffId: staff.id, action: 'unsuspend', reason });

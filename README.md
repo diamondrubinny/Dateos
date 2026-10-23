@@ -71,6 +71,7 @@ NexaHeart is in active development. Here is what works today and what comes next
 | Travel mode: meet people in a city before you arrive (up to 2 weeks), marked "Visiting {city}"; city search on your own server                                                                                               | ✅ Available |
 | About me: interests, lifestyle, religious observance (with its own consent), dealbreakers both ways, an opening question and a voice prompt                                                                                  | ✅ Available |
 | After the match: "when we're both free" (only the overlap is shown), a private "did you meet?" that reveals only a mutual "again", an opt-in met-in-person badge, and a focus mode that asks you to reply before liking more | ✅ Available |
+| Trust and safety: copied-photo detection (perceptual hash), banned photos can't come back, "hide me from my contacts" (hashed on the device), passkeys, invite codes and a waitlist, screenshot protection in the native app | ✅ Available |
 
 ## Screenshots
 

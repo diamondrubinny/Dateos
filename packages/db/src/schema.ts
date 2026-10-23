@@ -97,6 +97,34 @@ export const session = pgTable(
   (t) => [index('session_user_id_idx').on(t.userId)],
 );
 
+/**
+ * Passkeys (phase 21), the table of better-auth's official passkey plugin. Field names follow the
+ * plugin's model (credentialID, ...). Holds public keys only; the private key never leaves the
+ * person's device.
+ */
+export const passkey = pgTable(
+  'passkey',
+  {
+    id: text('id').primaryKey(),
+    name: text('name'),
+    publicKey: text('public_key').notNull(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    credentialID: text('credential_id').notNull(),
+    counter: integer('counter').notNull(),
+    deviceType: text('device_type').notNull(),
+    backedUp: boolean('backed_up').notNull(),
+    transports: text('transports'),
+    aaguid: text('aaguid'),
+    createdAt: timestamp('created_at', { withTimezone: true }),
+  },
+  (t) => [
+    index('passkey_user_id_idx').on(t.userId),
+    uniqueIndex('passkey_credential_id_uq').on(t.credentialID),
+  ],
+);
+
 export const account = pgTable(
   'account',
   {
@@ -264,6 +292,8 @@ export const photos = pgTable(
     height: integer('height'),
     position: smallint('position').notNull(),
     rejectReason: varchar('reject_reason', { length: 32 }),
+    /** Perceptual hash of a profile photo (phase 21), for duplicates and banned photos. */
+    phash: bigint('phash', { mode: 'bigint' }),
     ...timestamps,
   },
   (t) => [index('photos_user_id_idx').on(t.userId)],
@@ -537,6 +567,8 @@ export const reports = pgTable(
     category: reportCategoryEnum('category').notNull(),
     priority: reportPriorityEnum('priority').notNull(),
     details: varchar('details', { length: 1000 }),
+    /** Opened by an automatic check (phase 21), not by a member. */
+    automatic: boolean('automatic').notNull().default(false),
     status: reportStatusEnum('status').notNull().default('open'),
     resolvedBy: text('resolved_by').references(() => user.id, { onDelete: 'set null' }),
     resolvedAction: moderationActionEnum('resolved_action'),
@@ -602,6 +634,37 @@ export const bannedEmails = pgTable('banned_emails', {
   userId: text('user_id'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
+
+/**
+ * "Hide me from my contacts" (phase 21): only matches between the member's contacts and existing
+ * members are stored, never the hashes of anyone else. Silent and two-way in Discover.
+ */
+export const contactHides = pgTable(
+  'contact_hides',
+  {
+    userId: ownerId(),
+    otherId: text('other_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.userId, t.otherId] }),
+    index('contact_hides_other_idx').on(t.otherId),
+  ],
+);
+
+/** Perceptual hashes of a banned account's photos (phase 21); removed when the ban is lifted. */
+export const bannedPhotoHashes = pgTable(
+  'banned_photo_hashes',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    hash: bigint('hash', { mode: 'bigint' }).notNull(),
+    userId: text('user_id'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index('banned_photo_hashes_user_idx').on(t.userId)],
+);
 
 export const staffMfa = pgTable('staff_mfa', {
   userId: ownerId().primaryKey(),
@@ -681,6 +744,10 @@ export const instanceSettings = pgTable(
     /** Video dates (phase 15): off until an admin turns them on (and LiveKit is configured). */
     callsEnabled: boolean('calls_enabled').notNull().default(false),
     callMaxMinutes: smallint('call_max_minutes').notNull().default(60),
+    /** Who may open a new account (phase 21): open, with an invite code, or through a waitlist. */
+    signupMode: varchar('signup_mode', { length: 10 }).notNull().default('open'),
+    /** In invite mode, verified members can invite a few people themselves. */
+    memberInvites: boolean('member_invites').notNull().default(false),
     updatedBy: text('updated_by').references(() => user.id, { onDelete: 'set null' }),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
@@ -922,4 +989,54 @@ export const matchAvailability = pgTable(
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [primaryKey({ columns: [t.matchId, t.userId] })],
+);
+
+// ---------------------------------------------------------------------------
+// Who may sign up (phase 21)
+// ---------------------------------------------------------------------------
+
+/** Invite codes are stored as SHA-256 hashes; the code itself is shown once, when it's made. */
+export const inviteCodes = pgTable(
+  'invite_codes',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    codeHash: varchar('code_hash', { length: 64 }).notNull().unique(),
+    label: varchar('label', { length: 60 }),
+    createdBy: text('created_by').references(() => user.id, { onDelete: 'set null' }),
+    byMember: boolean('by_member').notNull().default(false),
+    maxUses: integer('max_uses').notNull(),
+    uses: integer('uses').notNull().default(0),
+    expiresAt: timestamp('expires_at', { withTimezone: true }),
+    revokedAt: timestamp('revoked_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index('invite_codes_created_by_idx').on(t.createdBy)],
+);
+
+/** An email (keyed hash) that may open an account until `expiresAt`: a redeemed code or approval. */
+export const signupAllowances = pgTable('signup_allowances', {
+  emailHash: varchar('email_hash', { length: 64 }).primaryKey(),
+  inviteId: uuid('invite_id').references(() => inviteCodes.id, { onDelete: 'set null' }),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const waitlist = pgTable(
+  'waitlist',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    email: varchar('email', { length: 254 }).notNull(),
+    emailHash: varchar('email_hash', { length: 64 }).notNull(),
+    note: varchar('note', { length: 200 }),
+    status: varchar('status', { length: 10 }).notNull().default('pending'),
+    decidedBy: text('decided_by').references(() => user.id, { onDelete: 'set null' }),
+    decidedAt: timestamp('decided_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex('waitlist_pending_email_uq')
+      .on(t.emailHash)
+      .where(sql`status = 'pending'`),
+    index('waitlist_queue_idx').on(t.status, t.createdAt),
+  ],
 );

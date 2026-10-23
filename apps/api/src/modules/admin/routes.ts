@@ -23,6 +23,10 @@ import {
   adminEventSchema,
   eventInputSchema,
   eventUpdateSchema,
+  createInviteSchema,
+  inviteSchema,
+  waitlistEntrySchema,
+  waitlistStatuses,
 } from '@nexaheart/shared';
 import type { Storage, StoredObject } from '@nexaheart/storage';
 import type { FastifyReply } from 'fastify';
@@ -38,6 +42,7 @@ import type { PhotoService } from '../photos/service.js';
 import type { VerificationService } from '../safety/verification.js';
 import type { VenueService } from '../dates/venues.js';
 import type { EventService } from '../events/service.js';
+import type { TrustService } from '../trust/service.js';
 import { isStaffRole, type StaffMfaService } from './mfa.js';
 import type { ModerationService } from './moderation.js';
 
@@ -62,9 +67,10 @@ export const adminRoutes: FastifyPluginAsyncZod<{
   storage: Storage;
   venues: VenueService;
   events: EventService;
+  trust: TrustService;
 }> = async (
   app,
-  { auth, mfa, moderation, verification, photos, instance, storage, venues, events },
+  { auth, mfa, moderation, verification, photos, instance, storage, venues, events, trust },
 ) => {
   await app.register(multipart, {
     limits: { fileSize: MAX_PHOTO_BYTES, files: 1, fields: 0, parts: 1 },
@@ -268,6 +274,58 @@ export const adminRoutes: FastifyPluginAsyncZod<{
   });
 
   // Date planner places (phase 12): every staff member can see them, only admins change them.
+  // ---------------------------------------------------------------- who may sign up (phase 21)
+
+  app.get(
+    '/v1/admin/invites',
+    { schema: { response: { 200: z.object({ invites: z.array(inviteSchema) }) } } },
+    async () => ({ invites: await trust.listInvites() }),
+  );
+  app.post(
+    '/v1/admin/invites',
+    {
+      config: perUserLimit(100, 60 * 60 * 1000),
+      schema: { body: createInviteSchema, response: { 201: inviteSchema } },
+    },
+    async (request, reply) =>
+      reply.status(201).send(await trust.createInvite(currentUser(request), request.body)),
+  );
+  app.post(
+    '/v1/admin/invites/:id/revoke',
+    { schema: { params: idParams, response: { 200: ok } } },
+    async (request) => {
+      await trust.revokeInvite(currentUser(request), request.params.id);
+      return { ok: true as const };
+    },
+  );
+  app.get(
+    '/v1/admin/waitlist',
+    {
+      schema: {
+        querystring: z.object({ status: z.enum(waitlistStatuses).default('pending') }),
+        response: { 200: z.object({ entries: z.array(waitlistEntrySchema) }) },
+      },
+    },
+    async (request) => ({ entries: await trust.listWaitlist(request.query.status) }),
+  );
+  app.post(
+    '/v1/admin/waitlist/:id/:decision',
+    {
+      schema: {
+        params: z.object({ id: z.uuid(), decision: z.enum(['approve', 'decline']) }),
+        response: { 200: ok },
+      },
+    },
+    async (request) => {
+      await trust.decideWaitlist(
+        currentUser(request),
+        request.params.id,
+        request.params.decision === 'approve',
+      );
+      return { ok: true as const };
+    },
+  );
+
   app.get(
     '/v1/admin/venues',
     { schema: { response: { 200: z.object({ venues: z.array(adminVenueSchema) }) } } },

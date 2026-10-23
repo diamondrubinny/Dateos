@@ -37,6 +37,7 @@ import { EventService } from './modules/events/service.js';
 import { CityIndex } from './modules/places/cities.js';
 import { TravelService } from './modules/places/service.js';
 import { CallService } from './modules/calls/service.js';
+import { TrustService } from './modules/trust/service.js';
 import { createLiveKitMedia, type CallMedia } from './lib/livekit.js';
 
 export interface Services {
@@ -58,6 +59,7 @@ export interface Services {
   verification: VerificationService;
   staffMfa: StaffMfaService;
   moderation: ModerationService;
+  trust: TrustService;
   instance: InstanceService;
   checkins: CheckinService;
   venues: VenueService;
@@ -115,14 +117,6 @@ export function createServices(
     (userId, matchId) => notifyQueue.push({ userId, kind: 'match', matchId }),
     cities,
   );
-  const auth = createAuth({
-    env,
-    secret: secrets.authSecret,
-    db: dbHandle.db,
-    redis,
-    mailer,
-    onMailError,
-  });
   const legal = { termsVersion: env.TERMS_VERSION, privacyVersion: env.PRIVACY_VERSION };
   const photos = new PhotoService(dbHandle.db, storage, mediaQueue, (viewer, owner) =>
     discovery.canView(viewer, owner),
@@ -141,6 +135,24 @@ export function createServices(
   const audio = new AudioService(dbHandle.db, storage, mediaQueue);
   audio.useVisibility((viewerId, ownerId) => discovery.canView(viewerId, ownerId));
   const hashEmail = createEmailHasher(secrets.authSecret);
+  const trust = new TrustService(
+    dbHandle.db,
+    env,
+    instance,
+    mailer,
+    createEmailHasher(secrets.authSecret, 'signup-email'),
+    onMailError,
+    overrides.now,
+  );
+  const auth = createAuth({
+    env,
+    secret: secrets.authSecret,
+    db: dbHandle.db,
+    redis,
+    mailer,
+    onMailError,
+    signup: trust,
+  });
   const venues = new VenueService(dbHandle.db);
   const chat = new ChatService(
     dbHandle.db,
@@ -211,6 +223,7 @@ export function createServices(
     ),
     moderation: new ModerationService(dbHandle.db, discovery, hashEmail, today),
     instance,
+    trust,
     checkins: new CheckinService(
       dbHandle.db,
       mailer,

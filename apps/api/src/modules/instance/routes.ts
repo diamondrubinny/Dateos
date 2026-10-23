@@ -7,6 +7,7 @@ import {
   instanceSchema,
   localeSchema,
   setupClaimSchema,
+  signupModes,
 } from '@nexaheart/shared';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';
@@ -29,6 +30,7 @@ export function instanceInfo(env: Env): InstanceInfo {
       magicLink: true,
       google: Boolean(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET),
       apple: Boolean(env.APPLE_CLIENT_ID && env.APPLE_CLIENT_SECRET),
+      passkey: false,
     },
     sponsorUrl: env.SPONSOR_URL ?? null,
     legal: { termsVersion: env.TERMS_VERSION, privacyVersion: env.PRIVACY_VERSION },
@@ -38,6 +40,7 @@ export function instanceInfo(env: Env): InstanceInfo {
     contactEmail: null,
     setupRequired: false,
     calls: false,
+    signup: 'open',
     poweredBy: poweredBy(env),
   };
 }
@@ -103,4 +106,6 @@ export const adminSettingsSchema = z.object({
   callsConfigured: z.boolean(),
   callsEnabled: z.boolean(),
   callMaxMinutes: z.number().int(),
+  signupMode: z.enum(signupModes),
+  memberInvites: z.boolean(),
 });

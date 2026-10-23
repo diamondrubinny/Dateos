@@ -6,6 +6,16 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Added
 
+- **Copied photos**: every profile photo gets a perceptual hash. A copy of another member's photo
+  (even resized or re-compressed) opens an automatic case for the moderators, and a photo of a banned
+  account can't be used on a new one. Flat images get no hash, so they never match.
+- **Hide me from my contacts**: paste addresses (web) or pick from your contacts (app). They're hashed
+  on the device; the server keeps only which members matched and hides you from each other, silently.
+- **Passkeys**: add one in Settings and sign in with your fingerprint, face or screen lock (web).
+- **Who can join**: open (the default), invite codes (also personal invites from verified members),
+  or a waitlist moderators approve, set in the dashboard's new Joining page.
+- **Screenshot protection** in the native app on chats, profiles and calls (Android blocks
+  screenshots, iOS screen recording). The web can't, and Settings says so.
 - **When we're both free**: in a chat, mark the mornings, afternoons and evenings you're free in the
   next two weeks. Only the times you're **both** free are shown, never the other person's list;
   tapping one opens the date planner with that day and time filled in. The times are deleted when
@@ -40,6 +50,8 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Changed
 
+- Build-time dependencies: patched esbuild (drizzle-kit's loader) and uuid (Expo's iOS project
+  tooling) through overrides; `pnpm audit --prod` has no open advisories beyond the two reviewed ones.
 - Right-to-left text in the chat and call screens now aligns to the right on the web (it followed
   the page direction only inside the standard screen layout).
 - **License: AGPL-3.0-or-later with a credit that must stay** (see [NOTICE](NOTICE)). Every copy,

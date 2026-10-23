@@ -2,6 +2,7 @@
 // Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 import { z } from 'zod';
+import { signupModes } from './trust.js';
 import { MAX_CALL_MAX_MINUTES, MIN_CALL_MAX_MINUTES } from './calls.js';
 import { localeSchema } from './common.js';
 
@@ -93,6 +94,8 @@ export const instanceSettingsInputSchema = z
       .nullable(),
     callsEnabled: z.boolean(),
     callMaxMinutes: z.number().int().min(MIN_CALL_MAX_MINUTES).max(MAX_CALL_MAX_MINUTES),
+    signupMode: z.enum(signupModes),
+    memberInvites: z.boolean(),
   })
   .partial();
 export type InstanceSettingsInput = z.infer<typeof instanceSettingsInputSchema>;

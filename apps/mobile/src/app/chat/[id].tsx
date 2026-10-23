@@ -25,6 +25,7 @@ import { MessageBubble } from '../../components/MessageBubble';
 import { RemoteImage } from '../../components/RemoteImage';
 import { RequireSession } from '../../components/RequireSession';
 import { VoiceRecorder, type Recording } from '../../components/VoiceRecorder';
+import { useNoScreenCapture } from '../../lib/screen-capture';
 import { ApiRequestError } from '../../lib/api';
 import {
   checkMessage,
@@ -45,6 +46,8 @@ import { MIN_TOUCH, radius, spacing, useColors } from '../../lib/theme';
 
 function ChatScreen() {
   const { t } = useTranslation();
+  // Other people's photos and words: no screenshots on Android, no recording on iOS (phase 21).
+  useNoScreenCapture();
   const colors = useColors();
   const { locale, direction } = useLocale();
   const { id: matchId } = useLocalSearchParams<{ id: string }>();

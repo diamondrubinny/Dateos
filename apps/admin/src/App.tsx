@@ -16,6 +16,7 @@ import { Reports } from './pages/Reports';
 import { SignIn } from './pages/SignIn';
 import { Events } from './pages/Events';
 import { Venues } from './pages/Venues';
+import { Signup } from './pages/Signup';
 import { Verifications } from './pages/Verifications';
 
 const LOCALE_KEY = 'nexaheart-admin-locale';
@@ -65,7 +66,9 @@ function Shell({
   const { t, toggle, locale } = useLocale();
   const route = useRoute();
   const current = route[0] ?? 'reports';
-  const link = (key: 'reports' | 'verifications' | 'venues' | 'events' | 'audit' | 'branding') => (
+  const link = (
+    key: 'reports' | 'verifications' | 'venues' | 'events' | 'signup' | 'audit' | 'branding',
+  ) => (
     <li>
       <a href={`#/${key}`} aria-current={current === key ? 'page' : undefined}>
         {key === 'branding'
@@ -74,7 +77,9 @@ function Shell({
             ? t.venues.nav
             : key === 'events'
               ? t.events.nav
-              : t.nav[key]}
+              : key === 'signup'
+                ? t.signup.nav
+                : t.nav[key]}
       </a>
     </li>
   );
@@ -92,6 +97,7 @@ function Shell({
               {link('verifications')}
               {link('venues')}
               {link('events')}
+              {link('signup')}
               {link('audit')}
               {isAdmin ? link('branding') : null}
             </ul>
@@ -127,6 +133,7 @@ function Routes({ staff }: { staff: NonNullable<Awaited<ReturnType<typeof api.me
   if (route[0] === 'verifications') return <Verifications />;
   if (route[0] === 'venues') return <Venues isAdmin={staff.role === 'admin'} />;
   if (route[0] === 'events') return <Events isAdmin={staff.role === 'admin'} />;
+  if (route[0] === 'signup') return <Signup isAdmin={staff.role === 'admin'} />;
   if (route[0] === 'audit') return <Audit />;
   if (route[0] === 'branding' && staff.role === 'admin') return <Branding wizard={false} />;
   return <Reports />;
