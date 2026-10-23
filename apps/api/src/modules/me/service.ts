@@ -9,6 +9,11 @@ import {
   MIN_PHOTOS,
   requiredConsents,
   SENSITIVE_CONSENT_VERSION,
+  RELIGION_CONSENT_VERSION,
+  emptyAbout,
+  noDealbreakers,
+  type About,
+  type Dealbreakers,
   type ConsentInput,
   type MeResponse,
   pauseEndsAt,
@@ -18,7 +23,9 @@ import {
   type ProfileInput,
   type ProfileUpdate,
   type PromptAnswer,
+  type PromptKey,
 } from '@nexaheart/shared';
+import { checkHarm } from '@nexaheart/ai';
 import { and, asc, desc, eq, isNull, ne } from 'drizzle-orm';
 import { HttpError } from '../../plugins/error-handler.js';
 import type { MediaQueue, ProfileQueue } from '../../lib/queue.js';
@@ -34,6 +41,7 @@ const {
   session,
   locations,
   moderationLog,
+  profileAbout,
 } = schema;
 
 export interface LegalVersions {
@@ -78,6 +86,10 @@ export class MeService {
 
     const [profile] = await this.db.select().from(profiles).where(eq(profiles.userId, userId));
     const [prefs] = await this.db.select().from(preferences).where(eq(preferences.userId, userId));
+    const [about] = await this.db
+      .select()
+      .from(profileAbout)
+      .where(eq(profileAbout.userId, userId));
     const promptRows = await this.db
       .select({ promptKey: prompts.promptKey, answer: prompts.answer })
       .from(prompts)
@@ -131,6 +143,30 @@ export class MeService {
           }
         : null,
       incognito: account.incognito,
+      about: about
+        ? {
+            interests: about.interests as About['interests'],
+            children: about.children as About['children'],
+            smoking: about.smoking as About['smoking'],
+            drinking: about.drinking as About['drinking'],
+            heightCm: about.heightCm,
+            religion: about.religion as About['religion'],
+            openingQuestion: about.openingQuestion,
+          }
+        : emptyAbout,
+      voicePrompt:
+        about?.voiceAudioId && about.voicePromptKey
+          ? await this.myVoicePrompt(about.voiceAudioId, about.voicePromptKey as PromptKey)
+          : null,
+      dealbreakers: prefs
+        ? {
+            smokingOk: prefs.smokingOk as Dealbreakers['smokingOk'],
+            childrenOk: prefs.childrenOk as Dealbreakers['childrenOk'],
+            religionOk: prefs.religionOk as Dealbreakers['religionOk'],
+            heightMin: prefs.heightMin,
+            heightMax: prefs.heightMax,
+          }
+        : noDealbreakers,
       profile: profile
         ? {
             displayName: profile.displayName,
@@ -191,6 +227,51 @@ export class MeService {
       .update(user)
       .set({ pausedAt: null, pausedUntil: null })
       .where(eq(user.id, userId));
+  }
+
+  /**
+   * About me (phase 19). Religious observance needs its own consent; the opening question goes
+   * through the same filter as messages, since every match will read it.
+   */
+  async setAbout(userId: string, about: About): Promise<void> {
+    await this.assertConsented(userId);
+    if (about.religion !== null) await this.assertReligionConsent(userId);
+    if (about.openingQuestion && checkHarm(about.openingQuestion).flagged) {
+      throw new HttpError(400, ErrorCode.ValidationError, 'Please rephrase your question.');
+    }
+    const values = { ...about, updatedAt: new Date() };
+    await this.db
+      .insert(profileAbout)
+      .values({ userId, ...values })
+      .onConflictDoUpdate({ target: profileAbout.userId, set: values });
+  }
+
+  /** Dealbreakers (phase 19): stored with the other preferences, which onboarding creates. */
+  async setDealbreakers(userId: string, d: Dealbreakers): Promise<void> {
+    if (d.religionOk.length > 0) await this.assertReligionConsent(userId);
+    const updated = await this.db
+      .update(preferences)
+      .set({ ...d, updatedAt: new Date() })
+      .where(eq(preferences.userId, userId))
+      .returning({ userId: preferences.userId });
+    if (updated.length === 0) {
+      throw new HttpError(409, ErrorCode.Conflict, 'Set your preferences first.');
+    }
+  }
+
+  private async myVoicePrompt(audioId: string, promptKey: PromptKey) {
+    const [clip] = await this.db
+      .select({ status: schema.audioClips.status, durationMs: schema.audioClips.durationMs })
+      .from(schema.audioClips)
+      .where(eq(schema.audioClips.id, audioId));
+    return clip ? { promptKey, audioId, status: clip.status, durationMs: clip.durationMs } : null;
+  }
+
+  private async assertReligionConsent(userId: string): Promise<void> {
+    const religion = (await this.currentConsents(userId)).religion;
+    if (!religion?.granted || religion.version !== RELIGION_CONSENT_VERSION) {
+      throw new HttpError(403, ErrorCode.Forbidden, 'Religious observance needs your consent.');
+    }
   }
 
   /** Incognito (phase 18b): only people this member liked can see them. */
@@ -318,6 +399,14 @@ export class MeService {
       if (items.some((item) => item.kind === 'location' && !item.granted)) {
         await tx.delete(locations).where(eq(locations.userId, userId));
       }
+      // Withdrawing the religion consent deletes the answer and the filter built on it.
+      if (items.some((item) => item.kind === 'religion' && !item.granted)) {
+        await tx
+          .update(profileAbout)
+          .set({ religion: null })
+          .where(eq(profileAbout.userId, userId));
+        await tx.update(preferences).set({ religionOk: [] }).where(eq(preferences.userId, userId));
+      }
       if (sensitive) {
         await tx
           .update(user)
@@ -341,6 +430,7 @@ export class MeService {
       terms: this.legal.termsVersion,
       privacy: this.legal.privacyVersion,
       sensitive: SENSITIVE_CONSENT_VERSION,
+      religion: RELIGION_CONSENT_VERSION,
     };
   }
 

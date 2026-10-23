@@ -30,10 +30,18 @@ export function VoiceRecorder({
   onSend,
   onClose,
   sending,
+  maxSeconds = MAX_VOICE_SECONDS,
+  sendLabel,
+  introLabel,
 }: {
   onSend: (recording: Recording) => void;
   onClose: () => void;
   sending: boolean;
+  /** A voice prompt is shorter than a voice message (30 s, phase 19). */
+  maxSeconds?: number;
+  /** Wording for other uses than a voice message (e.g. "Save answer"). */
+  sendLabel?: string;
+  introLabel?: string;
 }) {
   const { t } = useTranslation();
   const colors = useColors();
@@ -50,7 +58,7 @@ export function VoiceRecorder({
 
   // Hard limit, matching the server.
   useEffect(() => {
-    if (state.isRecording && state.durationMillis >= MAX_VOICE_SECONDS * 1000) void stop();
+    if (state.isRecording && state.durationMillis >= maxSeconds * 1000) void stop();
   });
 
   const start = async () => {
@@ -74,11 +82,11 @@ export function VoiceRecorder({
         {state.isRecording
           ? t('voice.recording', {
               time: formatSeconds(state.durationMillis),
-              max: formatSeconds(MAX_VOICE_SECONDS * 1000),
+              max: formatSeconds(maxSeconds * 1000),
             })
           : result
             ? t('voice.ready', { time: formatSeconds(result.durationMs) })
-            : t('voice.intro', { max: MAX_VOICE_SECONDS })}
+            : (introLabel ?? t('voice.intro', { max: maxSeconds }))}
       </AppText>
       {error ? (
         <AppText variant="caption" tone="danger" accessibilityRole="alert">
@@ -90,7 +98,11 @@ export function VoiceRecorder({
           <Button variant="danger" label={t('voice.stop')} onPress={() => void stop()} />
         ) : result ? (
           <>
-            <Button label={t('voice.send')} loading={sending} onPress={() => onSend(result)} />
+            <Button
+              label={sendLabel ?? t('voice.send')}
+              loading={sending}
+              onPress={() => onSend(result)}
+            />
             <Button variant="secondary" label={t('voice.again')} onPress={() => void start()} />
           </>
         ) : (

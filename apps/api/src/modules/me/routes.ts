@@ -4,6 +4,8 @@
 import {
   consentsInputSchema,
   meResponseSchema,
+  aboutSchema,
+  dealbreakersSchema,
   incognitoInputSchema,
   pauseInputSchema,
   preferencesSchema,
@@ -106,6 +108,31 @@ export const meRoutes: FastifyPluginAsyncZod<{
     { schema: { response: { 200: ok } }, config: perUserLimit(30, 24 * 60 * 60 * 1000) },
     async (request) => {
       await me.resume(currentUser(request).id);
+      return { ok: true as const };
+    },
+  );
+
+  // About me and dealbreakers (phase 19).
+  app.put(
+    '/v1/me/about',
+    {
+      schema: { body: aboutSchema, response: { 200: ok } },
+      config: perUserLimit(60, 60 * 60 * 1000),
+    },
+    async (request) => {
+      await me.setAbout(currentUser(request).id, request.body);
+      return { ok: true as const };
+    },
+  );
+
+  app.put(
+    '/v1/me/dealbreakers',
+    {
+      schema: { body: dealbreakersSchema, response: { 200: ok } },
+      config: perUserLimit(60, 60 * 60 * 1000),
+    },
+    async (request) => {
+      await me.setDealbreakers(currentUser(request).id, request.body);
       return { ok: true as const };
     },
   );

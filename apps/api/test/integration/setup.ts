@@ -87,7 +87,7 @@ export async function setupIntegration(options: SetupOptions = {}): Promise<Test
     ...process.env,
     ...isolated,
     NODE_ENV: 'test',
-    LOG_LEVEL: 'silent',
+    LOG_LEVEL: process.env.TEST_LOG_LEVEL ?? 'silent',
     WS_HEARTBEAT_MS: '200',
     CORS_ORIGINS: 'http://localhost:8081',
     PUBLIC_API_URL: 'http://localhost:4000',

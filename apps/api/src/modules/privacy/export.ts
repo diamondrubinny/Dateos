@@ -35,6 +35,7 @@ export async function exportMemberData(
     .where(eq(t.user.id, userId));
   if (!account) throw new Error('no such member');
   const [profile] = await db.select().from(t.profiles).where(eq(t.profiles.userId, userId));
+  const [about] = await db.select().from(t.profileAbout).where(eq(t.profileAbout.userId, userId));
   const [preferences] = await db
     .select()
     .from(t.preferences)
@@ -274,6 +275,25 @@ export async function exportMemberData(
           intentions: preferences.intentions,
           acceptVoice: preferences.acceptVoice,
           acceptCalls: preferences.acceptCalls,
+          dealbreakers: {
+            smokingOk: preferences.smokingOk,
+            childrenOk: preferences.childrenOk,
+            religionOk: preferences.religionOk,
+            heightMin: preferences.heightMin,
+            heightMax: preferences.heightMax,
+          },
+        }
+      : null,
+    // About me (phase 19); religious observance only while its consent is given.
+    about: about
+      ? {
+          interests: about.interests,
+          children: about.children,
+          smoking: about.smoking,
+          drinking: about.drinking,
+          heightCm: about.heightCm,
+          religion: about.religion,
+          openingQuestion: about.openingQuestion,
         }
       : null,
     approximateLocation: location

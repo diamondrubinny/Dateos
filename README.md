@@ -69,6 +69,7 @@ NexaHeart is in active development. Here is what works today and what comes next
 | Take a break: hide from new people for a day, a few days, a week or until you come back; matches and chats carry on                                                     | ✅ Available |
 | Incognito: only people you liked can see you; nobody is told                                                                                                            | ✅ Available |
 | Travel mode: meet people in a city before you arrive (up to 2 weeks), marked "Visiting {city}"; city search on your own server                                          | ✅ Available |
+| About me: interests, lifestyle, religious observance (with its own consent), dealbreakers both ways, an opening question and a voice prompt                             | ✅ Available |
 
 ## Screenshots
 

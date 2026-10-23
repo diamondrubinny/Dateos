@@ -2,6 +2,7 @@
 // Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 import { accountNoticeSchema } from './moderation.js';
+import { aboutSchema, dealbreakersSchema } from './about.js';
 import { pauseStateSchema } from './visibility.js';
 import { z } from 'zod';
 
@@ -32,6 +33,22 @@ export const promptKeys = [
   'looking_for',
 ] as const;
 export const promptKeySchema = z.enum(promptKeys);
+
+/** Voice prompt (phase 19): one spoken answer to a prompt, at most this long. */
+export const MAX_VOICE_PROMPT_SECONDS = 30;
+export const voicePromptQuerySchema = z.object({ promptKey: promptKeySchema });
+/** As others see it: only once the clip is clean. */
+export const voicePromptSchema = z.object({
+  promptKey: promptKeySchema,
+  audioId: z.uuid(),
+  durationMs: z.number().int().nullable(),
+});
+export type VoicePrompt = z.infer<typeof voicePromptSchema>;
+/** As the owner sees it, while it's being checked too. */
+export const myVoicePromptSchema = voicePromptSchema.extend({
+  status: z.enum(['quarantine', 'processing', 'clean', 'rejected']),
+});
+
 export type PromptKey = z.infer<typeof promptKeySchema>;
 
 /**
@@ -45,6 +62,8 @@ export const consentKinds = [
   'location',
   'ai_cloud',
   'analytics',
+  /** Religious observance on the profile and as a filter (phase 19), GDPR Art. 9(2)(a) ⚖️. */
+  'religion',
 ] as const;
 export const consentKindSchema = z.enum(consentKinds);
 export type ConsentKind = z.infer<typeof consentKindSchema>;
@@ -153,6 +172,10 @@ export const meResponseSchema = z.object({
   pause: pauseStateSchema,
   /** Only people I liked can see me (phase 18b). */
   incognito: z.boolean(),
+  /** About me and dealbreakers (phase 19). */
+  about: aboutSchema,
+  dealbreakers: dealbreakersSchema,
+  voicePrompt: myVoicePromptSchema.nullable(),
   profile: profileInputSchema
     .extend({ bio: z.string().nullable(), age: z.number().int() })
     .nullable(),

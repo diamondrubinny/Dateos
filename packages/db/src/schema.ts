@@ -176,6 +176,26 @@ export const profiles = pgTable('profiles', {
   ...timestamps,
 });
 
+/** About me (phase 19): every field optional; values are validated against fixed lists in shared. */
+export const profileAbout = pgTable('profile_about', {
+  userId: ownerId().primaryKey(),
+  interests: text('interests')
+    .array()
+    .notNull()
+    .default(sql`'{}'::text[]`),
+  children: varchar('children', { length: 24 }),
+  smoking: varchar('smoking', { length: 16 }),
+  drinking: varchar('drinking', { length: 16 }),
+  heightCm: smallint('height_cm'),
+  /** Special-category data: only stored while the `religion` consent is given. */
+  religion: varchar('religion', { length: 24 }),
+  openingQuestion: varchar('opening_question', { length: 140 }),
+  /** Voice prompt: the prompt it answers and the clip (deleted with it). */
+  voicePromptKey: varchar('voice_prompt_key', { length: 40 }),
+  voiceAudioId: uuid('voice_audio_id').references(() => audioClips.id, { onDelete: 'set null' }),
+  ...timestamps,
+});
+
 export const preferences = pgTable(
   'preferences',
   {
@@ -191,6 +211,21 @@ export const preferences = pgTable(
     acceptVoice: boolean('accept_voice').notNull().default(true),
     /** Receiver control: people can turn video and voice calls off (phase 15). */
     acceptCalls: boolean('accept_calls').notNull().default(true),
+    /** Dealbreakers (phase 19): empty means any; a missing answer always passes. */
+    smokingOk: text('smoking_ok')
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
+    childrenOk: text('children_ok')
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
+    religionOk: text('religion_ok')
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
+    heightMin: smallint('height_min'),
+    heightMax: smallint('height_max'),
     ...timestamps,
   },
   (t) => [check('preferences_age_range', sql`${t.ageMin} >= 18 AND ${t.ageMin} <= ${t.ageMax}`)],

@@ -82,6 +82,11 @@ function ProfileContent() {
         />
         <Button
           variant="secondary"
+          label={t('home.editAbout')}
+          onPress={() => router.push('/edit-about')}
+        />
+        <Button
+          variant="secondary"
           label={t('home.editPhotos')}
           onPress={() => router.push('/onboarding/photos?edit=1')}
         />

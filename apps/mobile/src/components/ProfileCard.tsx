@@ -10,6 +10,9 @@ import { useLocale } from '../lib/locale';
 import { MIN_TOUCH, radius, spacing, useColors } from '../lib/theme';
 import { AppText } from './AppText';
 import { RemoteImage } from './RemoteImage';
+import { AboutSection } from './AboutSection';
+import { VoicePlayer } from './VoicePlayer';
+import { useMe } from '../lib/queries';
 
 export type LikeTarget = { itemType: 'photo' | 'prompt'; itemId: string; label: string };
 
@@ -60,6 +63,7 @@ export function ProfileCard({ profile, onLikeItem }: ProfileCardProps) {
   const { t } = useTranslation();
   const colors = useColors();
   const { direction, locale } = useLocale();
+  const mine = useMe().data?.about.interests;
   const [index, setIndex] = useState(0);
   // Arrows point outward in both directions: "previous" sits at the start edge.
   const [prevGlyph, nextGlyph] = direction === 'rtl' ? ['›', '‹'] : ['‹', '›'];
@@ -168,6 +172,31 @@ export function ProfileCard({ profile, onLikeItem }: ProfileCardProps) {
             <AppText variant="body" userContent>
               {profile.bio}
             </AppText>
+          </View>
+        ) : null}
+
+        {profile.about ? (
+          <AboutSection about={profile.about} name={profile.displayName} mine={mine} />
+        ) : null}
+
+        {profile.voicePrompt ? (
+          <View
+            style={[
+              styles.prompt,
+              { backgroundColor: colors.background, borderColor: colors.border },
+            ]}
+            testID="profile-voice-prompt"
+          >
+            <View style={styles.promptText}>
+              <AppText variant="caption" tone="muted">
+                🎙️ {t(`prompt.${profile.voicePrompt.promptKey}`)}
+              </AppText>
+              <VoicePlayer
+                path={`/v1/audio/${profile.voicePrompt.audioId}`}
+                durationMs={profile.voicePrompt.durationMs}
+                onPrimary={false}
+              />
+            </View>
           </View>
         ) : null}
 

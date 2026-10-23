@@ -143,6 +143,7 @@ export async function buildApp(env: Env, deps: AppDependencies): Promise<Fastify
       realtime: services.realtime,
       allowedOrigins: env.CORS_ORIGINS,
       heartbeatMs: env.WS_HEARTBEAT_MS,
+      audio: services.audio,
     });
   }
 

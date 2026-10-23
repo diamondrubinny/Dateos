@@ -2,7 +2,8 @@
 // Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 import { z } from 'zod';
-import { genderSchema, intentionSchema, promptKeySchema } from './profile.js';
+import { genderSchema, intentionSchema, promptKeySchema, voicePromptSchema } from './profile.js';
+import { aboutSchema } from './about.js';
 import { placeSchema } from './visibility.js';
 
 /** Dimension of stored profile embeddings (hashing provider and 768-d Ollama models). */
@@ -64,6 +65,7 @@ export const reasonCodes = [
   'similar_vibe',
   'active_recently',
   'new_here',
+  'shared_interests',
 ] as const;
 export type ReasonCode = (typeof reasonCodes)[number];
 
@@ -85,6 +87,9 @@ export const publicProfileSchema = z.object({
   prompts: z.array(z.object({ id: z.uuid(), promptKey: promptKeySchema, answer: z.string() })),
   photos: z.array(publicPhotoSchema),
   distance: z.enum(distanceBuckets).nullable(),
+  /** Interests, lifestyle and the opening question (phase 19); null until filled in. */
+  about: aboutSchema.nullable(),
+  voicePrompt: voicePromptSchema.nullable(),
   /** Travel mode (phase 18c): shown as "Visiting {city}" instead of a distance. */
   visiting: placeSchema.nullable(),
   /** A moderator compared a live selfie with the photos. */

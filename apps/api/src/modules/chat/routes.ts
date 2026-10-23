@@ -16,6 +16,7 @@ import {
   messagesQuerySchema,
   messageViewSchema,
   sendMessageSchema,
+  voicePromptQuerySchema,
 } from '@nexaheart/shared';
 import { checkHarm } from '@nexaheart/ai';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
@@ -25,6 +26,7 @@ import type { Auth } from '../../auth/auth.js';
 import { currentUser, requireUser } from '../../auth/session.js';
 import type { Realtime } from '../../lib/realtime.js';
 import { HttpError } from '../../plugins/error-handler.js';
+import type { AudioService } from './audio.js';
 import type { ChatService } from './service.js';
 
 const matchParams = z.object({ id: z.uuid() });
@@ -40,11 +42,13 @@ export interface ChatRouteOptions {
   allowedOrigins: string[];
   /** Ping interval; every ping re-checks the session, so a revoked session loses the socket. */
   heartbeatMs: number;
+  /** Voice prompts on profiles (phase 19). */
+  audio?: AudioService;
 }
 
 export const chatRoutes: FastifyPluginAsyncZod<ChatRouteOptions> = async (
   app,
-  { auth, chat, realtime, allowedOrigins, heartbeatMs },
+  { auth, chat, realtime, allowedOrigins, heartbeatMs, audio },
 ) => {
   await app.register(multipart, {
     limits: { fileSize: MAX_PHOTO_BYTES, files: 1, fields: 0, parts: 1 },
@@ -129,6 +133,33 @@ export const chatRoutes: FastifyPluginAsyncZod<ChatRouteOptions> = async (
       return chat.sendVoice(request.params.id, currentUser(request).id, buffer);
     },
   );
+
+  // Voice prompt on the profile (phase 19): same pipeline as voice messages, at most 30 s.
+  app.post(
+    '/v1/me/voice-prompt',
+    {
+      schema: {
+        querystring: voicePromptQuerySchema,
+        response: { 200: z.object({ id: z.uuid() }) },
+      },
+      config: perUserLimit(20, 24 * 60 * 60_000),
+    },
+    async (request) => {
+      if (!audio) throw new HttpError(503, ErrorCode.ServiceUnavailable, 'Voice is not available.');
+      const file = await request.file();
+      if (!file) throw new HttpError(400, ErrorCode.BadRequest, 'Attach one audio file.');
+      const buffer = await file.toBuffer();
+      if (buffer.length > MAX_AUDIO_BYTES) {
+        throw new HttpError(413, ErrorCode.PayloadTooLarge, 'The recording is too large.');
+      }
+      return audio.setVoicePrompt(currentUser(request).id, request.query.promptKey, buffer);
+    },
+  );
+
+  app.delete('/v1/me/voice-prompt', { schema: { response: { 200: ok } } }, async (request) => {
+    await audio?.removeVoicePrompt(currentUser(request).id);
+    return { ok: true as const };
+  });
 
   app.get(
     '/v1/audio/:id',

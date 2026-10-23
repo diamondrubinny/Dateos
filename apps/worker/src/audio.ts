@@ -40,6 +40,7 @@ export function ffmpegArgs(
   output: string,
   container: AudioContainer,
   format: OutputFormat = 'aac',
+  maxSeconds = MAX_VOICE_SECONDS,
 ): string[] {
   const codec =
     format === 'aac'
@@ -74,7 +75,7 @@ export function ffmpegArgs(
     '1',
     ...codec,
     '-t',
-    String(MAX_VOICE_SECONDS),
+    String(maxSeconds),
     '-fs',
     String(1024 * 1024),
     ...muxer,
@@ -102,7 +103,12 @@ export interface TranscodedAudio {
 
 export async function transcodeVoice(
   buffer: Buffer,
-  options: { ffmpeg?: string | undefined; ffprobe?: string | undefined; timeoutMs?: number } = {},
+  options: {
+    ffmpeg?: string | undefined;
+    ffprobe?: string | undefined;
+    timeoutMs?: number;
+    maxSeconds?: number | undefined;
+  } = {},
 ): Promise<TranscodedAudio> {
   const container = await sniffAudio(buffer);
   if (!container) throw new InvalidAudioError('unsupported_format');
@@ -115,8 +121,12 @@ export async function transcodeVoice(
     try {
       const ffmpeg = options.ffmpeg ?? 'ffmpeg';
       const timeout = options.timeoutMs ?? 20_000;
-      await run(ffmpeg, ffmpegArgs(input, output, container, 'aac'), timeout);
-      await run(ffmpeg, ffmpegArgs(input, opusOutput, container, 'opus'), timeout);
+      await run(ffmpeg, ffmpegArgs(input, output, container, 'aac', options.maxSeconds), timeout);
+      await run(
+        ffmpeg,
+        ffmpegArgs(input, opusOutput, container, 'opus', options.maxSeconds),
+        timeout,
+      );
     } catch {
       throw new InvalidAudioError('undecodable');
     }
@@ -132,7 +142,7 @@ export async function transcodeVoice(
     return {
       data: await readFile(output),
       opus: await readFile(opusOutput),
-      durationMs: Math.min(durationMs, MAX_VOICE_SECONDS * 1000),
+      durationMs: Math.min(durationMs, (options.maxSeconds ?? MAX_VOICE_SECONDS) * 1000),
     };
   } finally {
     await rm(dir, { recursive: true, force: true });
