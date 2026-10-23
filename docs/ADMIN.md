@@ -140,7 +140,13 @@ The worker deletes expired records daily (`cleanup-discovery` job). Constants ar
   venue. The QR code and the 6-digit code change every 30 seconds; people going check in from 30
   minutes before the start until the end. Staff see only how many checked in.
 
-## 8. Known limitations
+## 8. Integrations (phase 24, admins only)
+
+The **Integrations** page connects outside services: see [INTEGRATIONS.md](INTEGRATIONS.md).
+Secrets can be replaced or removed but never read back; every change and test is in the audit log;
+cards set by the server's `.env` are locked.
+
+## 9. Known limitations
 
 - No automated nudity detection yet: chat images are blurred until tapped, and reports cover the rest.
 - Reports against an account are deleted when that account is deleted. A ban still blocks the email from signing up again ⚖️.

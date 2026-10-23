@@ -37,6 +37,7 @@ import { coachRoutes } from './modules/coach/routes.js';
 import { matchmakerRoutes } from './modules/matchmaker/routes.js';
 import { signupRoutes, trustRoutes } from './modules/trust/routes.js';
 import { friendRoutes, takePublicRoutes } from './modules/friends/routes.js';
+import { clientErrorRoutes, registerCaptcha } from './modules/integrations/routes.js';
 import type { Services } from './services.js';
 
 export interface AppDependencies {
@@ -69,17 +70,29 @@ export async function buildApp(env: Env, deps: AppDependencies): Promise<Fastify
     reply.header('x-request-id', request.id);
   });
 
-  registerErrorHandling(app);
+  registerErrorHandling(app, (error, request) => {
+    // The route pattern and method only: never the URL with its ids, the body or the user.
+    void deps.services?.integrations.captureError(
+      { type: error.name, message: error.message, stack: error.stack },
+      'node',
+      { route: request.routeOptions.url ?? 'unknown', method: request.method },
+    );
+  });
   await registerSecurity(app, { env, ...(deps.redis ? { redis: deps.redis } : {}) });
   const typed = app.withTypeProvider<ZodTypeProvider>();
   await typed.register(healthRoutes, { dependencies: deps.dependencies });
   await typed.register(instanceRoutes, {
     env,
-    ...(deps.services ? { instance: deps.services.instance } : {}),
+    ...(deps.services
+      ? { instance: deps.services.instance, integrations: deps.services.integrations }
+      : {}),
   });
 
   const { services } = deps;
   if (services) {
+    // Bot protection (phase 24) before any route, including better-auth's.
+    registerCaptcha(app, services.integrations);
+    await typed.register(clientErrorRoutes, { integrations: services.integrations });
     await app.register(authRoutes, {
       auth: services.auth,
       origin: env.PUBLIC_API_URL,
@@ -119,6 +132,7 @@ export async function buildApp(env: Env, deps: AppDependencies): Promise<Fastify
       venues: services.venues,
       events: services.events,
       trust: services.trust,
+      integrations: services.integrations,
     });
     await typed.register(signupRoutes, { trust: services.trust });
     await typed.register(takePublicRoutes, { takes: services.takes });

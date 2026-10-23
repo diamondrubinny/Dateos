@@ -51,3 +51,25 @@ export interface PushJob {
    */
   matchId: string;
 }
+
+/** Integrations (phase 24): webhooks and team alerts, delivered by the worker with retries. */
+export const OUTBOUND_QUEUE = 'outbound';
+
+export const OutboundJob = {
+  Webhook: 'webhook',
+  Alert: 'alert',
+} as const;
+
+/** A webhook to deliver: the event and opaque ids only. */
+export interface WebhookJob {
+  id: string;
+  type: string;
+  occurredAt: string;
+  data: Record<string, string>;
+}
+
+/** A line for the team's chat: built from counts, with a link to the dashboard. */
+export interface AlertJob {
+  event: string;
+  text: string;
+}

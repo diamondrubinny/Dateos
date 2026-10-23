@@ -26,13 +26,14 @@
 }
 
 # The member app (web/PWA). react-native-web injects its styles at runtime, hence
-# 'unsafe-inline' for styles only; scripts stay restricted to this origin.
+# 'unsafe-inline' for styles only; scripts stay restricted to this origin, plus the hosts in
+# CSP_EXTRA_HOSTS for a CAPTCHA or analytics set up in the dashboard (phase 24).
 {$DOMAIN} {
 	import security
 	root * /srv/app
 	import spa
 	header {
-		Content-Security-Policy "default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data: https://api.{$DOMAIN}; media-src 'self' blob: https://api.{$DOMAIN}; connect-src 'self' https://api.{$DOMAIN} wss://api.{$DOMAIN} https://{$RTC_DOMAIN:rtc.localhost} wss://{$RTC_DOMAIN:rtc.localhost}; font-src 'self' data:; manifest-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'"
+		Content-Security-Policy "default-src 'none'; script-src 'self' {$CSP_EXTRA_HOSTS}; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data: https://api.{$DOMAIN}; media-src 'self' blob: https://api.{$DOMAIN}; connect-src 'self' https://api.{$DOMAIN} wss://api.{$DOMAIN} https://{$RTC_DOMAIN:rtc.localhost} wss://{$RTC_DOMAIN:rtc.localhost} {$CSP_EXTRA_HOSTS}; frame-src {$CSP_EXTRA_HOSTS:'none'}; font-src 'self' data:; manifest-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'"
 		X-Frame-Options "DENY"
 		Permissions-Policy "camera=(self), geolocation=(self), microphone=(self)"
 	}

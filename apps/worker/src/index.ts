@@ -7,6 +7,7 @@ import {
   MEDIA_QUEUE,
   MediaJob,
   NOTIFY_QUEUE,
+  OUTBOUND_QUEUE,
   type PushJob,
   PROFILE_QUEUE,
   ProfileJob,
@@ -35,6 +36,14 @@ import { processAvailability } from './availability-jobs.js';
 import { processSignupRetention } from './signup-jobs.js';
 import { processFriendRetention } from './friend-jobs.js';
 import { processCalls } from './call-jobs.js';
+import { IntegrationStore, parseIntegrationsKey } from '@nexaheart/integrations';
+import {
+  dailySummary,
+  type OutboundContext,
+  processOutbound,
+  pushSettings,
+  reportJobError,
+} from './outbound-jobs.js';
 import { RoomServiceClient } from 'livekit-server-sdk';
 import nodemailer from 'nodemailer';
 import { sql } from 'drizzle-orm';
@@ -72,6 +81,21 @@ async function main(): Promise<void> {
     expoAccessToken: env.EXPO_ACCESS_TOKEN,
   };
   publisher.on('error', (error) => log.error({ err: error }, 'redis publisher error'));
+  // Integrations (phase 24): the same store as the API's (env wins, then the dashboard).
+  const store = new IntegrationStore(db, parseIntegrationsKey(env.INTEGRATIONS_KEY));
+  const outbound: OutboundContext = {
+    db,
+    store,
+    options: { allowPrivate: env.INTEGRATIONS_ALLOW_PRIVATE },
+    instanceName: env.INSTANCE_NAME,
+    adminUrl: env.PUBLIC_ADMIN_URL,
+  };
+  const failed = (name: string | undefined, error: Error) => {
+    log.error({ job: name, err: error }, 'job failed');
+    void reportJobError(outbound, name ?? 'unknown', error);
+  };
+  /** Push settings can change in the dashboard: read them for each notification. */
+  const pushNow = async () => ({ ...pushContext, ...(await pushSettings(store, env)) });
   const scanningEnabled = env.MALWARE_SCAN === 'clamav';
   if (!scanningEnabled) log.warn('Lite mode: MALWARE_SCAN=disabled, uploads are NOT scanned');
   const ctx: JobContext = {
@@ -122,9 +146,7 @@ async function main(): Promise<void> {
   worker.on('completed', (job, result) =>
     log.info({ job: job.name, id: job.id, result }, 'job done'),
   );
-  worker.on('failed', (job, error) =>
-    log.error({ job: job?.name, id: job?.id, err: error }, 'job failed'),
-  );
+  worker.on('failed', (job, error) => failed(job?.name, error));
 
   const embeddings =
     env.EMBEDDINGS_PROVIDER === 'ollama'
@@ -197,6 +219,8 @@ async function main(): Promise<void> {
           return processSignupRetention(db);
         case 'friend-retention':
           return processFriendRetention(db);
+        case 'daily-summary':
+          return dailySummary(outbound);
         case 'events':
           return processEvents({
             db,
@@ -215,19 +239,26 @@ async function main(): Promise<void> {
     const quiet = job.name === 'calls' && result?.missed === 0 && result?.ended === 0;
     if (!quiet) log.info({ job: job.name, result }, 'job done');
   });
-  profileWorker.on('failed', (job, error) =>
-    log.error({ job: job?.name, err: error }, 'job failed'),
-  );
+  profileWorker.on('failed', (job, error) => failed(job?.name, error));
 
   const notifyWorker = new Worker(
     NOTIFY_QUEUE,
-    async (job) => sendPush(pushContext, job.data as PushJob),
+    async (job) => sendPush(await pushNow(), job.data as PushJob),
     { connection, concurrency: env.WORKER_CONCURRENCY },
   );
   // Only the outcome is logged: never tokens or user ids together with content.
   notifyWorker.on('completed', (job, result) => log.info({ job: job.name, result }, 'job done'));
-  notifyWorker.on('failed', (job, error) =>
-    log.error({ job: job?.name, err: error }, 'job failed'),
+  notifyWorker.on('failed', (job, error) => failed(job?.name, error));
+
+  // Webhooks and team alerts (phase 24), retried with backoff by the queue.
+  const outboundWorker = new Worker(OUTBOUND_QUEUE, async (job) => processOutbound(outbound, job), {
+    connection,
+    concurrency: env.WORKER_CONCURRENCY,
+  });
+  outboundWorker.on('completed', (job, result) => log.info({ job: job.name, result }, 'job done'));
+  // Only the attempt is logged: never the payload or the address.
+  outboundWorker.on('failed', (job, error) =>
+    log.warn({ job: job?.name, attempt: job?.attemptsMade, err: error.message }, 'delivery failed'),
   );
 
   // Daily retention sweep (idempotent scheduler: safe with several workers).
@@ -263,6 +294,12 @@ async function main(): Promise<void> {
     { every: 86_400_000 },
     { name: 'friend-retention' },
   );
+  // The team's morning summary, and old webhook delivery records (daily).
+  await scheduler.upsertJobScheduler(
+    'daily-summary',
+    { pattern: '0 8 * * *' },
+    { name: 'daily-summary' },
+  );
   // Take a break: end breaks whose time is up and tell the member (every 5 minutes).
   await scheduler.upsertJobScheduler(
     'pauses',
@@ -281,6 +318,7 @@ async function main(): Promise<void> {
     await worker.close();
     await profileWorker.close();
     await notifyWorker.close();
+    await outboundWorker.close();
     await scheduler.close();
     connection.disconnect();
     publisher.disconnect();

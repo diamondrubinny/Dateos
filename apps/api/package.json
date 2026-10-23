@@ -25,6 +25,7 @@
     "@fastify/websocket": "11.3.4",
     "@nexaheart/ai": "workspace:*",
     "@nexaheart/db": "workspace:*",
+    "@nexaheart/integrations": "workspace:*",
     "@nexaheart/shared": "workspace:*",
     "@nexaheart/storage": "workspace:*",
     "@simplewebauthn/server": "13.3.3",

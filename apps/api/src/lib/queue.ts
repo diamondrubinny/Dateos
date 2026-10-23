@@ -6,6 +6,10 @@ import {
   MediaJob,
   NOTIFY_QUEUE,
   NotifyJob,
+  OUTBOUND_QUEUE,
+  OutboundJob,
+  type AlertJob,
+  type WebhookJob,
   PROFILE_QUEUE,
   ProfileJob,
   type DeleteObjectsJob,
@@ -101,6 +105,42 @@ export function createNotifyQueue(redisUrl: string, name: string = NOTIFY_QUEUE)
   return {
     async push(job) {
       await queue.add(NotifyJob.Push, job);
+    },
+    async close() {
+      await queue.close();
+      connection.disconnect();
+    },
+  };
+}
+
+export interface OutboundQueue {
+  webhook(job: WebhookJob): Promise<void>;
+  alert(job: AlertJob): Promise<void>;
+  close(): Promise<void>;
+}
+
+/** Webhooks and team alerts (phase 24): the worker sends them, retrying with backoff. */
+export function createOutboundQueue(
+  redisUrl: string,
+  name: string = OUTBOUND_QUEUE,
+): OutboundQueue {
+  const connection = new Redis(redisUrl, { maxRetriesPerRequest: null });
+  connection.on('error', () => undefined);
+  const queue = new Queue(name, {
+    connection,
+    defaultJobOptions: {
+      attempts: 5,
+      backoff: { type: 'exponential', delay: 10_000 },
+      removeOnComplete: true,
+      removeOnFail: 1_000,
+    },
+  });
+  return {
+    async webhook(job) {
+      await queue.add(OutboundJob.Webhook, job);
+    },
+    async alert(job) {
+      await queue.add(OutboundJob.Alert, job);
     },
     async close() {
       await queue.close();

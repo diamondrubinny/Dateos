@@ -52,7 +52,11 @@ function send(
   return reply.status(statusCode).send(body);
 }
 
-export function registerErrorHandling(app: FastifyInstance): void {
+export function registerErrorHandling(
+  app: FastifyInstance,
+  /** Phase 24: unexpected (500) errors also go to error monitoring, if it's set up. */
+  onUnexpected?: (error: Error, request: FastifyRequest) => void,
+): void {
   app.setNotFoundHandler((request, reply) =>
     send(reply, request, 404, ErrorCode.NotFound, 'Resource not found.'),
   );
@@ -86,6 +90,7 @@ export function registerErrorHandling(app: FastifyInstance): void {
 
     // Unknown failures: log the full error server-side, return a generic message to the client.
     request.log.error({ err: error }, 'unhandled error');
+    onUnexpected?.(error, request);
     return send(reply, request, 500, ErrorCode.Internal, safeMessages[ErrorCode.Internal]!);
   });
 }

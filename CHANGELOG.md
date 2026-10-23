@@ -6,6 +6,12 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Added
 
+- **Integrations in the dashboard**: connect email, sign-in with Google and Apple, a CAPTCHA
+  (Cloudflare Turnstile or hCaptcha), the AI model, video (LiveKit), push, error monitoring (Sentry
+  or GlitchTip), privacy-friendly analytics (Plausible, Umami, Matomo, only after consent), team
+  alerts (Slack, Discord, Telegram, Teams) and signed webhooks, each with a test button. Secrets are
+  encrypted and write-only; the server's environment variables always win. See
+  [docs/INTEGRATIONS.md](docs/INTEGRATIONS.md).
 - **Matchmaker**: a few quick questions (and, if a model is available, your own words) become
   suggested changes to your settings. You tick the ones you want; nothing is stored and nothing
   changes without you. Gender, orientation and religion are never touched.

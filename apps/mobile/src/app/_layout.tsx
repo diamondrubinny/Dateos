@@ -14,6 +14,7 @@ import { ApiRequestError } from '../lib/api';
 import { authClient } from '../lib/auth-client';
 import { LocaleProvider, useLocale } from '../lib/locale';
 import { RealtimeProvider } from '../lib/realtime';
+import { WebIntegrations } from '../components/WebIntegrations';
 import { IncomingCall } from '../components/IncomingCall';
 import { useInstance } from '../lib/queries';
 import { useColors } from '../lib/theme';
@@ -55,6 +56,7 @@ function Navigator() {
       <RealtimeProvider enabled={Boolean(session.data)}>
         <StatusBar style="auto" />
         {session.data ? <IncomingCall /> : null}
+        <WebIntegrations signedIn={Boolean(session.data)} />
         {/* On the web `textAlign: start` follows the nearest `dir`: set it once for every screen
             (chat and call screens don't use <Screen>). Native direction comes from I18nManager. */}
         <View style={styles.root} {...webDir}>

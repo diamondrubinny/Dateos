@@ -654,3 +654,50 @@ input[type='password'] {
   font-variant-numeric: tabular-nums;
   margin: 0;
 }
+
+/* Integrations (phase 24) */
+.integration-group {
+  margin-top: 1.5rem;
+}
+.integration-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 22rem), 1fr));
+  gap: 1rem;
+  align-items: start;
+}
+.integration {
+  display: grid;
+  gap: 0.5rem;
+}
+.integration p {
+  margin: 0;
+}
+.integration-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.integration-head h3 {
+  margin: 0;
+}
+.integration-form {
+  display: grid;
+  gap: 0.5rem;
+  border-top: 1px solid var(--border);
+  padding-top: 0.75rem;
+}
+.integration-form fieldset {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+  display: grid;
+  gap: 0.25rem;
+}
+.integration code {
+  overflow-wrap: anywhere;
+}
+.error-text {
+  color: var(--danger);
+}

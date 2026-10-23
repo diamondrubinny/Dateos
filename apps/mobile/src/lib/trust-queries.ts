@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
+import { captchaHeaders } from './captcha';
 import {
   normalizeEmail,
   type ContactHides,
@@ -69,8 +70,12 @@ export const useClearContactHides = () =>
 export const redeemInvite = (input: RedeemInviteInput) =>
   apiFetch<null>('/v1/signup/redeem', { method: 'POST', body: json(input) });
 
-export const joinWaitlist = (input: JoinWaitlistInput) =>
-  apiFetch<{ ok: true }>('/v1/signup/waitlist', { method: 'POST', body: json(input) });
+export const joinWaitlist = (input: JoinWaitlistInput, captchaToken?: string | null) =>
+  apiFetch<{ ok: true }>('/v1/signup/waitlist', {
+    method: 'POST',
+    body: json(input),
+    headers: captchaHeaders(captchaToken),
+  });
 
 const invitesKey = ['my-invites'] as const;
 export function useMyInvites() {

@@ -6,13 +6,16 @@ import { creditLine } from '@nexaheart/shared';
 import { buildApp } from './app.js';
 import { loadEnv } from './config/env.js';
 import { createRedis } from './lib/dependencies.js';
+import { withDashboardSignIn } from './lib/integrations-boot.js';
 import { createServices } from './services.js';
 
 const SHUTDOWN_TIMEOUT_MS = 10_000;
 
 async function main(): Promise<void> {
-  const env = loadEnv();
-  if (env.MIGRATE_ON_START) await runMigrations(env.DATABASE_URL);
+  const loaded = loadEnv();
+  if (loaded.MIGRATE_ON_START) await runMigrations(loaded.DATABASE_URL);
+  // Sign-in providers saved in the dashboard (phase 24) apply from this start.
+  const env = await withDashboardSignIn(loaded);
   const redis = createRedis(env.REDIS_URL);
   await redis.client.connect().catch(() => undefined); // /ready reports the outage instead of crashing.
 

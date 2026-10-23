@@ -31,6 +31,20 @@ export const workerEnvSchema = z.object({
     .string()
     .optional()
     .transform((v) => (v ? v : undefined)),
+  /** Integrations (phase 24): the same key as the API's, to read secrets saved in the dashboard. */
+  INTEGRATIONS_KEY: z
+    .string()
+    .optional()
+    .transform((v) => (v ? v : undefined)),
+  /** The dashboard's address, for links in team alerts. */
+  PUBLIC_ADMIN_URL: z
+    .string()
+    .optional()
+    .transform((v) => v ?? ''),
+  INTEGRATIONS_ALLOW_PRIVATE: z
+    .enum(['true', 'false'])
+    .default('false')
+    .transform((v) => v === 'true'),
   /** Months without sign-in before an account is warned and then deleted. 0 = never (default). ⚖️ */
   INACTIVE_ACCOUNT_DELETE_MONTHS: z.coerce.number().int().min(0).max(120).default(0),
   INSTANCE_NAME: z.string().max(40).default('NexaHeart'),

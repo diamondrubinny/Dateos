@@ -30,7 +30,8 @@ export function createTextModel(env: Env): TextModel | null {
 export class AiGate {
   constructor(
     private readonly db: Database,
-    readonly model: TextModel | null,
+    /** The model now: it can be changed in the dashboard (phase 24). */
+    private readonly source: () => Promise<TextModel | null>,
   ) {}
 
   private async consented(userIds: string[]): Promise<boolean> {
@@ -45,14 +46,23 @@ export class AiGate {
     return userIds.every((id) => latest.get(id) === true);
   }
 
+  private async current(): Promise<TextModel | null> {
+    // A misconfigured model (a blocked address) counts as no model.
+    return this.source().catch(() => null);
+  }
+
   async availability(...userIds: string[]): Promise<AiAvailability> {
-    if (!this.model) return 'unavailable';
-    if (!this.model.external) return 'available';
+    const model = await this.current();
+    if (!model) return 'unavailable';
+    if (!model.external) return 'available';
     return (await this.consented(userIds)) ? 'available' : 'needs_consent';
   }
 
   /** The model to use for text involving these people, or null (use the no-AI fallback). */
   async modelFor(...userIds: string[]): Promise<TextModel | null> {
-    return (await this.availability(...userIds)) === 'available' ? this.model : null;
+    const model = await this.current();
+    if (!model) return null;
+    if (model.external && !(await this.consented(userIds))) return null;
+    return model;
   }
 }

@@ -16,6 +16,7 @@ import { currentUser, requireUser } from '../../auth/session.js';
 import type { Env } from '../../config/env.js';
 import { poweredBy } from '../../lib/credit.js';
 import { perUserLimit } from '../../plugins/security.js';
+import type { IntegrationService } from '../integrations/service.js';
 import type { InstanceService } from './service.js';
 
 /** Branding from the environment only (health-only setups without a database). */
@@ -41,6 +42,7 @@ export function instanceInfo(env: Env): InstanceInfo {
     setupRequired: false,
     calls: false,
     signup: 'open',
+    integrations: { captcha: null, analytics: null, webErrors: false },
     poweredBy: poweredBy(env),
   };
 }
@@ -49,14 +51,20 @@ export function instanceInfo(env: Env): InstanceInfo {
 export const instanceRoutes: FastifyPluginAsyncZod<{
   env: Env;
   instance?: InstanceService;
-}> = async (app, { env, instance }) => {
+  integrations?: IntegrationService;
+}> = async (app, { env, instance, integrations }) => {
   const fallback = instanceInfo(env);
   app.get(
     '/v1/instance',
     { schema: { response: { 200: instanceSchema } } },
     async (_request, reply) => {
       reply.header('cache-control', 'public, max-age=15');
-      return instance ? instance.info() : fallback;
+      if (!instance) return fallback;
+      const info = await instance.info();
+      return {
+        ...info,
+        integrations: integrations ? await integrations.publicInfo() : fallback.integrations,
+      };
     },
   );
 

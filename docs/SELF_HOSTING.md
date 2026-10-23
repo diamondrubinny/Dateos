@@ -120,11 +120,23 @@ docker compose -f infra/docker-compose.yml --env-file .env --profile app --profi
 Database migrations run automatically when the API starts (`MIGRATE_ON_START=true`). If you run
 several API replicas, set it to `false` and run `pnpm --filter @nexaheart/db db:migrate` once instead.
 
+**Updating from before phase 24?** Add `INTEGRATIONS_KEY` to `.env` (`openssl rand -hex 32`) so
+admins can save settings in the dashboard's Integrations page. Variables already in your `.env`
+(SMTP, AI, push, LiveKit) keep working and lock their cards; remove one to manage it in the
+dashboard instead.
+
+## Integrations (optional)
+
+Admins connect outside services in the dashboard: **Integrations** (email, sign-in providers, a
+CAPTCHA, the AI model, video, push, error monitoring, analytics, team alerts and webhooks). See
+[INTEGRATIONS.md](INTEGRATIONS.md) for each one, the webhook signature and `CSP_EXTRA_HOSTS`.
+
 ## Push notifications (optional)
 
 Notifications are off by default. To enable them: build the app with your own Expo (EAS) project
-(`extra.eas.projectId` in `apps/mobile/app.json`), set `PUSH_PROVIDER=expo` (and optionally
-`EXPO_ACCESS_TOKEN`) in `.env`, and restart the worker. Members turn them on per device in Settings.
+(`extra.eas.projectId` in `apps/mobile/app.json`), then turn on **Push notifications** in the
+dashboard's Integrations page (or set `PUSH_PROVIDER=expo` and optionally `EXPO_ACCESS_TOKEN` in
+`.env` and restart the worker). Members turn them on per device in Settings.
 Notifications never contain names or message text, only "You have a new message" or "It's a match",
 but they still pass through Expo, Apple and Google: mention this in your privacy policy ⚖️.
 

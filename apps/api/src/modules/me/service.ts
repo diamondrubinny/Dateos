@@ -33,6 +33,8 @@ import { and, asc, desc, eq, isNull, ne } from 'drizzle-orm';
 import { HttpError } from '../../plugins/error-handler.js';
 import type { MediaQueue, ProfileQueue } from '../../lib/queue.js';
 import { audit } from '../../lib/audit.js';
+import type { AppEvents } from '../../lib/app-events.js';
+import { noEvents } from '../../lib/app-events.js';
 
 const {
   profiles,
@@ -68,6 +70,9 @@ export class MeService {
     private readonly today: () => string = todayUtc,
     private readonly profileQueue?: ProfileQueue,
   ) {}
+
+  /** Integrations listen here (phase 24). */
+  appEvents: AppEvents = noEvents;
 
   async getMe(userId: string): Promise<MeResponse> {
     const [account] = await this.db
@@ -386,6 +391,7 @@ export class MeService {
       await tx.update(user).set({ name: input.displayName }).where(eq(user.id, userId));
     });
     await this.profileQueue?.embedProfile(userId);
+    this.appEvents.emit({ type: 'member.joined', memberId: userId });
   }
 
   async updateProfile(userId: string, input: ProfileUpdate): Promise<void> {
@@ -550,5 +556,6 @@ export class MeService {
       quarantineKeys: keys.flatMap((k) => (k.quarantineKey ? [k.quarantineKey] : [])),
       mediaKeys: keys.flatMap((k) => (k.mediaKey ? [k.mediaKey] : [])),
     });
+    this.appEvents.emit({ type: 'member.deleted', memberId: userId });
   }
 }

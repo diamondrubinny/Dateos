@@ -9,7 +9,9 @@ import {
   type DeleteObjectsJob,
   type ProcessAudioJob,
   type ProcessPhotoJob,
+  type AlertJob,
   type PushJob,
+  type WebhookJob,
 } from '@nexaheart/shared';
 import type { FastifyInstance, LightMyRequestResponse } from 'fastify';
 import { Redis } from 'ioredis';
@@ -35,6 +37,8 @@ export interface TestContext {
     delete: DeleteObjectsJob[];
     embed: string[];
     push: PushJob[];
+    webhooks: WebhookJob[];
+    alerts: AlertJob[];
   };
   today: { value: string };
   /** Clock used for TOTP checks; advance it by 30 s to get a fresh code. */
@@ -71,10 +75,20 @@ export const TEST_LIVEKIT = {
 
 export interface SetupOptions {
   /** Text AI model for this suite (default: none). */
-  textModel?: TextModel | null;
+  /** Pass undefined to use the dashboard's model (phase 24). */
+  textModel?: TextModel | null | undefined;
   /** Media server for calls (default: none, calls unavailable). */
   callMedia?: CallMedia | null;
+  /** Integrations (phase 24): the network the integrations reach (default: none, all refused). */
+  fetch?: typeof fetch;
+  resolve?: (host: string) => Promise<string[]>;
+  /** What the server's environment sets (default: nothing, so every integration is editable). */
+  integrationsEnv?: Record<string, string | undefined>;
+  integrationsKey?: Buffer | null;
 }
+
+/** A fixed key for the tests' encrypted integration secrets. */
+export const TEST_INTEGRATIONS_KEY = Buffer.alloc(32, 7);
 
 export async function setupIntegration(options: SetupOptions = {}): Promise<TestContext> {
   const envFile = new URL('../../../../.env', import.meta.url);
@@ -89,6 +103,8 @@ export async function setupIntegration(options: SetupOptions = {}): Promise<Test
     NODE_ENV: 'test',
     LOG_LEVEL: process.env.TEST_LOG_LEVEL ?? 'silent',
     WS_HEARTBEAT_MS: '200',
+    // The SSRF guard is under test: never inherit a developer's local opt-out.
+    INTEGRATIONS_ALLOW_PRIVATE: 'false',
     CORS_ORIGINS: 'http://localhost:8081',
     PUBLIC_API_URL: 'http://localhost:4000',
     S3_ENDPOINT: process.env.S3_ENDPOINT ?? 'http://localhost:8333',
@@ -100,7 +116,15 @@ export async function setupIntegration(options: SetupOptions = {}): Promise<Test
 
   const mail: MailMessage[] = [];
   const mailer: Mailer = { send: async (m) => void mail.push(m), close: () => undefined };
-  const jobs: TestContext['jobs'] = { process: [], audio: [], delete: [], embed: [], push: [] };
+  const jobs: TestContext['jobs'] = {
+    process: [],
+    audio: [],
+    delete: [],
+    embed: [],
+    push: [],
+    webhooks: [],
+    alerts: [],
+  };
   const profileQueue: ProfileQueue = {
     embedProfile: async (userId) => void jobs.embed.push(userId),
     close: async () => undefined,
@@ -127,8 +151,26 @@ export async function setupIntegration(options: SetupOptions = {}): Promise<Test
       notifyQueue: { push: async (job) => void jobs.push.push(job), close: async () => undefined },
       today: () => today.value,
       now: () => clock.value,
-      textModel: options.textModel ?? null,
+      ...('textModel' in options
+        ? options.textModel !== undefined
+          ? { textModel: options.textModel }
+          : {}
+        : { textModel: null }),
       callMedia: options.callMedia ?? null,
+      integrationsEnv: options.integrationsEnv ?? {},
+      integrationsKey:
+        options.integrationsKey !== undefined ? options.integrationsKey : TEST_INTEGRATIONS_KEY,
+      outboundQueue: {
+        webhook: async (job) => void jobs.webhooks.push(job),
+        alert: async (job) => void jobs.alerts.push(job),
+        close: async () => undefined,
+      },
+      fetch:
+        options.fetch ??
+        ((async () => {
+          throw new Error('No network in tests.');
+        }) as unknown as typeof fetch),
+      resolve: options.resolve ?? (async () => ['93.184.216.34']),
     },
   );
   await services.storage.ensureBuckets();
@@ -138,7 +180,7 @@ export async function setupIntegration(options: SetupOptions = {}): Promise<Test
 
 export async function resetState(ctx: TestContext): Promise<void> {
   await ctx.services.dbHandle.pool.query(
-    'TRUNCATE "user", verification, rate_limit, audit_logs, banned_emails, banned_photo_hashes, instance_settings, venues, events RESTART IDENTITY CASCADE',
+    'TRUNCATE "user", verification, rate_limit, audit_logs, banned_emails, banned_photo_hashes, instance_settings, venues, events, integrations, webhook_deliveries RESTART IDENTITY CASCADE',
   );
   const { storage } = ctx.services;
   for (const bucket of Object.values(storage.buckets)) {
@@ -149,6 +191,9 @@ export async function resetState(ctx: TestContext): Promise<void> {
   const keys = await ctx.redis.keys('nexaheart:*');
   if (keys.length > 0) await ctx.redis.del(...keys);
   ctx.services.instance.invalidate();
+  ctx.services.integrations.store.invalidate();
+  ctx.jobs.webhooks.length = 0;
+  ctx.jobs.alerts.length = 0;
   ctx.mail.length = 0;
   ctx.jobs.process.length = 0;
   ctx.jobs.delete.length = 0;

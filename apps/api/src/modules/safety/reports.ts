@@ -12,6 +12,8 @@ import { audit } from '../../lib/audit.js';
 import type { Mailer } from '../../lib/mailer.js';
 import { HttpError } from '../../plugins/error-handler.js';
 import type { DiscoveryService } from '../discovery/service.js';
+import type { AppEvents } from '../../lib/app-events.js';
+import { noEvents } from '../../lib/app-events.js';
 
 const { reports, reportEvidence, messages, matches, user, audioClips, calls } = schema;
 
@@ -28,6 +30,9 @@ export class ReportService {
     private readonly onMailError: (error: unknown) => void,
     private readonly storage?: Storage,
   ) {}
+
+  /** Integrations listen here (phase 24). */
+  appEvents: AppEvents = noEvents;
 
   async create(reporterId: string, input: ReportInput): Promise<{ reportId: string }> {
     const { targetId } = input;
@@ -150,6 +155,7 @@ export class ReportService {
 
     if (input.block) await this.discovery.block(reporterId, targetId);
     if (priority === 'urgent') await this.alertStaff();
+    this.appEvents.emit({ type: 'report.created', reportId, urgent: priority === 'urgent' });
     return { reportId };
   }
 

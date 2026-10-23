@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
-import nodemailer from 'nodemailer';
+import nodemailer, { type Transporter } from 'nodemailer';
 import { creditHtml, creditLine } from '@nexaheart/shared';
 import type { Env } from '../config/env.js';
 
@@ -17,7 +17,14 @@ export interface Mailer {
   close(): void;
 }
 
-export function createMailer(env: Env): Mailer {
+/**
+ * Email through the server's SMTP settings, or (phase 24) the ones saved in the dashboard when
+ * the server doesn't set SMTP_HOST.
+ */
+export function createMailer(
+  env: Env,
+  dashboard?: () => Promise<{ transport: Transporter; from: string } | null>,
+): Mailer {
   const transport = nodemailer.createTransport({
     host: env.SMTP_HOST,
     port: env.SMTP_PORT,
@@ -26,6 +33,11 @@ export function createMailer(env: Env): Mailer {
   });
   return {
     async send(message) {
+      const configured = await dashboard?.();
+      if (configured) {
+        await configured.transport.sendMail({ from: configured.from, ...message });
+        return;
+      }
       await transport.sendMail({ from: env.SMTP_FROM, ...message });
     },
     close: () => transport.close(),

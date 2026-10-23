@@ -29,6 +29,8 @@ export interface CallMedia {
     /** End-to-end encryption: shown to the other person as this participant's `pk` attribute. */
     publicKey: string;
   }): Promise<string>;
+  /** Reaches the server's API with these credentials (the dashboard's "Test connection"). */
+  check?(): Promise<void>;
   /** Verifies LiveKit's signature; null for anything unsigned or forged. */
   receiveWebhook(body: string, authorization: string | undefined): Promise<CallWebhookEvent | null>;
 }
@@ -49,6 +51,9 @@ export function createLiveKitMedia(env: Env): CallMedia | null {
   const webhooks = new WebhookReceiver(key, secret);
   return {
     url: env.LIVEKIT_URL!,
+    async check() {
+      await rooms.listRooms([]);
+    },
     async createRoom(room) {
       await rooms.createRoom({
         name: room,

@@ -136,6 +136,24 @@ export const envSchema = z.object({
   LIVEKIT_API_URL: optionalString.pipe(z.url({ protocol: /^https?$/ }).optional()),
   LIVEKIT_API_KEY: optionalString,
   LIVEKIT_API_SECRET: optionalString.pipe(z.string().min(32).optional()),
+  /**
+   * Integrations (phase 24): 32 random bytes (hex or base64) that encrypt the secrets saved in the
+   * dashboard. Without it the Integrations page is read-only. install.sh generates it.
+   */
+  INTEGRATIONS_KEY: optionalString,
+  /** The dashboard's address, for links in team alerts. Defaults to admin.<the app's domain>. */
+  PUBLIC_ADMIN_URL: optionalString.pipe(z.url().optional()),
+  /** Lets integrations reach hosts on this server's own network (Ollama, a self-hosted Matomo). */
+  INTEGRATIONS_ALLOW_PRIVATE: booleanString.default(false),
+  /** Set any of these to manage the integration here instead of in the dashboard (env wins). */
+  CAPTCHA_PROVIDER: optionalString,
+  CAPTCHA_SITE_KEY: optionalString,
+  CAPTCHA_SECRET_KEY: optionalString,
+  SENTRY_DSN: optionalString,
+  SENTRY_ENVIRONMENT: optionalString,
+  ANALYTICS_PROVIDER: optionalString,
+  ANALYTICS_URL: optionalString,
+  ANALYTICS_SITE_ID: optionalString,
   TERMS_VERSION: z.string().max(32).default('2026-10'),
   PRIVACY_VERSION: z.string().max(32).default('2026-10'),
 });
