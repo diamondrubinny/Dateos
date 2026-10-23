@@ -1,6 +1,6 @@
 # Phase 21: Trust and safety automation (v0.7)
 
-> Status: 📝 plan (2026-10-23). Approved as part of the roadmap in
+> Status: ✅ done (2026-10-23). Approved as part of the roadmap in
 > [COMPETITIVE_ANALYSIS.md](../COMPETITIVE_ANALYSIS.md).
 > 📘 = verify against official docs, ⚖️ = needs legal review.
 
@@ -106,17 +106,17 @@ no data sent to outside services.
 
 ## API (new)
 
-| Method and path | Who | What |
-| --- | --- | --- |
-| `POST /v1/me/contact-hides` | member | `{ hashes: string[≤2000] }` returns `{ hidden: number }` |
-| `DELETE /v1/me/contact-hides` | member | Removes all of my contact hides |
-| `GET /v1/signup/mode` | public | `{ mode }` |
-| `POST /v1/signup/redeem` | public, rate-limited | `{ code, email }` returns 204, or 400 with a generic message |
-| `POST /v1/signup/waitlist` | public, rate-limited | `{ email, note? }` returns 202, always (no enumeration) |
-| `GET`/`POST /v1/admin/invites` | admin + MFA | List and create codes |
-| `GET /v1/admin/waitlist`, `POST /v1/admin/waitlist/:id/{approve,decline}` | moderator + MFA | Review the waitlist |
-| `GET /v1/admin/photo-matches` | moderator + MFA | Duplicate-photo cases (in the reports queue) |
-| better-auth `/v1/auth/passkey/*` | member | Register, list, delete, sign in 📘 |
+| Method and path                                                           | Who                  | What                                                         |
+| ------------------------------------------------------------------------- | -------------------- | ------------------------------------------------------------ |
+| `POST /v1/me/contact-hides`                                               | member               | `{ hashes: string[≤2000] }` returns `{ hidden: number }`     |
+| `DELETE /v1/me/contact-hides`                                             | member               | Removes all of my contact hides                              |
+| `GET /v1/signup/mode`                                                     | public               | `{ mode }`                                                   |
+| `POST /v1/signup/redeem`                                                  | public, rate-limited | `{ code, email }` returns 204, or 400 with a generic message |
+| `POST /v1/signup/waitlist`                                                | public, rate-limited | `{ email, note? }` returns 202, always (no enumeration)      |
+| `GET`/`POST /v1/admin/invites`                                            | admin + MFA          | List and create codes                                        |
+| `GET /v1/admin/waitlist`, `POST /v1/admin/waitlist/:id/{approve,decline}` | moderator + MFA      | Review the waitlist                                          |
+| `GET /v1/admin/photo-matches`                                             | moderator + MFA      | Duplicate-photo cases (in the reports queue)                 |
+| better-auth `/v1/auth/passkey/*`                                          | member               | Register, list, delete, sign in 📘                           |
 
 ## Data (new)
 
@@ -148,3 +148,48 @@ no data sent to outside services.
 3. Contacts: store only the matches, never the hashes of non-members.
 4. Passkeys on the web first; native after the domains are set up.
 5. `signupMode` stays `open` by default, so nothing changes for existing communities.
+
+## Results
+
+- **pHash measured on real images:**
+  - Re-encoding (WebP, a smaller JPEG): ≤ 4 bits.
+  - A little brighter: ≤ 6 bits.
+  - A 3% crop: 4–12 bits.
+  - Different photos: 26 bits or more.
+  - Thresholds: 10 bits for "same photo" and 6 for "banned photo". Images with too little detail
+    get no hash.
+- **Integration tests (`trust.test.ts`, 11):**
+  - An automatic case for a copied photo (one per member, not one per photo).
+  - Bans keep their photos out, and lifting a ban clears them.
+  - A flat image gets no hash.
+  - Contact hides work both ways, store only the matches, validate their input and can be undone; an
+    existing match is unaffected.
+  - Invite codes: forgiving about case and dashes, single use, revoked and expired codes refused,
+    admins only.
+  - Member invites need verification and the setting, at most 3.
+  - The waitlist: approval email, account created, the address not in the audit log, retention.
+  - Open mode by default; passkey registration offered to signed-in members only.
+  - The full suite: **177/177**.
+- **e2e `pnpm --dir e2e trust` in en/he/ar/ru**, through the dashboard and the app:
+  - Invite mode with a code made in the dashboard; a wrong code is refused.
+  - "How to join" instead of a link for a new address.
+  - The waitlist with approval in the dashboard.
+  - A **passkey** added and then used to sign in, with Chromium's virtual authenticator (CDP WebAuthn).
+  - Hide me from my contacts by pasting addresses.
+- Screenshots `74-signin-invite`, `75-waitlist`, `76-security`, `77-hide-contacts`, and in the
+  dashboard `admin-11-joining`, `admin-12-waitlist`.
+- **Dependencies:** both moderate advisories (esbuild, uuid in build-time tools) fixed with
+  overrides. `pnpm audit --prod` has nothing open beyond the two reviewed ones.
+
+## Changes while building
+
+- Email bans already existed (phase 4), so 21b only adds the photo hashes, with the same retention
+  (until the ban is lifted).
+- dHash turned out unstable on smooth images (9 bits between a photo and its WebP copy), so the hash
+  is pHash (DCT).
+- Automatic reports have their own `automatic` column, so the dashboard says "automatic check"
+  instead of "deleted account".
+- `PUBLIC_APP_URL` (optional; the default is the first CORS origin) sets the domain for passkeys and
+  links in emails.
+- In invite or waitlist mode, new staff need a code (or approval) too. This is documented in
+  SELF_HOSTING.md.

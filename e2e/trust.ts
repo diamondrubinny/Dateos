@@ -234,9 +234,13 @@ async function run(browser: Browser, locale: L) {
       await B.page.goto(`${WEB}/sign-in`);
       await B.page.getByRole('button', { name: t.signup.joinWaitlist }).click();
       await B.page.waitForURL((url) => url.pathname.startsWith('/waitlist'));
-      await B.page.getByLabel(t.signIn.email).fill(waiting);
-      await B.page.getByLabel(t.signup.note).fill('A friend told me');
-      await B.page.getByRole('button', { name: t.signup.joinWaitlist }).click();
+      // The sign-in screen stays mounted (hidden) under it: use the visible field.
+      await B.page.getByLabel(t.signIn.email).filter({ visible: true }).fill(waiting);
+      await B.page.getByLabel(t.signup.note).filter({ visible: true }).fill('A friend told me');
+      await B.page
+        .getByRole('button', { name: t.signup.joinWaitlist })
+        .filter({ visible: true })
+        .click();
       await B.page.getByText(t.signup.waitlistDone).waitFor();
       await shot(B.page, `${locale}/75-waitlist`);
 
@@ -301,7 +305,7 @@ async function run(browser: Browser, locale: L) {
     check(me === maya.id, 'signed in again with the passkey, no email needed');
 
     // 4. Hide me from my contacts.
-    const before = await dan.call<{ profiles: { id: string }[] }>('GET', '/v1/discover?limit=50');
+    const before = await dan.call<{ profiles: { id: string }[] }>('GET', '/v1/discover?limit=20');
     check(
       before.profiles.some((p) => p.id === maya.id),
       'before: Dan can see her',
@@ -313,9 +317,9 @@ async function run(browser: Browser, locale: L) {
     await C.page.getByRole('button', { name: t.contacts.hide }).click();
     await C.page.getByText(t.contacts.done.replace('{{count}}', '1')).waitFor();
     await shot(C.page, `${locale}/77-hide-contacts`);
-    const after = await dan.call<{ profiles: { id: string }[] }>('GET', '/v1/discover?limit=50');
+    const after = await dan.call<{ profiles: { id: string }[] }>('GET', '/v1/discover?limit=20');
     check(!after.profiles.some((p) => p.id === maya.id), 'after: Dan doesn’t see her (silently)');
-    const hers = await maya.call<{ profiles: { id: string }[] }>('GET', '/v1/discover?limit=50');
+    const hers = await maya.call<{ profiles: { id: string }[] }>('GET', '/v1/discover?limit=20');
     check(!hers.profiles.some((p) => p.id === dan.id), 'and she doesn’t see him');
     const stored = await pool.query(
       `SELECT count(*)::int AS n FROM contact_hides WHERE user_id = $1`,

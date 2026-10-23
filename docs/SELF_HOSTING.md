@@ -158,6 +158,28 @@ UDP fall back to TCP 7881; for networks that only allow HTTPS, LiveKit's TURN ov
 works too (point `LIVEKIT_URL` at it), but then a third party carries the calls: DPA and international
 transfers ⚖️. Mention video calls in your privacy policy (the drafts in `docs/legal` already do) ⚖️.
 
+## Who can join (optional)
+
+In the dashboard, **Joining** sets how new people open an account:
+
+- **Open**, the default: anyone with an email address.
+- **Invite code**: an admin makes codes (with a number of uses and an expiry). Optionally, verified
+  members can each invite up to 3 people. Someone without a code who asks for a sign-in link gets an
+  email explaining how to join instead.
+- **Waitlist**: people leave their address (and a short note), and a moderator approves them; the
+  approval email lets them open an account within 7 days.
+
+People who already have an account keep signing in as usual. Staff accounts are new accounts too: in
+invite or waitlist mode, give a new staff member a code (or approve them) before they first sign in.
+
+## Passkeys
+
+Members can add a passkey in Settings and sign in with it on the web. The passkey belongs to the web
+app's domain: set `PUBLIC_APP_URL` (for example `https://app.example.org`) if it isn't the first
+entry of `CORS_ORIGINS`. Changing that domain later makes existing passkeys unusable (members sign in
+with an email link and add a new one). Passkeys in the native apps need Associated Domains (iOS) and
+Digital Asset Links (Android) for your domain 📘.
+
 ## Mobile apps
 
 The web app works on phones and can be added to the home screen. Native iOS and Android builds come
