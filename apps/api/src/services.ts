@@ -5,7 +5,7 @@ import { createDb, type DbHandle } from '@nexaheart/db';
 import { createStorage, type Storage } from '@nexaheart/storage';
 import type { Redis } from 'ioredis';
 import { createAuth, type Auth } from './auth/auth.js';
-import { requireServiceEnv, type Env } from './config/env.js';
+import { appUrl, requireServiceEnv, type Env } from './config/env.js';
 import type { Dependency } from './lib/dependencies.js';
 import { createMailer, type Mailer } from './lib/mailer.js';
 import {
@@ -23,6 +23,7 @@ import { createRealtime, type Realtime } from './lib/realtime.js';
 import { ChatService } from './modules/chat/service.js';
 import { DiscoveryService } from './modules/discovery/service.js';
 import { MeService, todayUtc } from './modules/me/service.js';
+import { SpeedService } from './modules/speed/service.js';
 import { PhotoService } from './modules/photos/service.js';
 import { createEmailHasher } from './lib/banned.js';
 import { StaffMfaService } from './modules/admin/mfa.js';
@@ -72,6 +73,7 @@ export interface Services {
   cities: CityIndex;
   travel: TravelService;
   calls: CallService;
+  speed: SpeedService;
   ai: AiGate;
   /** Health checks and shutdown hooks for the resources above. */
   dependencies: Dependency[];
@@ -181,11 +183,13 @@ export function createServices(
     overrides.now,
   );
 
+  const callMedia =
+    overrides.callMedia !== undefined ? overrides.callMedia : createLiveKitMedia(env);
   const calls = new CallService(
     dbHandle.db,
     chat,
     realtime,
-    overrides.callMedia !== undefined ? overrides.callMedia : createLiveKitMedia(env),
+    callMedia,
     () => instance.callSettings(),
     (userId, matchId) => notifyQueue.push({ userId, kind: 'call', matchId }),
     overrides.now,
@@ -194,6 +198,15 @@ export function createServices(
     calls.available(matchId, viewerId, otherId),
   );
   discovery.onMatchClosed((matchId) => calls.endForMatch(matchId));
+  const speed = new SpeedService(
+    dbHandle.db,
+    discovery,
+    callMedia,
+    async () => (await calls.enabled()) !== null,
+    today,
+    overrides.now,
+  );
+  discovery.onSeparation((a, b) => (b ? speed.closeForBlock(a, b) : speed.closeForUser(a)));
 
   return {
     dbHandle,
@@ -213,12 +226,14 @@ export function createServices(
     venues,
     dates: new DateService(dbHandle.db, chat, venues, overrides.now),
     calls,
+    speed,
     cities,
     travel: new TravelService(dbHandle.db, cities),
     events: new EventService(
       dbHandle.db,
       (userId, eventId) => notifyQueue.push({ userId, kind: 'event', matchId: eventId }),
       overrides.now,
+      { appUrl: appUrl(env), speedAvailable: async () => (await calls.enabled()) !== null },
     ),
     reports: new ReportService(
       dbHandle.db,

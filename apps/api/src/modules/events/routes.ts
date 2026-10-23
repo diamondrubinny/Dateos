@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
-import { eventSchema } from '@nexaheart/shared';
+import { checkInSchema, eventSchema } from '@nexaheart/shared';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import type { Auth } from '../../auth/auth.js';
@@ -46,5 +46,15 @@ export const eventRoutes: FastifyPluginAsyncZod<{ auth: Auth; events: EventServi
     '/v1/events/:id/rsvp',
     { config: limit, schema: { params, response: { 200: eventSchema } } },
     async (request) => events.cancelRsvp(request.params.id, currentUser(request).id),
+  );
+  // Checking in with the code on the venue's screen (phase 23). Few tries: codes are 6 digits.
+  app.post(
+    '/v1/events/:id/check-in',
+    {
+      config: perUserLimit(10, 60 * 60_000),
+      schema: { params, body: checkInSchema, response: { 200: eventSchema } },
+    },
+    async (request) =>
+      events.checkIn(request.params.id, currentUser(request).id, request.body.code),
   );
 };

@@ -59,7 +59,9 @@ export const childrenOptions = [
   'dont_want',
   'open',
 ] as const;
+export type ChildrenOption = (typeof childrenOptions)[number];
 export const smokingOptions = ['no', 'sometimes', 'yes'] as const;
+export type SmokingOption = (typeof smokingOptions)[number];
 export const drinkingOptions = ['no', 'socially', 'often'] as const;
 /**
  * Religious observance: special-category data (GDPR Art. 9), stored only with the `religion`

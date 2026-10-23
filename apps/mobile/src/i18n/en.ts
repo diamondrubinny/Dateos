@@ -143,6 +143,9 @@ export const en = {
     age: '{{age}} years old',
   },
   visibility: {
+    eventBadgeLabel: 'Show “Checked in at an event”',
+    eventBadgeHint:
+      'A small badge on your profile after you checked in at one of this community’s events in the last year. It shows you really came: never which event, when, or how often.',
     title: 'Who can see me',
     incognitoLabel: 'Incognito: only people I like can see me',
     incognitoHint:
@@ -480,6 +483,20 @@ export const en = {
     },
   },
   events: {
+    speedLabel: 'Video speed dating · rounds of {{minutes}} minutes',
+    speedHint:
+      'Short video dates, one after another, with people you could match with under your own settings. After each one you decide privately; only a mutual yes makes a match.',
+    speedEnter: 'Enter the lobby',
+    speedLater: 'The lobby opens 15 minutes before the start.',
+    checkInTitle: 'Check in',
+    checkInHint:
+      'Type the 6 digits on the screen at the venue, or scan its QR code with your camera.',
+    checkInCode: 'Code from the venue',
+    checkInButton: 'Check in',
+    checkedIn: 'You checked in. Thanks for coming!',
+    checkInWrong: 'That code didn’t work. Check the screen at the venue and try again.',
+    checkInClosed: 'Check-in is open only during the event.',
+    checkInLimit: 'Too many tries. Please wait a little and try again.',
     title: 'Community events',
     profileButton: 'Community events',
     intro:
@@ -733,6 +750,8 @@ export const en = {
     cameraPermission: 'Allow camera access to take a selfie.',
   },
   badge: {
+    event: 'Checked in at an event',
+    eventLabel: 'Checked in at one of this community’s events in the last year',
     verified: 'Verified',
     verifiedLabel: 'Photo-verified profile',
     met: 'Met in person',
@@ -1115,6 +1134,111 @@ export const en = {
     leave: 'Leave the chat',
     leaveConfirm: 'Leaving closes the chat for all four of you.',
     leaveYes: 'Leave and close it',
+  },
+  matchmaker: {
+    open: 'Talk to the matchmaker',
+    title: 'Matchmaker',
+    intro:
+      'A few quick questions about who you’d like to meet. At the end you’ll see suggested changes to your settings, and you choose which to apply. Nothing changes without you.',
+    progress: 'Question {{n}} of {{total}}',
+    next: 'Next',
+    skip: 'Skip this question',
+    see: 'See suggestions',
+    q: {
+      looking: 'What are you looking for?',
+      distance: 'How far would you go for a first date?',
+      ages: 'Who would you like to meet?',
+      enjoy: 'What do you enjoy? (up to {{max}})',
+      smoking: 'How do you feel about smoking?',
+      children: 'And children?',
+      text: 'Anything else, in your own words?',
+    },
+    a: {
+      distance: {
+        near: 'Walking distance (about 5 km)',
+        city: 'Around my city (about 15 km)',
+        region: 'My region (about 50 km)',
+        far: 'I’ll travel (about 150 km)',
+      },
+      ages: {
+        younger: 'Younger than me',
+        similar: 'About my age',
+        older: 'Older than me',
+        wide: 'Age doesn’t matter much',
+      },
+      smoking: {
+        no_smokers: 'Only people who don’t smoke',
+        any: 'It doesn’t matter',
+      },
+      children: {
+        want: 'Someone who wants children',
+        dont_want: 'Someone who doesn’t want children',
+        any: 'It doesn’t matter',
+      },
+    },
+    textHint:
+      'Up to {{max}} characters. Read on this community’s own server to suggest settings; it isn’t saved or shown to anyone.',
+    textNeedsConsent:
+      'Your own words can only be read with the external AI option, which is off in your privacy settings. Your answers above still work.',
+    textUnavailable:
+      'Reading your own words isn’t available on this community. Your answers above still work.',
+    privacy: 'Nothing from this interview is stored. Only the changes you choose are saved.',
+    resultTitle: 'Suggestions',
+    resultIntro: 'Untick anything you’d rather keep as it is.',
+    nothing: 'Your settings already match your answers. Nothing to change.',
+    fromTo: 'Now: {{from}} → Suggested: {{to}}',
+    apply: 'Apply {{count}} changes',
+    applied: 'Done. Discover now uses your new settings.',
+    toDiscover: 'Go to Discover',
+    again: 'Answer again',
+    limit: 'You’ve used the matchmaker a lot today. Try again tomorrow.',
+    notSet: 'not set',
+    none: 'none',
+    anyone: 'anyone',
+    km: 'up to {{km}} km',
+    ages: 'ages {{min}} to {{max}}',
+    nonSmokers: 'only people who don’t smoke',
+    wantsChildren: 'people who want children (or are open)',
+    noChildren: 'people who don’t want children (or are open)',
+    field: {
+      intention: 'What you’re looking for',
+      maxDistanceKm: 'Distance',
+      ages: 'Ages',
+      interests: 'Your interests',
+      smokingOk: 'Smoking',
+      childrenOk: 'Children',
+    },
+  },
+  speed: {
+    title: 'Video speed dating',
+    lobby: 'Lobby',
+    here: 'People here: {{count}}',
+    startsSoon: 'The first round starts when the event begins.',
+    nextIn: 'Next round in {{time}}',
+    pairing: 'Pairing people for the next round…',
+    noMoreRounds: 'No more rounds today. Thank you for coming!',
+    lobbyHint:
+      'Keep this screen open. When a round starts, the video opens here. If nobody fits your settings this round, you’re first in line for the next.',
+    closed: 'The lobby is open only around the event.',
+    noVideo: 'Video isn’t available on this community right now.',
+    roundOver: 'This round is over.',
+    with: '{{name}}, {{age}}',
+    leaveRound: 'Leave this round',
+    afterHint:
+      'After the round you’ll be asked privately whether you’d like to match with {{name}}.',
+    yourRounds: 'Your rounds',
+    roundWith: 'Round {{round}}: {{name}}, {{age}}',
+    question: 'Would you like to match with {{name}}?',
+    yes: 'Yes',
+    no: 'No thanks',
+    private: 'Private: {{name}} never learns about a no.',
+    saidYes: 'You said yes. If {{name}} says yes too, it’s a match.',
+    saidNo: 'You said no thanks. Nobody will know.',
+    matched: 'You and {{name}} both said yes: it’s a match!',
+    openChat: 'Open the chat',
+    safety:
+      'Rounds are end-to-end encrypted and never recorded. Your camera starts off. You can leave or report at any moment.',
+    leaveLobby: 'Leave the lobby',
   },
 };
 

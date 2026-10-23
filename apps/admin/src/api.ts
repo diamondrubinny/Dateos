@@ -2,6 +2,7 @@
 // Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 import type {
+  AdminCheckIn,
   AdminEvent,
   EventInput,
   EventUpdate,
@@ -126,6 +127,8 @@ export const api = {
     request<AdminEvent>('PATCH', `/v1/admin/events/${encodeURIComponent(id)}`, patch),
   cancelEvent: (id: string) =>
     request<AdminEvent>('POST', `/v1/admin/events/${encodeURIComponent(id)}/cancel`),
+  checkIn: (id: string) =>
+    request<AdminCheckIn>('GET', `/v1/admin/events/${encodeURIComponent(id)}/check-in`),
   createVenue: (input: Omit<VenueInput, 'active'>) =>
     request<AdminVenue>('POST', '/v1/admin/venues', input),
   updateVenue: (id: string, patch: VenueUpdate) =>

@@ -7,3 +7,4 @@ export * from './moderation.js';
 export * from './scoring.js';
 export * from './coach.js';
 export * from './llm.js';
+export * from './matchmaker.js';

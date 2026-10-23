@@ -21,6 +21,8 @@ export interface CandidateQuery {
   excludeDecided?: boolean;
   /** Hide these ids (e.g. today's picks in the discover feed). */
   excludeIds?: string[];
+  /** Only these people (phase 23: the speed-dating lobby). */
+  onlyIds?: string[];
   limit?: number;
   /**
    * Friends mode (phase 22): both people turned it on and fit each other's friend ages and
@@ -186,6 +188,7 @@ export function candidateSql(q: CandidateQuery): SQL {
         SELECT 1 FROM interactions inc
         WHERE inc.actor_id = c.user_id AND inc.target_id = me.user_id AND inc.kind = 'like'))
       ${q.targetId ? sql`AND c.user_id = ${q.targetId}` : sql``}
+      ${q.onlyIds ? sql`AND c.user_id = ANY(${sql.param(q.onlyIds)}::text[])` : sql``}
       ${q.excludeDecided ? sql`AND NOT EXISTS (SELECT 1 FROM interactions i WHERE i.actor_id = me.user_id AND i.target_id = c.user_id)` : sql``}
       -- One array parameter keeps the statement text stable, so it can be prepared once.
       AND NOT (c.user_id = ANY(${sql.param(q.excludeIds ?? [])}::text[]))

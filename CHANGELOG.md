@@ -6,6 +6,14 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Added
 
+- **Matchmaker**: a few quick questions (and, if a model is available, your own words) become
+  suggested changes to your settings. You tick the ones you want; nothing is stored and nothing
+  changes without you. Gender, orientation and religion are never touched.
+- **Video speed dating**: a new event type. People going wait in a lobby; short end-to-end encrypted
+  video rounds pair those who may see each other under everyone's own settings. After each round you
+  answer privately; only a mutual yes makes a match.
+- **Check-in at the venue**: the dashboard shows a QR code that changes every 30 seconds; scanning it
+  fills in the code. An opt-in badge, "Checked in at an event", says only yes or no.
 - **Friends' takes**: send a friend a one-time link; they write a few words about you without an
   account. You approve each one, and up to 3 appear on your profile with their first name.
 - **Double date**: pair up with a friend through a link and see other pairs only when all four of you

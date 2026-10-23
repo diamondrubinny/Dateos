@@ -116,6 +116,11 @@ export const useSetMetBadge = () =>
   useBreakMutation((on: boolean) =>
     apiFetch('/v1/me/met-badge', { method: 'PUT', body: json({ on }) }),
   );
+/** "Checked in at an event" badge (phase 23): off by default. */
+export const useSetEventBadge = () =>
+  useBreakMutation((on: boolean) =>
+    apiFetch('/v1/me/event-badge', { method: 'PUT', body: json({ on }) }),
+  );
 export const useResume = () =>
   useBreakMutation(() => apiFetch('/v1/me/pause', { method: 'DELETE' }));
 /** About me and dealbreakers (phase 19): what Discover shows changes, so the feeds refresh. */

@@ -93,6 +93,8 @@ export const publicProfileSchema = z.object({
   voicePrompt: voicePromptSchema.nullable(),
   /** Opt-in badge: met someone from this community in person, both confirmed (phase 20). */
   metInPerson: z.boolean(),
+  /** Opt-in badge: checked in at one of this community's events in the last year (phase 23). */
+  atEvent: z.boolean(),
   /** Friends' takes (phase 22): approved by the profile owner, at most 3. */
   friendTakes: z.array(publicTakeSchema),
   /** Travel mode (phase 18c): shown as "Visiting {city}" instead of a distance. */

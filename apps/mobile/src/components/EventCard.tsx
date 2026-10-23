@@ -21,7 +21,9 @@ export function formatEventTime(
     month: 'long',
   }).format(new Date(event.startsAt));
   const time = new Intl.DateTimeFormat(locale, { hour: '2-digit', minute: '2-digit' });
-  return `${day}, ${time.format(new Date(event.startsAt))}–${time.format(new Date(event.endsAt))}`;
+  // The range is isolated left-to-right, so "05:30–06:30" isn't flipped in Hebrew or Arabic.
+  const range = `${time.format(new Date(event.startsAt))}–${time.format(new Date(event.endsAt))}`;
+  return `${day}, \u2066${range}\u2069`;
 }
 
 /** The status line of an event: going, full, cancelled, or how many are going. */
@@ -56,6 +58,11 @@ export function EventCard({ event }: { event: CommunityEvent }) {
       <AppText variant="heading" userContent>
         {event.title}
       </AppText>
+      {event.kind === 'speed' ? (
+        <AppText variant="label" tone="primary">
+          🎥 {t('events.speedLabel', { minutes: event.roundMinutes ?? 5 })}
+        </AppText>
+      ) : null}
       <AppText variant="body">{formatEventTime(event, locale)}</AppText>
       {event.venue ? (
         <AppText variant="body" tone="muted" userContent>

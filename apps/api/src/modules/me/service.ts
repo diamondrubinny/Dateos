@@ -162,6 +162,7 @@ export class MeService {
           ? await this.myVoicePrompt(about.voiceAudioId, about.voicePromptKey as PromptKey)
           : null,
       showMetBadge: prefs?.showMetBadge ?? false,
+      showEventBadge: prefs?.showEventBadge ?? false,
       dealbreakers: prefs
         ? {
             smokingOk: prefs.smokingOk as Dealbreakers['smokingOk'],
@@ -283,6 +284,13 @@ export class MeService {
     await this.db
       .update(preferences)
       .set({ showMetBadge: on, updatedAt: new Date() })
+      .where(eq(preferences.userId, userId));
+  }
+
+  async setEventBadge(userId: string, on: boolean): Promise<void> {
+    await this.db
+      .update(preferences)
+      .set({ showEventBadge: on, updatedAt: new Date() })
       .where(eq(preferences.userId, userId));
   }
 

@@ -143,6 +143,18 @@ export function ProfileCard({ profile, onLikeItem }: ProfileCardProps) {
               </AppText>
             </View>
           ) : null}
+          {profile.atEvent ? (
+            <View
+              testID="event-badge"
+              style={[styles.verified, { backgroundColor: colors.successSoft }]}
+              accessible
+              accessibilityLabel={t('badge.eventLabel')}
+            >
+              <AppText variant="label" tone="success">
+                📍 {t('badge.event')}
+              </AppText>
+            </View>
+          ) : null}
           <AppText variant="label" tone="primary">
             {t(`intention.${profile.intention}`)}
           </AppText>

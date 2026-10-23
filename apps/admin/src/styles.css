@@ -630,3 +630,27 @@ input[type='password'] {
   letter-spacing: 0.15em;
   user-select: all;
 }
+
+/* Check-in at the venue (phase 23): big enough to read and scan from a few steps away. */
+.check-in {
+  margin-bottom: 1rem;
+  display: grid;
+  justify-items: center;
+  gap: 0.75rem;
+  text-align: center;
+}
+.check-in img {
+  max-width: 100%;
+  height: auto;
+  background: #ffffff;
+  padding: 8px;
+  border-radius: 8px;
+}
+.check-in-code {
+  font-size: 2.5rem;
+  font-weight: 700;
+  letter-spacing: 0.3em;
+  direction: ltr;
+  font-variant-numeric: tabular-nums;
+  margin: 0;
+}

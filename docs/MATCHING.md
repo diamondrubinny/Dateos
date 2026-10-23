@@ -44,6 +44,15 @@ Another pair is shown only when **each** of us is a dating candidate of **each**
 rule above: the candidate query runs for both of us, and only pairs in both lists are shown. So a
 double date never shows anyone to someone they couldn't see alone.
 
+### Video speed dating (phase 23)
+
+A round pairs two people in an event's lobby only when each is a dating candidate of the other under
+every rule above (the same query, limited to the lobby, leaving out people either already decided
+on), and they haven't met earlier in the event. People with the fewest possible partners, and those
+who sat out the last round, are paired first, so as few people as possible wait. Someone who arrives
+during a round with at least 2 minutes left is paired into it. Only a mutual yes after the round makes
+a match, recorded as two likes.
+
 ## Step 2: ranking (soft signals)
 
 For each visible person the server computes:

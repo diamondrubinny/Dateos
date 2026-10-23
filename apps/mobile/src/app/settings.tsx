@@ -27,6 +27,7 @@ import {
   useMe,
   useSetConsents,
   useSetIncognito,
+  useSetEventBadge,
   useSetMetBadge,
 } from '../lib/queries';
 import { radius, spacing, useColors } from '../lib/theme';
@@ -49,6 +50,7 @@ function SettingsContent() {
   const setAcceptCalls = useSetAcceptCalls();
   const setIncognito = useSetIncognito();
   const setMetBadge = useSetMetBadge();
+  const setEventBadge = useSetEventBadge();
   const { locale } = useLocale();
   const [push, setPush] = useState(false);
   const [pushNote, setPushNote] = useState<string>();
@@ -171,6 +173,14 @@ function SettingsContent() {
         checked={me.data?.showMetBadge ?? false}
         onChange={(v) =>
           setMetBadge.mutate(v, { onError: () => setError(t('common.genericError')) })
+        }
+      />
+      <Checkbox
+        label={t('visibility.eventBadgeLabel')}
+        hint={t('visibility.eventBadgeHint')}
+        checked={me.data?.showEventBadge ?? false}
+        onChange={(v) =>
+          setEventBadge.mutate(v, { onError: () => setError(t('common.genericError')) })
         }
       />
       <TakeABreak />
