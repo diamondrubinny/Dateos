@@ -22,6 +22,13 @@ export interface CandidateQuery {
   /** Hide these ids (e.g. today's picks in the discover feed). */
   excludeIds?: string[];
   limit?: number;
+  /**
+   * Friends mode (phase 22): both people turned it on and fit each other's friend ages and
+   * (optional) genders. Dating gender, orientation, intentions and dealbreakers don't apply;
+   * every safety rule (status, breaks, distance, photos, blocks, unmatches, contact hides,
+   * incognito) does.
+   */
+  mode?: 'date' | 'friend';
 }
 
 export interface CandidateRow {
@@ -75,6 +82,40 @@ export function notSeparated(a: SQL, b: SQL): SQL {
     )`;
 }
 
+/** Dating: gender and orientation, ages and intentions, both ways. */
+function datingRules(today: SQL): SQL {
+  return sql`c.gender = ANY(me.interested_in)
+      AND me.gender = ANY(c.interested_in)
+      AND date_part('year', age(${today}, c.birth_date)) BETWEEN me.age_min AND me.age_max
+      AND me.age BETWEEN cpr.age_min AND cpr.age_max
+      AND (cardinality(me.wants) = 0 OR c.intention = ANY(me.wants))
+      AND (cardinality(cpr.intentions) = 0 OR me.intention = ANY(cpr.intentions))`;
+}
+
+/** Friends mode (phase 22): both opted in, friend ages and optional genders, both ways. */
+function friendRules(today: SQL): SQL {
+  return sql`me.friend_mode AND cpr.friend_mode
+      AND date_part('year', age(${today}, c.birth_date)) BETWEEN me.friend_age_min AND me.friend_age_max
+      AND me.age BETWEEN cpr.friend_age_min AND cpr.friend_age_max
+      AND (cardinality(me.friend_genders) = 0 OR c.gender::text = ANY(me.friend_genders))
+      AND (cardinality(cpr.friend_genders) = 0 OR me.gender::text = ANY(cpr.friend_genders))`;
+}
+
+/** Dealbreakers (phase 19), dating only. */
+const dealbreakerRules = sql.raw(`
+      -- Dealbreakers (phase 19), both ways. An empty list means any; a missing answer passes.
+      AND (cardinality(me.smoking_ok) = 0 OR ca.smoking IS NULL OR ca.smoking = ANY(me.smoking_ok))
+      AND (cardinality(cpr.smoking_ok) = 0 OR me.smoking IS NULL OR me.smoking = ANY(cpr.smoking_ok))
+      AND (cardinality(me.children_ok) = 0 OR ca.children IS NULL OR ca.children = ANY(me.children_ok))
+      AND (cardinality(cpr.children_ok) = 0 OR me.children IS NULL OR me.children = ANY(cpr.children_ok))
+      AND (cardinality(me.religion_ok) = 0 OR ca.religion IS NULL OR ca.religion = ANY(me.religion_ok))
+      AND (cardinality(cpr.religion_ok) = 0 OR me.religion IS NULL OR me.religion = ANY(cpr.religion_ok))
+      AND (ca.height_cm IS NULL OR ((me.height_min IS NULL OR ca.height_cm >= me.height_min)
+                                AND (me.height_max IS NULL OR ca.height_cm <= me.height_max)))
+      AND (me.height_cm IS NULL OR ((cpr.height_min IS NULL OR me.height_cm >= cpr.height_min)
+                                AND (cpr.height_max IS NULL OR me.height_cm <= cpr.height_max)))
+`);
+
 export function candidateSql(q: CandidateQuery): SQL {
   const today = sql`${q.today}::date`;
   return sql`
@@ -87,6 +128,8 @@ export function candidateSql(q: CandidateQuery): SQL {
              e.embedding, e.model,
              -- About me and dealbreakers (phase 19).
              pr.smoking_ok, pr.children_ok, pr.religion_ok, pr.height_min, pr.height_max,
+             -- Friends mode (phase 22).
+             pr.friend_mode, pr.friend_age_min, pr.friend_age_max, pr.friend_genders,
              COALESCE(ma.interests, '{}') AS interests, ma.smoking, ma.children, ma.religion, ma.height_cm
       FROM profiles p
       -- A paused viewer (sensitive-data consent withdrawn) is not matched either way.
@@ -126,10 +169,7 @@ export function candidateSql(q: CandidateQuery): SQL {
     JOIN locations cl ON cl.user_id = c.user_id
     LEFT JOIN profile_embeddings ce ON ce.user_id = c.user_id
     LEFT JOIN profile_about ca ON ca.user_id = c.user_id
-    WHERE c.gender = ANY(me.interested_in)
-      AND me.gender = ANY(c.interested_in)
-      AND date_part('year', age(${today}, c.birth_date)) BETWEEN me.age_min AND me.age_max
-      AND me.age BETWEEN cpr.age_min AND cpr.age_max
+    WHERE ${q.mode === 'friend' ? friendRules(today) : datingRules(today)}
       -- Two branches, so each can use its own spatial index (home cells and travel points).
       AND (
         (COALESCE(cl.travel_until <= now(), true)
@@ -137,22 +177,10 @@ export function candidateSql(q: CandidateQuery): SQL {
         OR (cl.travel_until > now()
           AND ST_DWithin(me.geo, cl.travel_geo, LEAST(me.max_distance_km, cpr.max_distance_km) * 1000.0))
       )
-      AND (cardinality(me.wants) = 0 OR c.intention = ANY(me.wants))
-      AND (cardinality(cpr.intentions) = 0 OR me.intention = ANY(cpr.intentions))
       AND EXISTS (SELECT 1 FROM photos ph WHERE ph.user_id = c.user_id AND ph.status = 'clean' AND ph.purpose = 'profile')
       AND ${notSeparated(sql`me.user_id`, sql`c.user_id`)}
       AND ${notContactHidden(sql`me.user_id`, sql`c.user_id`)}
-      -- Dealbreakers (phase 19), both ways. An empty list means any; a missing answer passes.
-      AND (cardinality(me.smoking_ok) = 0 OR ca.smoking IS NULL OR ca.smoking = ANY(me.smoking_ok))
-      AND (cardinality(cpr.smoking_ok) = 0 OR me.smoking IS NULL OR me.smoking = ANY(cpr.smoking_ok))
-      AND (cardinality(me.children_ok) = 0 OR ca.children IS NULL OR ca.children = ANY(me.children_ok))
-      AND (cardinality(cpr.children_ok) = 0 OR me.children IS NULL OR me.children = ANY(cpr.children_ok))
-      AND (cardinality(me.religion_ok) = 0 OR ca.religion IS NULL OR ca.religion = ANY(me.religion_ok))
-      AND (cardinality(cpr.religion_ok) = 0 OR me.religion IS NULL OR me.religion = ANY(cpr.religion_ok))
-      AND (ca.height_cm IS NULL OR ((me.height_min IS NULL OR ca.height_cm >= me.height_min)
-                                AND (me.height_max IS NULL OR ca.height_cm <= me.height_max)))
-      AND (me.height_cm IS NULL OR ((cpr.height_min IS NULL OR me.height_cm >= cpr.height_min)
-                                AND (cpr.height_max IS NULL OR me.height_cm <= cpr.height_max)))
+      ${q.mode === 'friend' ? sql`` : dealbreakerRules}
       -- Incognito (phase 18b): seen only by people they liked. Matches stay visible through canView.
       AND (NOT u.incognito OR EXISTS (
         SELECT 1 FROM interactions inc

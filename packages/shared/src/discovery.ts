@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
+import { matchModeSchema, publicTakeSchema } from './friends.js';
 import { z } from 'zod';
 import { genderSchema, intentionSchema, promptKeySchema, voicePromptSchema } from './profile.js';
 import { aboutSchema } from './about.js';
@@ -92,6 +93,8 @@ export const publicProfileSchema = z.object({
   voicePrompt: voicePromptSchema.nullable(),
   /** Opt-in badge: met someone from this community in person, both confirmed (phase 20). */
   metInPerson: z.boolean(),
+  /** Friends' takes (phase 22): approved by the profile owner, at most 3. */
+  friendTakes: z.array(publicTakeSchema),
   /** Travel mode (phase 18c): shown as "Visiting {city}" instead of a distance. */
   visiting: placeSchema.nullable(),
   /** A moderator compared a live selfie with the photos. */
@@ -111,6 +114,8 @@ export const interactionInputSchema = z
     itemType: z.enum(['photo', 'prompt']).optional(),
     itemId: z.uuid().optional(),
     comment: z.string().trim().min(1).max(300).optional(),
+    /** Friends mode (phase 22) has its own deck; a match needs both likes in the same mode. */
+    mode: matchModeSchema.optional(),
   })
   .refine((v) => (v.itemType === undefined) === (v.itemId === undefined), {
     message: 'itemType and itemId go together',
@@ -141,6 +146,7 @@ export type LikeReceived = z.infer<typeof likeReceivedSchema>;
 export const matchSummarySchema = z.object({
   id: z.uuid(),
   createdAt: z.string(),
+  mode: matchModeSchema,
   profile: publicProfileSchema,
 });
 export type MatchSummary = z.infer<typeof matchSummarySchema>;

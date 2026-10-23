@@ -501,6 +501,7 @@ export class ChatService {
         lastMessage: last ? toView(last, viewerId, this.now()) : null,
         unread: n,
         createdAt: m.createdAt,
+        mode: m.mode,
       });
     }
     const activity = (c: Conversation) => c.lastMessage?.createdAt ?? c.createdAt;

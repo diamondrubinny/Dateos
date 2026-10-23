@@ -257,6 +257,14 @@ export const preferences = pgTable(
     heightMax: smallint('height_max'),
     /** Phase 20: show "met in person" on the profile (off by default). */
     showMetBadge: boolean('show_met_badge').notNull().default(false),
+    /** Friends mode (phase 22): a separate deck, with its own ages and (optional) genders. */
+    friendMode: boolean('friend_mode').notNull().default(false),
+    friendAgeMin: smallint('friend_age_min').notNull().default(18),
+    friendAgeMax: smallint('friend_age_max').notNull().default(100),
+    friendGenders: text('friend_genders')
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
     ...timestamps,
   },
   (t) => [check('preferences_age_range', sql`${t.ageMin} >= 18 AND ${t.ageMin} <= ${t.ageMax}`)],
@@ -382,6 +390,8 @@ export const interactions = pgTable(
     itemType: interactionItemType('item_type'),
     itemId: uuid('item_id'),
     comment: varchar('comment', { length: 300 }),
+    /** Dating or friends mode (phase 22); still one decision per pair of people in total. */
+    mode: varchar('mode', { length: 6 }).notNull().default('date'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
@@ -408,6 +418,8 @@ export const matches = pgTable(
     /** "Close kindly": the message the other person sees on a card for a few days. */
     closeMessage: varchar('close_message', { length: 300 }),
     closeDismissedAt: timestamp('close_dismissed_at', { withTimezone: true }),
+    /** Dating or friends mode (phase 22): the inbox labels friend chats. */
+    mode: varchar('mode', { length: 6 }).notNull().default('date'),
   },
   (t) => [
     uniqueIndex('matches_pair_uq').on(t.userA, t.userB),
@@ -1038,5 +1050,130 @@ export const waitlist = pgTable(
       .on(t.emailHash)
       .where(sql`status = 'pending'`),
     index('waitlist_queue_idx').on(t.status, t.createdAt),
+  ],
+);
+
+// ---------------------------------------------------------------------------
+// Friends (phase 22)
+// ---------------------------------------------------------------------------
+
+/** A friend's take on a member's profile. The friend needs no account; the owner approves it. */
+export const friendTakes = pgTable(
+  'friend_takes',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    ownerId: ownerId(),
+    /** The friend's first name and how they know the member, as they wrote it. */
+    name: varchar('name', { length: 40 }).notNull(),
+    relation: varchar('relation', { length: 12 }).notNull(),
+    text: varchar('text', { length: 200 }).notNull(),
+    status: varchar('status', { length: 10 }).notNull().default('pending'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    decidedAt: timestamp('decided_at', { withTimezone: true }),
+  },
+  (t) => [index('friend_takes_owner_idx').on(t.ownerId, t.status)],
+);
+
+/** Single-use links for friends' takes and for forming a pair; stored as SHA-256 hashes. */
+export const friendLinks = pgTable(
+  'friend_links',
+  {
+    tokenHash: varchar('token_hash', { length: 64 }).primaryKey(),
+    ownerId: ownerId(),
+    /** 'take' or 'pair'. */
+    kind: varchar('kind', { length: 4 }).notNull(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    usedAt: timestamp('used_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index('friend_links_owner_idx').on(t.ownerId)],
+);
+
+/** Two friends going on double dates together. One active pair per member. */
+export const pairs = pgTable(
+  'pairs',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userA: text('user_a')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    userB: text('user_b')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    endedAt: timestamp('ended_at', { withTimezone: true }),
+  },
+  (t) => [
+    uniqueIndex('pairs_user_a_active_uq')
+      .on(t.userA)
+      .where(sql`ended_at IS NULL`),
+    uniqueIndex('pairs_user_b_active_uq')
+      .on(t.userB)
+      .where(sql`ended_at IS NULL`),
+  ],
+);
+
+/** A pair's decision on another pair, made by either friend. */
+export const pairInteractions = pgTable(
+  'pair_interactions',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    pairId: uuid('pair_id')
+      .notNull()
+      .references(() => pairs.id, { onDelete: 'cascade' }),
+    targetPairId: uuid('target_pair_id')
+      .notNull()
+      .references(() => pairs.id, { onDelete: 'cascade' }),
+    actorId: text('actor_id').references(() => user.id, { onDelete: 'set null' }),
+    kind: interactionKind('kind').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex('pair_interactions_uq').on(t.pairId, t.targetPairId)],
+);
+
+/** A double match: two pairs, a group chat of four. Anyone leaving closes it for everyone. */
+export const doubleMatches = pgTable(
+  'double_matches',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    pairA: uuid('pair_a')
+      .notNull()
+      .references(() => pairs.id, { onDelete: 'cascade' }),
+    pairB: uuid('pair_b')
+      .notNull()
+      .references(() => pairs.id, { onDelete: 'cascade' }),
+    /** The four people when it started (pairs can end later). */
+    members: text('members').array().notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    closedAt: timestamp('closed_at', { withTimezone: true }),
+    closedBy: text('closed_by').references(() => user.id, { onDelete: 'set null' }),
+  },
+  (t) => [
+    uniqueIndex('double_matches_pairs_uq').on(t.pairA, t.pairB),
+    index('double_matches_members_idx').using('gin', t.members),
+  ],
+);
+
+export const doubleMessages = pgTable(
+  'double_messages',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    doubleId: uuid('double_id')
+      .notNull()
+      .references(() => doubleMatches.id, { onDelete: 'cascade' }),
+    senderId: text('sender_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    clientId: varchar('client_id', { length: 64 }).notNull(),
+    body: varchar('body', { length: 1000 }).notNull(),
+    flags: text('flags')
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex('double_messages_sender_client_uq').on(t.senderId, t.clientId),
+    index('double_messages_double_created_idx').on(t.doubleId, t.createdAt),
   ],
 );

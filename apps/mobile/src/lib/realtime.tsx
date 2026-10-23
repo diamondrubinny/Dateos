@@ -70,6 +70,12 @@ export function RealtimeProvider({ enabled, children }: { enabled: boolean; chil
               }
             : d,
         );
+      } else if (event.type === 'double.message') {
+        void client.invalidateQueries({ queryKey: ['double-messages', event.doubleId] });
+        void client.invalidateQueries({ queryKey: ['doubles'] });
+      } else if (event.type === 'double.new' || event.type === 'double.closed') {
+        void client.invalidateQueries({ queryKey: ['doubles'] });
+        void client.invalidateQueries({ queryKey: ['pairs-discover'] });
       } else if (event.type === 'availability.updated') {
         void client.invalidateQueries({ queryKey: ['availability', event.matchId] });
       } else if (event.type === 'match.new' || event.type === 'match.closed') {

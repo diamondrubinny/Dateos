@@ -61,6 +61,20 @@ export const discoveryRoutes: FastifyPluginAsyncZod<{
     }),
   );
 
+  // Friends mode (phase 22): its own deck.
+  app.get(
+    '/v1/friends/discover',
+    {
+      schema: {
+        querystring: discoverQuerySchema,
+        response: { 200: z.object({ profiles: z.array(publicProfileSchema) }) },
+      },
+    },
+    async (request) => ({
+      profiles: await discovery.discoverFriends(currentUser(request).id, request.query.limit),
+    }),
+  );
+
   // Focus mode (phase 20): how many people are waiting for this member's reply.
   app.get(
     '/v1/me/your-turn',

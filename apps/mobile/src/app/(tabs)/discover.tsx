@@ -9,7 +9,10 @@ import { AccountNotices } from '../../components/AccountNotices';
 import { AppText } from '../../components/AppText';
 import { Banner } from '../../components/Banner';
 import { Button } from '../../components/Button';
+import { ChoiceGroup } from '../../components/Choice';
 import { DecisionPanel, type DecisionResult } from '../../components/DecisionPanel';
+import { DoubleDeck } from '../../components/DoubleDeck';
+import { FriendsDeck } from '../../components/FriendsDeck';
 import { Loading } from '../../components/Loading';
 import { MatchCelebration } from '../../components/MatchCelebration';
 import { Screen } from '../../components/Screen';
@@ -29,6 +32,8 @@ export default function Discover() {
   const { locale } = useLocale();
   const [index, setIndex] = useState(0);
   const [matchedWith, setMatchedWith] = useState<string>();
+  // Dating, friends (phase 22) or double dates (phase 22).
+  const [deck, setDeck] = useState<'date' | 'friend' | 'double'>('date');
 
   useEffect(() => setIndex(0), [feed.dataUpdatedAt]);
 
@@ -37,6 +42,26 @@ export default function Discover() {
       <Screen title={t('discover.title')}>
         <AccountNotices />
         <OnBreak />
+      </Screen>
+    );
+  }
+  const deckSwitch = (
+    <ChoiceGroup
+      label={t('friends.deck')}
+      options={(['date', 'friend', 'double'] as const).map((value) => ({
+        value,
+        label: t(`friends.decks.${value}`),
+      }))}
+      selected={[deck]}
+      onChange={([v]) => v && setDeck(v)}
+    />
+  );
+  if (deck !== 'date') {
+    return (
+      <Screen title={t('discover.title')}>
+        <AccountNotices />
+        {deckSwitch}
+        {deck === 'friend' ? <FriendsDeck /> : <DoubleDeck />}
       </Screen>
     );
   }
@@ -53,6 +78,7 @@ export default function Discover() {
   return (
     <Screen title={t('discover.title')}>
       <AccountNotices />
+      {deckSwitch}
       {travel.data ? <Banner tone="info" message={travelLine(travel.data, locale, t)} /> : null}
       {feed.error ? <Banner tone="error" message={t('common.genericError')} /> : null}
       {yourTurn.data && yourTurn.data.waiting >= yourTurn.data.limit ? (

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
-import type { PublicProfile } from '@nexaheart/shared';
+import type { MatchMode, PublicProfile } from '@nexaheart/shared';
 import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -25,9 +25,12 @@ export interface DecisionResult {
 export function DecisionPanel({
   profile,
   onDecided,
+  mode = 'date',
 }: {
   profile: PublicProfile;
   onDecided: (result: DecisionResult) => void;
+  /** Friends mode (phase 22) has its own deck; likes there are friend likes. */
+  mode?: MatchMode;
 }) {
   const { t } = useTranslation();
   const colors = useColors();
@@ -43,6 +46,7 @@ export function DecisionPanel({
       const result = await interact.mutateAsync({
         targetId: profile.id,
         kind,
+        ...(mode === 'friend' ? { mode } : {}),
         ...(kind === 'like' && target ? { itemType: target.itemType, itemId: target.itemId } : {}),
         ...(kind === 'like' && comment.trim() ? { comment: comment.trim() } : {}),
       });
@@ -100,7 +104,7 @@ export function DecisionPanel({
           </View>
           <View style={styles.action}>
             <Button
-              label={`♥ ${t('discover.like')}`}
+              label={mode === 'friend' ? `👋 ${t('friends.connect')}` : `♥ ${t('discover.like')}`}
               hint={t('discover.likeLabel', { name: profile.displayName })}
               loading={interact.isPending}
               onPress={() => void decide('like')}
