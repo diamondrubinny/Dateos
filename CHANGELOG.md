@@ -6,6 +6,10 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Added
 
+- **Partner communities (foundation)**: admins can connect their community with another NexaHeart
+  community they trust (Dashboard → Partners), after both confirm a data-sharing agreement. Every
+  request between the servers is signed, dated and can't be replayed. Off by default
+  (`FEDERATION=on`); no member data crosses yet. Discovery across communities comes next.
 - **Event updates and questions**: organizers post updates to an event, and people going or
   waiting get a content-free notification. Members going can ask the organizers privately; staff see
   questions without who asked, and only the asker sees the answer. Who else is going is still never

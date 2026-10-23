@@ -717,3 +717,19 @@ input[type='password'] {
 .board-list p {
   margin: 0.25rem 0;
 }
+
+/* Partner communities (phase 28a) */
+.partner h3 {
+  margin: 0;
+}
+.row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+label.checkbox {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+}

@@ -24,3 +24,4 @@ export * from './friends.js';
 export * from './matchmaker.js';
 export * from './integrations.js';
 export * from './transcripts.js';
+export * from './federation.js';

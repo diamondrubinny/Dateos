@@ -25,6 +25,7 @@ import {
   type ProfileQueue,
 } from './lib/queue.js';
 import { AudioService } from './modules/chat/audio.js';
+import { FederationService } from './modules/federation/service.js';
 import { llmIcebreakers, templateIcebreakers, type TextModel } from '@nexaheart/ai';
 import { AiGate } from './lib/ai-gate.js';
 import { createRealtime, type Realtime } from './lib/realtime.js';
@@ -60,6 +61,7 @@ export interface Services {
   profileQueue: ProfileQueue;
   notifyQueue: NotifyQueue;
   audio: AudioService;
+  federation: FederationService;
   discovery: DiscoveryService;
   realtime: Realtime;
   chat: ChatService;
@@ -127,11 +129,13 @@ export function createServices(
     quarantineBucket: env.S3_BUCKET_QUARANTINE,
     mediaBucket: env.S3_BUCKET_MEDIA,
   });
-  const integrationStore = new IntegrationStore(
-    dbHandle.db,
+  const sealKey =
     overrides.integrationsKey !== undefined
       ? overrides.integrationsKey
-      : parseIntegrationsKey(env.INTEGRATIONS_KEY),
+      : parseIntegrationsKey(env.INTEGRATIONS_KEY);
+  const integrationStore = new IntegrationStore(
+    dbHandle.db,
+    sealKey,
     overrides.integrationsEnv ?? process.env,
   );
   const outboundQueue = overrides.outboundQueue ?? createOutboundQueue(env.REDIS_URL);
@@ -251,6 +255,28 @@ export function createServices(
   );
   discovery.onSeparation((a, b) => (b ? speed.closeForBlock(a, b) : speed.closeForUser(a)));
 
+  // Communities that connect (phase 28a).
+  const federation = new FederationService(
+    dbHandle.db,
+    redis,
+    {
+      on: env.FEDERATION === 'on',
+      sealKey,
+      apiUrl: env.PUBLIC_API_URL,
+      appUrl: appUrl(env),
+      instance: async () => {
+        const info = await instance.info();
+        return { name: info.name, contactEmail: info.contactEmail };
+      },
+      outbound: {
+        allowPrivate: env.INTEGRATIONS_ALLOW_PRIVATE,
+        ...(overrides.fetch ? { fetch: overrides.fetch } : {}),
+        ...(overrides.resolve ? { resolve: overrides.resolve } : {}),
+      },
+    },
+    overrides.now,
+  );
+
   const services: Services = {
     dbHandle,
     redis,
@@ -260,6 +286,7 @@ export function createServices(
     profileQueue,
     notifyQueue,
     audio,
+    federation,
     discovery,
     mailer,
     me: new MeService(dbHandle.db, mediaQueue, legal, today, profileQueue),

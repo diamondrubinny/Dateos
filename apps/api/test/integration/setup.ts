@@ -89,6 +89,8 @@ export interface SetupOptions {
   integrationsKey?: Buffer | null;
   /** Voice transcripts (phase 26): on by default, as `TRANSCRIPTS=local`. */
   transcripts?: boolean;
+  /** Communities that connect (phase 28): off by default, as in production. */
+  federation?: boolean;
 }
 
 /** A fixed key for the tests' encrypted integration secrets. */
@@ -110,6 +112,7 @@ export async function setupIntegration(options: SetupOptions = {}): Promise<Test
     // The SSRF guard is under test: never inherit a developer's local opt-out.
     INTEGRATIONS_ALLOW_PRIVATE: 'false',
     TRANSCRIPTS: options.transcripts === false ? 'off' : 'local',
+    FEDERATION: options.federation ? 'on' : 'off',
     CORS_ORIGINS: 'http://localhost:8081',
     PUBLIC_API_URL: 'http://localhost:4000',
     S3_ENDPOINT: process.env.S3_ENDPOINT ?? 'http://localhost:8333',
@@ -193,7 +196,7 @@ export async function setupIntegration(options: SetupOptions = {}): Promise<Test
 
 export async function resetState(ctx: TestContext): Promise<void> {
   await ctx.services.dbHandle.pool.query(
-    'TRUNCATE "user", verification, rate_limit, audit_logs, banned_emails, banned_photo_hashes, instance_settings, venues, events, integrations, webhook_deliveries RESTART IDENTITY CASCADE',
+    'TRUNCATE "user", verification, rate_limit, audit_logs, banned_emails, banned_photo_hashes, instance_settings, venues, events, integrations, webhook_deliveries, federation_keys, federation_partners RESTART IDENTITY CASCADE',
   );
   const { storage } = ctx.services;
   for (const bucket of Object.values(storage.buckets)) {

@@ -1336,3 +1336,37 @@ export const webhookDeliveries = pgTable(
   },
   (t) => [index('webhook_deliveries_created_idx').on(t.createdAt)],
 );
+
+// ---------------------------------------------------------------------------
+// Communities that connect (phase 28)
+// ---------------------------------------------------------------------------
+
+/** This server's signing key (one row). The private key is sealed with INTEGRATIONS_KEY. */
+export const federationKeys = pgTable('federation_keys', {
+  id: smallint('id').primaryKey(),
+  publicKey: text('public_key').notNull(),
+  privateKeySealed: text('private_key_sealed').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+/** Another community this one invited, was invited by, or is connected to. No member data. */
+export const federationPartners = pgTable(
+  'federation_partners',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    /** Their API origin, e.g. https://api.example.org */
+    url: text('url').notNull(),
+    name: varchar('name', { length: 80 }).notNull(),
+    publicKey: text('public_key').notNull(),
+    contact: varchar('contact', { length: 200 }),
+    privacyUrl: text('privacy_url'),
+    status: varchar('status', { length: 16 }).notNull(),
+    createdBy: text('created_by').references(() => user.id, { onDelete: 'set null' }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    activatedAt: timestamp('activated_at', { withTimezone: true }),
+    endedAt: timestamp('ended_at', { withTimezone: true }),
+    lastSeenAt: timestamp('last_seen_at', { withTimezone: true }),
+    lastError: varchar('last_error', { length: 200 }),
+  },
+  (t) => [uniqueIndex('federation_partners_url_uq').on(t.url)],
+);

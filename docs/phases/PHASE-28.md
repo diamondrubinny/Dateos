@@ -1,7 +1,8 @@
 # Phase 28 (proposal): Communities that connect
 
-> Status: 📝 **proposal, waiting for approval**. Nothing here is built. A large architectural change
-> with privacy and legal consequences, so it needs a decision before any code.
+> Status: ✅ **28a done** (2026-10-23); 28b (discovery across communities) next. The owner delegated the decisions; chosen:
+> **A (partnerships)**; **discovery and matching first**, chat across communities later (28c);
+> members **off by default**, and federation itself off on a server until its admin turns it on.
 > 📘 = verify against official docs, ⚖️ = needs legal review.
 
 Every NexaHeart community runs its own server. That is good for privacy and control, but a small
@@ -85,9 +86,51 @@ members, **only for members who choose it**.
 
 Each step is its own PR, with two-server integration tests and e2e in four languages.
 
-## Decisions needed
+## Decisions (made 2026-10-23)
 
-1. Option A (recommended), B, C or D?
-2. Should text chat cross communities (28c), or only discovery and matching first?
-3. Is "off by default" right for members (recommended), or should each community choose?
-4. Legal review of the joint-controller agreement before any partnership goes live ⚖️.
+1. **Option A**, partnerships.
+2. **Discovery and matching first** (28b); text chat across communities after that proves itself
+   (28c).
+3. **Off by default** for members; `FEDERATION=off` by default for servers.
+4. Legal review of the joint-controller agreement before any partnership goes live ⚖️: the dashboard
+   asks both admins to confirm it's signed before a partnership becomes active.
+
+## 28a in detail (this step)
+
+- **Keys:** an Ed25519 key pair per server, made on first use; the private key is stored encrypted
+  with `INTEGRATIONS_KEY` (phase 24), so federation needs that key.
+- **`GET /.well-known/nexaheart`** (public): `{ version, name, url, publicKey, contact, privacyUrl }`.
+  Only when `FEDERATION=on`.
+- **Signed requests** between servers: headers `x-nexaheart-origin`, `-date`, `-nonce`, `-signature`
+  (Ed25519 over method, path, origin, date, nonce and the body's SHA-256). Checked: a known (or, for
+  an invitation, freshly fetched) key, at most 5 minutes of clock skew, a nonce never seen in the
+  last 10 minutes (Redis).
+- **Server-to-server API** (signed): `POST /v1/federation/invitations`, `POST /v1/federation/accept`,
+  `POST /v1/federation/end`, `GET /v1/federation/ping`.
+- **Dashboard → Partners** (admins only, moderators read): invite a community by its API address
+  (after confirming the agreement), see invitations that arrived with the other community's name,
+  contact and privacy policy, accept (after confirming the agreement), test, end. Everything in the
+  audit log.
+- **No member data** crosses in 28a: only the communities' public names, addresses and keys.
+- Outgoing requests use the integrations' SSRF guard (https only, no private networks unless
+  `INTEGRATIONS_ALLOW_PRIVATE`, no redirects, timeouts).
+
+## 28a results
+
+- **Built:** `federation_keys` and `federation_partners` (migration `0032_federation`), the public
+  identity, signing and verification (`apps/api/src/lib/federation-sign.ts`), the server-to-server
+  endpoints, the admin endpoints and the **Partners** page (English and Hebrew; moderators read
+  only), docs and `.env.example`.
+- **Tests:**
+  - Integration: 7 new, against a fake partner that checks every signature with our published
+    key: identity and a sealed key; invite → signed invitation → their accept → active → signed
+    ping; an invitation that arrives → accept → end both ways; refused: unsigned, tampered body,
+    6 minutes old, replayed nonce, claiming to be us, another key, inviting ourselves; a failed
+    invitation is removed with the reason; at most 20 invitations wait; off by default.
+  - e2e `pnpm --dir e2e federation` between **two real servers** (A on :4000, B on :4100 with its
+    own database): A invites from the dashboard, B accepts, A tests the signed ping, A ends it and
+    B sees it ended; English and Hebrew; axe 0 violations. Screenshot `admin-18-partners`.
+- **Found and fixed:** anyone with a domain can sign an invitation, so at most 20 may wait for an
+  admin; an invitation that the other side refuses is removed instead of left half-made.
+- **Still to check:** ⚖️ the agreement template between operators; 📘 key rotation (not built: a
+  new key means ending and re-inviting partners).
