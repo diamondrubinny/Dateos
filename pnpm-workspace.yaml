@@ -13,6 +13,7 @@ auditConfig:
   ignoreGhsas:
     - GHSA-86w9-cpqp-85rv # node-forge via @expo/cli (dev HTTPS certificates)
     - GHSA-vfj7-8cjw-p6xm # braces via metro-file-map (build-time globs we control)
+    - GHSA-mrhx-c7xc-m3w5 # zod 3 via @expo/cli (validates local config; our own code uses zod >= 4.6.6)
 # Patched versions for advisories in build-time tooling (phase 21). Both are used only while
 # generating migrations (drizzle-kit's loader) or an iOS project (Expo's config plugins).
 overrides:
