@@ -282,6 +282,11 @@ describe('senders', () => {
     expect(
       scrub('User noa@example.com 3f2a1b4c-1111-2222-3333-444455556666 at /v1/x?token=abc'),
     ).toBe('User [email] [id] at /v1/x?[…]');
+    // Hostile texts stay fast (no catastrophic backtracking) and are cut to a sane length.
+    const started = performance.now();
+    const hostile = scrub('!'.repeat(200_000) + '@' + '!'.repeat(200_000));
+    expect(performance.now() - started).toBeLessThan(500);
+    expect(hostile.length).toBeLessThanOrEqual(8_000);
     const f = fakeFetch();
     const error = new Error('Failed for dana@example.org');
     await reportError(

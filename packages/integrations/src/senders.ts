@@ -200,14 +200,18 @@ export function parseDsn(dsn: string): SentryDsn | null {
   }
 }
 
-const EMAIL = /[^\s@]+@[^\s@]+\.[^\s@]+/g;
+// Bounded quantifiers on capped input keep these linear (no ReDoS on hostile error texts).
+const EMAIL = /[^\s@]{1,64}@[^\s@.]{1,63}(?:\.[^\s@.]{1,63}){1,8}/g;
 const LONG_ID = /\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/gi;
-const TOKEN = /\b[A-Za-z0-9_-]{32,}\b/g;
-const QUERY = /\?[^\s)]*/g;
+const TOKEN = /\b[A-Za-z0-9_-]{32,512}\b/g;
+const QUERY = /\?[^\s)]{0,2048}/g;
+/** Longer error texts are cut first. */
+const MAX_TEXT = 8_000;
 
 /** Removes what could identify someone from an error text: emails, ids, tokens, query strings. */
 export function scrub(text: string): string {
   return text
+    .slice(0, MAX_TEXT)
     .replace(EMAIL, '[email]')
     .replace(LONG_ID, '[id]')
     .replace(TOKEN, '[token]')
@@ -219,7 +223,9 @@ function frames(stack: string | undefined) {
   return stack
     .split('\n')
     .slice(1, 40)
-    .map((line) => /at (?:(.+?) \()?(.+?):(\d+):(\d+)\)?$/.exec(line.trim()))
+    .map((line) =>
+      /at (?:([^()]{1,300}?) \()?([^()]{1,1000}?):(\d+):(\d+)\)?$/.exec(line.trim().slice(0, 1400)),
+    )
     .filter((m): m is RegExpExecArray => m !== null)
     .map((m) => ({
       function: m[1] ?? '?',
