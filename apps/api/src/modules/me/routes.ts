@@ -160,6 +160,16 @@ export const meRoutes: FastifyPluginAsyncZod<{
     },
   );
 
+  // "Checked in at an event" badge (phase 23, off by default).
+  app.put(
+    '/v1/me/event-badge',
+    { schema: { body: incognitoInputSchema, response: { 200: ok } } },
+    async (request) => {
+      await me.setEventBadge(currentUser(request).id, request.body.on);
+      return { ok: true as const };
+    },
+  );
+
   // Incognito (phase 18b).
   app.put(
     '/v1/me/incognito',

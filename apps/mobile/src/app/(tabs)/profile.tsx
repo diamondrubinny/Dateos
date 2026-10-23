@@ -74,6 +74,11 @@ function ProfileContent() {
         </View>
       </View>
       <Button label={`✨ ${t('coach.open')}`} onPress={() => router.push('/coach')} />
+      <Button
+        variant="secondary"
+        label={`💬 ${t('matchmaker.open')}`}
+        onPress={() => router.push('/matchmaker')}
+      />
       <View style={styles.editRow}>
         <Button
           variant="secondary"

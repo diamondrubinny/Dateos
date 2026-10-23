@@ -169,11 +169,35 @@ export async function exportMemberData(
       status: t.events.status,
       you: t.eventRsvps.status,
       at: t.eventRsvps.createdAt,
+      checkedInAt: t.eventRsvps.checkedInAt,
     })
     .from(t.eventRsvps)
     .innerJoin(t.events, eq(t.events.id, t.eventRsvps.eventId))
     .where(eq(t.eventRsvps.userId, userId))
     .orderBy(asc(t.eventRsvps.createdAt));
+  // Speed-dating rounds (phase 23): when, and your own answer. The other person's answer is theirs.
+  const speedRows = (
+    await db
+      .select({
+        event: t.events.title,
+        round: t.speedDates.round,
+        startsAt: t.speedDates.startsAt,
+        userA: t.speedDates.userA,
+        answerA: t.speedDates.answerA,
+        answerB: t.speedDates.answerB,
+        matched: t.speedDates.matchId,
+      })
+      .from(t.speedDates)
+      .innerJoin(t.events, eq(t.events.id, t.speedDates.eventId))
+      .where(or(eq(t.speedDates.userA, userId), eq(t.speedDates.userB, userId)))
+      .orderBy(asc(t.speedDates.startsAt))
+  ).map((r) => ({
+    event: r.event,
+    round: r.round,
+    startsAt: iso(r.startsAt),
+    yourAnswer: r.userA === userId ? r.answerA : r.answerB,
+    matched: r.matched !== null,
+  }));
   // Date ideas in your chats. The other person's own note is theirs, so only yours is included.
   const datePlanRows = await db
     .select({
@@ -312,6 +336,7 @@ export async function exportMemberData(
           bio: profile.bio,
           languages: profile.languages,
           verifiedAt: iso(profile.verifiedAt),
+          lastEventCheckInAt: iso(profile.eventCheckInAt),
         }
       : null,
     preferences: preferences
@@ -323,6 +348,7 @@ export async function exportMemberData(
           acceptVoice: preferences.acceptVoice,
           acceptCalls: preferences.acceptCalls,
           showMetInPersonBadge: preferences.showMetBadge,
+          showCheckedInAtEventBadge: preferences.showEventBadge,
           friendsMode: {
             on: preferences.friendMode,
             ageMin: preferences.friendAgeMin,
@@ -393,7 +419,13 @@ export async function exportMemberData(
       checkAt: iso(c.checkAt),
       alertedAt: iso(c.alertedAt),
     })),
-    eventsYouAreGoingTo: rsvpRows.map((r) => ({ ...r, startsAt: iso(r.startsAt), at: iso(r.at) })),
+    eventsYouAreGoingTo: rsvpRows.map((r) => ({
+      ...r,
+      startsAt: iso(r.startsAt),
+      at: iso(r.at),
+      checkedInAt: iso(r.checkedInAt),
+    })),
+    speedDatingRounds: speedRows,
     dateIdeas: datePlanRows.map(
       ({ proposerId, note, proposerMet, receiverMet, proposerAgain, receiverAgain, ...d }) => {
         const mine = proposerId === userId;

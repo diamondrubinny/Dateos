@@ -7,6 +7,7 @@ import { schema, type Database } from '@nexaheart/db';
 import {
   ageOn,
   DAILY_INTERACTION_LIMIT,
+  EVENT_BADGE_MONTHS,
   DAILY_PICKS_COUNT,
   distanceBucket,
   ErrorCode,
@@ -141,6 +142,7 @@ export class DiscoveryService {
       targetId?: string;
       excludeDecided?: boolean;
       mode?: MatchMode;
+      onlyIds?: string[];
     },
   ) {
     // drizzle's node-postgres database exposes its pool as $client.
@@ -214,6 +216,42 @@ export class DiscoveryService {
   /** Whether the viewer may see the target as a dating candidate (both ways, every rule). */
   async isCandidate(viewerId: string, targetId: string): Promise<boolean> {
     return (await this.candidates(viewerId, { targetId })).length > 0;
+  }
+
+  /**
+   * Speed dating (phase 23): who this member could be paired with, under every dating rule both
+   * ways, leaving out people either of them already decided on.
+   */
+  async speedPartners(viewerId: string, among: string[]): Promise<Set<string>> {
+    if (among.length === 0) return new Set();
+    const rows = await this.candidates(viewerId, { excludeDecided: true, onlyIds: among });
+    return new Set(rows.map((r) => r.id));
+  }
+
+  /**
+   * A mutual yes after a speed date (phase 23): both likes are recorded and a dating match opens,
+   * as if each had liked the other's profile. Returns the match.
+   */
+  async matchFromSpeedDate(a: string, b: string): Promise<string> {
+    const matchId = await this.db.transaction(async (tx) => {
+      await tx
+        .insert(interactions)
+        .values([
+          { actorId: a, targetId: b, kind: 'like', mode: 'date' },
+          { actorId: b, targetId: a, kind: 'like', mode: 'date' },
+        ])
+        .onConflictDoNothing();
+      const [userA, userB] = [a, b].sort() as [string, string];
+      await tx.insert(matches).values({ userA, userB, mode: 'date' }).onConflictDoNothing();
+      const [match] = await tx
+        .select({ id: matches.id })
+        .from(matches)
+        .where(and(eq(matches.userA, userA), eq(matches.userB, userB)));
+      return match!.id;
+    });
+    this.notify([a, b], { type: 'match.new', matchId });
+    for (const id of [a, b]) this.onMatch?.(id, matchId).catch(() => undefined);
+    return matchId;
   }
 
   /** Friends mode (phase 22): its own deck, only people who turned friends mode on too. */
@@ -731,6 +769,13 @@ export class DiscoveryService {
         WHERE d.status = 'accepted' AND d.proposer_met AND d.receiver_met
           AND (m.user_a = u.id OR m.user_b = u.id))`);
     const metIds = new Set(met.rows.map((r) => r.user_id));
+    // "Checked in at an event" (phase 23): opt-in, a check-in at a venue in the last year.
+    const atEvent = await this.db.execute<{ user_id: string }>(sql`
+      SELECT p.user_id FROM profiles p
+      JOIN preferences pr ON pr.user_id = p.user_id AND pr.show_event_badge
+      WHERE p.user_id = ANY(${sql.param(ids)}::text[])
+        AND p.event_check_in_at > now() - make_interval(months => ${EVENT_BADGE_MONTHS})`);
+    const atEventIds = new Set(atEvent.rows.map((r) => r.user_id));
     // Friends' takes (phase 22): approved by the owner, newest first, at most MAX_SHOWN_TAKES.
     const takesById = new Map<string, PublicTake[]>();
     for (const take of await this.db
@@ -794,6 +839,7 @@ export class DiscoveryService {
           about: toAbout(aboutById.get(p.userId)),
           voicePrompt: toVoicePrompt(aboutById.get(p.userId), cleanVoice),
           metInPerson: metIds.has(p.userId),
+          atEvent: atEventIds.has(p.userId),
           friendTakes: takesById.get(p.userId) ?? [],
           verified: p.verifiedAt !== null,
           reasons: item.result?.reasons ?? [],

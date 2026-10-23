@@ -20,6 +20,7 @@ import {
   adminVenueSchema,
   venueInputSchema,
   venueUpdateSchema,
+  adminCheckInSchema,
   adminEventSchema,
   eventInputSchema,
   eventUpdateSchema,
@@ -396,6 +397,15 @@ export const adminRoutes: FastifyPluginAsyncZod<{
       const staff = currentUser(request);
       adminOnly(staff.role);
       return events.cancel(staff.id, request.params.id);
+    },
+  );
+  // The rotating check-in code to show at the venue (phase 23).
+  app.get(
+    '/v1/admin/events/:id/check-in',
+    { schema: { params: idParams, response: { 200: adminCheckInSchema } } },
+    async (request) => {
+      adminOnly(currentUser(request).role);
+      return events.checkInFor(request.params.id);
     },
   );
 };

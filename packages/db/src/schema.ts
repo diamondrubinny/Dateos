@@ -200,6 +200,8 @@ export const profiles = pgTable('profiles', {
     .default(sql`'{}'::text[]`),
   /** Set when a moderator approved a photo verification; cleared when the profile photos change. */
   verifiedAt: timestamp('verified_at', { withTimezone: true }),
+  /** Phase 23: the last check-in at an event's venue (only "in the last year" is ever shown). */
+  eventCheckInAt: timestamp('event_check_in_at', { withTimezone: true }),
   /** Last time a profile photo was added or removed (a selfie taken before can't be approved). */
   photosChangedAt: timestamp('photos_changed_at', { withTimezone: true }),
   ...timestamps,
@@ -257,6 +259,8 @@ export const preferences = pgTable(
     heightMax: smallint('height_max'),
     /** Phase 20: show "met in person" on the profile (off by default). */
     showMetBadge: boolean('show_met_badge').notNull().default(false),
+    /** Phase 23: show "checked in at an event" on the profile (off by default). */
+    showEventBadge: boolean('show_event_badge').notNull().default(false),
     /** Friends mode (phase 22): a separate deck, with its own ages and (optional) genders. */
     friendMode: boolean('friend_mode').notNull().default(false),
     friendAgeMin: smallint('friend_age_min').notNull().default(18),
@@ -907,6 +911,11 @@ export const events = pgTable(
     endsAt: timestamp('ends_at', { withTimezone: true }).notNull(),
     capacity: integer('capacity'),
     status: eventStatus('status').notNull().default('scheduled'),
+    /** Phase 23: 'standard' or 'speed' (video speed dating), with the length of a round. */
+    kind: varchar('kind', { length: 8 }).notNull().default('standard'),
+    roundMinutes: smallint('round_minutes'),
+    /** Phase 23: the secret behind the rotating check-in code; made when first shown. */
+    checkInSecret: varchar('check_in_secret', { length: 64 }),
     ...timestamps,
   },
   (t) => [index('events_upcoming_idx').on(t.status, t.endsAt)],
@@ -925,6 +934,8 @@ export const eventRsvps = pgTable(
     userId: ownerId(),
     status: rsvpStatus('status').notNull().default('going'),
     remindedAt: timestamp('reminded_at', { withTimezone: true }),
+    /** Phase 23: checked in at the venue with the code shown there. */
+    checkedInAt: timestamp('checked_in_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
@@ -1175,5 +1186,59 @@ export const doubleMessages = pgTable(
   (t) => [
     uniqueIndex('double_messages_sender_client_uq').on(t.senderId, t.clientId),
     index('double_messages_double_created_idx').on(t.doubleId, t.createdAt),
+  ],
+);
+
+// ---------------------------------------------------------------------------
+// Video speed dating (phase 23)
+// ---------------------------------------------------------------------------
+
+/** Who is in a speed-dating event's lobby right now (kept alive by heartbeats). */
+export const speedLobby = pgTable(
+  'speed_lobby',
+  {
+    eventId: uuid('event_id')
+      .notNull()
+      .references(() => events.id, { onDelete: 'cascade' }),
+    userId: ownerId(),
+    joinedAt: timestamp('joined_at', { withTimezone: true }).notNull().defaultNow(),
+    lastSeenAt: timestamp('last_seen_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex('speed_lobby_uq').on(t.eventId, t.userId)],
+);
+
+/**
+ * One round between two people. The answers stay private: only a mutual yes makes a match.
+ * Deleted RSVP_RETENTION_DAYS after the event, with the RSVPs.
+ */
+export const speedDates = pgTable(
+  'speed_dates',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    eventId: uuid('event_id')
+      .notNull()
+      .references(() => events.id, { onDelete: 'cascade' }),
+    round: smallint('round').notNull(),
+    userA: text('user_a')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    userB: text('user_b')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    room: varchar('room', { length: 64 }).notNull(),
+    startsAt: timestamp('starts_at', { withTimezone: true }).notNull(),
+    endsAt: timestamp('ends_at', { withTimezone: true }).notNull(),
+    answerA: boolean('answer_a'),
+    answerB: boolean('answer_b'),
+    endedEarlyBy: text('ended_early_by'),
+    matchId: uuid('match_id').references(() => matches.id, { onDelete: 'set null' }),
+  },
+  (t) => [
+    uniqueIndex('speed_dates_room_uq').on(t.room),
+    uniqueIndex('speed_dates_pair_uq').on(t.eventId, t.userA, t.userB),
+    index('speed_dates_event_round_idx').on(t.eventId, t.round),
+    index('speed_dates_user_a_idx').on(t.userA),
+    index('speed_dates_user_b_idx').on(t.userB),
+    check('speed_dates_order', sql`${t.userA} COLLATE "C" < ${t.userB}`),
   ],
 );

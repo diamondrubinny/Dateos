@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
-import { type AdminEvent } from '@nexaheart/shared';
-import { useRef, useState, type FormEvent } from 'react';
+import { type AdminCheckIn, type AdminEvent, SPEED_ROUND_DEFAULT } from '@nexaheart/shared';
+import QRCode from 'qrcode';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { api } from '../api';
 import { useAsync } from '../hooks';
 import { format, useLocale } from '../i18n';
@@ -16,6 +17,8 @@ type Form = {
   start: string;
   end: string;
   capacity: string;
+  kind: 'standard' | 'speed';
+  roundMinutes: string;
 };
 
 const pad = (n: number) => String(n).padStart(2, '0');
@@ -32,6 +35,8 @@ function emptyForm(): Form {
     start: '19:00',
     end: '21:00',
     capacity: '',
+    kind: 'standard',
+    roundMinutes: String(SPEED_ROUND_DEFAULT),
   };
 }
 
@@ -43,7 +48,74 @@ const toForm = (e: AdminEvent): Form => ({
   start: localTime(new Date(e.startsAt)),
   end: localTime(new Date(e.endsAt)),
   capacity: e.capacity === null ? '' : String(e.capacity),
+  kind: e.kind,
+  roundMinutes: String(e.roundMinutes ?? SPEED_ROUND_DEFAULT),
 });
+
+/**
+ * The check-in code to show on a screen at the venue (phase 23): a QR code that opens the event in
+ * the app with the code filled in, and the same 6 digits in text. It changes every 30 seconds.
+ */
+function CheckInPanel({ event, onClose }: { event: AdminEvent; onClose: () => void }) {
+  const { t } = useLocale();
+  const [info, setInfo] = useState<AdminCheckIn>();
+  const [qr, setQr] = useState<string>();
+  const [error, setError] = useState<Error>();
+  const headingRef = useRef<HTMLHeadingElement>(null);
+
+  useEffect(() => headingRef.current?.focus(), []);
+  useEffect(() => {
+    let stopped = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const load = async () => {
+      try {
+        const next = await api.checkIn(event.id);
+        const image = await QRCode.toDataURL(next.url, { margin: 1, width: 320 });
+        if (stopped) return;
+        setInfo(next);
+        setQr(image);
+        setError(undefined);
+        timer = setTimeout(load, Math.max(1000, Date.parse(next.changesAt) - Date.now() + 300));
+      } catch (err) {
+        if (!stopped) setError(err as Error);
+      }
+    };
+    void load();
+    return () => {
+      stopped = true;
+      if (timer) clearTimeout(timer);
+    };
+  }, [event.id]);
+
+  return (
+    <section className="card check-in" aria-labelledby="check-in-title">
+      <h2 id="check-in-title" ref={headingRef} tabIndex={-1}>
+        {format(t.events.checkInTitle, { title: event.title })}
+      </h2>
+      <p className="help">{t.events.checkInHelp}</p>
+      {error ? <ErrorBox error={error} /> : null}
+      {info && qr ? (
+        <>
+          <img src={qr} width={320} height={320} alt={t.events.checkInQrAlt} />
+          <p
+            className="check-in-code"
+            aria-label={format(t.events.checkInCodeLabel, { code: info.code.split('').join(' ') })}
+          >
+            {info.code}
+          </p>
+          <p className="muted" role="status">
+            {format(t.events.checkedInCount, { n: info.checkedInCount })}
+          </p>
+        </>
+      ) : !error ? (
+        <Loading />
+      ) : null}
+      <button type="button" className="button" onClick={onClose}>
+        {t.events.checkInClose}
+      </button>
+    </section>
+  );
+}
 
 /** Start and end in the staff member's own time zone; an end before the start is the next day. */
 function times(form: Form): { startsAt: string; endsAt: string } {
@@ -64,6 +136,7 @@ export function Events({ isAdmin }: { isAdmin: boolean }) {
   const [form, setForm] = useState<Form>(emptyForm);
   const [editing, setEditing] = useState<string | null>(null);
   const [confirmCancel, setConfirmCancel] = useState<string | null>(null);
+  const [checkIn, setCheckIn] = useState<AdminEvent | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<Error>();
   const [notice, setNotice] = useState<string>();
@@ -89,9 +162,10 @@ export function Events({ isAdmin }: { isAdmin: boolean }) {
       ...times(form),
       capacity: form.capacity ? Number(form.capacity) : null,
     };
+    const speed = form.kind === 'speed' ? { roundMinutes: Number(form.roundMinutes) } : {};
     try {
-      if (editing) await api.updateEvent(editing, input);
-      else await api.createEvent(input);
+      if (editing) await api.updateEvent(editing, { ...input, ...speed });
+      else await api.createEvent({ ...input, kind: form.kind, ...speed });
       announce(format(editing ? t.events.updated : t.events.published, { title: input.title }));
       setForm(emptyForm());
       setEditing(null);
@@ -130,6 +204,7 @@ export function Events({ isAdmin }: { isAdmin: boolean }) {
         {notice ?? ''}
       </p>
       {error ? <ErrorBox error={error} /> : null}
+      {checkIn ? <CheckInPanel event={checkIn} onClose={() => setCheckIn(null)} /> : null}
 
       <div className="grid venues-grid">
         <div>
@@ -157,6 +232,13 @@ export function Events({ isAdmin }: { isAdmin: boolean }) {
                     <tr key={e.id}>
                       <th scope="row">
                         {e.title}
+                        {e.kind === 'speed' ? (
+                          <span className="block cell-detail">
+                            {format(t.events.speedLabel, {
+                              minutes: e.roundMinutes ?? SPEED_ROUND_DEFAULT,
+                            })}
+                          </span>
+                        ) : null}
                         <span className="muted block cell-detail">
                           {e.venue ? `${e.venue.name}, ${e.venue.area}` : t.events.noPlace}
                         </span>
@@ -170,6 +252,11 @@ export function Events({ isAdmin }: { isAdmin: boolean }) {
                           <span className="muted">
                             {' · '}
                             {format(t.events.waitingCount, { n: e.waitingCount })}
+                          </span>
+                        ) : null}
+                        {e.checkedInCount > 0 ? (
+                          <span className="muted block cell-detail">
+                            {format(t.events.checkedInCount, { n: e.checkedInCount })}
                           </span>
                         ) : null}
                       </td>
@@ -212,6 +299,14 @@ export function Events({ isAdmin }: { isAdmin: boolean }) {
                                 <button
                                   type="button"
                                   className="button small"
+                                  onClick={() => setCheckIn(e)}
+                                >
+                                  {t.events.checkIn}
+                                  <span className="visually-hidden"> {e.title}</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  className="button small"
                                   onClick={() => {
                                     setEditing(e.id);
                                     setForm(toForm(e));
@@ -247,6 +342,42 @@ export function Events({ isAdmin }: { isAdmin: boolean }) {
             <h2 id="event-form-title">{editing ? t.events.editTitle : t.events.addTitle}</h2>
             {venues.data && activeVenues.length === 0 ? (
               <p className="alert alert-error">{t.events.needPlace}</p>
+            ) : null}
+            <label htmlFor="event-kind">{t.events.kind}</label>
+            <select
+              id="event-kind"
+              value={form.kind}
+              disabled={editing !== null}
+              aria-describedby="event-kind-help"
+              onChange={(e) => {
+                const kind = e.target.value as Form['kind'];
+                setForm({
+                  ...form,
+                  kind,
+                  capacity: kind === 'speed' && !form.capacity ? '20' : form.capacity,
+                });
+              }}
+            >
+              <option value="standard">{t.events.kindStandard}</option>
+              <option value="speed">{t.events.kindSpeed}</option>
+            </select>
+            <p id="event-kind-help" className="help">
+              {form.kind === 'speed' ? t.events.kindSpeedHelp : t.events.kindStandardHelp}
+            </p>
+            {form.kind === 'speed' ? (
+              <>
+                <label htmlFor="event-round">{t.events.roundMinutes}</label>
+                <input
+                  id="event-round"
+                  type="number"
+                  min={3}
+                  max={10}
+                  required
+                  inputMode="numeric"
+                  value={form.roundMinutes}
+                  onChange={(e) => set('roundMinutes', e.target.value)}
+                />
+              </>
             ) : null}
             <label htmlFor="event-title">{t.events.titleLabel}</label>
             <input
@@ -319,7 +450,8 @@ export function Events({ isAdmin }: { isAdmin: boolean }) {
               id="event-capacity"
               type="number"
               min={2}
-              max={10000}
+              max={form.kind === 'speed' ? 40 : 10000}
+              required={form.kind === 'speed'}
               inputMode="numeric"
               value={form.capacity}
               aria-describedby="event-capacity-help"

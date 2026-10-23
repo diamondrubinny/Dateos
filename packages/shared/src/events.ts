@@ -22,6 +22,15 @@ export const RSVP_RETENTION_DAYS = 30;
 /** Ended events (no personal data) are deleted after this. */
 export const EVENT_RETENTION_DAYS = 365;
 
+/** A regular event, or video speed dating (phase 23). */
+export const eventKinds = ['standard', 'speed'] as const;
+export type EventKind = (typeof eventKinds)[number];
+export const SPEED_ROUND_MIN = 3;
+export const SPEED_ROUND_MAX = 10;
+export const SPEED_ROUND_DEFAULT = 5;
+/** Speed dating is small by design: everyone can meet a good share of the room. */
+export const MAX_SPEED_CAPACITY = 40;
+
 const title = z
   .string()
   .trim()
@@ -30,6 +39,7 @@ const title = z
   .regex(/^[^\p{Cc}]*$/u, 'Use a single line of text.');
 const description = z.string().trim().max(1000);
 const capacity = z.number().int().min(2).max(MAX_EVENT_CAPACITY).nullable();
+const roundMinutes = z.number().int().min(SPEED_ROUND_MIN).max(SPEED_ROUND_MAX);
 
 const window = (v: { startsAt?: string | undefined; endsAt?: string | undefined }) => {
   if (!v.startsAt || !v.endsAt) return true;
@@ -49,9 +59,15 @@ export const eventInputSchema = z
     startsAt: z.iso.datetime(),
     endsAt: z.iso.datetime(),
     capacity: capacity.default(null),
+    kind: z.enum(eventKinds).default('standard'),
+    roundMinutes: roundMinutes.nullable().default(null),
   })
   .strict()
-  .refine(window, windowMessage);
+  .refine(window, windowMessage)
+  .refine((v) => v.kind !== 'speed' || (v.capacity !== null && v.capacity <= MAX_SPEED_CAPACITY), {
+    message: `Speed dating needs a capacity of at most ${MAX_SPEED_CAPACITY}.`,
+    path: ['capacity'],
+  });
 export type EventInput = z.input<typeof eventInputSchema>;
 
 export const eventUpdateSchema = z
@@ -62,6 +78,7 @@ export const eventUpdateSchema = z
     startsAt: z.iso.datetime(),
     endsAt: z.iso.datetime(),
     capacity,
+    roundMinutes,
   })
   .partial()
   .strict()
@@ -88,12 +105,98 @@ export const eventSchema = z.object({
   waitingCount: z.number().int(),
   /** The viewer's place: null if not waiting, else how many people are ahead of them. */
   waitingAhead: z.number().int().nullable(),
+  kind: z.enum(eventKinds),
+  /** Speed dating only: the length of each round. */
+  roundMinutes: z.number().int().nullable(),
+  /** Whether the viewer checked in at the venue (phase 23). */
+  checkedIn: z.boolean(),
 });
 export type CommunityEvent = z.infer<typeof eventSchema>;
 
 /** Staff view: the venue id for editing, and when it was created. Still no attendee identities. */
-export const adminEventSchema = eventSchema.omit({ mine: true, waitingAhead: true }).extend({
-  venueId: z.uuid().nullable(),
-  createdAt: z.string(),
-});
+export const adminEventSchema = eventSchema
+  .omit({ mine: true, waitingAhead: true, checkedIn: true })
+  .extend({
+    venueId: z.uuid().nullable(),
+    createdAt: z.string(),
+    /** How many people checked in (a count). */
+    checkedInCount: z.number().int(),
+  });
 export type AdminEvent = z.infer<typeof adminEventSchema>;
+
+// ---------------------------------------------------------------------------
+// Check-in at the venue (phase 23)
+// ---------------------------------------------------------------------------
+
+/** The code on the venue's screen changes this often; the previous one is still accepted. */
+export const CHECK_IN_STEP_SECONDS = 30;
+/** Check-in opens this long before the start, and closes at the end. */
+export const CHECK_IN_EARLY_MINUTES = 30;
+/** The badge shows check-ins from the last 12 months. */
+export const EVENT_BADGE_MONTHS = 12;
+
+export const checkInSchema = z.object({ code: z.string().regex(/^\d{6}$/) }).strict();
+export const adminCheckInSchema = z.object({
+  code: z.string(),
+  /** What the QR code opens: the event page, with the code. */
+  url: z.string(),
+  changesAt: z.string(),
+  checkedInCount: z.number().int(),
+});
+export type AdminCheckIn = z.infer<typeof adminCheckInSchema>;
+
+// ---------------------------------------------------------------------------
+// Video speed dating (phase 23)
+// ---------------------------------------------------------------------------
+
+/** Heartbeats keep you in the lobby; without one for this long, you're out. */
+export const SPEED_HEARTBEAT_SECONDS = 15;
+export const SPEED_LOBBY_TIMEOUT_SECONDS = 40;
+/** The pause between rounds, to answer and get ready. */
+export const SPEED_BREAK_SECONDS = 45;
+/** During a round with at least this long left, people who are waiting are paired into it. */
+export const SPEED_LATE_JOIN_SECONDS = 120;
+/** Answers can still be given this long after the event ends. */
+export const SPEED_ANSWER_HOURS = 1;
+
+export const speedDateSchema = z.object({
+  id: z.uuid(),
+  round: z.number().int(),
+  /** The other person: first name only, as on a card. */
+  with: z.object({ id: z.string(), displayName: z.string(), age: z.number().int() }),
+  startsAt: z.string(),
+  endsAt: z.string(),
+  /** Live now, over, or ended early by one of the two. */
+  status: z.enum(['live', 'over']),
+  /** My answer, if I gave one. */
+  answer: z.boolean().nullable(),
+  /** Set when both said yes. */
+  matchId: z.uuid().nullable(),
+});
+export type SpeedDate = z.infer<typeof speedDateSchema>;
+
+export const speedStateSchema = z.object({
+  /** Whether I'm in the lobby now. */
+  inLobby: z.boolean(),
+  /** How many people are in the lobby (a count, never who). */
+  here: z.number().int(),
+  /** When the next round starts, if the event is on. */
+  nextRoundAt: z.string().nullable(),
+  /** Whether the event is on now (between the start and the end). */
+  live: z.boolean(),
+  current: speedDateSchema.nullable(),
+  /** Rounds I took part in, newest first. */
+  past: z.array(speedDateSchema),
+});
+export type SpeedState = z.infer<typeof speedStateSchema>;
+
+export const speedAnswerSchema = z.object({ yes: z.boolean() }).strict();
+
+export const speedJoinSchema = z.object({
+  url: z.string(),
+  token: z.string(),
+  /** The LiveKit room name (part of the end-to-end key derivation). */
+  room: z.string(),
+  date: speedDateSchema,
+});
+export type SpeedJoin = z.infer<typeof speedJoinSchema>;

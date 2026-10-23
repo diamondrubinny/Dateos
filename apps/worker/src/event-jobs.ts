@@ -15,10 +15,15 @@ export interface EventJobContext {
 /**
  * Runs every 10 minutes: reminds people going EVENT_REMINDER_HOURS before an event (once each),
  * deletes who was going RSVP_RETENTION_DAYS after an event ends, and ended events after a year.
+ * Speed dating (phase 23): the lobby is emptied once an event ends, and the rounds (with their
+ * private answers) go with the RSVPs.
  */
-export async function processEvents(
-  ctx: EventJobContext,
-): Promise<{ reminded: number; rsvpsDeleted: number; eventsDeleted: number }> {
+export async function processEvents(ctx: EventJobContext): Promise<{
+  reminded: number;
+  rsvpsDeleted: number;
+  eventsDeleted: number;
+  speedDatesDeleted: number;
+}> {
   const now = ctx.now?.() ?? new Date();
   const due = await ctx.db.execute<{ user_id: string; event_id: string }>(sql`
     UPDATE event_rsvps r SET reminded_at = ${now}
@@ -34,6 +39,13 @@ export async function processEvents(
     DELETE FROM event_rsvps r USING events e
     WHERE e.id = r.event_id
       AND e.ends_at < ${new Date(now.getTime() - RSVP_RETENTION_DAYS * 86_400_000)}`);
+  await ctx.db.execute(sql`
+    DELETE FROM speed_lobby l USING events e
+    WHERE e.id = l.event_id AND (e.ends_at < ${now} OR e.status = 'cancelled')`);
+  const speedDates = await ctx.db.execute(sql`
+    DELETE FROM speed_dates d USING events e
+    WHERE e.id = d.event_id
+      AND e.ends_at < ${new Date(now.getTime() - RSVP_RETENTION_DAYS * 86_400_000)}`);
   const ended = await ctx.db.execute(sql`
     DELETE FROM events
     WHERE ends_at < ${new Date(now.getTime() - EVENT_RETENTION_DAYS * 86_400_000)}`);
@@ -41,5 +53,6 @@ export async function processEvents(
     reminded: due.rows.length,
     rsvpsDeleted: rsvps.rowCount ?? 0,
     eventsDeleted: ended.rowCount ?? 0,
+    speedDatesDeleted: speedDates.rowCount ?? 0,
   };
 }

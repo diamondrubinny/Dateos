@@ -12,8 +12,25 @@ const base = {
 };
 
 describe('event input', () => {
-  it('fills defaults: empty description, no capacity', () => {
-    expect(eventInputSchema.parse(base)).toEqual({ ...base, description: '', capacity: null });
+  it('fills defaults: empty description, no capacity, a regular event', () => {
+    expect(eventInputSchema.parse(base)).toEqual({
+      ...base,
+      description: '',
+      capacity: null,
+      kind: 'standard',
+      roundMinutes: null,
+    });
+  });
+
+  it('speed dating needs a capacity of at most 40 and rounds of 3 to 10 minutes', () => {
+    const speed = (over: object) =>
+      eventInputSchema.safeParse({ ...base, kind: 'speed', capacity: 20, ...over }).success;
+    expect(speed({ roundMinutes: 5 })).toBe(true);
+    expect(speed({ capacity: null })).toBe(false);
+    expect(speed({ capacity: 41 })).toBe(false);
+    expect(speed({ roundMinutes: 2 })).toBe(false);
+    expect(speed({ roundMinutes: 11 })).toBe(false);
+    expect(speed({ kind: 'party' })).toBe(false);
   });
 
   it('allows line breaks in the description but not in the title', () => {

@@ -1,21 +1,27 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
+import { createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
 import { schema, type Database } from '@nexaheart/db';
 import {
+  type AdminCheckIn,
   type AdminEvent,
+  CHECK_IN_EARLY_MINUTES,
+  CHECK_IN_STEP_SECONDS,
   type CommunityEvent,
   ErrorCode,
   type EventInput,
   type EventUpdate,
   MAX_EVENT_HOURS,
   MAX_EVENT_WAITLIST,
+  MAX_SPEED_CAPACITY,
+  SPEED_ROUND_DEFAULT,
 } from '@nexaheart/shared';
 import { and, asc, desc, eq, gt, inArray, or, sql } from 'drizzle-orm';
 import { audit } from '../../lib/audit.js';
 import { HttpError } from '../../plugins/error-handler.js';
 
-const { events, eventRsvps, venues } = schema;
+const { events, eventRsvps, venues, profiles } = schema;
 
 const notFound = () => new HttpError(404, ErrorCode.NotFound, 'Resource not found.');
 const invalid = (message: string) => new HttpError(422, ErrorCode.ValidationError, message);
@@ -31,7 +37,7 @@ function baseView(
   v: VenueRow | null,
   going: number,
   waitingCount: number,
-): Omit<CommunityEvent, 'mine' | 'waitingAhead'> {
+): Omit<CommunityEvent, 'mine' | 'waitingAhead' | 'checkedIn'> {
   return {
     id: e.id,
     title: e.title,
@@ -53,7 +59,18 @@ function baseView(
     going,
     full: e.capacity !== null && going >= e.capacity,
     waitingCount,
+    kind: e.kind === 'speed' ? 'speed' : 'standard',
+    roundMinutes: e.kind === 'speed' ? (e.roundMinutes ?? SPEED_ROUND_DEFAULT) : null,
   };
+}
+
+/**
+ * The 6-digit check-in code for one 30-second window: HMAC-SHA256 of the event's secret and the
+ * window number, like a TOTP. A photo of the screen stops working within a minute.
+ */
+export function checkInCode(secret: string, step: number): string {
+  const mac = createHmac('sha256', Buffer.from(secret, 'hex')).update(`check-in:${step}`).digest();
+  return String(mac.readUInt32BE(0) % 1_000_000).padStart(6, '0');
 }
 
 interface Row {
@@ -63,13 +80,23 @@ interface Row {
   waitingCount: number;
   mine: boolean;
   waitingAhead: number | null;
+  checkedIn: boolean;
+  checkedInCount: number;
 }
 
 const toView = (r: Row): CommunityEvent => ({
   ...baseView(r.event, r.venue, r.going, r.waitingCount),
   mine: r.mine,
   waitingAhead: r.waitingAhead,
+  checkedIn: r.checkedIn,
 });
+
+export interface EventOptions {
+  /** The web app's address, for the link in the check-in QR code. */
+  appUrl?: string;
+  /** Whether video speed dating can run (video calls configured and on). */
+  speedAvailable?: () => Promise<boolean>;
+}
 
 /**
  * Community events (phase 14). Members only ever see how many people are going, never who; the
@@ -81,6 +108,7 @@ export class EventService {
     /** Content-free push to someone going (event cancelled). */
     private readonly notify: (userId: string, eventId: string) => Promise<void>,
     private readonly now: () => number = Date.now,
+    private readonly options: EventOptions = {},
   ) {}
 
   private query(viewerId: string | null) {
@@ -97,6 +125,10 @@ export class EventService {
           FROM event_rsvps me
           WHERE me.event_id = ${events.id} AND me.user_id = ${viewerId} AND me.status = 'waiting')`
       : sql<number | null>`NULL::int`;
+    const checkedIn = viewerId
+      ? sql<boolean>`EXISTS (SELECT 1 FROM event_rsvps r WHERE r.event_id = ${events.id} AND r.user_id = ${viewerId} AND r.checked_in_at IS NOT NULL)`
+      : sql<boolean>`false`;
+    const checkedInCount = sql<number>`(SELECT count(*)::int FROM event_rsvps r WHERE r.event_id = ${events.id} AND r.checked_in_at IS NOT NULL)`;
     return this.db
       .select({
         event: events,
@@ -105,6 +137,8 @@ export class EventService {
         waitingCount: count('waiting'),
         mine,
         waitingAhead,
+        checkedIn,
+        checkedInCount,
       })
       .from(events)
       .leftJoin(venues, eq(venues.id, events.venueId));
@@ -255,6 +289,7 @@ export class EventService {
       ...baseView(r.event, r.venue, r.going, r.waitingCount),
       venueId: r.event.venueId,
       createdAt: r.event.createdAt.toISOString(),
+      checkedInCount: r.checkedInCount,
     };
   }
 
@@ -272,6 +307,16 @@ export class EventService {
     if (!venue?.active) throw invalid('Choose one of the community’s active places.');
   }
 
+  private async requireSpeed() {
+    if (this.options.speedAvailable && !(await this.options.speedAvailable())) {
+      throw new HttpError(
+        409,
+        ErrorCode.Conflict,
+        'Video speed dating needs video calls: turn them on first.',
+      );
+    }
+  }
+
   private checkWindow(startsAt: Date, endsAt: Date) {
     if (startsAt.getTime() <= this.now()) throw invalid('The event must start in the future.');
     const hours = (endsAt.getTime() - startsAt.getTime()) / 3_600_000;
@@ -285,6 +330,8 @@ export class EventService {
     const endsAt = new Date(input.endsAt);
     this.checkWindow(startsAt, endsAt);
     await this.requireActiveVenue(input.venueId);
+    const speed = input.kind === 'speed';
+    if (speed) await this.requireSpeed();
     const [row] = await this.db
       .insert(events)
       .values({
@@ -294,6 +341,8 @@ export class EventService {
         startsAt,
         endsAt,
         capacity: input.capacity ?? null,
+        kind: speed ? 'speed' : 'standard',
+        roundMinutes: speed ? (input.roundMinutes ?? SPEED_ROUND_DEFAULT) : null,
       })
       .returning({ id: events.id });
     await audit(this.db, {
@@ -315,6 +364,13 @@ export class EventService {
     const endsAt = patch.endsAt ? new Date(patch.endsAt) : current.endsAt;
     if (patch.startsAt || patch.endsAt) this.checkWindow(startsAt, endsAt);
     if (patch.venueId) await this.requireActiveVenue(patch.venueId);
+    if (current.kind === 'speed') {
+      if (patch.capacity === null || (patch.capacity ?? 0) > MAX_SPEED_CAPACITY) {
+        throw invalid(`Speed dating needs a capacity of at most ${MAX_SPEED_CAPACITY}.`);
+      }
+    } else if (patch.roundMinutes !== undefined) {
+      throw invalid('Only speed-dating events have rounds.');
+    }
     // More places (or no limit any more) go to the waiting list straight away.
     const promoted = await this.db.transaction(async (tx) => {
       const [updated] = await tx
@@ -324,6 +380,7 @@ export class EventService {
           ...(patch.description !== undefined ? { description: patch.description } : {}),
           ...(patch.venueId !== undefined ? { venueId: patch.venueId } : {}),
           ...(patch.capacity !== undefined ? { capacity: patch.capacity } : {}),
+          ...(patch.roundMinutes !== undefined ? { roundMinutes: patch.roundMinutes } : {}),
           startsAt,
           endsAt,
         })
@@ -370,5 +427,86 @@ export class EventService {
       meta: { notified: going.length },
     });
     return this.staffView(id);
+  }
+
+  // ------------------------------------------------------------------ check-in (phase 23)
+
+  private step(): number {
+    return Math.floor(this.now() / 1000 / CHECK_IN_STEP_SECONDS);
+  }
+
+  /** The code to show at the venue now, and when it changes. Admins only. */
+  async checkInFor(id: string): Promise<AdminCheckIn> {
+    const [event] = await this.db.select().from(events).where(eq(events.id, id));
+    if (!event) throw notFound();
+    if (event.status === 'cancelled') {
+      throw new HttpError(409, ErrorCode.Conflict, 'This event was cancelled.');
+    }
+    let secret = event.checkInSecret;
+    if (!secret) {
+      // Made once, the first time the code is shown; never sent to members.
+      const fresh = randomBytes(32).toString('hex');
+      const [row] = await this.db
+        .update(events)
+        .set({ checkInSecret: sql`coalesce(${events.checkInSecret}, ${fresh})` })
+        .where(eq(events.id, id))
+        .returning({ secret: events.checkInSecret });
+      secret = row!.secret!;
+    }
+    const step = this.step();
+    const code = checkInCode(secret, step);
+    const [{ count }] = (
+      await this.db.execute<{ count: number }>(sql`
+        SELECT count(*)::int AS count FROM event_rsvps
+        WHERE event_id = ${id} AND checked_in_at IS NOT NULL`)
+    ).rows as [{ count: number }];
+    const base = (this.options.appUrl ?? '').replace(/\/+$/, '');
+    return {
+      code,
+      url: `${base}/events/${id}?code=${code}`,
+      changesAt: new Date((step + 1) * CHECK_IN_STEP_SECONDS * 1000).toISOString(),
+      checkedInCount: count,
+    };
+  }
+
+  /**
+   * Checking in at the venue with the code on its screen: during the event (from 30 minutes before),
+   * with a "going" RSVP. The current and the previous code are accepted. Doing it twice is harmless.
+   */
+  async checkIn(id: string, userId: string, code: string): Promise<CommunityEvent> {
+    const [event] = await this.db.select().from(events).where(eq(events.id, id));
+    const [rsvp] = event
+      ? await this.db
+          .select({ status: eventRsvps.status, checkedInAt: eventRsvps.checkedInAt })
+          .from(eventRsvps)
+          .where(and(eq(eventRsvps.eventId, id), eq(eventRsvps.userId, userId)))
+      : [];
+    if (!event || event.status === 'cancelled' || rsvp?.status !== 'going') throw notFound();
+    if (rsvp.checkedInAt) return this.get(id, userId);
+    const now = this.now();
+    if (
+      now < event.startsAt.getTime() - CHECK_IN_EARLY_MINUTES * 60_000 ||
+      now > event.endsAt.getTime()
+    ) {
+      throw new HttpError(409, ErrorCode.Conflict, 'Check-in is open only during the event.');
+    }
+    const step = this.step();
+    const given = Buffer.from(code);
+    const ok =
+      !!event.checkInSecret &&
+      [step, step - 1].some((s) => {
+        const expected = Buffer.from(checkInCode(event.checkInSecret!, s));
+        return expected.length === given.length && timingSafeEqual(expected, given);
+      });
+    if (!ok) throw invalid('That code didn’t work. Check the screen at the venue and try again.');
+    const at = new Date(now);
+    await this.db.transaction(async (tx) => {
+      await tx
+        .update(eventRsvps)
+        .set({ checkedInAt: at })
+        .where(and(eq(eventRsvps.eventId, id), eq(eventRsvps.userId, userId)));
+      await tx.update(profiles).set({ eventCheckInAt: at }).where(eq(profiles.userId, userId));
+    });
+    return this.get(id, userId);
   }
 }

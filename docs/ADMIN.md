@@ -131,7 +131,16 @@ as sensitive data in some jurisdictions: ask for explicit consent and review it 
 The worker deletes expired records daily (`cleanup-discovery` job). Constants are in
 `packages/shared/src/moderation.ts`.
 
-## 7. Known limitations
+## 7. Live events: speed dating and check-in (phase 23)
+
+- **Video speed dating** is an event type (Events → Type). It needs video calls to be on (Branding →
+  calls) and a capacity of at most 40. Rounds are 3 to 10 minutes. The server pairs people in the
+  lobby by everyone's own settings; staff never see who met whom.
+- **Check-in**: on the day, press "Check-in" next to the event and show the panel on a screen at the
+  venue. The QR code and the 6-digit code change every 30 seconds; people going check in from 30
+  minutes before the start until the end. Staff see only how many checked in.
+
+## 8. Known limitations
 
 - No automated nudity detection yet: chat images are blurred until tapped, and reports cover the rest.
 - Reports against an account are deleted when that account is deleted. A ban still blocks the email from signing up again ⚖️.

@@ -22,6 +22,7 @@ import { chatRoutes } from './modules/chat/routes.js';
 import { checkinRoutes } from './modules/checkins/routes.js';
 import { dateRoutes } from './modules/dates/routes.js';
 import { eventRoutes } from './modules/events/routes.js';
+import { speedRoutes } from './modules/speed/routes.js';
 import { travelRoutes } from './modules/places/routes.js';
 import { callRoutes, callWebhookRoutes } from './modules/calls/routes.js';
 import { discoveryRoutes } from './modules/discovery/routes.js';
@@ -33,6 +34,7 @@ import { adminRoutes } from './modules/admin/routes.js';
 import { safetyRoutes } from './modules/safety/routes.js';
 import { notificationRoutes } from './modules/notifications/routes.js';
 import { coachRoutes } from './modules/coach/routes.js';
+import { matchmakerRoutes } from './modules/matchmaker/routes.js';
 import { signupRoutes, trustRoutes } from './modules/trust/routes.js';
 import { friendRoutes, takePublicRoutes } from './modules/friends/routes.js';
 import type { Services } from './services.js';
@@ -131,6 +133,11 @@ export async function buildApp(env: Env, deps: AppDependencies): Promise<Fastify
       db: services.dbHandle.db,
       ai: services.ai,
     });
+    await typed.register(matchmakerRoutes, {
+      auth: services.auth,
+      me: services.me,
+      ai: services.ai,
+    });
     await typed.register(checkinRoutes, { auth: services.auth, checkins: services.checkins });
     await typed.register(dateRoutes, {
       auth: services.auth,
@@ -138,6 +145,7 @@ export async function buildApp(env: Env, deps: AppDependencies): Promise<Fastify
       venues: services.venues,
     });
     await typed.register(eventRoutes, { auth: services.auth, events: services.events });
+    await typed.register(speedRoutes, { auth: services.auth, speed: services.speed });
     await typed.register(travelRoutes, {
       auth: services.auth,
       cities: services.cities,
