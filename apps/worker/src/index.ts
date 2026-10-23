@@ -32,6 +32,7 @@ import { processEvents } from './event-jobs.js';
 import { processPauses } from './pause-jobs.js';
 import { processTrips } from './travel-jobs.js';
 import { processAvailability } from './availability-jobs.js';
+import { processSignupRetention } from './signup-jobs.js';
 import { processCalls } from './call-jobs.js';
 import { RoomServiceClient } from 'livekit-server-sdk';
 import nodemailer from 'nodemailer';
@@ -191,6 +192,8 @@ async function main(): Promise<void> {
           return processTrips(db);
         case 'availability':
           return processAvailability(db);
+        case 'signup-retention':
+          return processSignupRetention(db);
         case 'events':
           return processEvents({
             db,
@@ -244,6 +247,12 @@ async function main(): Promise<void> {
     'availability',
     { every: 3_600_000 },
     { name: 'availability' },
+  );
+  // Waitlist entries 90 days after a decision, and expired sign-up permissions (daily).
+  await scheduler.upsertJobScheduler(
+    'signup-retention',
+    { every: 86_400_000 },
+    { name: 'signup-retention' },
   );
   // Take a break: end breaks whose time is up and tell the member (every 5 minutes).
   await scheduler.upsertJobScheduler(

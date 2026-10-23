@@ -4,33 +4,71 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { StyleSheet, View } from 'react-native';
 import { z } from 'zod';
+import { AppText } from '../components/AppText';
 import { Banner } from '../components/Banner';
 import { Button } from '../components/Button';
+import { PoweredBy } from '../components/PoweredBy';
 import { Screen } from '../components/Screen';
 import { TextField } from '../components/TextField';
+import { ApiRequestError } from '../lib/api';
 import { requestMagicLink } from '../lib/magic-link';
-import { PoweredBy } from '../components/PoweredBy';
+import { useInstance } from '../lib/queries';
+import { spacing } from '../lib/theme';
+import { passkeysSupported, redeemInvite, signInWithPasskey } from '../lib/trust-queries';
 
 const emailSchema = z.email();
 
 export default function SignIn() {
   const { t } = useTranslation();
+  const instance = useInstance();
+  const mode = instance.data?.signup ?? 'open';
   const [email, setEmail] = useState('');
+  const [code, setCode] = useState('');
   const [fieldError, setFieldError] = useState<string>();
+  const [codeError, setCodeError] = useState<string>();
   const [failed, setFailed] = useState(false);
   const [sending, setSending] = useState(false);
+  const [passkeyBusy, setPasskeyBusy] = useState(false);
+  const [passkeyFailed, setPasskeyFailed] = useState(false);
 
   const submit = async () => {
     const value = email.trim();
     if (!emailSchema.safeParse(value).success) return setFieldError(t('signIn.invalidEmail'));
     setFieldError(undefined);
+    setCodeError(undefined);
     setFailed(false);
     setSending(true);
-    const ok = await requestMagicLink(value).catch(() => false);
-    setSending(false);
-    if (!ok) return setFailed(true);
-    router.push({ pathname: '/check-email', params: { email: value } });
+    try {
+      // Invite mode (phase 21): a code entered here lets this address open an account first.
+      if (mode === 'invite' && code.trim()) {
+        try {
+          await redeemInvite({ code: code.trim(), email: value });
+        } catch (e) {
+          if (e instanceof ApiRequestError && e.status === 400) {
+            return setCodeError(t('signup.badCode'));
+          }
+          throw e;
+        }
+      }
+      const ok = await requestMagicLink(value).catch(() => false);
+      if (!ok) return setFailed(true);
+      router.push({ pathname: '/check-email', params: { email: value } });
+    } catch {
+      setFailed(true);
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const passkey = async () => {
+    setPasskeyFailed(false);
+    setPasskeyBusy(true);
+    const ok = await signInWithPasskey().catch(() => false);
+    setPasskeyBusy(false);
+    if (ok) router.replace('/');
+    else setPasskeyFailed(true);
   };
 
   return (
@@ -57,7 +95,47 @@ export default function SignIn() {
         onSubmitEditing={() => void submit()}
         style={{ writingDirection: 'ltr' }}
       />
+
+      {mode === 'invite' ? (
+        <TextField
+          label={t('signup.code')}
+          hint={t('signup.codeHint')}
+          error={codeError}
+          value={code}
+          onChangeText={(v) => setCode(v.toUpperCase())}
+          autoCapitalize="characters"
+          autoCorrect={false}
+          maxLength={24}
+          style={{ writingDirection: 'ltr' }}
+        />
+      ) : null}
+      {mode === 'waitlist' ? (
+        <View style={styles.box}>
+          <AppText variant="body" tone="muted">
+            {t('signup.waitlistHint')}
+          </AppText>
+          <Button
+            variant="secondary"
+            label={t('signup.joinWaitlist')}
+            onPress={() => router.push('/waitlist')}
+          />
+        </View>
+      ) : null}
+
+      {instance.data?.auth.passkey && passkeysSupported() ? (
+        <View style={styles.box}>
+          {passkeyFailed ? <Banner tone="error" message={t('passkey.signInFailed')} /> : null}
+          <Button
+            variant="ghost"
+            label={t('passkey.signIn')}
+            loading={passkeyBusy}
+            onPress={() => void passkey()}
+          />
+        </View>
+      ) : null}
       <PoweredBy />
     </Screen>
   );
 }
+
+const styles = StyleSheet.create({ box: { gap: spacing.sm } });

@@ -610,3 +610,23 @@ input[type='password'] {
   display: inline-block;
   padding: 0.5rem 0.25rem;
 }
+
+/* Joining (phase 21): the waitlist and a new invite code. */
+.list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+.list-item {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+}
+.code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 1.5rem;
+  letter-spacing: 0.15em;
+  user-select: all;
+}

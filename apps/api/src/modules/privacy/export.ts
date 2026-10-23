@@ -194,6 +194,20 @@ export async function exportMemberData(
     .innerJoin(t.matches, eq(t.matches.id, t.datePlans.matchId))
     .where(or(eq(t.matches.userA, userId), eq(t.matches.userB, userId)))
     .orderBy(asc(t.datePlans.createdAt));
+  // Hide me from my contacts (phase 21): how many, not who (the matches are other members).
+  const [contactHideCount] = await db
+    .select({ n: sql<number>`count(*)::int` })
+    .from(t.contactHides)
+    .where(eq(t.contactHides.userId, userId));
+  const invitesMade = await db
+    .select({
+      uses: t.inviteCodes.uses,
+      maxUses: t.inviteCodes.maxUses,
+      expiresAt: t.inviteCodes.expiresAt,
+      createdAt: t.inviteCodes.createdAt,
+    })
+    .from(t.inviteCodes)
+    .where(eq(t.inviteCodes.createdBy, userId));
   // "When I'm free" lists you shared (the other person's list is theirs).
   const availabilityRows = await db
     .select({
@@ -364,12 +378,18 @@ export async function exportMemberData(
           // Only your own private answers after the date.
           youSaidYouMet: mine ? proposerMet : receiverMet,
           youWouldMeetAgain: mine ? proposerAgain : receiverAgain,
-      startsAt: iso(d.startsAt),
+          startsAt: iso(d.startsAt),
           respondedAt: iso(d.respondedAt),
           createdAt: iso(d.createdAt),
         };
       },
     ),
+    peopleHiddenFromYourContacts: contactHideCount?.n ?? 0,
+    invitesYouCreated: invitesMade.map((i) => ({
+      ...i,
+      expiresAt: iso(i.expiresAt),
+      createdAt: iso(i.createdAt),
+    })),
     availabilityYouShared: availabilityRows.map((a) => ({
       ...a,
       updatedAt: iso(a.updatedAt),

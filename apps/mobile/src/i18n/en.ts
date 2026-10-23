@@ -959,6 +959,63 @@ export const en = {
     open: 'Go to my chats',
     likeBlocked: 'Reply to the people waiting for you before liking someone new.',
   },
+  security: {
+    title: 'Security',
+    screenshotsNative:
+      'Chats, profiles and calls are protected: Android blocks screenshots and recording, iOS blocks screen recording.',
+    screenshotsWeb:
+      'A browser can’t block screenshots. In the app, chats, profiles and calls are protected from screenshots on Android and from screen recording on iOS.',
+  },
+  passkey: {
+    title: 'Passkeys',
+    intro:
+      'Sign in with your fingerprint, face or screen lock instead of an email link. Only a public key is kept on the server.',
+    add: 'Add a passkey on this device',
+    addFailed: 'The passkey wasn’t added. You can try again.',
+    remove: 'Remove',
+    unnamed: 'Passkey',
+    thisDevice: 'This device',
+    nameOn: 'Passkey on {{os}}',
+    signIn: 'Sign in with a passkey',
+    signInFailed: 'That didn’t work. Use your email instead, or try again.',
+  },
+  contacts: {
+    title: 'Hide me from my contacts',
+    open: 'Hide me from my contacts',
+    intro:
+      'People in your contacts who are members here won’t see you, and you won’t see them. Nobody is told. Chats you already have stay as they are.',
+    howTitle: 'How it’s kept private',
+    how: 'The addresses are turned into codes (hashes) on this device, and only the codes are sent. The server keeps only which members matched; everything else is dropped at once.',
+    fromDevice: 'Choose from my contacts',
+    pasteLabel: 'Email addresses',
+    pasteHint: 'Paste addresses, one per line or separated by commas.',
+    hide: 'Hide me from them',
+    count: 'People hidden: {{count}}',
+    done: 'Done. People hidden: {{count}}.',
+    none: 'No email addresses found.',
+    tooMany: 'Only the first {{max}} addresses were checked.',
+    denied: 'Without access to your contacts, you can paste addresses instead.',
+    clear: 'Show me to everyone again',
+    cleared: 'You’re visible to everyone again.',
+    later: 'People who join later aren’t covered automatically: run it again from time to time.',
+  },
+  invite: {
+    title: 'Invite friends',
+    intro: 'Each code lets one person join. Codes you made: {{count}}.',
+    create: 'Make an invite code',
+  },
+  signup: {
+    code: 'Invite code (new members)',
+    codeHint: 'Already a member? Leave this empty.',
+    badCode: 'This invite code doesn’t work. Check it, or ask for a new one.',
+    waitlistHint: 'New here? Joining is through a waitlist. Already a member? Just sign in.',
+    joinWaitlist: 'Join the waitlist',
+    waitlistTitle: 'Join the waitlist',
+    waitlistIntro: 'A moderator looks at each request. We’ll email you when you can join.',
+    note: 'A few words about you (optional)',
+    noteHint: 'Up to {{max}} characters. Only the moderators see it.',
+    waitlistDone: 'Thanks! If you’re approved, we’ll email you a link to join.',
+  },
 };
 
 type Widen<T> = { [K in keyof T]: T[K] extends string ? string : Widen<T[K]> };

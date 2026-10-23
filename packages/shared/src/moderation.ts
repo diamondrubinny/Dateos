@@ -163,6 +163,8 @@ export const moderationHistorySchema = z.object({
 export const reportDetailSchema = reportSummarySchema.extend({
   details: z.string().nullable(),
   reporter: z.object({ id: z.string().nullable(), displayName: z.string().nullable() }),
+  /** Opened by an automatic check (a duplicate or banned photo), not by a member. */
+  automatic: z.boolean(),
   evidence: z.array(evidenceMessageSchema),
   resolution: z
     .object({ action: z.enum(moderationActions), reason: z.string(), resolvedAt: z.string() })

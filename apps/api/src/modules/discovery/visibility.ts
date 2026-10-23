@@ -51,6 +51,17 @@ export function notOnBreak(alias: 'u' | 'mu'): SQL {
   return sql.raw(`(${alias}.paused_at IS NULL OR ${alias}.paused_until <= now())`);
 }
 
+/**
+ * Neither person hid themselves from the other with "hide me from my contacts" (phase 21). Silent
+ * and two-way; an existing match isn't affected (callers don't apply it to matches).
+ */
+export function notContactHidden(a: SQL, b: SQL): SQL {
+  return sql`NOT EXISTS (
+      SELECT 1 FROM contact_hides ch
+      WHERE (ch.user_id = ${a} AND ch.other_id = ${b}) OR (ch.user_id = ${b} AND ch.other_id = ${a})
+    )`;
+}
+
 /** Both users are active and not separated by a block or an unmatch. */
 export function notSeparated(a: SQL, b: SQL): SQL {
   return sql`NOT EXISTS (
@@ -130,6 +141,7 @@ export function candidateSql(q: CandidateQuery): SQL {
       AND (cardinality(cpr.intentions) = 0 OR me.intention = ANY(cpr.intentions))
       AND EXISTS (SELECT 1 FROM photos ph WHERE ph.user_id = c.user_id AND ph.status = 'clean' AND ph.purpose = 'profile')
       AND ${notSeparated(sql`me.user_id`, sql`c.user_id`)}
+      AND ${notContactHidden(sql`me.user_id`, sql`c.user_id`)}
       -- Dealbreakers (phase 19), both ways. An empty list means any; a missing answer passes.
       AND (cardinality(me.smoking_ok) = 0 OR ca.smoking IS NULL OR ca.smoking = ANY(me.smoking_ok))
       AND (cardinality(cpr.smoking_ok) = 0 OR me.smoking IS NULL OR me.smoking = ANY(cpr.smoking_ok))

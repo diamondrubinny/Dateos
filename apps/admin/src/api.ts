@@ -16,6 +16,11 @@ import type {
   ReportSummary,
   StaffMe,
   VerificationReview,
+  CreateInviteInput,
+  Invite,
+  SignupMode,
+  WaitlistEntry,
+  WaitlistStatus,
 } from '@nexaheart/shared';
 
 export const API_URL: string = import.meta.env.VITE_API_URL ?? 'http://localhost:4000';
@@ -71,6 +76,8 @@ export interface AdminInstanceSettings {
   callsConfigured: boolean;
   callsEnabled: boolean;
   callMaxMinutes: number;
+  signupMode: SignupMode;
+  memberInvites: boolean;
 }
 
 async function upload(path: string, file: File): Promise<void> {
@@ -102,6 +109,17 @@ export const api = {
   uploadLogo: (file: File) => upload('/v1/admin/instance/logo', file),
   removeLogo: () => request<{ ok: true }>('DELETE', '/v1/admin/instance/logo'),
   venues: () => request<{ venues: AdminVenue[] }>('GET', '/v1/admin/venues'),
+  invites: () => request<{ invites: Invite[] }>('GET', '/v1/admin/invites'),
+  createInvite: (input: CreateInviteInput) => request<Invite>('POST', '/v1/admin/invites', input),
+  revokeInvite: (id: string) =>
+    request<{ ok: true }>('POST', `/v1/admin/invites/${encodeURIComponent(id)}/revoke`),
+  waitlist: (status: WaitlistStatus) =>
+    request<{ entries: WaitlistEntry[] }>('GET', `/v1/admin/waitlist?status=${status}`),
+  decideWaitlist: (id: string, approve: boolean) =>
+    request<{ ok: true }>(
+      'POST',
+      `/v1/admin/waitlist/${encodeURIComponent(id)}/${approve ? 'approve' : 'decline'}`,
+    ),
   events: () => request<{ events: AdminEvent[] }>('GET', '/v1/admin/events'),
   createEvent: (input: EventInput) => request<AdminEvent>('POST', '/v1/admin/events', input),
   updateEvent: (id: string, patch: EventUpdate) =>

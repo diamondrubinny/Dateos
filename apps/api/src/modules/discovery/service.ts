@@ -31,7 +31,13 @@ import { audit } from '../../lib/audit.js';
 import { HttpError } from '../../plugins/error-handler.js';
 import { photoUrl } from '../me/service.js';
 import type { CityIndex } from '../places/cities.js';
-import { notOnBreak, notSeparated, queryCandidates, type CandidateRow } from './visibility.js';
+import {
+  notContactHidden,
+  notOnBreak,
+  notSeparated,
+  queryCandidates,
+  type CandidateRow,
+} from './visibility.js';
 
 const {
   profiles,
@@ -252,7 +258,7 @@ export class DiscoveryService {
           AND (
             -- Someone who liked me, unless they're taking a break; a match always stays visible.
             (EXISTS (SELECT 1 FROM interactions i WHERE i.actor_id = ${targetId} AND i.target_id = ${viewerId} AND i.kind = 'like')
-             AND ${notOnBreak('u')})
+             AND ${notOnBreak('u')} AND ${notContactHidden(sql`${viewerId}`, sql`${targetId}`)})
             OR EXISTS (SELECT 1 FROM matches m WHERE m.unmatched_at IS NULL
                        AND ((m.user_a = ${viewerId} AND m.user_b = ${targetId}) OR (m.user_a = ${targetId} AND m.user_b = ${viewerId})))
           )
@@ -403,6 +409,7 @@ export class DiscoveryService {
       WHERE i.target_id = ${viewerId} AND i.kind = 'like'
         AND NOT EXISTS (SELECT 1 FROM interactions mine WHERE mine.actor_id = ${viewerId} AND mine.target_id = i.actor_id)
         AND ${notSeparated(sql`${viewerId}`, sql`i.actor_id`)}
+        AND ${notContactHidden(sql`${viewerId}`, sql`i.actor_id`)}
       ORDER BY i.created_at DESC
       LIMIT 100`);
     const profilesById = new Map(

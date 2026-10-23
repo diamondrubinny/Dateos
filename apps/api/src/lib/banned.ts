@@ -3,27 +3,18 @@
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 import { createHmac } from 'node:crypto';
 import { schema, type Database } from '@nexaheart/db';
+import { normalizeEmail } from '@nexaheart/shared';
 import { eq } from 'drizzle-orm';
 import { deriveKey } from './totp.js';
 
-/**
- * Normalises an address so trivial variants map to the same ban: case, surrounding spaces,
- * "+tag" suffixes, and dots in Gmail local parts.
- */
-export function normalizeEmail(email: string): string {
-  const [rawLocal = '', rawDomain = ''] = email.trim().toLowerCase().split('@');
-  let local = rawLocal.split('+')[0]!;
-  let domain = rawDomain;
-  if (domain === 'googlemail.com') domain = 'gmail.com';
-  if (domain === 'gmail.com') local = local.replaceAll('.', '');
-  return `${local}@${domain}`;
-}
+// One normalisation for bans, sign-up permissions and contact matching (shared with the app).
+export { normalizeEmail };
 
 export type EmailHasher = (email: string) => string;
 
 /** Keyed hash: the stored value cannot be reversed or matched against a list of addresses. */
-export function createEmailHasher(masterSecret: string): EmailHasher {
-  const key = deriveKey(masterSecret, 'banned-email');
+export function createEmailHasher(masterSecret: string, purpose = 'banned-email'): EmailHasher {
+  const key = deriveKey(masterSecret, purpose);
   return (email) => createHmac('sha256', key).update(normalizeEmail(email)).digest('hex');
 }
 

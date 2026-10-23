@@ -10,6 +10,7 @@ import {
   type InstanceInfo,
   type InstanceSettingsInput,
   type Locale,
+  type SignupMode,
 } from '@nexaheart/shared';
 import type { StoredObject } from '@nexaheart/storage';
 import { and, eq, sql } from 'drizzle-orm';
@@ -42,6 +43,8 @@ export interface AdminInstanceSettings {
   callsConfigured: boolean;
   callsEnabled: boolean;
   callMaxMinutes: number;
+  signupMode: SignupMode;
+  memberInvites: boolean;
 }
 
 export class InstanceService {
@@ -87,6 +90,7 @@ export class InstanceService {
         magicLink: true,
         google: Boolean(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET),
         apple: Boolean(env.APPLE_CLIENT_ID && env.APPLE_CLIENT_SECRET),
+        passkey: true,
       },
       sponsorUrl: row ? row.sponsorUrl : (env.SPONSOR_URL ?? null),
       legal: { termsVersion: env.TERMS_VERSION, privacyVersion: env.PRIVACY_VERSION },
@@ -99,6 +103,7 @@ export class InstanceService {
       contactEmail: row?.contactEmail ?? null,
       setupRequired: Boolean(noAdmin.rows[0]?.none),
       calls: liveKitConfigured(env) && Boolean(row?.callsEnabled),
+      signup: (row?.signupMode ?? 'open') as SignupMode,
       poweredBy: poweredBy(env),
     };
     this.cache = { value, at: Date.now() };
@@ -131,6 +136,17 @@ export class InstanceService {
       callsConfigured: liveKitConfigured(this.env),
       callsEnabled: row?.callsEnabled ?? false,
       callMaxMinutes: row?.callMaxMinutes ?? DEFAULT_CALL_MAX_MINUTES,
+      signupMode: (row?.signupMode ?? 'open') as SignupMode,
+      memberInvites: row?.memberInvites ?? false,
+    };
+  }
+
+  /** Read fresh (not cached): who may sign up is checked on every new account. */
+  async signupSettings(): Promise<{ mode: SignupMode; memberInvites: boolean }> {
+    const row = await this.row();
+    return {
+      mode: (row?.signupMode ?? 'open') as SignupMode,
+      memberInvites: row?.memberInvites ?? false,
     };
   }
 

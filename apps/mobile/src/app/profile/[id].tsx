@@ -14,6 +14,7 @@ import { MatchCelebration } from '../../components/MatchCelebration';
 import { ProfileCard } from '../../components/ProfileCard';
 import { RequireSession } from '../../components/RequireSession';
 import { Screen } from '../../components/Screen';
+import { useNoScreenCapture } from '../../lib/screen-capture';
 import { useBlock, useProfile, useUnmatch } from '../../lib/queries';
 import { radius, spacing, useColors } from '../../lib/theme';
 
@@ -21,6 +22,8 @@ type Confirm = 'block' | 'unmatch' | undefined;
 
 function ProfileScreen() {
   const { t } = useTranslation();
+  // Other people's photos and words: no screenshots on Android, no recording on iOS (phase 21).
+  useNoScreenCapture();
   const colors = useColors();
   const { id, matchId } = useLocalSearchParams<{ id: string; matchId?: string }>();
   const profile = useProfile(id);

@@ -2,6 +2,7 @@
 // Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 import { expoClient } from '@better-auth/expo/client';
+import { passkeyClient } from '@better-auth/passkey/client';
 import { magicLinkClient } from 'better-auth/client/plugins';
 import { createAuthClient } from 'better-auth/react';
 import * as SecureStore from 'expo-secure-store';
@@ -20,8 +21,9 @@ export const authClient = createAuthClient({
   fetchOptions: isWeb ? { credentials: 'include' } : {},
   plugins: [
     magicLinkClient(),
+    // Passkeys (phase 21) on the web; native apps need the community's domain set up first.
     ...(isWeb
-      ? []
+      ? [passkeyClient()]
       : [
           expoClient({
             scheme: APP_SCHEME,

@@ -57,6 +57,11 @@ export const envSchema = z.object({
 
   /** Public URL of this API, used in sign-in links. Must be https in production. */
   PUBLIC_API_URL: z.url().default('http://localhost:4000'),
+  /**
+   * Public URL of the web app (phase 21): links in emails, and the passkey origin and domain.
+   * Defaults to the first CORS origin.
+   */
+  PUBLIC_APP_URL: optionalString.pipe(z.url().optional()),
   /** WebSocket ping interval; each ping also re-checks the session (sign-out, suspension). */
   WS_HEARTBEAT_MS: z.coerce.number().int().min(100).max(120_000).default(30_000),
   /** Deep-link scheme of the native app (nexaheart://...). */
@@ -174,4 +179,9 @@ export function requireServiceEnv(env: Env) {
     s3AccessKeyId: env.S3_ACCESS_KEY_ID!,
     s3SecretAccessKey: env.S3_SECRET_ACCESS_KEY!,
   };
+}
+
+/** The web app's public URL (no trailing slash): PUBLIC_APP_URL, else the first CORS origin. */
+export function appUrl(env: Env): string {
+  return (env.PUBLIC_APP_URL ?? env.CORS_ORIGINS[0] ?? 'http://localhost:8081').replace(/\/+$/, '');
 }

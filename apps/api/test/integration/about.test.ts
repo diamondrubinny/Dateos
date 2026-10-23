@@ -182,6 +182,7 @@ describe.skipIf(!integrationEnabled)('about me and dealbreakers (integration)', 
     expect(await discoverIds(ctx, noa)).toContain(dan.id);
   });
 
+  // Runs the real worker (ffmpeg), which takes a few seconds on a busy machine.
   it('voice prompt: up to 30 s, played only to people who can see the profile, replaced and deleted', async () => {
     const worker: JobContext = {
       db: ctx.services.dbHandle.db,
@@ -242,7 +243,7 @@ describe.skipIf(!integrationEnabled)('about me and dealbreakers (integration)', 
       second,
     ]);
     expect(left.rowCount).toBe(0);
-  });
+  }, 20_000);
 
   it('needs preferences before dealbreakers', async () => {
     const noa = await woman();

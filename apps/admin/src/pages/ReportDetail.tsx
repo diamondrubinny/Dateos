@@ -110,7 +110,11 @@ export function ReportDetail({ id, staff }: { id: string; staff: StaffMe }) {
           </p>
           <p className="muted">
             {t.detail.reporter}:{' '}
-            <bdi>{report.reporter.displayName ?? t.detail.deletedReporter}</bdi>
+            {report.automatic ? (
+              t.detail.automaticReporter
+            ) : (
+              <bdi>{report.reporter.displayName ?? t.detail.deletedReporter}</bdi>
+            )}
           </p>
 
           <h2>{t.detail.evidence}</h2>

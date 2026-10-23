@@ -3,15 +3,17 @@
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 import { createHash } from 'node:crypto';
 import { expo } from '@better-auth/expo';
+import { passkey } from '@better-auth/passkey';
 import { schema, type Database } from '@nexaheart/db';
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { eq } from 'drizzle-orm';
 import { magicLink } from 'better-auth/plugins/magic-link';
 import type { Redis } from 'ioredis';
-import type { Env } from '../config/env.js';
+import { appUrl, type Env } from '../config/env.js';
 import { createEmailHasher, isBanned } from '../lib/banned.js';
 import { magicLinkEmail, type Mailer } from '../lib/mailer.js';
+import type { TrustService } from '../modules/trust/service.js';
 
 export const AUTH_BASE_PATH = '/v1/auth';
 /** Header the API sets from Fastify's verified client IP; client-supplied values are dropped. */
@@ -47,9 +49,14 @@ export interface AuthDeps {
   redis: Redis;
   mailer: Mailer;
   onMailError: (error: unknown) => void;
+  /** Who may open a new account (phase 21); without it, sign-up is open. */
+  signup?: Pick<
+    TrustService,
+    'mayCreateAccount' | 'consumeAllowance' | 'signInBlockedFor' | 'sendSignupClosed'
+  >;
 }
 
-export function createAuth({ env, secret, db, redis, mailer, onMailError }: AuthDeps) {
+export function createAuth({ env, secret, db, redis, mailer, onMailError, signup }: AuthDeps) {
   const touchLastSeen = async (userId: string): Promise<void> => {
     await db
       .update(schema.user)
@@ -80,6 +87,7 @@ export function createAuth({ env, secret, db, redis, mailer, onMailError }: Auth
         account: schema.account,
         verification: schema.verification,
         rateLimit: schema.rateLimit,
+        passkey: schema.passkey,
       },
     }),
     trustedOrigins: [...env.CORS_ORIGINS, `${env.APP_SCHEME}://`],
@@ -96,7 +104,15 @@ export function createAuth({ env, secret, db, redis, mailer, onMailError }: Auth
         create: {
           // Banned addresses cannot open a new account (with any sign-in method). The client
           // only sees a generic sign-in failure.
-          before: async (data) => ((await isBanned(db, hashEmail, data.email)) ? false : undefined),
+          // In invite or waitlist mode, only an address with a current permission (phase 21).
+          before: async (data) =>
+            (await isBanned(db, hashEmail, data.email)) ||
+            (signup && !(await signup.mayCreateAccount(data.email)))
+              ? false
+              : undefined,
+          after: async (data) => {
+            await signup?.consumeAllowance(data.email);
+          },
         },
       },
       // Sign-in activity for the optional inactivity rule. Sessions refresh at most daily (updateAge),
@@ -123,6 +139,8 @@ export function createAuth({ env, secret, db, redis, mailer, onMailError }: Auth
       customRules: {
         '/sign-in/magic-link': { window: 600, max: 5 },
         '/magic-link/verify': { window: 600, max: 20 },
+        '/passkey/verify-authentication': { window: 600, max: 20 },
+        '/passkey/generate-authenticate-options': { window: 600, max: 40 },
       },
     },
     advanced: {
@@ -139,10 +157,19 @@ export function createAuth({ env, secret, db, redis, mailer, onMailError }: Auth
           // learn whether an address is registered or currently throttled.
           const ip = ctx?.request?.headers.get(CLIENT_IP_HEADER) ?? 'unknown';
           if (!(await allowEmail(redis, email, ip))) return;
+          // A new address that may not join yet gets "how to join" instead of a link that fails.
+          const blocked = await signup?.signInBlockedFor(email);
+          if (blocked) return signup!.sendSignupClosed(email, blocked);
           mailer.send({ to: email, ...magicLinkEmail(env.INSTANCE_NAME, url) }).catch(onMailError);
         },
       }),
       expo(),
+      // Passkeys (phase 21): the web app's domain is the relying party; public keys only are kept.
+      passkey({
+        rpID: new URL(appUrl(env)).hostname,
+        rpName: env.INSTANCE_NAME,
+        origin: [...new Set([appUrl(env), ...env.CORS_ORIGINS])],
+      }),
     ],
   });
 }

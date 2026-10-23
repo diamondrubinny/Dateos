@@ -15,6 +15,7 @@ import { Loading } from '../../components/Loading';
 import { RemoteImage } from '../../components/RemoteImage';
 import { RequireSession } from '../../components/RequireSession';
 import { VideoSurface } from '../../components/VideoSurface';
+import { useNoScreenCapture } from '../../lib/screen-capture';
 import { ApiRequestError } from '../../lib/api';
 import { newCallKeyPair, toBase64Url } from '../../lib/call-crypto';
 import { encryptionSupported } from '../../lib/call-encryption';
@@ -35,6 +36,8 @@ export const CALL_NOTICE_KEY = 'nexaheart.callNotice';
 
 function CallScreen() {
   const { t } = useTranslation();
+  // Other people's photos and words: no screenshots on Android, no recording on iOS (phase 21).
+  useNoScreenCapture();
   const colors = useColors();
   const client = useQueryClient();
   const realtime = useRealtime();

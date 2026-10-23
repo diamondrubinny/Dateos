@@ -138,7 +138,7 @@ export async function setupIntegration(options: SetupOptions = {}): Promise<Test
 
 export async function resetState(ctx: TestContext): Promise<void> {
   await ctx.services.dbHandle.pool.query(
-    'TRUNCATE "user", verification, rate_limit, audit_logs, banned_emails, instance_settings, venues, events RESTART IDENTITY CASCADE',
+    'TRUNCATE "user", verification, rate_limit, audit_logs, banned_emails, banned_photo_hashes, instance_settings, venues, events RESTART IDENTITY CASCADE',
   );
   const { storage } = ctx.services;
   for (const bucket of Object.values(storage.buckets)) {

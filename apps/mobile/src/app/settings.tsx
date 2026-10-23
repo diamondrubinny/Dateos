@@ -33,6 +33,7 @@ import { radius, spacing, useColors } from '../lib/theme';
 import { PoweredBy } from '../components/PoweredBy';
 import { TakeABreak } from '../components/TakeABreak';
 import { TravelMode } from '../components/TravelMode';
+import { SecuritySettings } from '../components/SecuritySettings';
 
 function SettingsContent() {
   const { t } = useTranslation();
@@ -169,6 +170,8 @@ function SettingsContent() {
       />
       <TakeABreak />
       <TravelMode />
+
+      <SecuritySettings />
 
       <AppText variant="heading">{t('settings.privacy')}</AppText>
       <Checkbox

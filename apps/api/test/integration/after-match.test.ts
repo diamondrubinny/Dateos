@@ -209,9 +209,7 @@ describe.skipIf(!integrationEnabled)('after the match (integration)', () => {
     expect((await card(dan)).feedback.bothAgain).toBe(true);
 
     // Each person's export holds only their own answers.
-    const zip = unzipSync(
-      new Uint8Array((await api(ctx, noa, 'GET', '/v1/me/export')).rawPayload),
-    );
+    const zip = unzipSync(new Uint8Array((await api(ctx, noa, 'GET', '/v1/me/export')).rawPayload));
     const data = JSON.parse(strFromU8(zip['data.json']!));
     expect(data.dateIdeas[0]).toMatchObject({ youSaidYouMet: true, youWouldMeetAgain: 'yes' });
     expect(JSON.stringify(data.dateIdeas)).not.toContain('unsure');
