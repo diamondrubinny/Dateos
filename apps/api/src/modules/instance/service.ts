@@ -48,7 +48,7 @@ export interface AdminInstanceSettings {
 }
 
 export class InstanceService {
-  private cache: { value: InstanceInfo; at: number } | undefined;
+  private cache: { value: Omit<InstanceInfo, 'integrations'>; at: number } | undefined;
 
   constructor(
     private readonly db: Database,
@@ -71,7 +71,7 @@ export class InstanceService {
   }
 
   /** Public branding. Database values override the environment defaults. */
-  async info(): Promise<InstanceInfo> {
+  async info(): Promise<Omit<InstanceInfo, 'integrations'>> {
     if (this.cache && Date.now() - this.cache.at < CACHE_MS) return this.cache.value;
     const row = await this.row();
     const env = this.env;
@@ -80,7 +80,7 @@ export class InstanceService {
       sql`SELECT NOT EXISTS (SELECT 1 FROM "user" WHERE role = 'admin')
                  AND NOT EXISTS (SELECT 1 FROM instance_claim) AS none`,
     );
-    const value: InstanceInfo = {
+    const value: Omit<InstanceInfo, 'integrations'> = {
       name: row?.name ?? env.INSTANCE_NAME,
       tagline: row?.tagline ?? env.INSTANCE_TAGLINE,
       primaryColor,

@@ -16,6 +16,8 @@ import type { EmailHasher } from '../../lib/banned.js';
 import { HttpError } from '../../plugins/error-handler.js';
 import type { AuthUser } from '../../auth/session.js';
 import type { DiscoveryService } from '../discovery/service.js';
+import type { AppEvents } from '../../lib/app-events.js';
+import { noEvents } from '../../lib/app-events.js';
 
 const {
   reports,
@@ -43,6 +45,9 @@ export class ModerationService {
     private readonly hashEmail: EmailHasher,
     private readonly today: () => string,
   ) {}
+
+  /** Integrations listen here (phase 24). */
+  appEvents: AppEvents = noEvents;
 
   queue(status: 'open' | 'closed'): Promise<ReportSummary[]> {
     return status === 'open'
@@ -268,6 +273,7 @@ export class ModerationService {
       });
     });
     if (removesAccess) await this.discovery.closeAllMatches(report.reportedId);
+    this.appEvents.emit({ type: 'report.resolved', reportId });
   }
 
   /** Admins only. Lifts a moderation suspension or ban (never an age-related suspension). */

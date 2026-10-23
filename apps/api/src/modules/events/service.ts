@@ -20,6 +20,8 @@ import {
 import { and, asc, desc, eq, gt, inArray, or, sql } from 'drizzle-orm';
 import { audit } from '../../lib/audit.js';
 import { HttpError } from '../../plugins/error-handler.js';
+import type { AppEvents } from '../../lib/app-events.js';
+import { noEvents } from '../../lib/app-events.js';
 
 const { events, eventRsvps, venues, profiles } = schema;
 
@@ -110,6 +112,9 @@ export class EventService {
     private readonly now: () => number = Date.now,
     private readonly options: EventOptions = {},
   ) {}
+
+  /** Integrations listen here (phase 24). */
+  appEvents: AppEvents = noEvents;
 
   private query(viewerId: string | null) {
     const count = (status: 'going' | 'waiting') =>
@@ -351,6 +356,7 @@ export class EventService {
       targetType: 'event',
       targetId: row!.id,
     });
+    this.appEvents.emit({ type: 'event.created', eventId: row!.id });
     return this.staffView(row!.id);
   }
 

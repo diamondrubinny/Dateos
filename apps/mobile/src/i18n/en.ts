@@ -358,6 +358,12 @@ export const en = {
       'NexaHeart is free, open-source software created by Diamond Rubinny (AGPL-3.0 license).',
   },
   cookies: {
+    captcha:
+      'Bot protection by {{provider}} on the sign-in, waitlist and friends’ pages: your IP address and browser signals go to it, to tell people from bots.',
+    analytics:
+      'Analytics by {{provider}}, only if you allowed it in Settings: which kinds of pages are visited (never names, ids or messages).',
+    pushOnly:
+      'If you turn on notifications in the phone app, a device token goes to Expo and Apple or Google to deliver them, without names or message text.',
     title: 'Privacy & cookies',
     summary: 'No tracking, no ads, no analytics cookies. Only what the app needs to work.',
     intro:
@@ -1239,6 +1245,10 @@ export const en = {
     safety:
       'Rounds are end-to-end encrypted and never recorded. Your camera starts off. You can leave or report at any moment.',
     leaveLobby: 'Leave the lobby',
+  },
+  captcha: {
+    label: 'Check that you’re not a bot',
+    needed: 'Please complete the check that you’re not a bot first.',
   },
 };
 

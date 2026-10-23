@@ -27,7 +27,8 @@
     "trust": "tsx trust.ts",
     "load": "node --env-file=../.env --import tsx load.ts",
     "friends": "tsx friends.ts",
-    "live-events": "tsx live-events.ts"
+    "live-events": "tsx live-events.ts",
+    "integrations": "tsx integrations.ts"
   },
   "dependencies": {
     "@axe-core/playwright": "4.14.0",

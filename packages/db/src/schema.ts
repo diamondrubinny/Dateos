@@ -1242,3 +1242,41 @@ export const speedDates = pgTable(
     check('speed_dates_order', sql`${t.userA} COLLATE "C" < ${t.userB}`),
   ],
 );
+
+// ---------------------------------------------------------------------------
+// Integrations (phase 24)
+// ---------------------------------------------------------------------------
+
+/**
+ * Outside services connected from the dashboard. Secrets are AES-256-GCM encrypted with
+ * INTEGRATIONS_KEY, which is not in the database; they are never sent back to a browser.
+ */
+export const integrations = pgTable('integrations', {
+  id: varchar('id', { length: 20 }).primaryKey(),
+  enabled: boolean('enabled').notNull().default(false),
+  settings: jsonb('settings')
+    .$type<Record<string, string | number | boolean>>()
+    .notNull()
+    .default({}),
+  /** Secret name → "iv.tag.ciphertext" (base64url). */
+  secrets: jsonb('secrets').$type<Record<string, string>>().notNull().default({}),
+  lastTestOk: boolean('last_test_ok'),
+  lastTestMessage: varchar('last_test_message', { length: 300 }),
+  lastTestAt: timestamp('last_test_at', { withTimezone: true }),
+  updatedBy: text('updated_by').references(() => user.id, { onDelete: 'set null' }),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+/** Webhook deliveries: the event type and the outcome only (no payloads). Kept 30 days. */
+export const webhookDeliveries = pgTable(
+  'webhook_deliveries',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    event: varchar('event', { length: 40 }).notNull(),
+    status: smallint('status'),
+    ok: boolean('ok').notNull(),
+    attempt: smallint('attempt').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index('webhook_deliveries_created_idx').on(t.createdAt)],
+);

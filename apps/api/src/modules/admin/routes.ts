@@ -21,6 +21,12 @@ import {
   venueInputSchema,
   venueUpdateSchema,
   adminCheckInSchema,
+  integrationIds,
+  integrationsResponseSchema,
+  integrationTestSchema,
+  integrationUpdateSchema,
+  integrationViewSchema,
+  webhookDeliveriesSchema,
   adminEventSchema,
   eventInputSchema,
   eventUpdateSchema,
@@ -44,6 +50,7 @@ import type { VerificationService } from '../safety/verification.js';
 import type { VenueService } from '../dates/venues.js';
 import type { EventService } from '../events/service.js';
 import type { TrustService } from '../trust/service.js';
+import type { IntegrationService } from '../integrations/service.js';
 import { isStaffRole, type StaffMfaService } from './mfa.js';
 import type { ModerationService } from './moderation.js';
 
@@ -69,9 +76,22 @@ export const adminRoutes: FastifyPluginAsyncZod<{
   venues: VenueService;
   events: EventService;
   trust: TrustService;
+  integrations: IntegrationService;
 }> = async (
   app,
-  { auth, mfa, moderation, verification, photos, instance, storage, venues, events, trust },
+  {
+    auth,
+    mfa,
+    moderation,
+    verification,
+    photos,
+    instance,
+    storage,
+    venues,
+    events,
+    trust,
+    integrations,
+  },
 ) => {
   await app.register(multipart, {
     limits: { fileSize: MAX_PHOTO_BYTES, files: 1, fields: 0, parts: 1 },
@@ -406,6 +426,65 @@ export const adminRoutes: FastifyPluginAsyncZod<{
     async (request) => {
       adminOnly(currentUser(request).role);
       return events.checkInFor(request.params.id);
+    },
+  );
+
+  // Integrations (phase 24): admins only. Secrets go in, never come out.
+  const integrationParams = z.object({ id: z.enum(integrationIds) });
+  app.get(
+    '/v1/admin/integrations',
+    { schema: { response: { 200: integrationsResponseSchema } } },
+    async (request) => {
+      adminOnly(currentUser(request).role);
+      return integrations.list();
+    },
+  );
+  app.put(
+    '/v1/admin/integrations/:id',
+    {
+      config: perUserLimit(60, 60 * 60 * 1000),
+      schema: {
+        params: integrationParams,
+        body: integrationUpdateSchema,
+        response: { 200: integrationViewSchema },
+      },
+    },
+    async (request) => {
+      const staff = currentUser(request);
+      adminOnly(staff.role);
+      return integrations.save(staff.id, request.params.id, request.body);
+    },
+  );
+  app.post(
+    '/v1/admin/integrations/:id/test',
+    {
+      config: perUserLimit(30, 60 * 60 * 1000),
+      schema: { params: integrationParams, response: { 200: integrationTestSchema } },
+    },
+    async (request) => {
+      const staff = currentUser(request);
+      adminOnly(staff.role);
+      return integrations.test(staff.id, request.params.id);
+    },
+  );
+  app.delete(
+    '/v1/admin/integrations/:id',
+    {
+      config: perUserLimit(60, 60 * 60 * 1000),
+      schema: { params: integrationParams, response: { 200: integrationViewSchema } },
+    },
+    async (request) => {
+      const staff = currentUser(request);
+      adminOnly(staff.role);
+      return integrations.remove(staff.id, request.params.id);
+    },
+  );
+  app.get(
+    '/v1/admin/webhooks/deliveries',
+    { schema: { response: { 200: webhookDeliveriesSchema } } },
+    async (request) => {
+      adminOnly(currentUser(request).role);
+      return integrations.deliveries();
     },
   );
 };

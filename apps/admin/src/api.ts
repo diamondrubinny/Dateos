@@ -3,6 +3,9 @@
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 import type {
   AdminCheckIn,
+  IntegrationId,
+  IntegrationUpdate,
+  IntegrationView,
   AdminEvent,
   EventInput,
   EventUpdate,
@@ -127,6 +130,28 @@ export const api = {
     request<AdminEvent>('PATCH', `/v1/admin/events/${encodeURIComponent(id)}`, patch),
   cancelEvent: (id: string) =>
     request<AdminEvent>('POST', `/v1/admin/events/${encodeURIComponent(id)}/cancel`),
+  integrations: () =>
+    request<{ integrations: IntegrationView[]; editable: boolean }>(
+      'GET',
+      '/v1/admin/integrations',
+    ),
+  saveIntegration: (id: IntegrationId, update: IntegrationUpdate) =>
+    request<IntegrationView>('PUT', `/v1/admin/integrations/${id}`, update),
+  testIntegration: (id: IntegrationId) =>
+    request<{ ok: boolean; message: string }>('POST', `/v1/admin/integrations/${id}/test`),
+  removeIntegration: (id: IntegrationId) =>
+    request<IntegrationView>('DELETE', `/v1/admin/integrations/${id}`),
+  webhookDeliveries: () =>
+    request<{
+      deliveries: {
+        id: string;
+        event: string;
+        status: number | null;
+        ok: boolean;
+        attempt: number;
+        at: string;
+      }[];
+    }>('GET', '/v1/admin/webhooks/deliveries'),
   checkIn: (id: string) =>
     request<AdminCheckIn>('GET', `/v1/admin/events/${encodeURIComponent(id)}/check-in`),
   createVenue: (input: Omit<VenueInput, 'active'>) =>

@@ -25,6 +25,8 @@ import { signupClosedEmail, waitlistApprovedEmail, type Mailer } from '../../lib
 import type { AuthUser } from '../../auth/session.js';
 import { HttpError } from '../../plugins/error-handler.js';
 import type { InstanceService } from '../instance/service.js';
+import type { AppEvents } from '../../lib/app-events.js';
+import { noEvents } from '../../lib/app-events.js';
 
 const { contactHides, inviteCodes, signupAllowances, waitlist, user, profiles } = schema;
 const DAY = 86_400_000;
@@ -55,6 +57,9 @@ export class TrustService {
     private readonly onMailError: (error: unknown) => void = () => undefined,
     private readonly now: () => number = Date.now,
   ) {}
+
+  /** Integrations listen here (phase 24). */
+  appEvents: AppEvents = noEvents;
 
   // -------------------------------------------------------------- hide me from my contacts
 
@@ -189,10 +194,12 @@ export class TrustService {
       .from(user)
       .where(eq(user.email, address));
     if (member) return;
-    await this.db
+    const added = await this.db
       .insert(waitlist)
       .values({ email: address, emailHash: this.hashEmail(email), note: note || null })
-      .onConflictDoNothing();
+      .onConflictDoNothing()
+      .returning({ id: waitlist.id });
+    if (added.length > 0) this.appEvents.emit({ type: 'waitlist.joined' });
   }
 
   // -------------------------------------------------------------- invite codes

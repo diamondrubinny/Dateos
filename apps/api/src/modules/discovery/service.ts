@@ -43,6 +43,8 @@ import {
   queryCandidates,
   type CandidateRow,
 } from './visibility.js';
+import type { AppEvents } from '../../lib/app-events.js';
+import { noEvents } from '../../lib/app-events.js';
 
 const {
   profiles,
@@ -79,6 +81,9 @@ export class DiscoveryService {
     /** Names of the cities travellers visit (phase 18c). */
     private readonly cities?: CityIndex,
   ) {}
+
+  /** Integrations listen here (phase 24). */
+  appEvents: AppEvents = noEvents;
 
   private closedListeners: ((matchId: string) => Promise<void>)[] = [];
 
@@ -251,6 +256,7 @@ export class DiscoveryService {
     });
     this.notify([a, b], { type: 'match.new', matchId });
     for (const id of [a, b]) this.onMatch?.(id, matchId).catch(() => undefined);
+    this.appEvents.emit({ type: 'match.created', matchId });
     return matchId;
   }
 
@@ -481,6 +487,7 @@ export class DiscoveryService {
     if (result.matchId) {
       this.notify([input.targetId], { type: 'match.new', matchId: result.matchId });
       this.onMatch?.(input.targetId, result.matchId).catch(() => undefined);
+      this.appEvents.emit({ type: 'match.created', matchId: result.matchId });
     }
     return result;
   }

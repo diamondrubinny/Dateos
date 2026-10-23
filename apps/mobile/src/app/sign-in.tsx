@@ -9,6 +9,7 @@ import { z } from 'zod';
 import { AppText } from '../components/AppText';
 import { Banner } from '../components/Banner';
 import { Button } from '../components/Button';
+import { Captcha } from '../components/Captcha';
 import { PoweredBy } from '../components/PoweredBy';
 import { Screen } from '../components/Screen';
 import { TextField } from '../components/TextField';
@@ -32,6 +33,11 @@ export default function SignIn() {
   const [sending, setSending] = useState(false);
   const [passkeyBusy, setPasskeyBusy] = useState(false);
   const [passkeyFailed, setPasskeyFailed] = useState(false);
+  // Bot protection (phase 24): only when the community set one up.
+  const needsCaptcha = Boolean(instance.data?.integrations.captcha);
+  const [captcha, setCaptcha] = useState<string | null>(null);
+  const [captchaRound, setCaptchaRound] = useState(0);
+  const [captchaError, setCaptchaError] = useState(false);
 
   const submit = async () => {
     const value = email.trim();
@@ -39,6 +45,8 @@ export default function SignIn() {
     setFieldError(undefined);
     setCodeError(undefined);
     setFailed(false);
+    setCaptchaError(false);
+    if (needsCaptcha && !captcha) return setCaptchaError(true);
     setSending(true);
     try {
       // Invite mode (phase 21): a code entered here lets this address open an account first.
@@ -52,7 +60,13 @@ export default function SignIn() {
           throw e;
         }
       }
-      const ok = await requestMagicLink(value).catch(() => false);
+      const ok = await requestMagicLink(value, captcha).catch(() => false);
+      if (ok === 'captcha') {
+        // Answers are single use: ask again.
+        setCaptcha(null);
+        setCaptchaRound((n) => n + 1);
+        return setCaptchaError(true);
+      }
       if (!ok) return setFailed(true);
       router.push({ pathname: '/check-email', params: { email: value } });
     } catch {
@@ -119,6 +133,13 @@ export default function SignIn() {
             label={t('signup.joinWaitlist')}
             onPress={() => router.push('/waitlist')}
           />
+        </View>
+      ) : null}
+
+      {needsCaptcha ? (
+        <View style={styles.box}>
+          <Captcha onToken={setCaptcha} resetKey={captchaRound} />
+          {captchaError ? <Banner tone="error" message={t('captcha.needed')} /> : null}
         </View>
       ) : null}
 

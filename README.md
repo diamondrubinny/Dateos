@@ -74,6 +74,7 @@ NexaHeart is in active development. Here is what works today and what comes next
 | Trust and safety: copied-photo detection (perceptual hash), banned photos can't come back, "hide me from my contacts" (hashed on the device), passkeys, invite codes and a waitlist, screenshot protection in the native app      | ✅ Available |
 | Friends: friends' takes (written without an account, shown only after you approve), double dates with a friend (shown only when all four can see each other) and a separate friends mode                                          | ✅ Available |
 | Live events: video speed dating (paired by everyone's own settings, a match only on a mutual yes), check-in at the venue with a rotating QR code and an opt-in badge, and a matchmaker that suggests settings you choose to apply | ✅ Available |
+| Integrations in the dashboard: email, sign-in, CAPTCHA, AI, video, push, error monitoring, consent-gated analytics, team alerts and signed webhooks, with encrypted write-only secrets and a test button                          | ✅ Available |
 
 ## Screenshots
 

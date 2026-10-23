@@ -5,6 +5,7 @@ import { accountNoticeSchema } from './moderation.js';
 import { aboutSchema, dealbreakersSchema } from './about.js';
 import { pauseStateSchema } from './visibility.js';
 import { z } from 'zod';
+import { publicIntegrationsSchema } from './integrations.js';
 import { signupModes } from './trust.js';
 
 export const MIN_AGE = 18;
@@ -231,6 +232,8 @@ export const instanceSchema = z.object({
   calls: z.boolean(),
   /** Who may open a new account (phase 21): open, with an invite code, or through a waitlist. */
   signup: z.enum(signupModes),
+  /** What clients need from the integrations (phase 24): never a secret. */
+  integrations: publicIntegrationsSchema,
   /** The software credit every interface shows (license term, see NOTICE). */
   poweredBy: z.object({
     name: z.literal('NexaHeart'),

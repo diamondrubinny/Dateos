@@ -85,7 +85,7 @@ export const coachRoutes: FastifyPluginAsyncZod<{ auth: Auth; db: Database; ai: 
       if (!profile) throw new HttpError(409, ErrorCode.Conflict, 'Create your profile first.');
       // Only the person's own bio and prompt answers are used: no name, age, gender or photos.
       return {
-        ideas: await bioIdeas(ai.model!, {
+        ideas: await bioIdeas((await ai.modelFor(userId))!, {
           locale: request.body.locale,
           bio: profile.bio,
           prompts: answers,

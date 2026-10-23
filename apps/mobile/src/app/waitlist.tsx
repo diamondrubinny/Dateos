@@ -7,8 +7,11 @@ import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 import { Banner } from '../components/Banner';
 import { Button } from '../components/Button';
+import { Captcha } from '../components/Captcha';
 import { Screen } from '../components/Screen';
 import { TextField } from '../components/TextField';
+import { ApiRequestError } from '../lib/api';
+import { useInstance } from '../lib/queries';
 import { joinWaitlist } from '../lib/trust-queries';
 
 const emailSchema = z.email();
@@ -21,16 +24,26 @@ export default function Waitlist() {
   const [error, setError] = useState<string>();
   const [sending, setSending] = useState(false);
   const [done, setDone] = useState(false);
+  const needsCaptcha = Boolean(useInstance().data?.integrations.captcha);
+  const [captcha, setCaptcha] = useState<string | null>(null);
+  const [captchaRound, setCaptchaRound] = useState(0);
 
   const submit = async () => {
     const value = email.trim();
     if (!emailSchema.safeParse(value).success) return setError(t('signIn.invalidEmail'));
     setError(undefined);
+    if (needsCaptcha && !captcha) return setError(t('captcha.needed'));
     setSending(true);
     try {
-      await joinWaitlist({ email: value, ...(note.trim() ? { note: note.trim() } : {}) });
+      await joinWaitlist({ email: value, ...(note.trim() ? { note: note.trim() } : {}) }, captcha);
       setDone(true);
-    } catch {
+    } catch (e) {
+      if (e instanceof ApiRequestError && e.status === 403) {
+        setCaptcha(null);
+        setCaptchaRound((n) => n + 1);
+        setError(t('captcha.needed'));
+        return;
+      }
       setError(t('common.genericError'));
     } finally {
       setSending(false);
@@ -76,6 +89,7 @@ export default function Waitlist() {
             maxLength={WAITLIST_NOTE_MAX}
             multiline
           />
+          <Captcha onToken={setCaptcha} resetKey={captchaRound} />
         </>
       )}
     </Screen>

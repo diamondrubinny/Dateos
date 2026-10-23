@@ -20,6 +20,8 @@ export const ErrorCode = {
   ServiceUnavailable: 'SERVICE_UNAVAILABLE',
   /** Focus mode (phase 20): reply to the people waiting before liking new ones. */
   YourTurn: 'YOUR_TURN',
+  /** Phase 24: this form needs the CAPTCHA (bot protection) answered first. */
+  CaptchaRequired: 'CAPTCHA_REQUIRED',
   Internal: 'INTERNAL_ERROR',
 } as const;
 

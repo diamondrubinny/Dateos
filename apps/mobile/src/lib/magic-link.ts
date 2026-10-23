@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
+import { captchaHeaders } from './captcha';
 import * as Crypto from 'expo-crypto';
 import * as Linking from 'expo-linking';
 import { Platform } from 'react-native';
@@ -27,8 +28,17 @@ async function callbackUrl(): Promise<string> {
   return Linking.createURL('/auth/callback', { queryParams: { challenge } });
 }
 
-export async function requestMagicLink(email: string): Promise<boolean> {
-  const { error } = await authClient.signIn.magicLink({ email, callbackURL: await callbackUrl() });
+/** False when it failed; 'captcha' when the bot check is needed (again). */
+export async function requestMagicLink(
+  email: string,
+  captchaToken?: string | null,
+): Promise<boolean | 'captcha'> {
+  const { error } = await authClient.signIn.magicLink({
+    email,
+    callbackURL: await callbackUrl(),
+    fetchOptions: { headers: captchaHeaders(captchaToken) },
+  });
+  if (error?.status === 403) return 'captcha';
   return !error;
 }
 

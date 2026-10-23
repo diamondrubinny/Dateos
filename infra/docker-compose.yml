@@ -175,6 +175,8 @@ services:
       DOMAIN: ${DOMAIN:-localhost}
       # Video dates: the LiveKit address (rtc.example.org). The default never requests a certificate.
       RTC_DOMAIN: ${RTC_DOMAIN:-rtc.localhost}
+      # Integrations (phase 24): hosts the web app may load a CAPTCHA or analytics from.
+      CSP_EXTRA_HOSTS: ${CSP_EXTRA_HOSTS:-}
     ports:
       - '80:80'
       - '443:443'

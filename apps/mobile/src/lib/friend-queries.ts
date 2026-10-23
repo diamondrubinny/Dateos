@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
+import { captchaHeaders } from './captcha';
 import type {
   DoubleChat,
   DoubleMessage,
@@ -117,8 +118,12 @@ export const useRemoveTake = () =>
 /** Public (no account): the friend's side of a take link. */
 export const takeLinkInfo = (token: string) =>
   apiFetch<{ name: string }>(`/v1/takes/${encodeURIComponent(token)}`);
-export const writeTake = (token: string, input: WriteTakeInput) =>
-  apiFetch(`/v1/takes/${encodeURIComponent(token)}`, { method: 'POST', body: json(input) });
+export const writeTake = (token: string, input: WriteTakeInput, captchaToken?: string | null) =>
+  apiFetch(`/v1/takes/${encodeURIComponent(token)}`, {
+    method: 'POST',
+    body: json(input),
+    headers: captchaHeaders(captchaToken),
+  });
 
 // ---------------------------------------------------------------- pairs and double dates
 

@@ -17,6 +17,7 @@
   "dependencies": {
     "@nexaheart/ai": "workspace:*",
     "@nexaheart/db": "workspace:*",
+    "@nexaheart/integrations": "workspace:*",
     "@nexaheart/shared": "workspace:*",
     "@nexaheart/storage": "workspace:*",
     "bullmq": "6.3.19",

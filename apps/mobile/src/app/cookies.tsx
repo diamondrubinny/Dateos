@@ -9,6 +9,16 @@ import { Screen } from '../components/Screen';
 import { storageInventory, type StorageItem } from '../lib/storage-inventory';
 import { radius, spacing, useColors } from '../lib/theme';
 import { PoweredBy } from '../components/PoweredBy';
+import { useInstance } from '../lib/queries';
+
+/** Brand names stay as they are in every language. */
+const PROVIDER_NAMES: Record<string, string> = {
+  turnstile: 'Cloudflare Turnstile',
+  hcaptcha: 'hCaptcha',
+  plausible: 'Plausible',
+  umami: 'Umami',
+  matomo: 'Matomo',
+};
 
 function Item({ item }: { item: StorageItem }) {
   const { t } = useTranslation();
@@ -29,6 +39,10 @@ function Item({ item }: { item: StorageItem }) {
 
 export default function CookiesPage() {
   const { t } = useTranslation();
+  // Phase 24: what the community set up decides which outside services are listed.
+  const integrations = useInstance().data?.integrations;
+  const captcha = integrations?.captcha ?? null;
+  const analytics = integrations?.analytics ?? null;
   const section = (platform: StorageItem['platform']) => (
     <View style={styles.section}>
       {storageInventory
@@ -47,7 +61,23 @@ export default function CookiesPage() {
       <AppText variant="heading">{t('cookies.native')}</AppText>
       {section('native')}
       <AppText variant="heading">{t('cookies.thirdPartyTitle')}</AppText>
-      <AppText variant="body">{t('cookies.thirdParty')}</AppText>
+      {captcha || analytics ? (
+        <>
+          {captcha ? (
+            <AppText variant="body">
+              {t('cookies.captcha', { provider: PROVIDER_NAMES[captcha.provider] })}
+            </AppText>
+          ) : null}
+          {analytics ? (
+            <AppText variant="body">
+              {t('cookies.analytics', { provider: PROVIDER_NAMES[analytics.provider] })}
+            </AppText>
+          ) : null}
+          <AppText variant="body">{t('cookies.pushOnly')}</AppText>
+        </>
+      ) : (
+        <AppText variant="body">{t('cookies.thirdParty')}</AppText>
+      )}
       <AppText variant="body">{t('cookies.control')}</AppText>
       <PoweredBy />
     </Screen>

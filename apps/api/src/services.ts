@@ -8,17 +8,23 @@ import { createAuth, type Auth } from './auth/auth.js';
 import { appUrl, requireServiceEnv, type Env } from './config/env.js';
 import type { Dependency } from './lib/dependencies.js';
 import { createMailer, type Mailer } from './lib/mailer.js';
+import { IntegrationStore, parseIntegrationsKey } from '@nexaheart/integrations';
+import { IntegrationService } from './modules/integrations/service.js';
+import { forwardToIntegrations } from './modules/integrations/forward.js';
+import { AppEvents } from './lib/app-events.js';
 import {
   createMediaQueue,
   createNotifyQueue,
+  createOutboundQueue,
   createProfileQueue,
   type MediaQueue,
   type NotifyQueue,
+  type OutboundQueue,
   type ProfileQueue,
 } from './lib/queue.js';
 import { AudioService } from './modules/chat/audio.js';
 import { llmIcebreakers, templateIcebreakers, type TextModel } from '@nexaheart/ai';
-import { AiGate, createTextModel } from './lib/ai-gate.js';
+import { AiGate } from './lib/ai-gate.js';
 import { createRealtime, type Realtime } from './lib/realtime.js';
 import { ChatService } from './modules/chat/service.js';
 import { DiscoveryService } from './modules/discovery/service.js';
@@ -41,7 +47,7 @@ import { CallService } from './modules/calls/service.js';
 import { PairService } from './modules/friends/pairs.js';
 import { TakeService } from './modules/friends/takes.js';
 import { TrustService } from './modules/trust/service.js';
-import { createLiveKitMedia, type CallMedia } from './lib/livekit.js';
+import type { CallMedia } from './lib/livekit.js';
 
 export interface Services {
   dbHandle: DbHandle;
@@ -75,6 +81,8 @@ export interface Services {
   calls: CallService;
   speed: SpeedService;
   ai: AiGate;
+  integrations: IntegrationService;
+  outboundQueue: OutboundQueue;
   /** Health checks and shutdown hooks for the resources above. */
   dependencies: Dependency[];
 }
@@ -91,6 +99,12 @@ export interface ServiceOverrides {
   now?: () => number;
   /** Media server for calls (tests use a fake; null = calls unavailable). */
   callMedia?: CallMedia | null;
+  /** Integrations (phase 24): what counts as "set by the server", the key, and the network. */
+  integrationsEnv?: Record<string, string | undefined>;
+  integrationsKey?: Buffer | null;
+  outboundQueue?: OutboundQueue;
+  fetch?: typeof fetch;
+  resolve?: (host: string) => Promise<string[]>;
 }
 
 export function createServices(
@@ -109,7 +123,29 @@ export function createServices(
     quarantineBucket: env.S3_BUCKET_QUARANTINE,
     mediaBucket: env.S3_BUCKET_MEDIA,
   });
-  const mailer = overrides.mailer ?? createMailer(env);
+  const integrationStore = new IntegrationStore(
+    dbHandle.db,
+    overrides.integrationsKey !== undefined
+      ? overrides.integrationsKey
+      : parseIntegrationsKey(env.INTEGRATIONS_KEY),
+    overrides.integrationsEnv ?? process.env,
+  );
+  const outboundQueue = overrides.outboundQueue ?? createOutboundQueue(env.REDIS_URL);
+  const integrations = new IntegrationService(
+    dbHandle.db,
+    integrationStore,
+    {
+      env,
+      outbound: outboundQueue,
+      storage,
+      ...(overrides.fetch ? { fetch: overrides.fetch } : {}),
+      ...(overrides.resolve ? { resolve: overrides.resolve } : {}),
+      ...(overrides.textModel !== undefined ? { textModel: overrides.textModel } : {}),
+      ...(overrides.callMedia !== undefined ? { callMedia: overrides.callMedia } : {}),
+    },
+    overrides.now,
+  );
+  const mailer = overrides.mailer ?? createMailer(env, () => integrations.dashboardMail());
   const mediaQueue = overrides.mediaQueue ?? createMediaQueue(env.REDIS_URL);
   const profileQueue = overrides.profileQueue ?? createProfileQueue(env.REDIS_URL);
   const today = overrides.today ?? todayUtc;
@@ -127,10 +163,7 @@ export function createServices(
   const photos = new PhotoService(dbHandle.db, storage, mediaQueue, (viewer, owner) =>
     discovery.canView(viewer, owner),
   );
-  const ai = new AiGate(
-    dbHandle.db,
-    overrides.textModel !== undefined ? overrides.textModel : createTextModel(env),
-  );
+  const ai = new AiGate(dbHandle.db, () => integrations.aiModel());
   const icebreakers = async (a: string, b: string) => {
     const model = await ai.modelFor(a, b);
     return model ? llmIcebreakers(model) : templateIcebreakers;
@@ -183,8 +216,7 @@ export function createServices(
     overrides.now,
   );
 
-  const callMedia =
-    overrides.callMedia !== undefined ? overrides.callMedia : createLiveKitMedia(env);
+  const callMedia = () => integrations.media();
   const calls = new CallService(
     dbHandle.db,
     chat,
@@ -208,7 +240,7 @@ export function createServices(
   );
   discovery.onSeparation((a, b) => (b ? speed.closeForBlock(a, b) : speed.closeForUser(a)));
 
-  return {
+  const services: Services = {
     dbHandle,
     redis,
     auth,
@@ -227,6 +259,8 @@ export function createServices(
     dates: new DateService(dbHandle.db, chat, venues, overrides.now),
     calls,
     speed,
+    integrations,
+    outboundQueue,
     cities,
     travel: new TravelService(dbHandle.db, cities),
     events: new EventService(
@@ -280,7 +314,23 @@ export function createServices(
       { name: 'realtime', isHealthy: async () => true, close: () => realtime.close() },
       { name: 'profile-queue', isHealthy: async () => true, close: () => profileQueue.close() },
       { name: 'notify-queue', isHealthy: async () => true, close: () => notifyQueue.close() },
+      { name: 'outbound-queue', isHealthy: async () => true, close: () => outboundQueue.close() },
       { name: 'mailer', isHealthy: async () => true, close: async () => mailer.close() },
     ],
   };
+
+  // Integrations (phase 24): what happened, turned into webhooks and team alerts.
+  const appEvents = new AppEvents();
+  for (const service of [
+    services.reports,
+    services.moderation,
+    services.trust,
+    services.me,
+    services.discovery,
+    services.events,
+  ]) {
+    service.appEvents = appEvents;
+  }
+  appEvents.on((event) => forwardToIntegrations(event, integrations, dbHandle.db));
+  return services;
 }

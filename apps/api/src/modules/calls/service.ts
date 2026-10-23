@@ -51,7 +51,8 @@ export class CallService {
     private readonly db: Database,
     private readonly chat: ChatService,
     private readonly realtime: Pick<Realtime, 'publish'>,
-    private readonly media: CallMedia | null,
+    /** The video server now (it can be changed in the dashboard, phase 24). */
+    private readonly mediaSource: () => Promise<CallMedia | null>,
     private readonly settings: () => Promise<CallSettings>,
     /** Content-free push to the person being called. */
     private readonly ring: (userId: string, matchId: string) => Promise<void>,
@@ -60,7 +61,7 @@ export class CallService {
 
   /** Configured (LiveKit) and turned on by the community's admins. */
   async enabled(): Promise<CallSettings | null> {
-    if (!this.media) return null;
+    if (!(await this.mediaSource())) return null;
     const settings = await this.settings();
     return settings.enabled ? settings : null;
   }
@@ -84,7 +85,8 @@ export class CallService {
 
   async start(matchId: string, callerId: string, input: StartCallInput): Promise<CallView> {
     const settings = await this.enabled();
-    if (!settings || !this.media) throw unavailable();
+    const media = await this.mediaSource();
+    if (!settings || !media) throw unavailable();
     const { otherId } = await this.chat.participant(matchId, callerId);
     if (!(await this.chat.mediaUnlocked(matchId, callerId, otherId))) {
       throw new HttpError(
@@ -99,7 +101,7 @@ export class CallService {
     await this.checkLimits(matchId, callerId, otherId);
 
     const room = randomBytes(16).toString('hex');
-    await this.media.createRoom(room);
+    await media.createRoom(room);
     let call: CallRow;
     let messageId: string;
     try {
@@ -129,7 +131,7 @@ export class CallService {
         return { call: created!, messageId: message!.id };
       }));
     } catch (error) {
-      await this.media.deleteRoom(room).catch(() => undefined);
+      await media.deleteRoom(room).catch(() => undefined);
       if (isUniqueViolation(error)) {
         throw new HttpError(409, ErrorCode.Conflict, 'There is already a call in this chat.');
       }
@@ -224,7 +226,8 @@ export class CallService {
   }
 
   async join(callId: string, userId: string, publicKey: string): Promise<CallJoin> {
-    if (!this.media) throw unavailable();
+    const media = await this.mediaSource();
+    if (!media) throw unavailable();
     let call = await this.load(callId, userId);
     if (!OPEN.includes(call.status) || this.expired(call)) {
       throw new HttpError(409, ErrorCode.Conflict, 'This call has ended.');
@@ -236,14 +239,14 @@ export class CallService {
         throw new HttpError(409, ErrorCode.Conflict, 'This call has ended.');
       }
     }
-    const token = await this.media.joinToken({
+    const token = await media.joinToken({
       room: call.room,
       role,
       video: call.video,
       ttlSeconds: CALL_TOKEN_SECONDS,
       publicKey,
     });
-    return { url: this.media.url, token, room: call.room, call: callView(call, userId) };
+    return { url: media.url, token, room: call.room, call: callView(call, userId) };
   }
 
   /** Only the person being called can decline. */
@@ -300,8 +303,9 @@ export class CallService {
 
   /** Signed events from LiveKit keep the state right when an app crashes or loses the network. */
   async webhook(body: string, authorization: string | undefined): Promise<boolean> {
-    if (!this.media) return false;
-    const event = await this.media.receiveWebhook(body, authorization);
+    const media = await this.mediaSource();
+    if (!media) return false;
+    const event = await media.receiveWebhook(body, authorization);
     if (!event) return false;
     const [call] = await this.db
       .select()
@@ -336,7 +340,9 @@ export class CallService {
       .where(and(eq(calls.id, call.id), inArray(calls.status, from)))
       .returning();
     if (!updated) return null;
-    if (status !== 'active') await this.media?.deleteRoom(call.room).catch(() => undefined);
+    if (status !== 'active') {
+      await (await this.mediaSource())?.deleteRoom(call.room).catch(() => undefined);
+    }
     const [message] = await this.db
       .select({ id: messages.id })
       .from(messages)

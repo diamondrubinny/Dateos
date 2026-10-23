@@ -81,6 +81,10 @@ What the evals found and what changed because of them:
 
 ## Choosing a provider
 
+Since phase 24 an admin can also choose it in the dashboard (**Integrations → AI model**), as long
+as `ICEBREAKERS_PROVIDER` isn't set in `.env` (the server's setting wins). A model on your own
+network needs `INTEGRATIONS_ALLOW_PRIVATE=true`.
+
 | Setting                                                                        | Privacy                                                                                                 | Quality                                       | Cost                                                      |
 | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------- | --------------------------------------------- | --------------------------------------------------------- |
 | `template`                                                                     | Nothing leaves the server, no model                                                                     | Fixed phrases                                 | Free                                                      |

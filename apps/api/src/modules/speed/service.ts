@@ -73,7 +73,7 @@ export class SpeedService {
   constructor(
     private readonly db: Database,
     private readonly discovery: DiscoveryService,
-    private readonly media: CallMedia | null,
+    private readonly mediaSource: () => Promise<CallMedia | null>,
     /** Whether video calls are on in this community. */
     private readonly videoOn: () => Promise<boolean>,
     private readonly today: () => string,
@@ -118,7 +118,7 @@ export class SpeedService {
     ) {
       throw conflict('The lobby is open only around the event.');
     }
-    if (!this.media || !(await this.videoOn())) {
+    if (!(await this.mediaSource()) || !(await this.videoOn())) {
       throw new HttpError(503, ErrorCode.ServiceUnavailable, 'Video isn’t available right now.');
     }
     const at = new Date(now);
@@ -200,7 +200,8 @@ export class SpeedService {
    * moment later.
    */
   private async tick(event: EventRow): Promise<void> {
-    if (!this.live(event) || !this.media) return;
+    const media = await this.mediaSource();
+    if (!this.live(event) || !media) return;
     if (!(await this.plan(event))) return;
     const created = await this.db.transaction(async (tx) => {
       const [{ locked }] = (
@@ -273,7 +274,7 @@ export class SpeedService {
       await tx.insert(speedDates).values(rows).onConflictDoNothing();
       return rows.map((r) => r.room);
     });
-    for (const room of created) await this.media.createRoom(room).catch(() => undefined);
+    for (const room of created) await media.createRoom(room).catch(() => undefined);
   }
 
   // -------------------------------------------------------------- one date
@@ -297,10 +298,11 @@ export class SpeedService {
   async join(id: string, userId: string, publicKey: string): Promise<SpeedJoin> {
     const d = await this.loadDate(id, userId);
     if (!this.isLive(d)) throw conflict('This round is over.');
-    if (!this.media || !(await this.videoOn())) {
+    const media = await this.mediaSource();
+    if (!media || !(await this.videoOn())) {
       throw new HttpError(503, ErrorCode.ServiceUnavailable, 'Video isn’t available right now.');
     }
-    const token = await this.media.joinToken({
+    const token = await media.joinToken({
       room: d.room,
       // LiveKit only ever knows the role, never who the person is.
       role: d.userA === userId ? 'caller' : 'callee',
@@ -308,7 +310,7 @@ export class SpeedService {
       ttlSeconds: CALL_TOKEN_SECONDS,
       publicKey,
     });
-    return { url: this.media.url, token, room: d.room, date: await this.view(d, userId) };
+    return { url: media.url, token, room: d.room, date: await this.view(d, userId) };
   }
 
   /** Leaving early ends the round for both. */
@@ -319,7 +321,7 @@ export class SpeedService {
         .update(speedDates)
         .set({ endedEarlyBy: userId })
         .where(and(eq(speedDates.id, id), isNull(speedDates.endedEarlyBy)));
-      await this.media?.deleteRoom(d.room).catch(() => undefined);
+      await (await this.mediaSource())?.deleteRoom(d.room).catch(() => undefined);
     }
     return this.view(await this.loadDate(id, userId), userId);
   }
@@ -365,7 +367,8 @@ export class SpeedService {
         ),
       )
       .returning({ room: speedDates.room });
-    for (const { room } of ended) await this.media?.deleteRoom(room).catch(() => undefined);
+    const media = await this.mediaSource();
+    for (const { room } of ended) await media?.deleteRoom(room).catch(() => undefined);
   }
 
   /** An account that lost access (suspended, deleted) leaves every lobby and live round. */
@@ -382,7 +385,8 @@ export class SpeedService {
         ),
       )
       .returning({ room: speedDates.room });
-    for (const { room } of ended) await this.media?.deleteRoom(room).catch(() => undefined);
+    const media = await this.mediaSource();
+    for (const { room } of ended) await media?.deleteRoom(room).catch(() => undefined);
   }
 
   // -------------------------------------------------------------- views

@@ -76,6 +76,8 @@ AUTH_SECRET="$(secret 64)"
 SETUP_TOKEN="$(secret 32)"
 LIVEKIT_API_KEY="API$(secret 12)"
 LIVEKIT_API_SECRET="$(secret 48)"
+# Encrypts secrets saved in the dashboard's Integrations page (phase 24).
+INTEGRATIONS_KEY="$(openssl rand -hex 32)"
 
 umask 077
 # Write to a temp file first so a failed run never leaves a half-configured .env behind.
@@ -92,6 +94,7 @@ sed \
   -e "s|^SETUP_TOKEN=.*|SETUP_TOKEN=${SETUP_TOKEN}|" \
   -e "s|^LIVEKIT_API_KEY=.*|LIVEKIT_API_KEY=${LIVEKIT_API_KEY}|" \
   -e "s|^LIVEKIT_API_SECRET=.*|LIVEKIT_API_SECRET=${LIVEKIT_API_SECRET}|" \
+  -e "s|^INTEGRATIONS_KEY=.*|INTEGRATIONS_KEY=${INTEGRATIONS_KEY}|" \
   .env.example > "$TMP_ENV"
 
 if [[ -n "$DOMAIN" ]]; then
