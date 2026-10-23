@@ -121,6 +121,7 @@ describe.skipIf(!integrationEnabled)('voice messages & push (integration)', () =
     expect((await api(ctx, dan, 'GET', '/v1/me/settings')).json()).toEqual({
       acceptVoice: true,
       acceptCalls: true,
+      allowTranscripts: true,
       pushDevices: 0,
     });
   });

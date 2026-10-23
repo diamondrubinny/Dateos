@@ -39,6 +39,8 @@ export interface TestContext {
     push: PushJob[];
     webhooks: WebhookJob[];
     alerts: AlertJob[];
+    /** Clips queued for a transcript (phase 26). */
+    transcripts: string[];
   };
   today: { value: string };
   /** Clock used for TOTP checks; advance it by 30 s to get a fresh code. */
@@ -85,6 +87,8 @@ export interface SetupOptions {
   /** What the server's environment sets (default: nothing, so every integration is editable). */
   integrationsEnv?: Record<string, string | undefined>;
   integrationsKey?: Buffer | null;
+  /** Voice transcripts (phase 26): on by default, as `TRANSCRIPTS=local`. */
+  transcripts?: boolean;
 }
 
 /** A fixed key for the tests' encrypted integration secrets. */
@@ -105,6 +109,7 @@ export async function setupIntegration(options: SetupOptions = {}): Promise<Test
     WS_HEARTBEAT_MS: '200',
     // The SSRF guard is under test: never inherit a developer's local opt-out.
     INTEGRATIONS_ALLOW_PRIVATE: 'false',
+    TRANSCRIPTS: options.transcripts === false ? 'off' : 'local',
     CORS_ORIGINS: 'http://localhost:8081',
     PUBLIC_API_URL: 'http://localhost:4000',
     S3_ENDPOINT: process.env.S3_ENDPOINT ?? 'http://localhost:8333',
@@ -124,6 +129,7 @@ export async function setupIntegration(options: SetupOptions = {}): Promise<Test
     push: [],
     webhooks: [],
     alerts: [],
+    transcripts: [],
   };
   const profileQueue: ProfileQueue = {
     embedProfile: async (userId) => void jobs.embed.push(userId),
@@ -160,6 +166,13 @@ export async function setupIntegration(options: SetupOptions = {}): Promise<Test
       integrationsEnv: options.integrationsEnv ?? {},
       integrationsKey:
         options.integrationsKey !== undefined ? options.integrationsKey : TEST_INTEGRATIONS_KEY,
+      transcribeQueue:
+        options.transcripts === false
+          ? null
+          : {
+              transcribe: async (audioId) => void jobs.transcripts.push(audioId),
+              close: async () => undefined,
+            },
       outboundQueue: {
         webhook: async (job) => void jobs.webhooks.push(job),
         alert: async (job) => void jobs.alerts.push(job),
@@ -194,6 +207,7 @@ export async function resetState(ctx: TestContext): Promise<void> {
   ctx.services.integrations.store.invalidate();
   ctx.jobs.webhooks.length = 0;
   ctx.jobs.alerts.length = 0;
+  ctx.jobs.transcripts.length = 0;
   ctx.mail.length = 0;
   ctx.jobs.process.length = 0;
   ctx.jobs.delete.length = 0;

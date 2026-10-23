@@ -18,7 +18,7 @@ import { RequireSession } from '../components/RequireSession';
 import { Screen } from '../components/Screen';
 import { authClient } from '../lib/auth-client';
 import { useSetAcceptCalls } from '../lib/call-queries';
-import { useChatSettings, useSetAcceptVoice } from '../lib/chat-queries';
+import { useChatSettings, useSetAcceptVoice, useSetAllowTranscripts } from '../lib/chat-queries';
 import { useLocale } from '../lib/locale';
 import { disablePush, enablePush, pushEnabledOnThisDevice } from '../lib/push';
 import {
@@ -48,6 +48,7 @@ function SettingsContent() {
   const [locationRemoved, setLocationRemoved] = useState(false);
   const chatSettings = useChatSettings();
   const setAcceptVoice = useSetAcceptVoice();
+  const setAllowTranscripts = useSetAllowTranscripts();
   const setAcceptCalls = useSetAcceptCalls();
   const setIncognito = useSetIncognito();
   const setMetBadge = useSetMetBadge();
@@ -155,6 +156,16 @@ function SettingsContent() {
           setAcceptVoice.mutate(v, { onError: () => setError(t('common.genericError')) })
         }
       />
+      {instance.data?.transcripts ? (
+        <Checkbox
+          label={t('transcript.allowLabel')}
+          hint={t('transcript.allowHint')}
+          checked={chatSettings.data?.allowTranscripts ?? true}
+          onChange={(v) =>
+            setAllowTranscripts.mutate(v, { onError: () => setError(t('common.genericError')) })
+          }
+        />
+      ) : null}
       {instance.data?.calls ? (
         <Checkbox
           label={t('call.acceptLabel')}

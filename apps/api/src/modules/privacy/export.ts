@@ -312,6 +312,8 @@ export async function exportMemberData(
       status: c.status,
       recordedAt: iso(c.createdAt),
       file,
+      // Phase 26: the automatic text of your clip, if someone asked for it.
+      transcript: c.transcriptStatus === 'done' ? c.transcript : null,
     });
   }
 
@@ -347,6 +349,7 @@ export async function exportMemberData(
           intentions: preferences.intentions,
           acceptVoice: preferences.acceptVoice,
           acceptCalls: preferences.acceptCalls,
+          allowTranscripts: preferences.allowTranscripts,
           showMetInPersonBadge: preferences.showMetBadge,
           showCheckedInAtEventBadge: preferences.showEventBadge,
           friendsMode: {

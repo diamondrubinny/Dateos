@@ -16,7 +16,9 @@ import {
   messagesQuerySchema,
   messageViewSchema,
   sendMessageSchema,
+  transcriptSchema,
   voicePromptQuerySchema,
+  voiceUploadQuerySchema,
 } from '@nexaheart/shared';
 import { checkHarm } from '@nexaheart/ai';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
@@ -116,7 +118,11 @@ export const chatRoutes: FastifyPluginAsyncZod<ChatRouteOptions> = async (
   app.post(
     '/v1/matches/:id/voice',
     {
-      schema: { params: matchParams, response: { 200: messageViewSchema } },
+      schema: {
+        params: matchParams,
+        querystring: voiceUploadQuerySchema,
+        response: { 200: messageViewSchema },
+      },
       config: perUserLimit(30, 60 * 60_000),
     },
     async (request) => {
@@ -130,7 +136,7 @@ export const chatRoutes: FastifyPluginAsyncZod<ChatRouteOptions> = async (
           'Voice messages can be up to 60 seconds.',
         );
       }
-      return chat.sendVoice(request.params.id, currentUser(request).id, buffer);
+      return chat.sendVoice(request.params.id, currentUser(request).id, buffer, request.query.lang);
     },
   );
 
@@ -152,7 +158,12 @@ export const chatRoutes: FastifyPluginAsyncZod<ChatRouteOptions> = async (
       if (buffer.length > MAX_AUDIO_BYTES) {
         throw new HttpError(413, ErrorCode.PayloadTooLarge, 'The recording is too large.');
       }
-      return audio.setVoicePrompt(currentUser(request).id, request.query.promptKey, buffer);
+      return audio.setVoicePrompt(
+        currentUser(request).id,
+        request.query.promptKey,
+        buffer,
+        request.query.lang,
+      );
     },
   );
 
@@ -176,6 +187,27 @@ export const chatRoutes: FastifyPluginAsyncZod<ChatRouteOptions> = async (
         .type(format === 'opus' ? 'audio/webm' : 'audio/mp4')
         .header('cache-control', 'private, max-age=300')
         .send(object.body);
+    },
+  );
+
+  // Voice transcripts (phase 26): for whoever may play the clip; made on this server.
+  app.get(
+    '/v1/audio/:id/transcript',
+    { schema: { params: matchParams, response: { 200: transcriptSchema } } },
+    async (request) => {
+      if (!audio) throw new HttpError(404, ErrorCode.NotFound, 'Resource not found.');
+      return audio.transcript(currentUser(request).id, request.params.id, false);
+    },
+  );
+  app.post(
+    '/v1/audio/:id/transcript',
+    {
+      schema: { params: matchParams, response: { 200: transcriptSchema } },
+      config: perUserLimit(120, 60 * 60_000),
+    },
+    async (request) => {
+      if (!audio) throw new HttpError(404, ErrorCode.NotFound, 'Resource not found.');
+      return audio.transcript(currentUser(request).id, request.params.id, true);
     },
   );
 

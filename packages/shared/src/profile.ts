@@ -7,6 +7,7 @@ import { pauseStateSchema } from './visibility.js';
 import { z } from 'zod';
 import { publicIntegrationsSchema } from './integrations.js';
 import { signupModes } from './trust.js';
+import { localeSchema } from './common.js';
 
 export const MIN_AGE = 18;
 export const MAX_AGE = 100;
@@ -38,7 +39,11 @@ export const promptKeySchema = z.enum(promptKeys);
 
 /** Voice prompt (phase 19): one spoken answer to a prompt, at most this long. */
 export const MAX_VOICE_PROMPT_SECONDS = 30;
-export const voicePromptQuerySchema = z.object({ promptKey: promptKeySchema });
+export const voicePromptQuerySchema = z.object({
+  promptKey: promptKeySchema,
+  /** The app's language, for transcripts (phase 26). */
+  lang: localeSchema.optional(),
+});
 /** As others see it: only once the clip is clean. */
 export const voicePromptSchema = z.object({
   promptKey: promptKeySchema,
@@ -234,6 +239,8 @@ export const instanceSchema = z.object({
   setupRequired: z.boolean(),
   /** Video dates are configured (LiveKit) and turned on by the community's admins. */
   calls: z.boolean(),
+  /** Voice messages can be shown as text (phase 26), made on this community's server. */
+  transcripts: z.boolean(),
   /** Who may open a new account (phase 21): open, with an invite code, or through a waitlist. */
   signup: z.enum(signupModes),
   /** What clients need from the integrations (phase 24): never a secret. */

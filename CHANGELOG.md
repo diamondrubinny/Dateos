@@ -6,6 +6,10 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Added
 
+- **Voice transcripts**: "Show text" under every voice message and voice prompt, made by an open
+  speech model (Whisper) in the worker on your own server, only when someone who may play the clip
+  asks. Automatic for members who shared "deaf or hard of hearing"; a speaker can choose "voice
+  only". `TRANSCRIPTS=off` turns it off.
 - **Easy mode and display settings**: larger text, higher contrast, reduced motion, and an easy
   mode with three tabs, bigger buttons, fewer menus and a plain explanation under Like and Pass.
   Offered on the welcome page; kept on the device only.

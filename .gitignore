@@ -8,6 +8,8 @@ coverage/
 !.env.example
 .DS_Store
 infra/data/
+# Voice transcripts: the local speech model (phase 26)
+.cache/
 
 # Instance backups (personal data)
 backups/

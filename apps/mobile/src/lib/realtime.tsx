@@ -99,7 +99,12 @@ export function RealtimeProvider({ enabled, children }: { enabled: boolean; chil
               ) => WebSocket
             )(url, undefined, { headers: await authHeaders() });
       socketRef.current = socket;
-      socket.onopen = () => (attempt = 0);
+      socket.onopen = () => {
+        attempt = 0;
+        // Events sent while we were (re)connecting are lost: catch up on the chats once connected.
+        void client.invalidateQueries({ queryKey: ['messages'] });
+        void client.invalidateQueries({ queryKey: chatKeys.conversations });
+      };
       socket.onmessage = (message) => {
         try {
           handle(JSON.parse(String(message.data)) as RealtimeEvent);

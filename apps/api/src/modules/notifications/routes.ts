@@ -16,7 +16,7 @@ import { currentUser, requireUser } from '../../auth/session.js';
 import { HttpError } from '../../plugins/error-handler.js';
 import { perUserLimit } from '../../plugins/security.js';
 
-const { preferences, pushTokens } = schema;
+const { audioClips, preferences, pushTokens } = schema;
 const ok = z.object({ ok: z.literal(true) });
 
 /** Per-person chat settings and opt-in push notification devices. */
@@ -32,7 +32,11 @@ export const notificationRoutes: FastifyPluginAsyncZod<{ auth: Auth; db: Databas
     async (request) => {
       const userId = currentUser(request).id;
       const [prefs] = await db
-        .select({ acceptVoice: preferences.acceptVoice, acceptCalls: preferences.acceptCalls })
+        .select({
+          acceptVoice: preferences.acceptVoice,
+          acceptCalls: preferences.acceptCalls,
+          allowTranscripts: preferences.allowTranscripts,
+        })
         .from(preferences)
         .where(eq(preferences.userId, userId));
       const devices = await db
@@ -42,6 +46,7 @@ export const notificationRoutes: FastifyPluginAsyncZod<{ auth: Auth; db: Databas
       return {
         acceptVoice: prefs?.acceptVoice ?? true,
         acceptCalls: prefs?.acceptCalls ?? true,
+        allowTranscripts: prefs?.allowTranscripts ?? true,
         pushDevices: devices.length,
       };
     },
@@ -60,11 +65,21 @@ export const notificationRoutes: FastifyPluginAsyncZod<{ auth: Auth; db: Databas
           ...(request.body.acceptCalls !== undefined
             ? { acceptCalls: request.body.acceptCalls }
             : {}),
+          ...(request.body.allowTranscripts !== undefined
+            ? { allowTranscripts: request.body.allowTranscripts }
+            : {}),
         })
         .where(eq(preferences.userId, currentUser(request).id))
         .returning({ userId: preferences.userId });
       if (updated.length === 0)
         throw new HttpError(409, ErrorCode.Conflict, 'Finish setting up your profile first.');
+      // "Voice only" (phase 26): texts already made from my voice are deleted too.
+      if (request.body.allowTranscripts === false) {
+        await db
+          .update(audioClips)
+          .set({ transcript: null, transcriptStatus: null })
+          .where(eq(audioClips.userId, currentUser(request).id));
+      }
       return { ok: true as const };
     },
   );

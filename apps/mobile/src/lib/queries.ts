@@ -29,6 +29,7 @@ import type {
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Platform } from 'react-native';
 import { apiFetch, json } from './api';
+import { recordingLang } from './chat-queries';
 
 export const keys = { me: ['me'] as const, instance: ['instance'] as const };
 
@@ -147,10 +148,13 @@ export const useSetVoicePrompt = () =>
     } else {
       form.append('file', { uri, name: 'voice.m4a', type: 'audio/mp4' } as unknown as Blob);
     }
-    return apiFetch(`/v1/me/voice-prompt?promptKey=${encodeURIComponent(promptKey)}`, {
-      method: 'POST',
-      body: form,
-    });
+    return apiFetch(
+      `/v1/me/voice-prompt?promptKey=${encodeURIComponent(promptKey)}${recordingLang('&')}`,
+      {
+        method: 'POST',
+        body: form,
+      },
+    );
   });
 export const useRemoveVoicePrompt = () =>
   useMeMutation(() => apiFetch('/v1/me/voice-prompt', { method: 'DELETE' }));

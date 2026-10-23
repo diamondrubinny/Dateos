@@ -16,5 +16,7 @@ auditConfig:
 # Patched versions for advisories in build-time tooling (phase 21). Both are used only while
 # generating migrations (drizzle-kit's loader) or an iOS project (Expo's config plugins).
 overrides:
+  # One sharp for the worker: Transformers.js only loads it for images, which we never give it.
+  '@huggingface/transformers>sharp': 0.35.5
   '@esbuild-kit/core-utils>esbuild': ^0.25.0
   'xcode>uuid': ^11.1.1

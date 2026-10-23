@@ -247,6 +247,8 @@ export const preferences = pgTable(
       .default(sql`'{}'::intention[]`),
     /** Receiver control: people can turn voice messages off (e.g. if they cannot hear them). */
     acceptVoice: boolean('accept_voice').notNull().default(true),
+    /** Phase 26: people I send voice to may read it as text (made on this server). */
+    allowTranscripts: boolean('allow_transcripts').notNull().default(true),
     /** Receiver control: people can turn video and voice calls off (phase 15). */
     acceptCalls: boolean('accept_calls').notNull().default(true),
     /** Dealbreakers (phase 19): empty means any; a missing answer always passes. */
@@ -511,6 +513,11 @@ export const audioClips = pgTable(
     opusKey: text('opus_key'),
     durationMs: integer('duration_ms'),
     rejectReason: varchar('reject_reason', { length: 32 }),
+    /** Phase 26: the app's language when it was recorded, for the speech model. */
+    lang: varchar('lang', { length: 5 }),
+    /** Phase 26: made only when someone who may play the clip asks; deleted with the clip. */
+    transcript: text('transcript'),
+    transcriptStatus: varchar('transcript_status', { length: 12 }),
     ...timestamps,
   },
   (t) => [index('audio_clips_user_idx').on(t.userId)],

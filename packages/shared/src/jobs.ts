@@ -52,6 +52,17 @@ export interface PushJob {
   matchId: string;
 }
 
+/** Voice transcripts (phase 26): one at a time, on the community's own server. */
+export const TRANSCRIBE_QUEUE = 'transcribe';
+
+export const TranscribeJob = {
+  Transcribe: 'transcribe',
+} as const;
+
+export interface TranscribeJobData {
+  audioId: string;
+}
+
 /** Integrations (phase 24): webhooks and team alerts, delivered by the worker with retries. */
 export const OUTBOUND_QUEUE = 'outbound';
 

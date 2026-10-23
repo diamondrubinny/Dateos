@@ -45,6 +45,12 @@ export const workerEnvSchema = z.object({
     .enum(['true', 'false'])
     .default('false')
     .transform((v) => v === 'true'),
+  /** Voice transcripts (phase 26): `local` runs an open speech model on this server; `off` hides them. */
+  TRANSCRIPTS: z.enum(['local', 'off']).default('local'),
+  /** A Whisper model in ONNX format; `onnx-community/whisper-small` is better for Hebrew and Arabic. */
+  TRANSCRIPTS_MODEL: z.string().min(1).default('onnx-community/whisper-base'),
+  /** Where the model is kept (downloaded once from Hugging Face, or copied there by hand). */
+  TRANSCRIPTS_CACHE: z.string().min(1).default('./.cache/models'),
   /** Months without sign-in before an account is warned and then deleted. 0 = never (default). ⚖️ */
   INACTIVE_ACCOUNT_DELETE_MONTHS: z.coerce.number().int().min(0).max(120).default(0),
   INSTANCE_NAME: z.string().max(40).default('NexaHeart'),

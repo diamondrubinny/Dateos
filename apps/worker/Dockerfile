@@ -12,14 +12,26 @@ COPY . .
 RUN pnpm install --frozen-lockfile \
   && pnpm turbo run build --filter=@nexaheart/worker... \
   && pnpm --filter=@nexaheart/worker deploy --prod --legacy /out
+# Voice transcripts (phase 26) run ONNX Runtime on the CPU in Node: drop its GPU libraries
+# (~340 MB), the builds for other systems, the browser runtime and the browser bundles.
+RUN for bin in $(find /out/node_modules -type d -path '*onnxruntime-node/bin/napi-v*' -prune); do \
+      for os in "$bin"/*; do [ "$(basename "$os")" = linux ] || rm -rf "$os"; done; \
+    done \
+  && find /out/node_modules -path '*onnxruntime-node/bin/*' \
+    \( -name '*providers_cuda*' -o -name '*providers_tensorrt*' \) -delete \
+  && find /out/node_modules -type d -name 'onnxruntime-web*' -prune -exec rm -rf {} + \
+  && find /out/node_modules -path '*@huggingface/transformers/dist/*' \
+    ! -name 'transformers.node.mjs' ! -name 'transformers.node.cjs' -type f -delete
 
 FROM node:22-trixie-slim AS runtime
-ENV NODE_ENV=production
+ENV NODE_ENV=production TRANSCRIPTS_CACHE=/models
 # ffmpeg re-encodes voice messages (Debian security updates keep it patched: rebuild regularly).
 RUN apt-get update \
   && apt-get install -y --no-install-recommends ffmpeg \
   && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
+# The speech model (phase 26) is downloaded here once; compose mounts a volume.
+RUN mkdir -p /models && chown node:node /models
 COPY --from=build --chown=node:node /out ./
 # The license and its additional terms (the "Powered by NexaHeart" credit) travel with the image.
 COPY --from=build /repo/LICENSE /repo/NOTICE ./

@@ -12,6 +12,7 @@ import { AppText } from './AppText';
 import { RemoteImage } from './RemoteImage';
 import { AboutSection } from './AboutSection';
 import { VoicePlayer } from './VoicePlayer';
+import { VoiceTranscript } from './VoiceTranscript';
 import { useMe } from '../lib/queries';
 
 export type LikeTarget = { itemType: 'photo' | 'prompt'; itemId: string; label: string };
@@ -255,6 +256,10 @@ export function ProfileCard({ profile, onLikeItem }: ProfileCardProps) {
               <VoicePlayer
                 path={`/v1/audio/${profile.voicePrompt.audioId}`}
                 durationMs={profile.voicePrompt.durationMs}
+                onPrimary={false}
+              />
+              <VoiceTranscript
+                path={`/v1/audio/${profile.voicePrompt.audioId}`}
                 onPrimary={false}
               />
             </View>

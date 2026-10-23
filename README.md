@@ -232,7 +232,7 @@ Found a vulnerability? Please report it privately; see [SECURITY.md](SECURITY.md
 NexaHeart targets **WCAG 2.1 AA** and the Israeli standard **IS 5568**. Every screen in the screenshot flow is scanned with
 [axe-core](https://github.com/dequelabs/axe-core) and currently reports **0 violations**. Every control has a screen-reader label
 and role, focus is visible for keyboard users, text scales up to 200%, and every swipe action has a button.
-An **easy mode** (three tabs, bigger buttons, fewer menus, plain explanations), larger text, higher contrast and reduced motion are offered from the welcome page and kept on the device only. Members can also share **accessibility needs** by choice: step-free places come first when planning a date, and captions start by themselves in calls; these are never used for ranking or filtering (`pnpm --dir e2e easy`).
+An **easy mode** (three tabs, bigger buttons, fewer menus, plain explanations), larger text, higher contrast and reduced motion are offered from the welcome page and kept on the device only. Voice messages and voice prompts have **Show text**, transcribed on the community's own server. Members can also share **accessibility needs** by choice: step-free places come first when planning a date, and captions start by themselves in calls; these are never used for ranking or filtering (`pnpm --dir e2e easy`).
 Further automated checks cover keyboard-only sign-in with visible focus, reflow at 320 px, 200% text, reduced motion and the document language and direction (`pnpm --dir e2e a11y`). Automated checks catch only part of the issues: manual testing with VoiceOver, TalkBack and keyboard is part of the [release checklist](docs/PRODUCTION_CHECKLIST.md).
 
 ## 💜 Sponsor NexaHeart
