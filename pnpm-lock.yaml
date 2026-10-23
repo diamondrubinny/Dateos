@@ -391,6 +391,9 @@ importers:
       fflate:
         specifier: 0.8.3
         version: 0.8.3
+      ioredis:
+        specifier: 6.0.0
+        version: 6.0.0
       livekit-server-sdk:
         specifier: 2.19.2
         version: 2.19.2
@@ -8043,7 +8046,9 @@ snapshots:
       metro-runtime: 0.87.1
     transitivePeerDependencies:
       - '@babel/core'
+      - bufferutil
       - supports-color
+      - utf-8-validate
 
   '@react-native/normalize-colors@0.74.89': {}
 

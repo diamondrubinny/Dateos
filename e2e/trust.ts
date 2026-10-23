@@ -25,6 +25,7 @@ import {
   locales,
   magicLink,
   reportA11y,
+  resetRouteLimits,
   shot,
   signInHttp,
   WEB,
@@ -305,11 +306,13 @@ async function run(browser: Browser, locale: L) {
     check(me === maya.id, 'signed in again with the passkey, no email needed');
 
     // 4. Hide me from my contacts.
-    const before = await dan.call<{ profiles: { id: string }[] }>('GET', '/v1/discover?limit=20');
-    check(
-      before.profiles.some((p) => p.id === maya.id),
-      'before: Dan can see her',
-    );
+    // The same visibility rule as Discover (a profile someone can't see is a 404).
+    const visible = (viewer: typeof dan, id: string) =>
+      viewer.call('GET', `/v1/profiles/${id}`).then(
+        () => true,
+        () => false,
+      );
+    check(await visible(dan, maya.id), 'before: Dan can see her');
     await C.page.goto(`${WEB}/hide-contacts`);
     await C.page
       .getByLabel(t.contacts.pasteLabel)
@@ -317,10 +320,8 @@ async function run(browser: Browser, locale: L) {
     await C.page.getByRole('button', { name: t.contacts.hide }).click();
     await C.page.getByText(t.contacts.done.replace('{{count}}', '1')).waitFor();
     await shot(C.page, `${locale}/77-hide-contacts`);
-    const after = await dan.call<{ profiles: { id: string }[] }>('GET', '/v1/discover?limit=20');
-    check(!after.profiles.some((p) => p.id === maya.id), 'after: Dan doesn’t see her (silently)');
-    const hers = await maya.call<{ profiles: { id: string }[] }>('GET', '/v1/discover?limit=20');
-    check(!hers.profiles.some((p) => p.id === dan.id), 'and she doesn’t see him');
+    check(!(await visible(dan, maya.id)), 'after: Dan doesn’t see her (silently)');
+    check(!(await visible(maya, dan.id)), 'and she doesn’t see him');
     const stored = await pool.query(
       `SELECT count(*)::int AS n FROM contact_hides WHERE user_id = $1`,
       [maya.id],
@@ -338,6 +339,7 @@ try {
   for (const locale of locales(['en', 'he', 'ar', 'ru'] as const)) {
     process.stdout.write(`${locale}:\n`);
     await pool.query('DELETE FROM rate_limit');
+    await resetRouteLimits();
     await run(browser, locale);
   }
 } finally {

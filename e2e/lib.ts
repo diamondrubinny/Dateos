@@ -173,3 +173,25 @@ export async function showcase(file: string, screens: string[]) {
   writeFileSync(join(OUT, `${file}.png`), out);
   process.stdout.write(`  ✓ ${file}.png\n`);
 }
+
+/**
+ * Clears the local API's per-IP route limits (Redis `nexaheart:rl:*`). Every e2e browser comes from
+ * one address, so a run over four languages reaches limits real people never share (for example 10
+ * invite redemptions an hour). Local development only.
+ */
+export async function resetRouteLimits(): Promise<void> {
+  const envFile = new URL('../.env', import.meta.url);
+  if (!process.env.REDIS_URL && existsSync(envFile)) process.loadEnvFile(envFile);
+  const { Redis } = await import('ioredis');
+  const redis = new Redis(process.env.REDIS_URL ?? '');
+  try {
+    let cursor = '0';
+    do {
+      const [next, keys] = await redis.scan(cursor, 'MATCH', 'nexaheart:rl:*', 'COUNT', 1000);
+      cursor = next;
+      if (keys.length > 0) await redis.del(...keys);
+    } while (cursor !== '0');
+  } finally {
+    redis.disconnect();
+  }
+}
