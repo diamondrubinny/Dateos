@@ -364,7 +364,7 @@ export async function exportMemberData(
           // Only your own private answers after the date.
           youSaidYouMet: mine ? proposerMet : receiverMet,
           youWouldMeetAgain: mine ? proposerAgain : receiverAgain,
-      startsAt: iso(d.startsAt),
+          startsAt: iso(d.startsAt),
           respondedAt: iso(d.respondedAt),
           createdAt: iso(d.createdAt),
         };
