@@ -90,6 +90,8 @@ export const publicProfileSchema = z.object({
   /** Interests, lifestyle and the opening question (phase 19); null until filled in. */
   about: aboutSchema.nullable(),
   voicePrompt: voicePromptSchema.nullable(),
+  /** Opt-in badge: met someone from this community in person, both confirmed (phase 20). */
+  metInPerson: z.boolean(),
   /** Travel mode (phase 18c): shown as "Visiting {city}" instead of a distance. */
   visiting: placeSchema.nullable(),
   /** A moderator compared a live selfie with the photos. */

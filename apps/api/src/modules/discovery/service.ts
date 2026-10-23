@@ -23,6 +23,7 @@ import {
   type RealtimeEvent,
   CLOSED_CARD_DAYS,
   type ClosedConversation,
+  YOUR_TURN_LIMIT,
 } from '@nexaheart/shared';
 import type { Realtime } from '../../lib/realtime.js';
 import { and, asc, desc, eq, gt, inArray, isNull, or, sql } from 'drizzle-orm';
@@ -283,6 +284,10 @@ export class DiscoveryService {
       throw new HttpError(403, ErrorCode.Forbidden, 'Your profile is paused.');
     }
     if (!(await this.canView(actorId, input.targetId))) throw notFound();
+    // Focus mode (phase 20): with too many people waiting for your reply, answer them first.
+    if (input.kind === 'like' && (await this.waitingForReply(actorId)) >= YOUR_TURN_LIMIT) {
+      throw new HttpError(409, ErrorCode.YourTurn, 'Reply to the people waiting for you first.');
+    }
 
     if (input.itemType && input.itemId) {
       const table = input.itemType === 'photo' ? photos : prompts;
@@ -354,6 +359,22 @@ export class DiscoveryService {
       this.onMatch?.(input.targetId, result.matchId).catch(() => undefined);
     }
     return result;
+  }
+
+  /**
+   * Conversations where the other person wrote last and is waiting for this member (phase 20).
+   * Closed chats and chats with someone blocked don't count.
+   */
+  async waitingForReply(userId: string): Promise<number> {
+    const { rows } = await this.db.execute<{ n: number }>(sql`
+      SELECT count(*)::int AS n FROM matches m
+      JOIN LATERAL (
+        SELECT sender_id FROM messages WHERE match_id = m.id ORDER BY created_at DESC LIMIT 1
+      ) last ON true
+      WHERE m.unmatched_at IS NULL AND (m.user_a = ${userId} OR m.user_b = ${userId})
+        AND last.sender_id <> ${userId}
+        AND ${notSeparated(sql`m.user_a`, sql`m.user_b`)}`);
+    return rows[0]?.n ?? 0;
   }
 
   /** Active and not taking a break: may like, pass and see who liked them. */
@@ -605,6 +626,16 @@ export class DiscoveryService {
       .innerJoin(profileAbout, eq(profileAbout.voiceAudioId, schema.audioClips.id))
       .where(and(inArray(profileAbout.userId, ids), eq(schema.audioClips.status, 'clean')));
     const cleanVoice = new Map(voiceClips.map((c) => [c.id, c.durationMs]));
+    // "Met in person" (phase 20): opt-in, and only after both people of a date confirmed meeting.
+    const met = await this.db.execute<{ user_id: string }>(sql`
+      SELECT DISTINCT u.id AS user_id
+      FROM unnest(${sql.param(ids)}::text[]) AS u(id)
+      JOIN preferences pr ON pr.user_id = u.id AND pr.show_met_badge
+      WHERE EXISTS (
+        SELECT 1 FROM date_plans d JOIN matches m ON m.id = d.match_id
+        WHERE d.status = 'accepted' AND d.proposer_met AND d.receiver_met
+          AND (m.user_a = u.id OR m.user_b = u.id))`);
+    const metIds = new Set(met.rows.map((r) => r.user_id));
     const aboutById = new Map(
       (await this.db.select().from(profileAbout).where(inArray(profileAbout.userId, ids))).map(
         (a) => [a.userId, a],
@@ -647,6 +678,7 @@ export class DiscoveryService {
           visiting: visiting.get(p.userId) ?? null,
           about: toAbout(aboutById.get(p.userId)),
           voicePrompt: toVoicePrompt(aboutById.get(p.userId), cleanVoice),
+          metInPerson: metIds.has(p.userId),
           verified: p.verifiedAt !== null,
           reasons: item.result?.reasons ?? [],
         },

@@ -158,6 +158,7 @@ export class MeService {
         about?.voiceAudioId && about.voicePromptKey
           ? await this.myVoicePrompt(about.voiceAudioId, about.voicePromptKey as PromptKey)
           : null,
+      showMetBadge: prefs?.showMetBadge ?? false,
       dealbreakers: prefs
         ? {
             smokingOk: prefs.smokingOk as Dealbreakers['smokingOk'],
@@ -272,6 +273,14 @@ export class MeService {
     if (!religion?.granted || religion.version !== RELIGION_CONSENT_VERSION) {
       throw new HttpError(403, ErrorCode.Forbidden, 'Religious observance needs your consent.');
     }
+  }
+
+  /** Phase 20: show "met in person" (off by default; needs preferences, which onboarding sets). */
+  async setMetBadge(userId: string, on: boolean): Promise<void> {
+    await this.db
+      .update(preferences)
+      .set({ showMetBadge: on, updatedAt: new Date() })
+      .where(eq(preferences.userId, userId));
   }
 
   /** Incognito (phase 18b): only people this member liked can see them. */

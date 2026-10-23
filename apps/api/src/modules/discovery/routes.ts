@@ -12,6 +12,8 @@ import {
   publicProfileSchema,
   closeMatchSchema,
   closedConversationSchema,
+  YOUR_TURN_LIMIT,
+  yourTurnSchema,
 } from '@nexaheart/shared';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { perUserLimit } from '../../plugins/security.js';
@@ -56,6 +58,16 @@ export const discoveryRoutes: FastifyPluginAsyncZod<{
     },
     async (request) => ({
       profiles: await discovery.discover(currentUser(request).id, request.query.limit),
+    }),
+  );
+
+  // Focus mode (phase 20): how many people are waiting for this member's reply.
+  app.get(
+    '/v1/me/your-turn',
+    { schema: { response: { 200: yourTurnSchema } } },
+    async (request) => ({
+      waiting: await discovery.waitingForReply(currentUser(request).id),
+      limit: YOUR_TURN_LIMIT,
     }),
   );
 

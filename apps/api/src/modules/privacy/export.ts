@@ -185,11 +185,24 @@ export async function exportMemberData(
       note: t.datePlans.note,
       respondedAt: t.datePlans.respondedAt,
       createdAt: t.datePlans.createdAt,
+      proposerMet: t.datePlans.proposerMet,
+      receiverMet: t.datePlans.receiverMet,
+      proposerAgain: t.datePlans.proposerAgain,
+      receiverAgain: t.datePlans.receiverAgain,
     })
     .from(t.datePlans)
     .innerJoin(t.matches, eq(t.matches.id, t.datePlans.matchId))
     .where(or(eq(t.matches.userA, userId), eq(t.matches.userB, userId)))
     .orderBy(asc(t.datePlans.createdAt));
+  // "When I'm free" lists you shared (the other person's list is theirs).
+  const availabilityRows = await db
+    .select({
+      matchId: t.matchAvailability.matchId,
+      slots: t.matchAvailability.slots,
+      updatedAt: t.matchAvailability.updatedAt,
+    })
+    .from(t.matchAvailability)
+    .where(eq(t.matchAvailability.userId, userId));
   const callRows = await db
     .select({
       matchId: t.calls.matchId,
@@ -275,6 +288,7 @@ export async function exportMemberData(
           intentions: preferences.intentions,
           acceptVoice: preferences.acceptVoice,
           acceptCalls: preferences.acceptCalls,
+          showMetInPersonBadge: preferences.showMetBadge,
           dealbreakers: {
             smokingOk: preferences.smokingOk,
             childrenOk: preferences.childrenOk,
@@ -340,13 +354,25 @@ export async function exportMemberData(
       alertedAt: iso(c.alertedAt),
     })),
     eventsYouAreGoingTo: rsvpRows.map((r) => ({ ...r, startsAt: iso(r.startsAt), at: iso(r.at) })),
-    dateIdeas: datePlanRows.map(({ proposerId, note, ...d }) => ({
-      ...d,
-      proposedByYou: proposerId === userId,
-      note: proposerId === userId ? note : null,
+    dateIdeas: datePlanRows.map(
+      ({ proposerId, note, proposerMet, receiverMet, proposerAgain, receiverAgain, ...d }) => {
+        const mine = proposerId === userId;
+        return {
+          ...d,
+          proposedByYou: mine,
+          note: mine ? note : null,
+          // Only your own private answers after the date.
+          youSaidYouMet: mine ? proposerMet : receiverMet,
+          youWouldMeetAgain: mine ? proposerAgain : receiverAgain,
       startsAt: iso(d.startsAt),
-      respondedAt: iso(d.respondedAt),
-      createdAt: iso(d.createdAt),
+          respondedAt: iso(d.respondedAt),
+          createdAt: iso(d.createdAt),
+        };
+      },
+    ),
+    availabilityYouShared: availabilityRows.map((a) => ({
+      ...a,
+      updatedAt: iso(a.updatedAt),
     })),
     callsNoAudioOrVideoIsStored: callRows.map(({ callerId, ...c }) => ({
       ...c,

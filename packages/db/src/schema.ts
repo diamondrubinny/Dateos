@@ -14,6 +14,7 @@ import {
   jsonb,
   pgEnum,
   pgTable,
+  primaryKey,
   smallint,
   text,
   timestamp,
@@ -226,6 +227,8 @@ export const preferences = pgTable(
       .default(sql`'{}'::text[]`),
     heightMin: smallint('height_min'),
     heightMax: smallint('height_max'),
+    /** Phase 20: show "met in person" on the profile (off by default). */
+    showMetBadge: boolean('show_met_badge').notNull().default(false),
     ...timestamps,
   },
   (t) => [check('preferences_age_range', sql`${t.ageMin} >= 18 AND ${t.ageMin} <= ${t.ageMax}`)],
@@ -791,6 +794,11 @@ export const datePlans = pgTable(
     status: dateStatus('status').notNull().default('proposed'),
     respondedAt: timestamp('responded_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    /** "Did you meet?" (phase 20): each side's private answer, deleted with the chat. */
+    proposerMet: boolean('proposer_met'),
+    receiverMet: boolean('receiver_met'),
+    proposerAgain: varchar('proposer_again', { length: 8 }),
+    receiverAgain: varchar('receiver_again', { length: 8 }),
   },
   (t) => [
     // At most one open proposal per chat.
@@ -892,4 +900,26 @@ export const calls = pgTable(
       .on(t.status)
       .where(sql`${t.status} IN ('ringing', 'active')`),
   ],
+);
+
+/**
+ * When each person in a chat is free (phase 20): only the overlap is ever shown. Deleted when the
+ * chat closes and two weeks after the last update.
+ */
+export const matchAvailability = pgTable(
+  'match_availability',
+  {
+    matchId: uuid('match_id')
+      .notNull()
+      .references(() => matches.id, { onDelete: 'cascade' }),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    slots: text('slots')
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.matchId, t.userId] })],
 );

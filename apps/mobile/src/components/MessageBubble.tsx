@@ -25,13 +25,22 @@ export function ScamBanner() {
   );
 }
 
-export function MessageBubble({ message, seen }: { message: MessageView; seen: boolean }) {
+export function MessageBubble({
+  message,
+  seen,
+  other,
+}: {
+  message: MessageView;
+  seen: boolean;
+  /** The other person, for "something felt wrong?" on a date card. */
+  other?: { id: string; name: string } | undefined;
+}) {
   const { t } = useTranslation();
   const colors = useColors();
   const [revealed, setRevealed] = useState(false);
   const [imageShown, setImageShown] = useState(false);
   const mine = message.mine;
-  if (message.kind === 'date') return <DateCard message={message} />;
+  if (message.kind === 'date') return <DateCard message={message} other={other} />;
   if (message.kind === 'call') return <CallLine message={message} />;
   const bubble = [
     styles.bubble,

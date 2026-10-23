@@ -8,7 +8,12 @@ import {
   DATE_MIN_LEAD_MINUTES,
   DATE_PROPOSALS_PER_DAY,
   datePlanSummary,
+  AVAILABILITY_DAYS,
   ErrorCode,
+  FEEDBACK_AFTER_MINUTES,
+  parseSlot,
+  type Availability,
+  type DateFeedbackInput,
   type MessageView,
   type ProposeDateInput,
 } from '@nexaheart/shared';
@@ -17,7 +22,7 @@ import { HttpError } from '../../plugins/error-handler.js';
 import { type ChatService, messageFlags } from '../chat/service.js';
 import type { VenueService } from './venues.js';
 
-const { datePlans, messages, matches } = schema;
+const { datePlans, messages, matches, matchAvailability } = schema;
 
 const notFound = () => new HttpError(404, ErrorCode.NotFound, 'Resource not found.');
 const isUniqueViolation = (error: unknown) =>
@@ -211,5 +216,78 @@ export class DateService {
       ['proposed', 'accepted'],
       gt(datePlans.startsAt, new Date(this.now())),
     );
+  }
+
+  /**
+   * "Did you meet?" (phase 20): each person's answer is private. The card updates for both, but the
+   * other person only ever learns "you both want to meet again".
+   */
+  async feedback(planId: string, userId: string, input: DateFeedbackInput): Promise<MessageView> {
+    const { plan, messageId, otherId } = await this.load(planId, userId);
+    const due = plan.startsAt.getTime() + FEEDBACK_AFTER_MINUTES * 60_000;
+    if (plan.status !== 'accepted' || this.now() < due) {
+      throw new HttpError(409, ErrorCode.Conflict, 'You can answer after the date.');
+    }
+    const proposer = plan.proposerId === userId;
+    await this.db
+      .update(datePlans)
+      .set(
+        proposer
+          ? { proposerMet: input.met, proposerAgain: input.again }
+          : { receiverMet: input.met, receiverAgain: input.again },
+      )
+      .where(eq(datePlans.id, plan.id));
+    await this.chat.announceUpdated(plan.matchId, messageId, [userId, otherId]);
+    return this.chat.messageView(messageId, userId);
+  }
+
+  // ---------------------------------------------------------------- availability (phase 20)
+
+  /** Slots from today (UTC, a day of slack for time zones) up to AVAILABILITY_DAYS ahead. */
+  private window(): { from: string; to: string } {
+    const day = (offset: number) =>
+      new Date(this.now() + offset * 86_400_000).toISOString().slice(0, 10);
+    return { from: day(-1), to: day(AVAILABILITY_DAYS) };
+  }
+
+  async availability(matchId: string, userId: string): Promise<Availability> {
+    const { otherId } = await this.chat.participant(matchId, userId);
+    const rows = await this.db
+      .select({ userId: matchAvailability.userId, slots: matchAvailability.slots })
+      .from(matchAvailability)
+      .where(eq(matchAvailability.matchId, matchId));
+    const { from } = this.window();
+    const current = (slots: string[] | undefined) =>
+      (slots ?? []).filter((s) => parseSlot(s).date >= from).sort();
+    const mine = current(rows.find((r) => r.userId === userId)?.slots);
+    const theirs = current(rows.find((r) => r.userId === otherId)?.slots);
+    return {
+      mine,
+      theyShared: theirs.length > 0,
+      // Only the overlap: the other person's other times stay private.
+      overlap: mine.filter((s) => theirs.includes(s)),
+    };
+  }
+
+  async setAvailability(matchId: string, userId: string, slots: string[]): Promise<Availability> {
+    const { otherId } = await this.chat.participant(matchId, userId);
+    const { from, to } = this.window();
+    for (const slot of slots) {
+      const { date } = parseSlot(slot);
+      if (date < from || date > to || Number.isNaN(Date.parse(date))) {
+        throw new HttpError(400, ErrorCode.ValidationError, 'Choose times in the next two weeks.');
+      }
+    }
+    const values = { slots, updatedAt: new Date(this.now()) };
+    await this.db
+      .insert(matchAvailability)
+      .values({ matchId, userId, ...values })
+      .onConflictDoUpdate({
+        target: [matchAvailability.matchId, matchAvailability.userId],
+        set: values,
+      });
+    // Let the other person's chat refresh its overlap.
+    this.chat.notifyAvailability(matchId, [otherId]);
+    return this.availability(matchId, userId);
   }
 }

@@ -14,6 +14,9 @@ import {
   type MessageView,
   type PromptKey,
   scamSignals,
+  FEEDBACK_AFTER_MINUTES,
+  type AgainAnswer,
+  type DateFeedbackView,
 } from '@nexaheart/shared';
 import { randomUUID } from 'node:crypto';
 import { and, asc, desc, eq, isNull, lt, or, sql } from 'drizzle-orm';
@@ -97,8 +100,28 @@ export function messageFlags(text: string, messagesSoFar: number): string[] {
   ];
 }
 
+/**
+ * "Did you meet?" on an accepted date (phase 20). Each person sees only their own answers, and
+ * "you both want to meet again" once both said yes; never the other person's no.
+ */
+export function feedbackView(
+  plan: typeof datePlans.$inferSelect,
+  viewerId: string,
+  now = Date.now(),
+): DateFeedbackView | null {
+  if (plan.status !== 'accepted') return null;
+  const proposer = plan.proposerId === viewerId;
+  const met = proposer ? plan.proposerMet : plan.receiverMet;
+  const again = (proposer ? plan.proposerAgain : plan.receiverAgain) as AgainAnswer | null;
+  return {
+    canGive: now >= plan.startsAt.getTime() + FEEDBACK_AFTER_MINUTES * 60_000,
+    mine: met === null ? null : { met, again },
+    bothAgain: plan.proposerAgain === 'yes' && plan.receiverAgain === 'yes',
+  };
+}
+
 /** What a given participant sees. Harmful messages arrive hidden for the receiver only. */
-export function toView(row: MessageRow, viewerId: string): MessageView {
+export function toView(row: MessageRow, viewerId: string, now = Date.now()): MessageView {
   const mine = row.senderId === viewerId;
   const harm = harmCategories.filter((c) => row.flags.includes(`harm:${c}`));
   const scam = scamSignals.filter((s) => row.flags.includes(`scam:${s}`));
@@ -139,6 +162,7 @@ export function toView(row: MessageRow, viewerId: string): MessageView {
             startsAt: row.plan.startsAt.toISOString(),
             note: row.plan.note,
             respondedAt: row.plan.respondedAt?.toISOString() ?? null,
+            feedback: feedbackView(row.plan, viewerId, now),
           }
         : null,
     call: row.kind === 'call' && row.call ? callView(row.call, viewerId) : null,
@@ -160,6 +184,8 @@ export class ChatService {
       IcebreakerProvider | ((a: string, b: string) => Promise<IcebreakerProvider>),
     private readonly audio?: AudioService,
     private readonly notifier?: ChatNotifier,
+    /** The clock for time-based card states ("did you meet?"); tests move it. */
+    private readonly now: () => number = Date.now,
   ) {}
 
   /** Whether a realtime connection may keep receiving events for this session. */
@@ -222,7 +248,7 @@ export class ChatService {
   async messageView(messageId: string, viewerId: string): Promise<MessageView> {
     const [row] = await this.rows(eq(messages.id, messageId));
     if (!row) throw notFound();
-    return toView(row, viewerId);
+    return toView(row, viewerId, this.now());
   }
 
   /** Tells both people about a new message, with a content-free push to the receiver. */
@@ -252,6 +278,14 @@ export class ChatService {
         this.realtime.publish(userId, { type: 'message.updated', matchId, messageId }),
       ),
     );
+  }
+
+  notifyAvailability(matchId: string, userIds: string[]): void {
+    for (const userId of userIds) {
+      void this.realtime
+        .publish(userId, { type: 'availability.updated', matchId })
+        .catch(() => undefined);
+    }
   }
 
   private async counts(matchId: string): Promise<Map<string, number>> {
@@ -295,7 +329,7 @@ export class ChatService {
       .from(matchReads)
       .where(and(eq(matchReads.matchId, matchId), eq(matchReads.userId, otherId)));
     return {
-      messages: page.reverse().map((r) => toView(r, viewerId)),
+      messages: page.reverse().map((r) => toView(r, viewerId, this.now())),
       before: rows.length > limit ? page[0]!.createdAt.toISOString() : null,
       otherReadAt: read?.at.toISOString() ?? null,
       imagesUnlocked: await this.imagesUnlocked(matchId, viewerId, otherId),
@@ -339,9 +373,9 @@ export class ChatService {
     await this.realtime.publish(senderId, {
       type: 'message.new',
       matchId,
-      message: toView(row!, senderId),
+      message: toView(row!, senderId, this.now()),
     });
-    return toView(row!, senderId);
+    return toView(row!, senderId, this.now());
   }
 
   async openAudio(viewerId: string, audioId: string, format: 'aac' | 'opus' = 'aac') {
@@ -376,7 +410,7 @@ export class ChatService {
     if (!row || row.matchId !== matchId)
       throw new HttpError(409, ErrorCode.Conflict, 'Message id already used.');
     if (inserted.length > 0) await this.deliver(row, senderId, otherId);
-    return toView(row, senderId);
+    return toView(row, senderId, this.now());
   }
 
   async sendImage(matchId: string, senderId: string, buffer: Buffer): Promise<MessageView> {
@@ -400,9 +434,9 @@ export class ChatService {
     await this.realtime.publish(senderId, {
       type: 'message.new',
       matchId,
-      message: toView(row!, senderId),
+      message: toView(row!, senderId, this.now()),
     });
-    return toView(row!, senderId);
+    return toView(row!, senderId, this.now());
   }
 
   private async deliver(row: MessageRow, senderId: string, otherId: string, push = true) {
@@ -411,12 +445,12 @@ export class ChatService {
       this.realtime.publish(senderId, {
         type: 'message.new',
         matchId: row.matchId,
-        message: toView(row, senderId),
+        message: toView(row, senderId, this.now()),
       }),
       this.realtime.publish(otherId, {
         type: 'message.new',
         matchId: row.matchId,
-        message: toView(row, otherId),
+        message: toView(row, otherId, this.now()),
       }),
     ]);
   }
@@ -464,7 +498,7 @@ export class ChatService {
       out.push({
         matchId: m.id,
         profile: m.profile,
-        lastMessage: last ? toView(last, viewerId) : null,
+        lastMessage: last ? toView(last, viewerId, this.now()) : null,
         unread: n,
         createdAt: m.createdAt,
       });

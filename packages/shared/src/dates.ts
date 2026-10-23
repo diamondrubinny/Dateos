@@ -2,6 +2,7 @@
 // Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 import { z } from 'zod';
+import { dateFeedbackViewSchema } from './after-match.js';
 
 /** Date planner (phase 12): see docs/phases/PHASE-12.md. */
 export const venueCategories = [
@@ -104,6 +105,8 @@ export const datePlanSchema = z.object({
   startsAt: z.string(),
   note: z.string().nullable(),
   respondedAt: z.string().nullable(),
+  /** "Did you meet?" (phase 20); null unless the date was accepted. */
+  feedback: dateFeedbackViewSchema.nullable(),
 });
 export type DatePlan = z.infer<typeof datePlanSchema>;
 

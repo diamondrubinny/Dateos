@@ -142,9 +142,18 @@ export function createServices(
   audio.useVisibility((viewerId, ownerId) => discovery.canView(viewerId, ownerId));
   const hashEmail = createEmailHasher(secrets.authSecret);
   const venues = new VenueService(dbHandle.db);
-  const chat = new ChatService(dbHandle.db, realtime, discovery, photos, icebreakers, audio, {
-    messageReceived: (userId, matchId) => notifyQueue.push({ userId, kind: 'message', matchId }),
-  });
+  const chat = new ChatService(
+    dbHandle.db,
+    realtime,
+    discovery,
+    photos,
+    icebreakers,
+    audio,
+    {
+      messageReceived: (userId, matchId) => notifyQueue.push({ userId, kind: 'message', matchId }),
+    },
+    overrides.now,
+  );
 
   const calls = new CallService(
     dbHandle.db,

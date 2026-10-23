@@ -95,6 +95,8 @@ export const icebreakersSchema = z.object({ suggestions: z.array(z.string()) });
 export type RealtimeEvent =
   | { type: 'message.new'; matchId: string; message: MessageView }
   | { type: 'message.updated'; matchId: string; messageId: string }
+  /** Phase 20: the other person changed when they're free; refetch the overlap. */
+  | { type: 'availability.updated'; matchId: string }
   | { type: 'message.read'; matchId: string; at: string }
   | { type: 'typing'; matchId: string }
   | { type: 'match.new'; matchId: string }

@@ -131,6 +131,18 @@ export function ProfileCard({ profile, onLikeItem }: ProfileCardProps) {
               </AppText>
             </View>
           ) : null}
+          {profile.metInPerson ? (
+            <View
+              testID="met-badge"
+              style={[styles.verified, { backgroundColor: colors.successSoft }]}
+              accessible
+              accessibilityLabel={t('badge.metLabel')}
+            >
+              <AppText variant="label" tone="success">
+                🤝 {t('badge.met')}
+              </AppText>
+            </View>
+          ) : null}
           <AppText variant="label" tone="primary">
             {t(`intention.${profile.intention}`)}
           </AppText>

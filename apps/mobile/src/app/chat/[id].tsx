@@ -20,6 +20,7 @@ import { AppText, startAlign } from '../../components/AppText';
 import { Banner } from '../../components/Banner';
 import { Button } from '../../components/Button';
 import { Loading } from '../../components/Loading';
+import { FreeTimes } from '../../components/FreeTimes';
 import { MessageBubble } from '../../components/MessageBubble';
 import { RemoteImage } from '../../components/RemoteImage';
 import { RequireSession } from '../../components/RequireSession';
@@ -314,6 +315,8 @@ function ChatScreen() {
           </View>
         ) : null}
 
+        {conversation && !closed ? <FreeTimes matchId={matchId} name={name} /> : null}
+
         <FlatList
           // Keyboard users must be able to focus and scroll the conversation (WCAG 2.1.1).
           focusable
@@ -326,6 +329,7 @@ function ChatScreen() {
           renderItem={({ item }) => (
             <MessageBubble
               message={item}
+              other={conversation ? { id: conversation.profile.id, name } : undefined}
               seen={item.id === lastMineId && otherReadAt !== null && otherReadAt >= item.createdAt}
             />
           )}

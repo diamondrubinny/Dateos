@@ -70,6 +70,8 @@ export function RealtimeProvider({ enabled, children }: { enabled: boolean; chil
               }
             : d,
         );
+      } else if (event.type === 'availability.updated') {
+        void client.invalidateQueries({ queryKey: ['availability', event.matchId] });
       } else if (event.type === 'match.new' || event.type === 'match.closed') {
         void client.invalidateQueries({ queryKey: chatKeys.conversations });
         void client.invalidateQueries({ queryKey: ['matches'] });
