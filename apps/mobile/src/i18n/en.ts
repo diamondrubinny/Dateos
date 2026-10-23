@@ -538,7 +538,7 @@ export const en = {
       'You must be 18 or older. Be respectful: harassment, hate, scams, impersonation and sharing others’ private information are not allowed and lead to removal. Report and block are available on every profile and chat.',
     privacyTitle: 'Privacy Policy',
     privacyBody:
-      'We collect only what is needed to run the service: your email, profile, photos and your choices. Your gender and who you’re interested in are used only for matching, with your explicit consent. Photos are stripped of location data. We never sell data or show ads. You can download a copy of your data or delete your account and all data at any time from Settings. Closed chats are deleted after 30 days. No tracking cookies are used (see Privacy & cookies).',
+      'We collect only what is needed to run the service: your email, profile, photos and your choices. Your gender and who you’re interested in are used only for matching, with your explicit consent. Photos are stripped of location data. We never sell data or show ads. You can download a copy of your data or delete your account and all data at any time from Settings. Closed chats are deleted after 30 days. If a friend writes a few words about you, we keep only their first name and the text, and only until you decline or remove it or delete your account. No tracking cookies are used (see Privacy & cookies).',
   },
   location: {
     title: 'Show people near you',
@@ -1102,6 +1102,7 @@ export const en = {
     findPairs: 'Find pairs',
   },
   double: {
+    options: 'Report or leave',
     inbox: 'Double dates',
     subtitle: 'Double date',
     new: 'New double match: say hello',

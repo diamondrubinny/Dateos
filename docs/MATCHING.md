@@ -27,6 +27,23 @@ Two people can only see each other when **both** of the following hold, in both 
 
 The same rule decides who can open a profile, view a photo, or send a like. Anything outside it returns "not found".
 
+### Friends mode (phase 22)
+
+A separate deck for friendship, using the **same query** with `mode: 'friend'`:
+
+- **Applied:** active, not on a break, distance, photos, blocks, unmatches, contact hides,
+  incognito, and both people's friends-mode age range and (optional) genders to meet as friends.
+- **Not applied:** "interested in" (orientation isn't used here), intentions and dealbreakers.
+- Only people who turned friends mode on see each other there. A like is stored with its mode, and a
+  match needs both likes **in the same mode**; friend matches are labelled "Friends" and never appear
+  in Likes You. Each person still gets one decision per person in total, so nobody is in both decks.
+
+### Double dates (phase 22)
+
+Another pair is shown only when **each** of us is a dating candidate of **each** of them under every
+rule above: the candidate query runs for both of us, and only pairs in both lists are shown. So a
+double date never shows anyone to someone they couldn't see alone.
+
 ## Step 2: ranking (soft signals)
 
 For each visible person the server computes:

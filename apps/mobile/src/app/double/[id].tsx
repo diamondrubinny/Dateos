@@ -37,6 +37,7 @@ function DoubleChatScreen() {
   const [text, setText] = useState('');
   const [error, setError] = useState<string>();
   const [confirming, setConfirming] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [revealed, setRevealed] = useState<Set<string>>(new Set());
 
   const chat = doubles.data?.find((d) => d.id === id);
@@ -93,46 +94,63 @@ function DoubleChatScreen() {
             {t('double.subtitle')}
           </AppText>
         </View>
+        <Pressable
+          onPress={() => {
+            setMenuOpen((open) => !open);
+            setConfirming(false);
+          }}
+          accessibilityRole="button"
+          accessibilityLabel={t('double.options')}
+          accessibilityState={{ expanded: menuOpen }}
+          style={styles.iconBtn}
+          testID="double-options"
+        >
+          <AppText variant="heading" tone="primary">
+            ⋯
+          </AppText>
+        </Pressable>
       </View>
-      <View style={[styles.pad, styles.menu]}>
-        {chat.members.map((m) => (
-          <Button
-            key={m.id}
-            variant="ghost"
-            label={t('double.report', { name: m.displayName })}
-            onPress={() =>
-              router.push({ pathname: '/report/[id]', params: { id: m.id, name: m.displayName } })
-            }
-          />
-        ))}
-        {chat.closed ? null : confirming ? (
-          <>
-            <Banner tone="info" message={t('double.leaveConfirm')} />
+      {menuOpen ? (
+        <View style={[styles.pad, styles.menu]}>
+          {chat.members.map((m) => (
             <Button
-              variant="danger"
-              label={t('double.leaveYes')}
-              loading={leave.isPending}
+              key={m.id}
+              variant="ghost"
+              label={t('double.report', { name: m.displayName })}
               onPress={() =>
-                leave.mutate(undefined, {
-                  onSuccess: () => setConfirming(false),
-                  onError: () => setError(t('common.genericError')),
-                })
+                router.push({ pathname: '/report/[id]', params: { id: m.id, name: m.displayName } })
               }
             />
+          ))}
+          {chat.closed ? null : confirming ? (
+            <>
+              <Banner tone="info" message={t('double.leaveConfirm')} />
+              <Button
+                variant="danger"
+                label={t('double.leaveYes')}
+                loading={leave.isPending}
+                onPress={() =>
+                  leave.mutate(undefined, {
+                    onSuccess: () => setConfirming(false),
+                    onError: () => setError(t('common.genericError')),
+                  })
+                }
+              />
+              <Button
+                variant="ghost"
+                label={t('common.cancel')}
+                onPress={() => setConfirming(false)}
+              />
+            </>
+          ) : (
             <Button
-              variant="ghost"
-              label={t('common.cancel')}
-              onPress={() => setConfirming(false)}
+              variant="dangerGhost"
+              label={t('double.leave')}
+              onPress={() => setConfirming(true)}
             />
-          </>
-        ) : (
-          <Button
-            variant="dangerGhost"
-            label={t('double.leave')}
-            onPress={() => setConfirming(true)}
-          />
-        )}
-      </View>
+          )}
+        </View>
+      ) : null}
       <FlatList
         focusable
         accessibilityLabel={t('double.messages', { names: title })}

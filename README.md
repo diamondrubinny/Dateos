@@ -72,6 +72,7 @@ NexaHeart is in active development. Here is what works today and what comes next
 | About me: interests, lifestyle, religious observance (with its own consent), dealbreakers both ways, an opening question and a voice prompt                                                                                  | ✅ Available |
 | After the match: "when we're both free" (only the overlap is shown), a private "did you meet?" that reveals only a mutual "again", an opt-in met-in-person badge, and a focus mode that asks you to reply before liking more | ✅ Available |
 | Trust and safety: copied-photo detection (perceptual hash), banned photos can't come back, "hide me from my contacts" (hashed on the device), passkeys, invite codes and a waitlist, screenshot protection in the native app | ✅ Available |
+| Friends: friends' takes (written without an account, shown only after you approve), double dates with a friend (shown only when all four can see each other) and a separate friends mode                                     | ✅ Available |
 
 ## Screenshots
 

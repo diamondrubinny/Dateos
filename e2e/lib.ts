@@ -195,3 +195,64 @@ export async function resetRouteLimits(): Promise<void> {
     redis.disconnect();
   }
 }
+
+let onboarded = 0;
+
+/**
+ * A fully onboarded member over HTTP (real magic link, consents, profile, preferences, location,
+ * a prompt and a photo processed by the real worker). Email addresses stay ASCII whatever the name.
+ */
+export async function onboardMember(
+  prefix: string,
+  name: string,
+  gender: 'woman' | 'man',
+  interestedIn: string[],
+) {
+  const { demoPhoto } = await import('./demo-images.ts');
+  onboarded += 1;
+  const email = `${prefix}-${gender}-${onboarded}-${Date.now()}@example.test`;
+  const session = await signInHttp(email);
+  const call = apiClient(session.header);
+  await call('PUT', '/v1/me/consents', {
+    consents: [
+      { kind: 'terms', granted: true, version: '2026-10' },
+      { kind: 'privacy', granted: true, version: '2026-10' },
+      { kind: 'sensitive', granted: true, version: '1' },
+      { kind: 'location', granted: true, version: '1' },
+    ],
+  });
+  await call('POST', '/v1/me/profile', {
+    displayName: name,
+    birthDate: '1993-05-05',
+    gender,
+    interestedIn,
+    intention: 'long_term',
+    languages: ['he', 'en'],
+  });
+  await call('PUT', '/v1/me/preferences', {
+    ageMin: 18,
+    ageMax: 99,
+    maxDistanceKm: 50,
+    intentions: [],
+  });
+  await call('PUT', '/v1/me/location', { lat: 32.08, lng: 34.78 });
+  await call('PUT', '/v1/me/prompts', {
+    prompts: [{ promptKey: 'perfect_sunday', answer: 'Coffee by the sea, then a long walk.' }],
+  });
+  const form = new FormData();
+  form.append(
+    'file',
+    new Blob([new Uint8Array(await demoPhoto(gender === 'woman' ? 'sunset' : 'mountains'))], {
+      type: 'image/jpeg',
+    }),
+    'me.jpg',
+  );
+  await call('POST', '/v1/me/photos', form);
+  for (let i = 0; i < 60; i += 1) {
+    const me = await call<{ user: { id: string }; photos: { status: string }[] }>('GET', '/v1/me');
+    if (me.photos[0]?.status === 'clean') return { session, call, id: me.user.id, email };
+    await new Promise((r) => setTimeout(r, 500));
+  }
+  throw new Error('photo was not processed');
+}
+export type OnboardedMember = Awaited<ReturnType<typeof onboardMember>>;

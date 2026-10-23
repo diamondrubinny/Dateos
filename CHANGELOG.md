@@ -6,6 +6,13 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Added
 
+- **Friends' takes**: send a friend a one-time link; they write a few words about you without an
+  account. You approve each one, and up to 3 appear on your profile with their first name.
+- **Double date**: pair up with a friend through a link and see other pairs only when all four of you
+  could see each other. When both pairs like each other, a group chat of four opens. Anyone leaving,
+  or a block, closes it for everyone.
+- **Friends mode**: a separate deck for friendship with its own ages and genders, never mixed with
+  dating. Friend matches are labelled "Friends" in Matches.
 - **Copied photos**: every profile photo gets a perceptual hash. A copy of another member's photo
   (even resized or re-compressed) opens an automatic case for the moderators, and a photo of a banned
   account can't be used on a new one. Flat images get no hash, so they never match.

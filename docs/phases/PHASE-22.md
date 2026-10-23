@@ -1,6 +1,6 @@
 # Phase 22: Friends (v0.8)
 
-> Status: 🔨 building (2026-10-23). Approved as part of the roadmap in
+> Status: ✅ done (2026-10-23). Approved as part of the roadmap in
 > [COMPETITIVE_ANALYSIS.md](../COMPETITIVE_ANALYSIS.md).
 > 📘 = verify against official docs, ⚖️ = needs legal review.
 
@@ -109,3 +109,37 @@ can vouch for you, come on a date with you, or simply be the reason you're here.
    chat for all.
 3. Group chat: text only at first.
 4. Friends mode is a separate deck and doesn't use orientation; one decision per person in total.
+
+## Results
+
+- **Integration tests (`friends.test.ts`, 8):**
+  - Friends mode is its own deck, only between people who turned it on; dating gender and
+    orientation aren't used.
+  - A friends match needs both likes in friends mode, is labelled `friend`, and never shows up in
+    Likes You.
+  - A friend writes a take without an account and sees only the member's first name; links are
+    single use; phone numbers and insults are refused; only the owner approves or removes it.
+  - At most 3 takes are shown, and "Download my data" holds them.
+  - One pair per person, single-use pair links.
+  - A pair sees another pair only when all four can see each other: a member too far away, or a
+    dealbreaker (smoking), hides the pair, and liking it is refused.
+  - Mutual likes open a group chat of four; leaving closes it for all; a block between any two of
+    the four closes it.
+  - The full suite: **185/185**.
+- **e2e `pnpm --dir e2e friends` in en/he/ar/ru:**
+  - Friends mode turned on in Settings, the Friends deck, a friends match labelled "Friends".
+  - A take written in a browser without an account, approved, then shown on the profile to someone
+    else.
+  - A pair made through an invitation link, another pair shown, a double match, and the group chat
+    updating live.
+  - The chat menu lets you report each of the other three or leave.
+  - axe: 0 WCAG 2.1 AA violations.
+- **Found and fixed while testing:**
+  - The takes heading sat inside the `list` role (an axe error); it's outside now.
+  - The group chat's report and leave buttons took half the screen; they're in a menu now.
+  - Hebrew and Arabic "you matched as friends" now name the person, like the other languages.
+- Screenshots `78-friend-mode`, `79-friends-deck`, `80-write-take`, `81-takes`, `82-profile-takes`,
+  `83-pair-card`, `84-double-chat`.
+- **Still to check:**
+  - The take page's wording to a non-member, and keeping their first name and text ⚖️.
+  - Sharing links through the native share sheet on real devices 📘.

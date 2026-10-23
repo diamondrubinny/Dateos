@@ -192,32 +192,33 @@ export function ProfileCard({ profile, onLikeItem }: ProfileCardProps) {
         ) : null}
 
         {profile.friendTakes.length > 0 ? (
-          <View
-            style={styles.takes}
-            testID="friend-takes"
-            role="list"
-            accessibilityLabel={t('takes.onProfile', { name: profile.displayName })}
-          >
+          <View style={styles.takes} testID="friend-takes">
             <AppText variant="heading">
               {t('takes.onProfile', { name: profile.displayName })}
             </AppText>
-            {profile.friendTakes.map((take, i) => (
-              <View
-                key={i}
-                role="listitem"
-                style={[styles.take, { backgroundColor: colors.primarySoft }]}
-              >
-                <AppText variant="body" userContent>
-                  {t('ghosting.quote', { message: take.text })}
-                </AppText>
-                <AppText variant="caption" tone="muted" userContent>
-                  {t('takes.byline', {
-                    name: take.name,
-                    relation: t(`takes.relations.${take.relation}`),
-                  })}
-                </AppText>
-              </View>
-            ))}
+            <View
+              style={styles.takes}
+              role="list"
+              accessibilityLabel={t('takes.onProfile', { name: profile.displayName })}
+            >
+              {profile.friendTakes.map((take, i) => (
+                <View
+                  key={i}
+                  role="listitem"
+                  style={[styles.take, { backgroundColor: colors.primarySoft }]}
+                >
+                  <AppText variant="body" userContent>
+                    {t('ghosting.quote', { message: take.text })}
+                  </AppText>
+                  <AppText variant="caption" tone="muted" userContent>
+                    {t('takes.byline', {
+                      name: take.name,
+                      relation: t(`takes.relations.${take.relation}`),
+                    })}
+                  </AppText>
+                </View>
+              ))}
+            </View>
           </View>
         ) : null}
 
