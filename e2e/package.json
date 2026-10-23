@@ -31,7 +31,8 @@
     "integrations": "tsx integrations.ts",
     "easy": "tsx easy.ts",
     "transcripts": "tsx transcripts.ts",
-    "event-board": "tsx event-board.ts"
+    "event-board": "tsx event-board.ts",
+    "federation": "tsx federation.ts"
   },
   "dependencies": {
     "@axe-core/playwright": "4.14.0",

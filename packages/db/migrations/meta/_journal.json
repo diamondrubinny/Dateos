@@ -225,6 +225,13 @@
       "when": 1792789411946,
       "tag": "0031_event_board",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1792791059607,
+      "tag": "0032_federation",
+      "breakpoints": true
     }
   ]
 }

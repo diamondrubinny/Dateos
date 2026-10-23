@@ -129,6 +129,19 @@ dashboard instead.
 an open speech model (about 77 MB, from Hugging Face) the first time someone asks, and keeps it in
 the `models-data` volume. Set `TRANSCRIPTS=off` in `.env` to turn this off, or see below.
 
+## Communities that connect (optional)
+
+Two NexaHeart communities can connect so that, in later steps, members who choose to can be seen
+in both. Turn it on with `FEDERATION=on` (it needs `INTEGRATIONS_KEY`) and restart the API; admins
+then use **Partners** in the dashboard.
+
+- The server publishes its name, address and public key at `https://api.<domain>/.well-known/nexaheart`.
+- Every request between servers is signed (Ed25519), dated (5 minutes either way) and can't be
+  replayed. Outgoing requests use the same guard as the integrations: https only, no private
+  networks (set `INTEGRATIONS_ALLOW_PRIVATE=true` only to test two servers on one machine).
+- ⚖️ The two operators share responsibility for what members later share: sign a data-sharing
+  agreement first. The dashboard asks both admins to confirm it.
+
 ## Voice transcripts
 
 "Show text" under each voice message and voice prompt is made by Whisper, an open speech model, in

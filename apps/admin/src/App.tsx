@@ -16,6 +16,7 @@ import { Reports } from './pages/Reports';
 import { SignIn } from './pages/SignIn';
 import { Events } from './pages/Events';
 import { Integrations } from './pages/Integrations';
+import { Partners } from './pages/Partners';
 import { Venues } from './pages/Venues';
 import { Signup } from './pages/Signup';
 import { Verifications } from './pages/Verifications';
@@ -76,21 +77,24 @@ function Shell({
       | 'signup'
       | 'audit'
       | 'branding'
-      | 'integrations',
+      | 'integrations'
+      | 'partners',
   ) => (
     <li>
       <a href={`#/${key}`} aria-current={current === key ? 'page' : undefined}>
-        {key === 'integrations'
-          ? t.integrations.nav
-          : key === 'branding'
-            ? t.branding.nav
-            : key === 'venues'
-              ? t.venues.nav
-              : key === 'events'
-                ? t.events.nav
-                : key === 'signup'
-                  ? t.signup.nav
-                  : t.nav[key]}
+        {key === 'partners'
+          ? t.partners.nav
+          : key === 'integrations'
+            ? t.integrations.nav
+            : key === 'branding'
+              ? t.branding.nav
+              : key === 'venues'
+                ? t.venues.nav
+                : key === 'events'
+                  ? t.events.nav
+                  : key === 'signup'
+                    ? t.signup.nav
+                    : t.nav[key]}
       </a>
     </li>
   );
@@ -109,6 +113,7 @@ function Shell({
               {link('venues')}
               {link('events')}
               {link('signup')}
+              {link('partners')}
               {link('audit')}
               {isAdmin ? link('branding') : null}
               {isAdmin ? link('integrations') : null}
@@ -146,6 +151,7 @@ function Routes({ staff }: { staff: NonNullable<Awaited<ReturnType<typeof api.me
   if (route[0] === 'venues') return <Venues isAdmin={staff.role === 'admin'} />;
   if (route[0] === 'events') return <Events isAdmin={staff.role === 'admin'} />;
   if (route[0] === 'signup') return <Signup isAdmin={staff.role === 'admin'} />;
+  if (route[0] === 'partners') return <Partners isAdmin={staff.role === 'admin'} />;
   if (route[0] === 'audit') return <Audit />;
   if (route[0] === 'branding' && staff.role === 'admin') return <Branding wizard={false} />;
   if (route[0] === 'integrations' && staff.role === 'admin') return <Integrations />;

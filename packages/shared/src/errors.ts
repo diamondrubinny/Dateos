@@ -22,6 +22,8 @@ export const ErrorCode = {
   YourTurn: 'YOUR_TURN',
   /** Phase 24: this form needs the CAPTCHA (bot protection) answered first. */
   CaptchaRequired: 'CAPTCHA_REQUIRED',
+  /** Phase 28: another community couldn't be reached or answered wrongly. */
+  BadGateway: 'BAD_GATEWAY',
   Internal: 'INTERNAL_ERROR',
 } as const;
 

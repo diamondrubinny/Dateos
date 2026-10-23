@@ -26,6 +26,7 @@ import type {
   WaitlistEntry,
   WaitlistStatus,
   EventBoard,
+  PartnersResponse,
 } from '@nexaheart/shared';
 
 export const API_URL: string = import.meta.env.VITE_API_URL ?? 'http://localhost:4000';
@@ -168,6 +169,17 @@ export const api = {
       `/v1/admin/events/${encodeURIComponent(id)}/questions/${encodeURIComponent(questionId)}/answer`,
       { answer },
     ),
+  partners: () => request<PartnersResponse>('GET', '/v1/admin/partners'),
+  invitePartner: (url: string) =>
+    request<PartnersResponse>('POST', '/v1/admin/partners', { url, agreementConfirmed: true }),
+  acceptPartner: (id: string) =>
+    request<PartnersResponse>('POST', `/v1/admin/partners/${encodeURIComponent(id)}/accept`, {
+      agreementConfirmed: true,
+    }),
+  endPartner: (id: string) =>
+    request<PartnersResponse>('POST', `/v1/admin/partners/${encodeURIComponent(id)}/end`),
+  testPartner: (id: string) =>
+    request<PartnersResponse>('POST', `/v1/admin/partners/${encodeURIComponent(id)}/test`),
   checkIn: (id: string) =>
     request<AdminCheckIn>('GET', `/v1/admin/events/${encodeURIComponent(id)}/check-in`),
   createVenue: (input: Omit<VenueInput, 'active'>) =>

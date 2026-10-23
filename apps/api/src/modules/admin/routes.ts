@@ -23,6 +23,9 @@ import {
   adminCheckInSchema,
   eventAnswerInputSchema,
   eventBoardSchema,
+  partnerAcceptSchema,
+  partnerInviteSchema,
+  partnersResponseSchema,
   eventNoticeInputSchema,
   integrationIds,
   integrationsResponseSchema,
@@ -52,6 +55,7 @@ import type { PhotoService } from '../photos/service.js';
 import type { VerificationService } from '../safety/verification.js';
 import type { VenueService } from '../dates/venues.js';
 import type { EventService } from '../events/service.js';
+import type { FederationService } from '../federation/service.js';
 import type { TrustService } from '../trust/service.js';
 import type { IntegrationService } from '../integrations/service.js';
 import { isStaffRole, type StaffMfaService } from './mfa.js';
@@ -80,6 +84,7 @@ export const adminRoutes: FastifyPluginAsyncZod<{
   events: EventService;
   trust: TrustService;
   integrations: IntegrationService;
+  federation: FederationService;
 }> = async (
   app,
   {
@@ -94,6 +99,7 @@ export const adminRoutes: FastifyPluginAsyncZod<{
     events,
     trust,
     integrations,
+    federation,
   },
 ) => {
   await app.register(multipart, {
@@ -487,6 +493,62 @@ export const adminRoutes: FastifyPluginAsyncZod<{
         request.params.questionId,
         request.body.answer,
       );
+    },
+  );
+
+  // Communities that connect (phase 28a): moderators can see, admins decide.
+  app.get(
+    '/v1/admin/partners',
+    { schema: { response: { 200: partnersResponseSchema } } },
+    async () => federation.list(),
+  );
+  app.post(
+    '/v1/admin/partners',
+    {
+      config: perUserLimit(20, 60 * 60 * 1000),
+      schema: { body: partnerInviteSchema, response: { 200: partnersResponseSchema } },
+    },
+    async (request) => {
+      const staff = currentUser(request);
+      adminOnly(staff.role);
+      return federation.invite(staff.id, request.body.url);
+    },
+  );
+  app.post(
+    '/v1/admin/partners/:id/accept',
+    {
+      config: perUserLimit(20, 60 * 60 * 1000),
+      schema: {
+        params: idParams,
+        body: partnerAcceptSchema,
+        response: { 200: partnersResponseSchema },
+      },
+    },
+    async (request) => {
+      const staff = currentUser(request);
+      adminOnly(staff.role);
+      return federation.accept(staff.id, request.params.id);
+    },
+  );
+  app.post(
+    '/v1/admin/partners/:id/end',
+    { schema: { params: idParams, response: { 200: partnersResponseSchema } } },
+    async (request) => {
+      const staff = currentUser(request);
+      adminOnly(staff.role);
+      return federation.end(staff.id, request.params.id);
+    },
+  );
+  app.post(
+    '/v1/admin/partners/:id/test',
+    {
+      config: perUserLimit(60, 60 * 60 * 1000),
+      schema: { params: idParams, response: { 200: partnersResponseSchema } },
+    },
+    async (request) => {
+      const staff = currentUser(request);
+      adminOnly(staff.role);
+      return federation.test(staff.id, request.params.id);
     },
   );
 

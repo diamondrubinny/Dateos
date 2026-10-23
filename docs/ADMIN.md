@@ -148,6 +148,15 @@ Members going can ask a question; you see it **without who asked**, and only the
 If several people ask the same, post an update instead. Moderators can read, not write. Updates and
 questions are deleted 30 days after the event; the audit log keeps ids only, never the text.
 
+## 7b. Partner communities (phase 28a)
+
+**Partners** connects this community with other NexaHeart communities you trust (off until the
+server sets `FEDERATION=on`). Invite another community by its API address, or accept an invitation
+that arrived; both need you to confirm that the two operators signed a data-sharing agreement ⚖️.
+**Test connection** sends a signed ping; **End partnership** stops it on both sides at once. In this
+step only the communities' names, addresses and public keys are exchanged, never anything about
+members. Moderators can see the list; only admins decide.
+
 ## 8. Integrations (phase 24, admins only)
 
 The **Integrations** page connects outside services: see [INTEGRATIONS.md](INTEGRATIONS.md).

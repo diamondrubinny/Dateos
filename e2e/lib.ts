@@ -47,9 +47,11 @@ export async function magicLink(email: string): Promise<string> {
 /** Signs in over HTTP (real magic link through Mailpit) and returns the session cookie value. */
 export async function signInHttp(
   email: string,
+  /** Another server (phase 28: a second community). */
+  base: string = API,
 ): Promise<{ name: string; value: string; header: string }> {
   const request = () =>
-    fetch(`${API}/v1/auth/sign-in/magic-link`, {
+    fetch(`${base}/v1/auth/sign-in/magic-link`, {
       method: 'POST',
       headers: { 'content-type': 'application/json', origin: WEB },
       body: JSON.stringify({ email, callbackURL: `${WEB}/` }),
@@ -82,10 +84,10 @@ export async function resetSignInLimits(): Promise<void> {
   }
 }
 
-export function apiClient(cookie: string) {
+export function apiClient(cookie: string, base: string = API) {
   return async <T = unknown>(method: string, path: string, body?: unknown): Promise<T> => {
     const isForm = body instanceof FormData;
-    const res = await fetch(`${API}${path}`, {
+    const res = await fetch(`${base}${path}`, {
       method,
       headers: {
         cookie,
