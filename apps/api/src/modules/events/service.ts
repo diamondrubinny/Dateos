@@ -16,14 +16,18 @@ import {
   MAX_EVENT_WAITLIST,
   MAX_SPEED_CAPACITY,
   SPEED_ROUND_DEFAULT,
+  MAX_OPEN_EVENT_QUESTIONS,
+  type EventBoard,
+  type EventQuestion,
 } from '@nexaheart/shared';
-import { and, asc, desc, eq, gt, inArray, or, sql } from 'drizzle-orm';
+import { checkHarm } from '@nexaheart/ai';
+import { and, asc, desc, eq, gt, inArray, isNull, or, sql } from 'drizzle-orm';
 import { audit } from '../../lib/audit.js';
 import { HttpError } from '../../plugins/error-handler.js';
 import type { AppEvents } from '../../lib/app-events.js';
 import { noEvents } from '../../lib/app-events.js';
 
-const { events, eventRsvps, venues, profiles } = schema;
+const { events, eventRsvps, eventQuestions, eventUpdates, venues, profiles } = schema;
 
 const notFound = () => new HttpError(404, ErrorCode.NotFound, 'Resource not found.');
 const invalid = (message: string) => new HttpError(422, ErrorCode.ValidationError, message);
@@ -85,6 +89,14 @@ interface Row {
   checkedIn: boolean;
   checkedInCount: number;
 }
+
+const toQuestion = (q: typeof eventQuestions.$inferSelect): EventQuestion => ({
+  id: q.id,
+  body: q.body,
+  answer: q.answer,
+  answeredAt: q.answeredAt?.toISOString() ?? null,
+  createdAt: q.createdAt.toISOString(),
+});
 
 const toView = (r: Row): CommunityEvent => ({
   ...baseView(r.event, r.venue, r.going, r.waitingCount),
@@ -433,6 +445,164 @@ export class EventService {
       meta: { notified: going.length },
     });
     return this.staffView(id);
+  }
+
+  // ------------------------------------------------- updates and questions (phase 27)
+
+  /** The event, if this member is going or waiting; otherwise it doesn't exist for them. */
+  private async requireAttendee(eventId: string, userId: string): Promise<EventRow> {
+    const [row] = await this.db
+      .select({ event: events })
+      .from(events)
+      .innerJoin(eventRsvps, and(eq(eventRsvps.eventId, events.id), eq(eventRsvps.userId, userId)))
+      .where(eq(events.id, eventId));
+    if (!row) throw notFound();
+    return row.event;
+  }
+
+  /** Updates and the member's own questions, for people going or waiting. */
+  async board(eventId: string, userId: string): Promise<EventBoard> {
+    await this.requireAttendee(eventId, userId);
+    return {
+      updates: await this.updatesOf(eventId),
+      questions: (
+        await this.db
+          .select()
+          .from(eventQuestions)
+          .where(and(eq(eventQuestions.eventId, eventId), eq(eventQuestions.userId, userId)))
+          .orderBy(desc(eventQuestions.createdAt))
+      ).map(toQuestion),
+    };
+  }
+
+  async ask(eventId: string, userId: string, body: string): Promise<EventQuestion> {
+    const event = await this.requireAttendee(eventId, userId);
+    if (event.status !== 'scheduled' || event.endsAt.getTime() <= this.now()) {
+      throw new HttpError(409, ErrorCode.Conflict, 'This event is over.');
+    }
+    if (checkHarm(body).flagged) throw invalid('Please rephrase your question.');
+    const [open] = await this.db
+      .select({ n: sql<number>`count(*)::int` })
+      .from(eventQuestions)
+      .where(
+        and(
+          eq(eventQuestions.eventId, eventId),
+          eq(eventQuestions.userId, userId),
+          isNull(eventQuestions.answeredAt),
+        ),
+      );
+    if ((open?.n ?? 0) >= MAX_OPEN_EVENT_QUESTIONS) {
+      throw new HttpError(429, ErrorCode.RateLimited, 'Wait for an answer before asking more.');
+    }
+    const [row] = await this.db
+      .insert(eventQuestions)
+      .values({ eventId, userId, body })
+      .returning();
+    return toQuestion(row!);
+  }
+
+  async deleteQuestion(eventId: string, userId: string, questionId: string): Promise<void> {
+    const deleted = await this.db
+      .delete(eventQuestions)
+      .where(
+        and(
+          eq(eventQuestions.id, questionId),
+          eq(eventQuestions.eventId, eventId),
+          eq(eventQuestions.userId, userId),
+        ),
+      )
+      .returning({ id: eventQuestions.id });
+    if (deleted.length === 0) throw notFound();
+  }
+
+  /** Staff: updates, and questions without who asked. */
+  async staffBoard(eventId: string): Promise<EventBoard> {
+    await this.staffView(eventId);
+    return {
+      updates: await this.updatesOf(eventId),
+      questions: (
+        await this.db
+          .select()
+          .from(eventQuestions)
+          .where(eq(eventQuestions.eventId, eventId))
+          .orderBy(asc(eventQuestions.createdAt))
+      ).map(toQuestion),
+    };
+  }
+
+  /** Posts an update and tells everyone going or waiting (a content-free push). */
+  async postUpdate(actorId: string, eventId: string, body: string): Promise<EventBoard> {
+    const [event] = await this.db.select().from(events).where(eq(events.id, eventId));
+    if (!event) throw notFound();
+    if (event.status !== 'scheduled' || event.endsAt.getTime() <= this.now()) {
+      throw new HttpError(409, ErrorCode.Conflict, 'Updates can be posted until the event ends.');
+    }
+    const [row] = await this.db
+      .insert(eventUpdates)
+      .values({ eventId, authorId: actorId, body })
+      .returning({ id: eventUpdates.id });
+    const people = await this.db
+      .select({ userId: eventRsvps.userId })
+      .from(eventRsvps)
+      .where(eq(eventRsvps.eventId, eventId));
+    for (const { userId } of people) await this.notify(userId, eventId).catch(() => undefined);
+    await audit(this.db, {
+      actorId,
+      action: 'event.update_posted',
+      targetType: 'event',
+      targetId: eventId,
+      meta: { update: row!.id, notified: people.length },
+    });
+    return this.staffBoard(eventId);
+  }
+
+  async deleteUpdate(actorId: string, eventId: string, updateId: string): Promise<EventBoard> {
+    const deleted = await this.db
+      .delete(eventUpdates)
+      .where(and(eq(eventUpdates.id, updateId), eq(eventUpdates.eventId, eventId)))
+      .returning({ id: eventUpdates.id });
+    if (deleted.length === 0) throw notFound();
+    await audit(this.db, {
+      actorId,
+      action: 'event.update_deleted',
+      targetType: 'event',
+      targetId: eventId,
+      meta: { update: updateId },
+    });
+    return this.staffBoard(eventId);
+  }
+
+  /** Answers a question privately; only the asker sees it (a content-free push tells them). */
+  async answerQuestion(
+    actorId: string,
+    eventId: string,
+    questionId: string,
+    answer: string,
+  ): Promise<EventBoard> {
+    const [row] = await this.db
+      .update(eventQuestions)
+      .set({ answer, answeredBy: actorId, answeredAt: new Date(this.now()) })
+      .where(and(eq(eventQuestions.id, questionId), eq(eventQuestions.eventId, eventId)))
+      .returning({ userId: eventQuestions.userId });
+    if (!row) throw notFound();
+    await this.notify(row.userId, eventId).catch(() => undefined);
+    await audit(this.db, {
+      actorId,
+      action: 'event.question_answered',
+      targetType: 'event',
+      targetId: eventId,
+      meta: { question: questionId },
+    });
+    return this.staffBoard(eventId);
+  }
+
+  private async updatesOf(eventId: string) {
+    const rows = await this.db
+      .select({ id: eventUpdates.id, body: eventUpdates.body, createdAt: eventUpdates.createdAt })
+      .from(eventUpdates)
+      .where(eq(eventUpdates.eventId, eventId))
+      .orderBy(desc(eventUpdates.createdAt));
+    return rows.map((u) => ({ ...u, createdAt: u.createdAt.toISOString() }));
   }
 
   // ------------------------------------------------------------------ check-in (phase 23)

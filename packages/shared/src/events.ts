@@ -200,3 +200,46 @@ export const speedJoinSchema = z.object({
   date: speedDateSchema,
 });
 export type SpeedJoin = z.infer<typeof speedJoinSchema>;
+
+// ---------------------------------------------------------------------------
+// Updates and questions to the organizers (phase 27)
+// ---------------------------------------------------------------------------
+
+export const MAX_EVENT_UPDATE_LENGTH = 500;
+export const MAX_EVENT_QUESTION_LENGTH = 500;
+export const MAX_EVENT_ANSWER_LENGTH = 1000;
+/** Open (unanswered) questions one member may have about one event. */
+export const MAX_OPEN_EVENT_QUESTIONS = 5;
+
+const text = (max: number) => z.string().trim().min(1).max(max);
+
+/** An update from the organizers, for people going or waiting. No author is shown. */
+export const eventNoticeSchema = z.object({
+  id: z.uuid(),
+  body: z.string(),
+  createdAt: z.string(),
+});
+export type EventNotice = z.infer<typeof eventNoticeSchema>;
+
+/** A question to the organizers. Staff see it without who asked. */
+export const eventQuestionSchema = z.object({
+  id: z.uuid(),
+  body: z.string(),
+  answer: z.string().nullable(),
+  answeredAt: z.string().nullable(),
+  createdAt: z.string(),
+});
+export type EventQuestion = z.infer<typeof eventQuestionSchema>;
+
+/** What a member going or waiting sees: the updates and their own questions. */
+export const eventBoardSchema = z.object({
+  updates: z.array(eventNoticeSchema),
+  questions: z.array(eventQuestionSchema),
+});
+export type EventBoard = z.infer<typeof eventBoardSchema>;
+
+export const eventNoticeInputSchema = z.object({ body: text(MAX_EVENT_UPDATE_LENGTH) }).strict();
+export const eventQuestionInputSchema = z
+  .object({ body: text(MAX_EVENT_QUESTION_LENGTH) })
+  .strict();
+export const eventAnswerInputSchema = z.object({ answer: text(MAX_EVENT_ANSWER_LENGTH) }).strict();

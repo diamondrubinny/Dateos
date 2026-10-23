@@ -1,7 +1,14 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
-import { type AdminCheckIn, type AdminEvent, SPEED_ROUND_DEFAULT } from '@nexaheart/shared';
+import {
+  type AdminCheckIn,
+  type AdminEvent,
+  type EventBoard,
+  MAX_EVENT_ANSWER_LENGTH,
+  MAX_EVENT_UPDATE_LENGTH,
+  SPEED_ROUND_DEFAULT,
+} from '@nexaheart/shared';
 import QRCode from 'qrcode';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { api } from '../api';
@@ -117,6 +124,169 @@ function CheckInPanel({ event, onClose }: { event: AdminEvent; onClose: () => vo
   );
 }
 
+/**
+ * Updates to everyone going or waiting, and answers to their questions (phase 27). Questions come
+ * without who asked; moderators can read, admins write.
+ */
+function BoardPanel({
+  event,
+  isAdmin,
+  onClose,
+}: {
+  event: AdminEvent;
+  isAdmin: boolean;
+  onClose: () => void;
+}) {
+  const { t, locale } = useLocale();
+  const [board, setBoard] = useState<EventBoard>();
+  const [error, setError] = useState<Error>();
+  const [update, setUpdate] = useState('');
+  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [status, setStatus] = useState('');
+  const [busy, setBusy] = useState(false);
+  const headingRef = useRef<HTMLHeadingElement>(null);
+
+  useEffect(() => headingRef.current?.focus(), []);
+  useEffect(() => {
+    api.eventBoard(event.id).then(setBoard, (err: Error) => setError(err));
+  }, [event.id]);
+
+  const run = async (action: () => Promise<EventBoard>, done: string) => {
+    setBusy(true);
+    setError(undefined);
+    try {
+      setBoard(await action());
+      setStatus(done);
+      return true;
+    } catch (err) {
+      setError(err as Error);
+      return false;
+    } finally {
+      setBusy(false);
+    }
+  };
+  const open = event.status === 'scheduled' && Date.parse(event.endsAt) > Date.now();
+
+  return (
+    <section className="card board" aria-labelledby="board-title">
+      <h2 id="board-title" ref={headingRef} tabIndex={-1}>
+        {format(t.events.boardTitle, { title: event.title })}
+      </h2>
+      <p className="help">{t.events.boardHelp}</p>
+      <p role="status" className={status ? 'alert alert-ok' : 'visually-hidden'}>
+        {status}
+      </p>
+      {error ? <ErrorBox error={error} /> : null}
+      {!board && !error ? <Loading /> : null}
+      {board ? (
+        <>
+          {isAdmin && open ? (
+            <form
+              className="stack"
+              onSubmit={(e) => {
+                e.preventDefault();
+                void run(
+                  () => api.postEventUpdate(event.id, update.trim()),
+                  t.events.updatePosted,
+                ).then((ok) => ok && setUpdate(''));
+              }}
+            >
+              <label htmlFor="event-update">{t.events.updateLabel}</label>
+              <textarea
+                id="event-update"
+                value={update}
+                maxLength={MAX_EVENT_UPDATE_LENGTH}
+                onChange={(e) => setUpdate(e.target.value)}
+                rows={3}
+                required
+              />
+              <button type="submit" className="button primary" disabled={busy || !update.trim()}>
+                {t.events.postUpdate}
+              </button>
+            </form>
+          ) : null}
+          {board.updates.length === 0 ? (
+            <p className="empty">{t.events.noUpdates}</p>
+          ) : (
+            <ul className="board-list">
+              {board.updates.map((u) => (
+                <li key={u.id}>
+                  <p className="muted">{formatDate(u.createdAt, locale)}</p>
+                  <p dir="auto">{u.body}</p>
+                  {isAdmin ? (
+                    <button
+                      type="button"
+                      className="button small"
+                      disabled={busy}
+                      onClick={() =>
+                        void run(() => api.deleteEventUpdate(event.id, u.id), t.events.deleteUpdate)
+                      }
+                    >
+                      {t.events.deleteUpdate}
+                    </button>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          )}
+          <h3>{t.events.questions}</h3>
+          {board.questions.length === 0 ? (
+            <p className="empty">{t.events.noQuestions}</p>
+          ) : (
+            <ul className="board-list">
+              {board.questions.map((q) => (
+                <li key={q.id}>
+                  <p className="muted">{formatDate(q.createdAt, locale)}</p>
+                  <p dir="auto">
+                    <strong>{q.body}</strong>
+                  </p>
+                  {q.answer ? (
+                    <p dir="auto">
+                      <Badge tone="ok">{t.events.answered}</Badge> {q.answer}
+                    </p>
+                  ) : isAdmin ? (
+                    <form
+                      className="stack"
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        void run(
+                          () =>
+                            api.answerEventQuestion(event.id, q.id, (answers[q.id] ?? '').trim()),
+                          t.events.answerSent,
+                        );
+                      }}
+                    >
+                      <label htmlFor={`answer-${q.id}`}>{t.events.answerLabel}</label>
+                      <textarea
+                        id={`answer-${q.id}`}
+                        value={answers[q.id] ?? ''}
+                        maxLength={MAX_EVENT_ANSWER_LENGTH}
+                        onChange={(e) => setAnswers({ ...answers, [q.id]: e.target.value })}
+                        rows={2}
+                        required
+                      />
+                      <button
+                        type="submit"
+                        className="button small primary"
+                        disabled={busy || !(answers[q.id] ?? '').trim()}
+                      >
+                        {t.events.sendAnswer}
+                      </button>
+                    </form>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          )}
+        </>
+      ) : null}
+      <button type="button" className="button" onClick={onClose}>
+        {t.events.checkInClose}
+      </button>
+    </section>
+  );
+}
+
 /** Start and end in the staff member's own time zone; an end before the start is the next day. */
 function times(form: Form): { startsAt: string; endsAt: string } {
   const startsAt = new Date(`${form.date}T${form.start}`);
@@ -137,6 +307,7 @@ export function Events({ isAdmin }: { isAdmin: boolean }) {
   const [editing, setEditing] = useState<string | null>(null);
   const [confirmCancel, setConfirmCancel] = useState<string | null>(null);
   const [checkIn, setCheckIn] = useState<AdminEvent | null>(null);
+  const [boardFor, setBoardFor] = useState<AdminEvent | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<Error>();
   const [notice, setNotice] = useState<string>();
@@ -205,6 +376,9 @@ export function Events({ isAdmin }: { isAdmin: boolean }) {
       </p>
       {error ? <ErrorBox error={error} /> : null}
       {checkIn ? <CheckInPanel event={checkIn} onClose={() => setCheckIn(null)} /> : null}
+      {boardFor ? (
+        <BoardPanel event={boardFor} isAdmin={isAdmin} onClose={() => setBoardFor(null)} />
+      ) : null}
 
       <div className="grid venues-grid">
         <div>
@@ -269,7 +443,15 @@ export function Events({ isAdmin }: { isAdmin: boolean }) {
                             : upcoming(e)
                               ? t.events.statusScheduled
                               : t.events.statusEnded}
-                        </Badge>
+                        </Badge>{' '}
+                        <button
+                          type="button"
+                          className="button small"
+                          onClick={() => setBoardFor(e)}
+                        >
+                          {t.events.board}
+                          <span className="visually-hidden"> {e.title}</span>
+                        </button>
                       </td>
                       {isAdmin ? (
                         <td className="actions">

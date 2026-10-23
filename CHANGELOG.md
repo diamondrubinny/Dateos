@@ -6,6 +6,10 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Added
 
+- **Event updates and questions**: organizers post updates to an event, and people going or
+  waiting get a content-free notification. Members going can ask the organizers privately; staff see
+  questions without who asked, and only the asker sees the answer. Who else is going is still never
+  shown.
 - **Voice transcripts**: "Show text" under every voice message and voice prompt, made by an open
   speech model (Whisper) in the worker on your own server, only when someone who may play the clip
   asks. Automatic for members who shared "deaf or hard of hearing"; a speaker can choose "voice

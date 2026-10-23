@@ -701,3 +701,19 @@ input[type='password'] {
 .error-text {
   color: var(--danger);
 }
+
+/* Event updates and questions (phase 27) */
+.board-list {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+.board-list li {
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+}
+.board-list p {
+  margin: 0.25rem 0;
+}

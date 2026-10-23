@@ -1,13 +1,21 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
-import type { CommunityEvent, SpeedDate, SpeedJoin, SpeedState } from '@nexaheart/shared';
+import type {
+  CommunityEvent,
+  EventBoard,
+  EventQuestion,
+  SpeedDate,
+  SpeedJoin,
+  SpeedState,
+} from '@nexaheart/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiFetch, json } from './api';
 
 export const eventKeys = {
   list: ['events'] as const,
   one: (id: string) => ['events', id] as const,
+  board: (id: string) => ['events', id, 'board'] as const,
 };
 
 /** Upcoming community events (phase 14). */
@@ -94,5 +102,35 @@ export function useSpeedAnswer(eventId: string) {
       await client.invalidateQueries({ queryKey: speedKey(eventId) });
       if (date.matchId) await client.invalidateQueries({ queryKey: ['matches'] });
     },
+  });
+}
+
+/** Updates and my questions to the organizers (phase 27): only while going or waiting. */
+export function useEventBoard(id: string, enabled: boolean) {
+  return useQuery({
+    queryKey: eventKeys.board(id),
+    queryFn: () => apiFetch<EventBoard>(`/v1/events/${id}/board`),
+    enabled,
+  });
+}
+
+export function useAskOrganizers(id: string) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (body: string) =>
+      apiFetch<EventQuestion>(`/v1/events/${id}/questions`, {
+        method: 'POST',
+        body: json({ body }),
+      }),
+    onSuccess: () => client.invalidateQueries({ queryKey: eventKeys.board(id) }),
+  });
+}
+
+export function useDeleteQuestion(id: string) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (questionId: string) =>
+      apiFetch(`/v1/events/${id}/questions/${questionId}`, { method: 'DELETE' }),
+    onSuccess: () => client.invalidateQueries({ queryKey: eventKeys.board(id) }),
   });
 }

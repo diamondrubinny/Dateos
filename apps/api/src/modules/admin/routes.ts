@@ -21,6 +21,9 @@ import {
   venueInputSchema,
   venueUpdateSchema,
   adminCheckInSchema,
+  eventAnswerInputSchema,
+  eventBoardSchema,
+  eventNoticeInputSchema,
   integrationIds,
   integrationsResponseSchema,
   integrationTestSchema,
@@ -426,6 +429,64 @@ export const adminRoutes: FastifyPluginAsyncZod<{
     async (request) => {
       adminOnly(currentUser(request).role);
       return events.checkInFor(request.params.id);
+    },
+  );
+
+  // Updates and questions to the organizers (phase 27): questions come without who asked.
+  app.get(
+    '/v1/admin/events/:id/board',
+    { schema: { params: idParams, response: { 200: eventBoardSchema } } },
+    async (request) => events.staffBoard(request.params.id),
+  );
+  app.post(
+    '/v1/admin/events/:id/updates',
+    {
+      config: perUserLimit(100, 60 * 60 * 1000),
+      schema: {
+        params: idParams,
+        body: eventNoticeInputSchema,
+        response: { 200: eventBoardSchema },
+      },
+    },
+    async (request) => {
+      const staff = currentUser(request);
+      adminOnly(staff.role);
+      return events.postUpdate(staff.id, request.params.id, request.body.body);
+    },
+  );
+  app.delete(
+    '/v1/admin/events/:id/updates/:updateId',
+    {
+      schema: {
+        params: idParams.extend({ updateId: z.uuid() }),
+        response: { 200: eventBoardSchema },
+      },
+    },
+    async (request) => {
+      const staff = currentUser(request);
+      adminOnly(staff.role);
+      return events.deleteUpdate(staff.id, request.params.id, request.params.updateId);
+    },
+  );
+  app.post(
+    '/v1/admin/events/:id/questions/:questionId/answer',
+    {
+      config: perUserLimit(200, 60 * 60 * 1000),
+      schema: {
+        params: idParams.extend({ questionId: z.uuid() }),
+        body: eventAnswerInputSchema,
+        response: { 200: eventBoardSchema },
+      },
+    },
+    async (request) => {
+      const staff = currentUser(request);
+      adminOnly(staff.role);
+      return events.answerQuestion(
+        staff.id,
+        request.params.id,
+        request.params.questionId,
+        request.body.answer,
+      );
     },
   );
 

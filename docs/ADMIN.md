@@ -140,6 +140,14 @@ The worker deletes expired records daily (`cleanup-discovery` job). Constants ar
   venue. The QR code and the 6-digit code change every 30 seconds; people going check in from 30
   minutes before the start until the end. Staff see only how many checked in.
 
+## 7a. Event updates and questions (phase 27)
+
+**Events → Updates and questions** on any event. Admins post short updates ("we moved inside")
+until the event ends; everyone going or on the waiting list gets a notification without content.
+Members going can ask a question; you see it **without who asked**, and only they see your answer.
+If several people ask the same, post an update instead. Moderators can read, not write. Updates and
+questions are deleted 30 days after the event; the audit log keeps ids only, never the text.
+
 ## 8. Integrations (phase 24, admins only)
 
 The **Integrations** page connects outside services: see [INTEGRATIONS.md](INTEGRATIONS.md).
