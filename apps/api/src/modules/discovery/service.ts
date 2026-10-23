@@ -13,6 +13,7 @@ import {
   ErrorCode,
   snapToGrid,
   type About,
+  type AccessNeed,
   type InteractionInput,
   type Intention,
   type LikeReceived,
@@ -845,6 +846,7 @@ export class DiscoveryService {
           visiting: visiting.get(p.userId) ?? null,
           about: toAbout(aboutById.get(p.userId)),
           voicePrompt: toVoicePrompt(aboutById.get(p.userId), cleanVoice),
+          accessNeeds: shownAccessNeeds(aboutById.get(p.userId)),
           metInPerson: metIds.has(p.userId),
           atEvent: atEventIds.has(p.userId),
           friendTakes: takesById.get(p.userId) ?? [],
@@ -868,6 +870,11 @@ function toAbout(row: typeof profileAbout.$inferSelect | undefined): About | nul
     religion: row.religion as About['religion'],
     openingQuestion: row.openingQuestion,
   };
+}
+
+/** Accessibility needs others may see (phase 25): only when the member chose to show them. */
+function shownAccessNeeds(row: typeof profileAbout.$inferSelect | undefined): AccessNeed[] {
+  return row?.showAccessNeeds ? (row.accessNeeds as AccessNeed[]) : [];
 }
 
 /** A voice prompt others can play: only once its clip passed the scan and re-encoding. */

@@ -8,6 +8,7 @@ import { Platform, StyleSheet, View } from 'react-native';
 import { AppText } from '../../components/AppText';
 import { Button } from '../../components/Button';
 import { Loading } from '../../components/Loading';
+import { MoreOptions } from '../../components/MoreOptions';
 import { Screen } from '../../components/Screen';
 import { mediaUrl } from '../../lib/api';
 import { useMe } from '../../lib/queries';
@@ -73,12 +74,6 @@ function ProfileContent() {
           ))}
         </View>
       </View>
-      <Button label={`✨ ${t('coach.open')}`} onPress={() => router.push('/coach')} />
-      <Button
-        variant="secondary"
-        label={`💬 ${t('matchmaker.open')}`}
-        onPress={() => router.push('/matchmaker')}
-      />
       <View style={styles.editRow}>
         <Button
           variant="secondary"
@@ -87,40 +82,55 @@ function ProfileContent() {
         />
         <Button
           variant="secondary"
-          label={t('home.editAbout')}
-          onPress={() => router.push('/edit-about')}
-        />
-        <Button
-          variant="secondary"
-          label={t('takes.title')}
-          onPress={() => router.push('/takes')}
-        />
-        <Button
-          variant="secondary"
           label={t('home.editPhotos')}
           onPress={() => router.push('/onboarding/photos?edit=1')}
         />
         <Button
           variant="secondary"
-          label={t('home.editPrompts')}
-          onPress={() => router.push('/onboarding/prompts?edit=1')}
+          label={t('home.settings')}
+          onPress={() => router.push('/settings')}
         />
       </View>
-      <Button
-        variant="secondary"
-        label={t('events.profileButton')}
-        onPress={() => router.push('/events')}
-      />
-      <Button
-        variant="secondary"
-        label={t('checkin.title')}
-        onPress={() => router.push('/checkin')}
-      />
-      <Button
-        variant="secondary"
-        label={t('home.settings')}
-        onPress={() => router.push('/settings')}
-      />
+      <MoreOptions>
+        <Button label={`✨ ${t('coach.open')}`} onPress={() => router.push('/coach')} />
+        <Button
+          variant="secondary"
+          label={`💬 ${t('matchmaker.open')}`}
+          onPress={() => router.push('/matchmaker')}
+        />
+        <View style={styles.editRow}>
+          <Button
+            variant="secondary"
+            label={t('home.editAbout')}
+            onPress={() => router.push('/edit-about')}
+          />
+          <Button
+            variant="secondary"
+            label={t('access.title')}
+            onPress={() => router.push('/access-needs')}
+          />
+          <Button
+            variant="secondary"
+            label={t('takes.title')}
+            onPress={() => router.push('/takes')}
+          />
+          <Button
+            variant="secondary"
+            label={t('home.editPrompts')}
+            onPress={() => router.push('/onboarding/prompts?edit=1')}
+          />
+        </View>
+        <Button
+          variant="secondary"
+          label={t('events.profileButton')}
+          onPress={() => router.push('/events')}
+        />
+        <Button
+          variant="secondary"
+          label={t('checkin.title')}
+          onPress={() => router.push('/checkin')}
+        />
+      </MoreOptions>
     </Screen>
   );
 }

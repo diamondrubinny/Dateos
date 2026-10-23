@@ -3,7 +3,8 @@
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 import { ActivityIndicator, Pressable, StyleSheet, View, type PressableProps } from 'react-native';
 import { useKeyboardMode } from '../lib/focus-visible';
-import { MIN_TOUCH, radius, spacing, useColors } from '../lib/theme';
+import { useDisplay } from '../lib/display';
+import { EASY_TOUCH, MIN_TOUCH, radius, spacing, useColors } from '../lib/theme';
 import { AppText } from './AppText';
 
 export interface ButtonProps extends Omit<PressableProps, 'children' | 'style'> {
@@ -24,6 +25,7 @@ export function Button({
 }: ButtonProps) {
   const colors = useColors();
   const keyboard = useKeyboardMode();
+  const { easy } = useDisplay();
   const isDisabled = Boolean(disabled || loading);
   const palette = {
     primary: { bg: colors.primary, fg: 'onPrimary' as const, border: colors.primary },
@@ -45,6 +47,7 @@ export function Button({
         const focused = keyboard && (state as { focused?: boolean }).focused;
         return [
           styles.base,
+          easy && styles.easy,
           { backgroundColor: palette.bg, borderColor: palette.border },
           state.pressed && styles.pressed,
           isDisabled && styles.disabled,
@@ -83,6 +86,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm },
+  easy: { minHeight: EASY_TOUCH, paddingVertical: spacing.md },
   pressed: { opacity: 0.85 },
   disabled: { opacity: 0.5 },
 });

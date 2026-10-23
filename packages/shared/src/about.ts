@@ -141,3 +141,38 @@ export const noDealbreakers: Dealbreakers = {
 
 /** Version of the in-app text for the `religion` consent; bump it when the wording changes. */
 export const RELIGION_CONSENT_VERSION = '1';
+
+/**
+ * Accessibility needs (phase 25): can reveal health information (GDPR Art. 9), so stored only with
+ * the `accessibility` consent ⚖️. Never used for ranking or as a filter by others, never sent to
+ * an AI model; shown on the profile only when the member turns `show` on.
+ */
+export const accessNeeds = [
+  'wheelchair',
+  'step_free',
+  'deaf_hoh',
+  'blind_low_vision',
+  'sign_language',
+  'text_first',
+  'quiet_places',
+] as const;
+export type AccessNeed = (typeof accessNeeds)[number];
+export const accessNeedSchema = z.enum(accessNeeds);
+
+export const accessNeedsSchema = z
+  .object({
+    needs: z
+      .array(accessNeedSchema)
+      .max(accessNeeds.length)
+      .refine(unique, { message: 'Each need once' }),
+    show: z.boolean(),
+  })
+  .strict();
+export type AccessNeeds = z.infer<typeof accessNeedsSchema>;
+export const noAccessNeeds: AccessNeeds = { needs: [], show: false };
+
+/** Needs that make step-free places come first in the date planner. */
+export const STEP_FREE_NEEDS: readonly AccessNeed[] = ['wheelchair', 'step_free'];
+
+/** Version of the in-app text for the `accessibility` consent; bump it when the wording changes. */
+export const ACCESSIBILITY_CONSENT_VERSION = '1';

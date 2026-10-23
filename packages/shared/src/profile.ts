@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 import { accountNoticeSchema } from './moderation.js';
-import { aboutSchema, dealbreakersSchema } from './about.js';
+import { aboutSchema, accessNeedsSchema, dealbreakersSchema } from './about.js';
 import { pauseStateSchema } from './visibility.js';
 import { z } from 'zod';
 import { publicIntegrationsSchema } from './integrations.js';
@@ -66,6 +66,8 @@ export const consentKinds = [
   'analytics',
   /** Religious observance on the profile and as a filter (phase 19), GDPR Art. 9(2)(a) ⚖️. */
   'religion',
+  /** Accessibility needs (phase 25): can reveal health data, GDPR Art. 9(2)(a) ⚖️. */
+  'accessibility',
 ] as const;
 export const consentKindSchema = z.enum(consentKinds);
 export type ConsentKind = z.infer<typeof consentKindSchema>;
@@ -177,6 +179,8 @@ export const meResponseSchema = z.object({
   /** About me and dealbreakers (phase 19). */
   about: aboutSchema,
   dealbreakers: dealbreakersSchema,
+  /** Accessibility needs (phase 25), by consent; `show` puts them on the profile. */
+  accessNeeds: accessNeedsSchema,
   voicePrompt: myVoicePromptSchema.nullable(),
   /** Show the "met in person" badge (phase 20, off by default). */
   showMetBadge: z.boolean(),

@@ -11,7 +11,7 @@ export interface StorageItem {
   kind: 'cookie' | 'localStorage' | 'secureStore';
   platform: 'web' | 'native';
   /** i18n key suffix under cookies.purpose / cookies.duration */
-  purpose: 'session' | 'sessionCache' | 'language' | 'pushToken' | 'callNotice';
+  purpose: 'session' | 'sessionCache' | 'language' | 'pushToken' | 'callNotice' | 'display';
   duration: 'days30' | 'untilChanged' | 'untilSignOut';
 }
 
@@ -36,6 +36,14 @@ export const storageInventory: StorageItem[] = [
     kind: 'localStorage',
     platform: 'web',
     purpose: 'callNotice',
+    duration: 'untilChanged',
+  },
+  {
+    // Phase 25: text size, easy mode, contrast and motion; never sent to the server.
+    name: 'nexaheart.display',
+    kind: 'localStorage',
+    platform: 'web',
+    purpose: 'display',
     duration: 'untilChanged',
   },
   {
@@ -71,6 +79,13 @@ export const storageInventory: StorageItem[] = [
     kind: 'secureStore',
     platform: 'native',
     purpose: 'callNotice',
+    duration: 'untilChanged',
+  },
+  {
+    name: 'nexaheart.display',
+    kind: 'secureStore',
+    platform: 'native',
+    purpose: 'display',
     duration: 'untilChanged',
   },
 ];

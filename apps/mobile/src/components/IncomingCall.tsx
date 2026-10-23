@@ -9,6 +9,7 @@ import { Modal, StyleSheet, View } from 'react-native';
 import { declineCall } from '../lib/call-queries';
 import { useConversations } from '../lib/chat-queries';
 import { useRealtime } from '../lib/realtime';
+import { useDisplay } from '../lib/display';
 import { radius, spacing, useColors } from '../lib/theme';
 import { AppText } from './AppText';
 import { Button } from './Button';
@@ -27,6 +28,7 @@ interface Ringing {
 export function IncomingCall() {
   const { t } = useTranslation();
   const colors = useColors();
+  const { motionOff } = useDisplay();
   const realtime = useRealtime();
   const conversations = useConversations();
   const [ringing, setRinging] = useState<Ringing>();
@@ -62,7 +64,12 @@ export function IncomingCall() {
     : t('call.incomingVoice', { name });
 
   return (
-    <Modal transparent animationType="fade" visible onRequestClose={() => setRinging(undefined)}>
+    <Modal
+      transparent
+      animationType={motionOff ? 'none' : 'fade'}
+      visible
+      onRequestClose={() => setRinging(undefined)}
+    >
       <View style={[styles.backdrop, { backgroundColor: 'rgba(0,0,0,0.55)' }]}>
         <View
           style={[styles.card, { backgroundColor: colors.background, borderColor: colors.border }]}

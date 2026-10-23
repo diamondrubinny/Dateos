@@ -21,6 +21,7 @@ import { newCallKeyPair, toBase64Url } from '../../lib/call-crypto';
 import { encryptionSupported } from '../../lib/call-encryption';
 import { callKey, endCall, formatClock, joinCall, useCall } from '../../lib/call-queries';
 import { useConversations } from '../../lib/chat-queries';
+import { useMe } from '../../lib/queries';
 import { useRealtime } from '../../lib/realtime';
 import { prefs } from '../../lib/storage';
 import { radius, spacing, useColors } from '../../lib/theme';
@@ -64,6 +65,15 @@ function CallScreen() {
     micOn: room.micOn,
     secure: room.secure,
   });
+
+  // Phase 25: someone deaf or hard of hearing gets captions as soon as the call connects.
+  const wantsCaptions = useMe().data?.accessNeeds.needs.includes('deaf_hoh') ?? false;
+  const autoCaptions = useRef(false);
+  useEffect(() => {
+    if (!wantsCaptions || autoCaptions.current || room.status !== 'connected') return;
+    autoCaptions.current = true;
+    if (!captions.showing) captions.toggle();
+  }, [wantsCaptions, room.status, captions]);
 
   useEffect(() => {
     void prefs.get(CALL_NOTICE_KEY).then((v) => setNotice(v ? 'seen' : 'show'));

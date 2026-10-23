@@ -12,6 +12,7 @@ import { Platform, StyleSheet, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ApiRequestError } from '../lib/api';
 import { authClient } from '../lib/auth-client';
+import { DisplayProvider } from '../lib/display';
 import { LocaleProvider, useLocale } from '../lib/locale';
 import { RealtimeProvider } from '../lib/realtime';
 import { WebIntegrations } from '../components/WebIntegrations';
@@ -90,7 +91,9 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <QueryClientProvider client={queryClient}>
         <LocaleProvider>
-          <Navigator />
+          <DisplayProvider>
+            <Navigator />
+          </DisplayProvider>
         </LocaleProvider>
       </QueryClientProvider>
     </SafeAreaProvider>

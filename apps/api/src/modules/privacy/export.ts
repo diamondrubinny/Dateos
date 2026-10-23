@@ -374,6 +374,9 @@ export async function exportMemberData(
           heightCm: about.heightCm,
           religion: about.religion,
           openingQuestion: about.openingQuestion,
+          // Phase 25: only while the accessibility consent is given.
+          accessNeeds: about.accessNeeds,
+          showAccessNeeds: about.showAccessNeeds,
         }
       : null,
     approximateLocation: location

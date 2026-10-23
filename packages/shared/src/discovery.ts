@@ -4,7 +4,7 @@
 import { matchModeSchema, publicTakeSchema } from './friends.js';
 import { z } from 'zod';
 import { genderSchema, intentionSchema, promptKeySchema, voicePromptSchema } from './profile.js';
-import { aboutSchema } from './about.js';
+import { aboutSchema, accessNeedSchema } from './about.js';
 import { placeSchema } from './visibility.js';
 
 /** Dimension of stored profile embeddings (hashing provider and 768-d Ollama models). */
@@ -91,6 +91,8 @@ export const publicProfileSchema = z.object({
   /** Interests, lifestyle and the opening question (phase 19); null until filled in. */
   about: aboutSchema.nullable(),
   voicePrompt: voicePromptSchema.nullable(),
+  /** Accessibility needs (phase 25), only those the member chose to show; usually empty. */
+  accessNeeds: z.array(accessNeedSchema),
   /** Opt-in badge: met someone from this community in person, both confirmed (phase 20). */
   metInPerson: z.boolean(),
   /** Opt-in badge: checked in at one of this community's events in the last year (phase 23). */

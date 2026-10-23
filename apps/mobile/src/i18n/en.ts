@@ -377,6 +377,7 @@ export const en = {
       secureStore: 'Device keychain (encrypted)',
     },
     purpose: {
+      display: 'Remembers the text size, easy mode, contrast and motion you chose.',
       session: 'Keeps you signed in.',
       sessionCache: 'A copy of your session, so the app opens quickly.',
       language: 'Remembers the language you chose.',
@@ -1249,6 +1250,80 @@ export const en = {
   captcha: {
     label: 'Check that you’re not a bot',
     needed: 'Please complete the check that you’re not a bot first.',
+  },
+  display: {
+    title: 'Display and ease of use',
+    subtitle: 'Make the app easier to read and use. These choices stay on this device.',
+    textSize: 'Text size',
+    sizes: {
+      standard: 'Standard',
+      large: 'Large',
+      larger: 'Larger',
+    },
+    previewTitle: 'This is how text will look',
+    previewBody:
+      'Take your time. Every action has a clear button, and nothing happens unless you choose it.',
+    easyLabel: 'Easy mode',
+    easyHint:
+      'Three tabs instead of five, bigger buttons, fewer menus, and a short explanation under each action.',
+    contrastLabel: 'Higher contrast',
+    contrastHint: 'Grey text and borders become darker and easier to see.',
+    motionLabel: 'Reduce motion',
+    motionHint: 'Skip animations. The app also follows your device’s setting.',
+    deviceOnly:
+      'Saved on this device only. Nobody, not even this community, learns what you chose.',
+    picksHint: 'A few chosen profiles each day',
+    likesHint: 'People who already liked you',
+    explainDecide:
+      '“Like” lets {{name}} know you’re interested. If the like is mutual, you can start chatting. “Pass” moves on, and {{name}} isn’t told.',
+    explainFriend:
+      '“Connect” lets {{name}} know you’d like to be friends. If it’s mutual, you can start chatting.',
+    likedSent:
+      'Your like was sent to {{name}}. If it’s mutual, the chat will appear under {{tab}}.',
+    moreOptions: 'More options',
+    fewerOptions: 'Fewer options',
+    welcomeLabel: 'Bigger text and a simpler app',
+    welcomeHint: 'Turns on easy mode with large text. You can change it any time in Settings.',
+  },
+  access: {
+    title: 'Accessibility needs',
+    intro:
+      'If you like, tell the app what helps you. It can then suggest step-free places, start captions in calls, and more. This is entirely optional.',
+    saved: 'Saved.',
+    consent: 'I agree that the app stores the needs I choose',
+    consentHint:
+      'This can reveal health information, so it needs your explicit consent. Turning it off deletes your answers at once.',
+    needsLabel: 'What helps you?',
+    needs: {
+      wheelchair: 'I use a wheelchair',
+      step_free: 'I need step-free places',
+      deaf_hoh: 'I’m deaf or hard of hearing',
+      blind_low_vision: 'I’m blind or have low vision',
+      sign_language: 'I use sign language',
+      text_first: 'I prefer texting before a call',
+      quiet_places: 'I prefer quiet places',
+    },
+    short: {
+      wheelchair: 'Uses a wheelchair',
+      step_free: 'Needs step-free places',
+      deaf_hoh: 'Deaf or hard of hearing',
+      blind_low_vision: 'Blind or low vision',
+      sign_language: 'Uses sign language',
+      text_first: 'Prefers texting first',
+      quiet_places: 'Prefers quiet places',
+    },
+    howTitle: 'Who sees this',
+    howPrivate:
+      'By default only your own app uses these: step-free places come first when you plan a date, and captions start by themselves in calls if you’re deaf or hard of hearing.',
+    show: 'Show them on my profile',
+    showHint:
+      'People who see you in Discover, and your matches, will see a short line on your profile.',
+    never:
+      'Never used to rank you or filter you out, never sent to an AI model, and not shown to moderators.',
+    stepFreeOnly: 'Step-free places only',
+    stepFreeOnlyHint: 'On because step-free access matters for this date.',
+    textFirst:
+      '{{name}}’s profile says they prefer texting before a call. You could send a message first.',
   },
 };
 

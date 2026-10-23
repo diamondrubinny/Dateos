@@ -4,6 +4,7 @@
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Modal, StyleSheet, View } from 'react-native';
+import { useDisplay } from '../lib/display';
 import { radius, spacing, useColors } from '../lib/theme';
 import { AppText } from './AppText';
 import { Button } from './Button';
@@ -12,8 +13,9 @@ import { Button } from './Button';
 export function MatchCelebration({ name, onClose }: { name: string; onClose: () => void }) {
   const { t } = useTranslation();
   const colors = useColors();
+  const { motionOff } = useDisplay();
   return (
-    <Modal transparent animationType="fade" onRequestClose={onClose} visible>
+    <Modal transparent animationType={motionOff ? 'none' : 'fade'} onRequestClose={onClose} visible>
       <View style={styles.backdrop}>
         <View
           style={[styles.card, { backgroundColor: colors.primary }]}

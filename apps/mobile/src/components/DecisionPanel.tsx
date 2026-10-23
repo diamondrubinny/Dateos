@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 import { ApiRequestError } from '../lib/api';
+import { useDisplay } from '../lib/display';
 import { useInteract, yourTurnKey } from '../lib/queries';
 import { radius, spacing, useColors } from '../lib/theme';
 import { AppText } from './AppText';
@@ -35,6 +36,7 @@ export function DecisionPanel({
   const { t } = useTranslation();
   const colors = useColors();
   const interact = useInteract();
+  const { easy } = useDisplay();
   const client = useQueryClient();
   const [target, setTarget] = useState<LikeTarget>();
   const [comment, setComment] = useState('');
@@ -112,6 +114,14 @@ export function DecisionPanel({
           </View>
         </View>
       )}
+      {easy && !target ? (
+        // Easy mode (phase 25): what each button does, in plain words.
+        <AppText variant="body" tone="muted">
+          {t(mode === 'friend' ? 'display.explainFriend' : 'display.explainDecide', {
+            name: profile.displayName,
+          })}
+        </AppText>
+      ) : null}
     </View>
   );
 }
