@@ -51,9 +51,13 @@ export interface TestContext {
  * Tests wipe data between cases, so they must never touch the developer's own data: they use a
  * separate database (`<name>_test`, created on demand), Redis database 15 and separate buckets.
  */
-async function isolatedResources(databaseUrl: string, redisUrl: string) {
+async function isolatedResources(
+  databaseUrl: string,
+  redisUrl: string,
+  second?: SetupOptions['second'],
+) {
   const db = new URL(databaseUrl);
-  const testName = `${db.pathname.slice(1)}_test`;
+  const testName = `${db.pathname.slice(1)}_test${second ? `_${second.suffix}` : ''}`;
   const admin = new pg.Client({ connectionString: databaseUrl });
   await admin.connect();
   try {
@@ -64,7 +68,7 @@ async function isolatedResources(databaseUrl: string, redisUrl: string) {
   }
   db.pathname = `/${testName}`;
   const redis = new URL(redisUrl);
-  redis.pathname = '/15';
+  redis.pathname = `/${second?.redisDb ?? 15}`;
   return { DATABASE_URL: db.toString(), REDIS_URL: redis.toString() };
 }
 
@@ -91,6 +95,13 @@ export interface SetupOptions {
   transcripts?: boolean;
   /** Communities that connect (phase 28): off by default, as in production. */
   federation?: boolean;
+  /**
+   * A second, separate server (phase 28b: two communities in one test): its own database
+   * (`<name>_test_<suffix>`), Redis database and buckets, and its own address.
+   */
+  second?: { suffix: string; redisDb: number; apiUrl: string };
+  /** This server's address (default http://localhost:4000). */
+  apiUrl?: string;
 }
 
 /** A fixed key for the tests' encrypted integration secrets. */
@@ -102,7 +113,9 @@ export async function setupIntegration(options: SetupOptions = {}): Promise<Test
   const isolated = await isolatedResources(
     process.env.DATABASE_URL ?? '',
     process.env.REDIS_URL ?? '',
+    options.second,
   );
+  const buckets = options.second ? `nexaheart-test-${options.second.suffix}` : 'nexaheart-test';
   const env = loadEnv({
     ...process.env,
     ...isolated,
@@ -114,10 +127,10 @@ export async function setupIntegration(options: SetupOptions = {}): Promise<Test
     TRANSCRIPTS: options.transcripts === false ? 'off' : 'local',
     FEDERATION: options.federation ? 'on' : 'off',
     CORS_ORIGINS: 'http://localhost:8081',
-    PUBLIC_API_URL: 'http://localhost:4000',
+    PUBLIC_API_URL: options.second?.apiUrl ?? options.apiUrl ?? 'http://localhost:4000',
     S3_ENDPOINT: process.env.S3_ENDPOINT ?? 'http://localhost:8333',
-    S3_BUCKET_QUARANTINE: 'nexaheart-test-quarantine',
-    S3_BUCKET_MEDIA: 'nexaheart-test-media',
+    S3_BUCKET_QUARANTINE: `${buckets}-quarantine`,
+    S3_BUCKET_MEDIA: `${buckets}-media`,
     ...(options.callMedia ? TEST_LIVEKIT : {}),
   });
   await runMigrations(env.DATABASE_URL);
@@ -196,7 +209,7 @@ export async function setupIntegration(options: SetupOptions = {}): Promise<Test
 
 export async function resetState(ctx: TestContext): Promise<void> {
   await ctx.services.dbHandle.pool.query(
-    'TRUNCATE "user", verification, rate_limit, audit_logs, banned_emails, banned_photo_hashes, instance_settings, venues, events, integrations, webhook_deliveries, federation_keys, federation_partners RESTART IDENTITY CASCADE',
+    'TRUNCATE "user", verification, rate_limit, audit_logs, banned_emails, banned_photo_hashes, instance_settings, venues, events, integrations, webhook_deliveries, federation_keys, federation_partners, federation_aliases, federation_decisions, federation_matches RESTART IDENTITY CASCADE',
   );
   const { storage } = ctx.services;
   for (const bucket of Object.values(storage.buckets)) {

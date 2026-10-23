@@ -13,12 +13,14 @@ import { ChoiceGroup } from '../../components/Choice';
 import { DecisionPanel, type DecisionResult } from '../../components/DecisionPanel';
 import { DoubleDeck } from '../../components/DoubleDeck';
 import { FriendsDeck } from '../../components/FriendsDeck';
+import { PartnersDeck } from '../../components/PartnersDeck';
 import { Loading } from '../../components/Loading';
 import { MatchCelebration } from '../../components/MatchCelebration';
 import { Screen } from '../../components/Screen';
 import { OnBreak } from '../../components/OnBreak';
 import { travelLine } from '../../components/TravelMode';
 import { useDisplay } from '../../lib/display';
+import { useFederatedStatus } from '../../lib/federated-queries';
 import { useLocale } from '../../lib/locale';
 import { useDiscover, useMe, useTravel, useYourTurn } from '../../lib/queries';
 import { radius, spacing, useColors } from '../../lib/theme';
@@ -37,7 +39,9 @@ export default function Discover() {
   // Easy mode: confirm each like in words, so nothing happens silently.
   const [liked, setLiked] = useState<string>();
   // Dating, friends (phase 22) or double dates (phase 22).
-  const [deck, setDeck] = useState<'date' | 'friend' | 'double'>('date');
+  // ...and, when this community has partners, people from partner communities (phase 28b).
+  const [deck, setDeck] = useState<'date' | 'friend' | 'double' | 'partners'>('date');
+  const partners = Boolean(useFederatedStatus().data?.available);
 
   useEffect(() => setIndex(0), [feed.dataUpdatedAt]);
 
@@ -68,10 +72,13 @@ export default function Discover() {
   ) : (
     <ChoiceGroup
       label={t('friends.deck')}
-      options={(['date', 'friend', 'double'] as const).map((value) => ({
-        value,
-        label: t(`friends.decks.${value}`),
-      }))}
+      options={[
+        ...(['date', 'friend', 'double'] as const).map((value) => ({
+          value,
+          label: t(`friends.decks.${value}`),
+        })),
+        ...(partners ? [{ value: 'partners' as const, label: t('partners.deck') }] : []),
+      ]}
       selected={[deck]}
       onChange={([v]) => v && setDeck(v)}
     />
@@ -81,7 +88,13 @@ export default function Discover() {
       <Screen title={t('discover.title')}>
         <AccountNotices />
         {deckSwitch}
-        {deck === 'friend' ? <FriendsDeck /> : <DoubleDeck />}
+        {deck === 'friend' ? (
+          <FriendsDeck />
+        ) : deck === 'partners' ? (
+          <PartnersDeck />
+        ) : (
+          <DoubleDeck />
+        )}
       </Screen>
     );
   }

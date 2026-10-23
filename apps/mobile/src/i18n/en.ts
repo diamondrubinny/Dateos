@@ -1351,6 +1351,58 @@ export const en = {
     rephrase: 'Please rephrase your question.',
     tooMany: 'Wait for an answer before asking more.',
   },
+  partners: {
+    deck: 'Partner communities',
+    title: 'Partner communities',
+    offTitle: 'Meet people from partner communities',
+    offBody:
+      'This community is connected with {{names}}. If you join, people there who joined too can see you, and you can see them.',
+    learnMore: 'What’s shared, and joining',
+    from: 'From {{community}}',
+    passHint: 'Pass on {{name}}',
+    likeHint: 'Like {{name}}. The like goes to {{community}}.',
+    block: 'Block {{name}}',
+    blockConfirm: 'Block {{name}}? You won’t see each other again, and a match between you ends.',
+    blockYes: 'Block',
+    matched: 'You and {{name}} like each other. You’ll find them in Matches.',
+    unreachable: '{{community}} can’t be reached right now. Try again later.',
+    emptyTitle: 'No one new from partner communities',
+    emptyBody:
+      'Check back later. Only people who joined and fit what you both look for appear here.',
+    settings: 'Partner communities settings',
+    none: 'This community isn’t connected with any other community yet.',
+    intro:
+      'The team of this community connected it with other communities it trusts, after signing an agreement with each. Joining is up to you, and off until you turn it on.',
+    whoTitle: 'Connected communities',
+    privacyOf: 'Privacy policy of {{name}}',
+    sharesTitle: 'What they see if you join',
+    shares:
+      'Your card: first name, age, gender, what you’re looking for, bio, prompts, photos, languages and whether you’re verified. Your photos stay here: they’re sent through this community each time, never copied.',
+    filter:
+      'To show you only people who fit both ways, each search sends your gender, who you’re interested in, your age and the ages you’re looking for. Each community knows you by a different code name, never your account.',
+    neverTitle: 'What never leaves this community',
+    never:
+      'Your email, location or distance, religion, accessibility needs, voice, friends’ takes, messages and reports.',
+    otherOperator:
+      'A partner community is run by another team. What they do with what they receive is covered by their privacy policy and the agreement between the communities. Your likes go to them; when you match, both communities keep the match.',
+    joinedNote:
+      'You’ve joined. Find people from partner communities in Discover → Show → Partner communities.',
+    leave: 'Leave partner communities',
+    leaveConfirm:
+      'Leave? Partner communities are told to forget you, and your likes and matches there are deleted.',
+    leaveYes: 'Leave',
+    left: 'You left. Partner communities were told to forget you.',
+    agree: 'I agree to share my card with these communities',
+    agreeHint:
+      'Includes your gender and who you’re interested in, which can reveal your sexual orientation.',
+    join: 'Join',
+    joined: 'You’ve joined. You can leave at any time.',
+    matchesTitle: 'From partner communities',
+    chatSoon: 'Chatting across communities is coming soon.',
+    unmatch: 'Unmatch {{name}}',
+    unmatchConfirm: 'Unmatch {{name}}? Their community is told too.',
+    unmatchYes: 'Unmatch',
+  },
 };
 
 type Widen<T> = { [K in keyof T]: T[K] extends string ? string : Widen<T[K]> };

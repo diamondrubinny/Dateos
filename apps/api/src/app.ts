@@ -31,6 +31,7 @@ import { exportMemberData } from './modules/privacy/export.js';
 import { audit } from './lib/audit.js';
 import { photoRoutes } from './modules/photos/routes.js';
 import { adminRoutes } from './modules/admin/routes.js';
+import { federatedRoutes } from './modules/federation/member-routes.js';
 import { federationRoutes } from './modules/federation/routes.js';
 import { safetyRoutes } from './modules/safety/routes.js';
 import { notificationRoutes } from './modules/notifications/routes.js';
@@ -136,7 +137,11 @@ export async function buildApp(env: Env, deps: AppDependencies): Promise<Fastify
       integrations: services.integrations,
       federation: services.federation,
     });
-    await typed.register(federationRoutes, { federation: services.federation });
+    await typed.register(federationRoutes, {
+      federation: services.federation,
+      members: services.federated,
+    });
+    await typed.register(federatedRoutes, { auth: services.auth, members: services.federated });
     await typed.register(signupRoutes, { trust: services.trust });
     await typed.register(takePublicRoutes, { takes: services.takes });
     await typed.register(friendRoutes, {

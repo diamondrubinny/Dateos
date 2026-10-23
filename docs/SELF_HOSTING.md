@@ -131,16 +131,20 @@ the `models-data` volume. Set `TRANSCRIPTS=off` in `.env` to turn this off, or s
 
 ## Communities that connect (optional)
 
-Two NexaHeart communities can connect so that, in later steps, members who choose to can be seen
-in both. Turn it on with `FEDERATION=on` (it needs `INTEGRATIONS_KEY`) and restart the API; admins
+Two NexaHeart communities can connect so that members who choose to can be seen, and match, in
+both (chat across communities comes in a later step). Turn it on with `FEDERATION=on` (it needs `INTEGRATIONS_KEY`) and restart the API; admins
 then use **Partners** in the dashboard.
 
 - The server publishes its name, address and public key at `https://api.<domain>/.well-known/nexaheart`.
 - Every request between servers is signed (Ed25519), dated (5 minutes either way) and can't be
   replayed. Outgoing requests use the same guard as the integrations: https only, no private
   networks (set `INTEGRATIONS_ALLOW_PRIVATE=true` only to test two servers on one machine).
-- ⚖️ The two operators share responsibility for what members later share: sign a data-sharing
-  agreement first. The dashboard asks both admins to confirm it.
+- Members take part only after they join in the app. A partner receives their card (first name,
+  age, gender, intention, bio, prompts, photo ids, languages, verified) under a random code name per
+  partner; photos are served through the member's own server, never copied. Never: email,
+  location, religion, accessibility needs, voice, messages or reports.
+- ⚖️ The two operators share responsibility for what members share: sign a data-sharing agreement
+  first. The dashboard asks both admins to confirm it.
 
 ## Voice transcripts
 

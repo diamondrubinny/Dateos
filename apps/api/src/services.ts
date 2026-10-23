@@ -25,6 +25,7 @@ import {
   type ProfileQueue,
 } from './lib/queue.js';
 import { AudioService } from './modules/chat/audio.js';
+import { FederatedMembers } from './modules/federation/members.js';
 import { FederationService } from './modules/federation/service.js';
 import { llmIcebreakers, templateIcebreakers, type TextModel } from '@nexaheart/ai';
 import { AiGate } from './lib/ai-gate.js';
@@ -62,6 +63,7 @@ export interface Services {
   notifyQueue: NotifyQueue;
   audio: AudioService;
   federation: FederationService;
+  federated: FederatedMembers;
   discovery: DiscoveryService;
   realtime: Realtime;
   chat: ChatService;
@@ -276,6 +278,11 @@ export function createServices(
     },
     overrides.now,
   );
+  // 28b: partners' members, and ours at partners.
+  const federated = new FederatedMembers(dbHandle.db, federation, storage, today);
+  discovery.onSeparation((a, b) => (b ? Promise.resolve() : federated.endAllMatches(a)));
+  const me = new MeService(dbHandle.db, mediaQueue, legal, today, profileQueue);
+  me.beforeDelete((userId) => federated.forgetEverywhere(userId));
 
   const services: Services = {
     dbHandle,
@@ -287,9 +294,10 @@ export function createServices(
     notifyQueue,
     audio,
     federation,
+    federated,
     discovery,
     mailer,
-    me: new MeService(dbHandle.db, mediaQueue, legal, today, profileQueue),
+    me,
     photos,
     realtime,
     chat,

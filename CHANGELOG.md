@@ -6,6 +6,12 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Added
 
+- **Partner communities: discovery and matching**: members can join (off by default, an explicit
+  consent) to see and be seen by members of partner communities who joined too, matched both ways
+  by gender, interest, age and intention. Partners know each member only by a random code name;
+  photos come through the member's own server. A mutual like is a match on both servers; blocks,
+  unmatching, leaving, deleting the account and ending the partnership reach the other side.
+  Chat across communities comes next.
 - **Partner communities (foundation)**: admins can connect their community with another NexaHeart
   community they trust (Dashboard → Partners), after both confirm a data-sharing agreement. Every
   request between the servers is signed, dated and can't be replayed. Off by default

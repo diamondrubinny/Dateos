@@ -1,11 +1,18 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
-import { ErrorCode, FEDERATION_WELL_KNOWN, federationIdentitySchema } from '@nexaheart/shared';
+import {
+  ErrorCode,
+  FEDERATION_WELL_KNOWN,
+  federatedDiscoverResponseSchema,
+  federatedLikeResponseSchema,
+  federationIdentitySchema,
+} from '@nexaheart/shared';
 import { HttpError } from '../../plugins/error-handler.js';
 import type { FastifyRequest } from 'fastify';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';
+import type { FederatedMembers } from './members.js';
 import type { FederationService, IncomingSigned } from './service.js';
 
 const ok = z.object({ ok: z.literal(true) });
@@ -21,14 +28,14 @@ declare module 'fastify' {
  * Communities that connect (phase 28a): the public identity, and the signed server-to-server API.
  * No user session here: every call is checked by its signature instead.
  */
-export const federationRoutes: FastifyPluginAsyncZod<{ federation: FederationService }> = async (
-  app,
-  { federation },
-) => {
+export const federationRoutes: FastifyPluginAsyncZod<{
+  federation: FederationService;
+  members: FederatedMembers;
+}> = async (app, { federation, members }) => {
   // Keep the raw body: the signature covers the exact bytes that were sent.
   app.addContentTypeParser(
     'application/json',
-    { parseAs: 'string', bodyLimit: 16 * 1024 },
+    { parseAs: 'string', bodyLimit: 128 * 1024 },
     (request, body, done) => {
       request.rawBody = body as string;
       try {
@@ -46,6 +53,8 @@ export const federationRoutes: FastifyPluginAsyncZod<{ federation: FederationSer
   });
   // Few calls are expected between two servers: a tight limit per address.
   const limit = { rateLimit: { max: 60, timeWindow: 60_000 } };
+  // Members browsing (28b): every deck, like and photo of a partner's members comes through here.
+  const busy = { rateLimit: { max: 1200, timeWindow: 60_000 } };
 
   app.get(
     FEDERATION_WELL_KNOWN,
@@ -89,6 +98,52 @@ export const federationRoutes: FastifyPluginAsyncZod<{ federation: FederationSer
         throw new HttpError(403, ErrorCode.Forbidden, 'Not connected.');
       }
       return { ok: true as const };
+    },
+  );
+
+  // ---------------------------------------------------------------- 28b: members
+  app.post(
+    '/v1/federation/discover',
+    { config: busy, schema: { response: { 200: federatedDiscoverResponseSchema } } },
+    async (request) => members.receiveDiscover(incoming(request)),
+  );
+  app.post(
+    '/v1/federation/likes',
+    { config: busy, schema: { response: { 200: federatedLikeResponseSchema } } },
+    async (request) => members.receiveLike(incoming(request)),
+  );
+  app.post(
+    '/v1/federation/unmatch',
+    { config: busy, schema: { response: { 200: ok } } },
+    async (request) => {
+      await members.receiveUnmatch(incoming(request));
+      return { ok: true as const };
+    },
+  );
+  app.post(
+    '/v1/federation/forget',
+    { config: busy, schema: { response: { 200: ok } } },
+    async (request) => {
+      await members.receiveForget(incoming(request));
+      return { ok: true as const };
+    },
+  );
+  app.get(
+    '/v1/federation/photos/:id',
+    {
+      config: busy,
+      schema: { params: z.object({ id: z.uuid() }), querystring: z.object({ viewer: z.string() }) },
+    },
+    async (request, reply) => {
+      const object = await members.receivePhoto(
+        incoming(request),
+        request.params.id,
+        request.query.viewer,
+      );
+      return reply
+        .type('image/webp')
+        .header('cache-control', 'private, max-age=300')
+        .send(object.body);
     },
   );
 };

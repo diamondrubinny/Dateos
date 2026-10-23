@@ -209,12 +209,14 @@ export async function onboardMember(
   name: string,
   gender: 'woman' | 'man',
   interestedIn: string[],
+  /** Another community's API (phase 28b); by default the dev API. */
+  base = API,
 ) {
   const { demoPhoto } = await import('./demo-images.ts');
   onboarded += 1;
   const email = `${prefix}-${gender}-${onboarded}-${Date.now()}@example.test`;
-  const session = await signInHttp(email);
-  const call = apiClient(session.header);
+  const session = await signInHttp(email, base);
+  const call = apiClient(session.header, base);
   await call('PUT', '/v1/me/consents', {
     consents: [
       { kind: 'terms', granted: true, version: '2026-10' },

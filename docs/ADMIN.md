@@ -157,6 +157,12 @@ that arrived; both need you to confirm that the two operators signed a data-shar
 step only the communities' names, addresses and public keys are exchanged, never anything about
 members. Moderators can see the list; only admins decide.
 
+**Members (phase 28b).** Once a partnership is active, members can join **Partner communities** in
+the app (Settings, or Discover → Show → Partner communities). It's off for everyone until each
+person turns it on; leaving or deleting the account tells every partner to forget them. Ending a
+partnership deletes everything that crossed with that community on this server (the code names,
+likes, passes and matches) and tells the other side to do the same.
+
 ## 8. Integrations (phase 24, admins only)
 
 The **Integrations** page connects outside services: see [INTEGRATIONS.md](INTEGRATIONS.md).

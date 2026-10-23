@@ -1370,3 +1370,62 @@ export const federationPartners = pgTable(
   },
   (t) => [uniqueIndex('federation_partners_url_uq').on(t.url)],
 );
+
+/**
+ * The random alias a member has at one partner (phase 28b): partners never see the real id, and two
+ * partners can't link the same person. Made when the member is first shown to or acts toward that
+ * partner; deleted when they leave or the partnership ends.
+ */
+export const federationAliases = pgTable(
+  'federation_aliases',
+  {
+    partnerId: uuid('partner_id')
+      .notNull()
+      .references(() => federationPartners.id, { onDelete: 'cascade' }),
+    userId: ownerId(),
+    alias: varchar('alias', { length: 22 }).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.partnerId, t.userId] }),
+    uniqueIndex('federation_aliases_alias_uq').on(t.partnerId, t.alias),
+  ],
+);
+
+/** A member's like, pass or block on a partner's member (known only by their alias there). */
+export const federationDecisions = pgTable(
+  'federation_decisions',
+  {
+    userId: ownerId(),
+    partnerId: uuid('partner_id')
+      .notNull()
+      .references(() => federationPartners.id, { onDelete: 'cascade' }),
+    alias: varchar('alias', { length: 22 }).notNull(),
+    kind: varchar('kind', { length: 8 }).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.userId, t.partnerId, t.alias] }),
+    index('federation_decisions_alias_idx').on(t.partnerId, t.alias),
+  ],
+);
+
+/** A match between a member here and a partner's member (both servers keep their side). */
+export const federationMatches = pgTable(
+  'federation_matches',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    partnerId: uuid('partner_id')
+      .notNull()
+      .references(() => federationPartners.id, { onDelete: 'cascade' }),
+    userId: ownerId(),
+    alias: varchar('alias', { length: 22 }).notNull(),
+    name: varchar('name', { length: 40 }).notNull(),
+    photoId: uuid('photo_id'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex('federation_matches_pair_uq').on(t.partnerId, t.userId, t.alias),
+    index('federation_matches_user_idx').on(t.userId),
+  ],
+);

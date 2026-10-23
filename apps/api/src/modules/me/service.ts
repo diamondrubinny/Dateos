@@ -77,6 +77,13 @@ export class MeService {
   /** Integrations listen here (phase 24). */
   appEvents: AppEvents = noEvents;
 
+  private beforeDeleteHooks: ((userId: string) => Promise<void>)[] = [];
+
+  /** Runs before an account is deleted (phase 28b: partner communities are told). */
+  beforeDelete(hook: (userId: string) => Promise<void>): void {
+    this.beforeDeleteHooks.push(hook);
+  }
+
   async getMe(userId: string): Promise<MeResponse> {
     const [account] = await this.db
       .select({
@@ -468,6 +475,14 @@ export class MeService {
   }
 
   async recordConsents(userId: string, items: ConsentInput[]): Promise<void> {
+    // Partner communities have their own join and leave (phase 28b): leaving tells the partners.
+    if (items.some((item) => item.kind === 'federation')) {
+      throw new HttpError(
+        400,
+        ErrorCode.BadRequest,
+        'Use /v1/federated/join or /v1/federated/leave.',
+      );
+    }
     const expected = this.consentVersions();
     for (const item of items) {
       const version = expected[item.kind];
@@ -564,6 +579,7 @@ export class MeService {
   }
 
   async deleteAccount(userId: string): Promise<void> {
+    for (const hook of this.beforeDeleteHooks) await hook(userId).catch(() => undefined);
     const keys = await this.db
       .select({ quarantineKey: photos.quarantineKey, mediaKey: photos.mediaKey })
       .from(photos)

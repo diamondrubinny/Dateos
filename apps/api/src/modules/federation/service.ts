@@ -34,12 +34,21 @@ import {
 } from '../../lib/federation-sign.js';
 import { HttpError } from '../../plugins/error-handler.js';
 
-const { federationKeys, federationPartners } = schema;
+const {
+  federationAliases,
+  federationDecisions,
+  federationKeys,
+  federationMatches,
+  federationPartners,
+} = schema;
 type PartnerRow = typeof federationPartners.$inferSelect;
 
 const KEY_CONTEXT = 'federation.privateKey';
 /** Invitations from other communities waiting for an admin, at most. */
 export const MAX_PENDING_INVITATIONS = 20;
+/** A partner's JSON answer and a partner's photo, at most. */
+const MAX_JSON_BYTES = 512 * 1024;
+const MAX_IMAGE_BYTES = 6 * 1024 * 1024;
 const notFound = () => new HttpError(404, ErrorCode.NotFound, 'Resource not found.');
 const unauthorized = (why: string) => new HttpError(401, ErrorCode.Unauthorized, why);
 
@@ -71,7 +80,7 @@ const header = (h: IncomingSigned['headers'], name: string) => {
 
 /**
  * Communities that connect (phase 28a): this server's identity and key, partnerships with other
- * communities, and signed requests between them. No member data crosses here.
+ * communities, and signed requests between them. Members' data (28b) is in `members.ts`.
  */
 export class FederationService {
   constructor(
@@ -166,12 +175,13 @@ export class FederationService {
   }
 
   /** Sends a signed request to a partner. Throws a short message on failure. */
-  private async send(
+  private async signedFetch(
     to: string,
     method: 'GET' | 'POST',
     path: string,
     payload?: object,
-  ): Promise<unknown> {
+    timeoutMs?: number,
+  ): Promise<Response> {
     const { privateKey } = await this.keys();
     const body = payload ? JSON.stringify(payload) : '';
     const date = new Date(this.now()).toISOString();
@@ -199,7 +209,7 @@ export class FederationService {
           },
           ...(payload ? { body } : {}),
         },
-        this.deps.outbound,
+        timeoutMs ? { ...this.deps.outbound, timeoutMs } : this.deps.outbound,
       );
     } catch (error) {
       throw new HttpError(
@@ -209,9 +219,39 @@ export class FederationService {
       );
     }
     if (!res.ok) {
+      await res.body?.cancel().catch(() => undefined);
       throw new HttpError(502, ErrorCode.BadGateway, `That community answered ${res.status}.`);
     }
-    return res.json().catch(() => null);
+    return res;
+  }
+
+  /** A signed JSON request to a partner; the answer is untrusted and capped in size. */
+  async send(
+    to: string,
+    method: 'GET' | 'POST',
+    path: string,
+    payload?: object,
+    timeoutMs?: number,
+  ): Promise<unknown> {
+    const res = await this.signedFetch(to, method, path, payload, timeoutMs);
+    const bytes = await readCapped(res, MAX_JSON_BYTES);
+    if (!bytes) return null;
+    try {
+      return JSON.parse(bytes.toString('utf8'));
+    } catch {
+      return null;
+    }
+  }
+
+  /** A signed request for an image (a partner's photo), capped in size; null if it fails. */
+  async fetchImage(to: string, path: string): Promise<Buffer | null> {
+    const res = await this.signedFetch(to, 'GET', path).catch(() => null);
+    if (!res) return null;
+    if (!(res.headers.get('content-type') ?? '').startsWith('image/')) {
+      await res.body?.cancel().catch(() => undefined);
+      return null;
+    }
+    return readCapped(res, MAX_IMAGE_BYTES);
   }
 
   // ------------------------------------------------------------------ incoming
@@ -280,6 +320,34 @@ export class FederationService {
         .where(eq(federationPartners.id, partner.id));
     }
     return { origin: from, partner: partner ?? null, identity };
+  }
+
+  /** A signed request from a community we're connected to (anything else is refused). */
+  async verifyActive(incoming: IncomingSigned): Promise<PartnerRow> {
+    const { partner } = await this.verify(incoming);
+    if (!partner || partner.status !== 'active') {
+      throw new HttpError(403, ErrorCode.Forbidden, 'Not connected.');
+    }
+    return partner;
+  }
+
+  /** Active partnerships (phase 28b). */
+  async activePartners(): Promise<PartnerRow[]> {
+    if (!this.enabled) return [];
+    return this.db
+      .select()
+      .from(federationPartners)
+      .where(eq(federationPartners.status, 'active'))
+      .orderBy(federationPartners.activatedAt);
+  }
+
+  async activePartner(id: string): Promise<PartnerRow | null> {
+    if (!this.enabled) return null;
+    const [row] = await this.db
+      .select()
+      .from(federationPartners)
+      .where(and(eq(federationPartners.id, id), eq(federationPartners.status, 'active')));
+    return row ?? null;
   }
 
   /** Another community invites us: kept for our admin to decide. */
@@ -481,11 +549,17 @@ export class FederationService {
       .where(eq(federationPartners.id, id));
   }
 
+  /** Ends a partnership; every alias, decision and match with that community is deleted. */
   private async markEnded(id: string, lastError: string | null): Promise<void> {
-    await this.db
-      .update(federationPartners)
-      .set({ status: 'ended', endedAt: new Date(this.now()), lastError })
-      .where(eq(federationPartners.id, id));
+    await this.db.transaction(async (tx) => {
+      await tx
+        .update(federationPartners)
+        .set({ status: 'ended', endedAt: new Date(this.now()), lastError })
+        .where(eq(federationPartners.id, id));
+      await tx.delete(federationAliases).where(eq(federationAliases.partnerId, id));
+      await tx.delete(federationDecisions).where(eq(federationDecisions.partnerId, id));
+      await tx.delete(federationMatches).where(eq(federationMatches.partnerId, id));
+    });
   }
 }
 
@@ -503,4 +577,27 @@ function toPartner(r: PartnerRow): Partner {
     lastSeenAt: r.lastSeenAt?.toISOString() ?? null,
     lastError: r.lastError,
   };
+}
+
+/** Reads a response body, giving up (null) past `max` bytes: a partner can't flood us. */
+async function readCapped(res: Response, max: number): Promise<Buffer | null> {
+  if (Number(res.headers.get('content-length') ?? 0) > max) {
+    await res.body?.cancel().catch(() => undefined);
+    return null;
+  }
+  if (!res.body) return Buffer.alloc(0);
+  const chunks: Buffer[] = [];
+  let size = 0;
+  const reader = res.body.getReader();
+  for (;;) {
+    const { done, value } = await reader.read().catch(() => ({ done: true, value: undefined }));
+    if (done || !value) break;
+    size += value.byteLength;
+    if (size > max) {
+      await reader.cancel().catch(() => undefined);
+      return null;
+    }
+    chunks.push(Buffer.from(value));
+  }
+  return Buffer.concat(chunks);
 }
