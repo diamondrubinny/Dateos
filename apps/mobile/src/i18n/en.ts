@@ -1336,6 +1336,21 @@ export const en = {
     allowHint:
       'The text is made on this community’s server, only when someone asks for it. Turning this off deletes texts already made.',
   },
+  eventBoard: {
+    updatesTitle: 'Updates from the organizers',
+    noUpdates: 'No updates yet. If anything changes, you’ll get a notification.',
+    askTitle: 'Ask the organizers',
+    askHint:
+      'Only the organizers read your question, without your name, and only you see the answer.',
+    question: 'Your question',
+    send: 'Send question',
+    sent: 'Sent. You’ll get a notification when they answer.',
+    answer: 'Answer:',
+    waiting: 'Waiting for an answer',
+    delete: 'Delete question',
+    rephrase: 'Please rephrase your question.',
+    tooMany: 'Wait for an answer before asking more.',
+  },
 };
 
 type Widen<T> = { [K in keyof T]: T[K] extends string ? string : Widen<T[K]> };

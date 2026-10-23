@@ -175,6 +175,19 @@ export async function exportMemberData(
     .innerJoin(t.events, eq(t.events.id, t.eventRsvps.eventId))
     .where(eq(t.eventRsvps.userId, userId))
     .orderBy(asc(t.eventRsvps.createdAt));
+  // Your questions to event organizers (phase 27), with their answers.
+  const questionRows = await db
+    .select({
+      event: t.events.title,
+      question: t.eventQuestions.body,
+      answer: t.eventQuestions.answer,
+      askedAt: t.eventQuestions.createdAt,
+      answeredAt: t.eventQuestions.answeredAt,
+    })
+    .from(t.eventQuestions)
+    .innerJoin(t.events, eq(t.events.id, t.eventQuestions.eventId))
+    .where(eq(t.eventQuestions.userId, userId))
+    .orderBy(asc(t.eventQuestions.createdAt));
   // Speed-dating rounds (phase 23): when, and your own answer. The other person's answer is theirs.
   const speedRows = (
     await db
@@ -430,6 +443,11 @@ export async function exportMemberData(
       startsAt: iso(r.startsAt),
       at: iso(r.at),
       checkedInAt: iso(r.checkedInAt),
+    })),
+    questionsToEventOrganizers: questionRows.map((q) => ({
+      ...q,
+      askedAt: iso(q.askedAt),
+      answeredAt: iso(q.answeredAt),
     })),
     speedDatingRounds: speedRows,
     dateIdeas: datePlanRows.map(

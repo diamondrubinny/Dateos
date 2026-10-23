@@ -218,6 +218,13 @@
       "when": 1792785112609,
       "tag": "0030_transcripts",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1792789411946,
+      "tag": "0031_event_board",
+      "breakpoints": true
     }
   ]
 }

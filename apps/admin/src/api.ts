@@ -25,6 +25,7 @@ import type {
   SignupMode,
   WaitlistEntry,
   WaitlistStatus,
+  EventBoard,
 } from '@nexaheart/shared';
 
 export const API_URL: string = import.meta.env.VITE_API_URL ?? 'http://localhost:4000';
@@ -152,6 +153,21 @@ export const api = {
         at: string;
       }[];
     }>('GET', '/v1/admin/webhooks/deliveries'),
+  eventBoard: (id: string) =>
+    request<EventBoard>('GET', `/v1/admin/events/${encodeURIComponent(id)}/board`),
+  postEventUpdate: (id: string, body: string) =>
+    request<EventBoard>('POST', `/v1/admin/events/${encodeURIComponent(id)}/updates`, { body }),
+  deleteEventUpdate: (id: string, updateId: string) =>
+    request<EventBoard>(
+      'DELETE',
+      `/v1/admin/events/${encodeURIComponent(id)}/updates/${encodeURIComponent(updateId)}`,
+    ),
+  answerEventQuestion: (id: string, questionId: string, answer: string) =>
+    request<EventBoard>(
+      'POST',
+      `/v1/admin/events/${encodeURIComponent(id)}/questions/${encodeURIComponent(questionId)}/answer`,
+      { answer },
+    ),
   checkIn: (id: string) =>
     request<AdminCheckIn>('GET', `/v1/admin/events/${encodeURIComponent(id)}/check-in`),
   createVenue: (input: Omit<VenueInput, 'active'>) =>

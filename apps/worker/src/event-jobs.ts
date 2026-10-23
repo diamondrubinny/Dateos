@@ -39,6 +39,15 @@ export async function processEvents(ctx: EventJobContext): Promise<{
     DELETE FROM event_rsvps r USING events e
     WHERE e.id = r.event_id
       AND e.ends_at < ${new Date(now.getTime() - RSVP_RETENTION_DAYS * 86_400_000)}`);
+  // Updates and questions to the organizers (phase 27) go with the RSVPs.
+  await ctx.db.execute(sql`
+    DELETE FROM event_updates u USING events e
+    WHERE e.id = u.event_id
+      AND e.ends_at < ${new Date(now.getTime() - RSVP_RETENTION_DAYS * 86_400_000)}`);
+  await ctx.db.execute(sql`
+    DELETE FROM event_questions q USING events e
+    WHERE e.id = q.event_id
+      AND e.ends_at < ${new Date(now.getTime() - RSVP_RETENTION_DAYS * 86_400_000)}`);
   await ctx.db.execute(sql`
     DELETE FROM speed_lobby l USING events e
     WHERE e.id = l.event_id AND (e.ends_at < ${now} OR e.status = 'cancelled')`);

@@ -960,6 +960,48 @@ export const eventRsvps = pgTable(
   ],
 );
 
+/**
+ * Phase 27: updates from the organizers, shown only to people going or waiting. Deleted with the
+ * RSVPs (30 days after the event) or with the event.
+ */
+export const eventUpdates = pgTable(
+  'event_updates',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    eventId: uuid('event_id')
+      .notNull()
+      .references(() => events.id, { onDelete: 'cascade' }),
+    authorId: text('author_id').references(() => user.id, { onDelete: 'set null' }),
+    body: varchar('body', { length: 500 }).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index('event_updates_event_idx').on(t.eventId, t.createdAt)],
+);
+
+/**
+ * Phase 27: a member's question to the organizers. Staff see it without who asked; only the asker
+ * sees the answer. Deleted with the RSVPs, the event or the account.
+ */
+export const eventQuestions = pgTable(
+  'event_questions',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    eventId: uuid('event_id')
+      .notNull()
+      .references(() => events.id, { onDelete: 'cascade' }),
+    userId: ownerId(),
+    body: varchar('body', { length: 500 }).notNull(),
+    answer: varchar('answer', { length: 1000 }),
+    answeredBy: text('answered_by').references(() => user.id, { onDelete: 'set null' }),
+    answeredAt: timestamp('answered_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index('event_questions_event_idx').on(t.eventId, t.createdAt),
+    index('event_questions_user_idx').on(t.userId),
+  ],
+);
+
 // ---------------------------------------------------------------------------
 // Video dates (phase 15)
 // ---------------------------------------------------------------------------

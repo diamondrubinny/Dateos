@@ -9,6 +9,7 @@ import { StyleSheet, TextInput, View } from 'react-native';
 import { AppText } from '../../components/AppText';
 import { Banner } from '../../components/Banner';
 import { Button } from '../../components/Button';
+import { EventBoard } from '../../components/EventBoard';
 import { eventStatus, formatEventTime } from '../../components/EventCard';
 import { Loading } from '../../components/Loading';
 import { RequireSession } from '../../components/RequireSession';
@@ -221,6 +222,10 @@ function EventScreen() {
             onPress={submitCheckIn}
           />
         </View>
+      ) : null}
+      {e.mine || waiting ? (
+        // Phase 27: updates and questions, only for people going or waiting.
+        <EventBoard eventId={id} open={!cancelled && now < end} />
       ) : null}
       <Banner tone="info" message={t('events.privacy')} />
     </Screen>
