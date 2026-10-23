@@ -8,7 +8,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
 import * as Notifications from 'expo-notifications';
 import { router } from 'expo-router';
-import { Platform } from 'react-native';
+import { Platform, StyleSheet, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ApiRequestError } from '../lib/api';
 import { authClient } from '../lib/auth-client';
@@ -49,17 +49,22 @@ function Navigator() {
     // Browser tab and bookmarks show the community's own name.
     if (Platform.OS === 'web' && name) document.title = name;
   }, [name]);
+  const webDir = (Platform.OS === 'web' ? { dir: direction } : {}) as object;
   return (
     <RouterLocaleProvider direction={direction}>
       <RealtimeProvider enabled={Boolean(session.data)}>
         <StatusBar style="auto" />
         {session.data ? <IncomingCall /> : null}
-        <Stack
-          screenOptions={{
-            headerShown: false,
-            contentStyle: { backgroundColor: colors.background },
-          }}
-        />
+        {/* On the web `textAlign: start` follows the nearest `dir`: set it once for every screen
+            (chat and call screens don't use <Screen>). Native direction comes from I18nManager. */}
+        <View style={styles.root} {...webDir}>
+          <Stack
+            screenOptions={{
+              headerShown: false,
+              contentStyle: { backgroundColor: colors.background },
+            }}
+          />
+        </View>
       </RealtimeProvider>
     </RouterLocaleProvider>
   );
@@ -89,3 +94,5 @@ export default function RootLayout() {
     </SafeAreaProvider>
   );
 }
+
+const styles = StyleSheet.create({ root: { flex: 1 } });

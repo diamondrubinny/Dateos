@@ -37,13 +37,28 @@ function PlanDateScreen() {
   const { t } = useTranslation();
   const { locale } = useLocale();
   const colors = useColors();
-  const { id: matchId, name = '' } = useLocalSearchParams<{ id: string; name?: string }>();
+  const {
+    id: matchId,
+    name = '',
+    day: wantedDay,
+    hour: wantedHour,
+  } = useLocalSearchParams<{ id: string; name?: string; day?: string; hour?: string }>();
   const venues = useVenues();
   const propose = useProposeDate(matchId);
   const [category, setCategory] = useState<'all' | VenueCategory>('all');
   const [venueId, setVenueId] = useState<string>();
-  const [dayOffset, setDayOffset] = useState('1');
-  const [hour, setHour] = useState('19');
+  // Opened from a shared free time (phase 20): that day and part of the day are filled in.
+  const [dayOffset, setDayOffset] = useState(() => {
+    const [y, m, d] = (wantedDay ?? '').split('-').map(Number);
+    const offset =
+      y && m && d
+        ? Math.round((new Date(y, m - 1, d).getTime() - day(0).getTime()) / 86_400_000)
+        : NaN;
+    return Number.isInteger(offset) && offset >= 0 && offset < DAYS ? String(offset) : '1';
+  });
+  const [hour, setHour] = useState(() =>
+    wantedHour && HOURS.includes(Number(wantedHour)) ? wantedHour : '19',
+  );
   const [minute, setMinute] = useState('0');
   const [note, setNote] = useState('');
   const [error, setError] = useState<string>();

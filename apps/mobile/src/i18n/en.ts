@@ -147,6 +147,9 @@ export const en = {
     incognitoLabel: 'Incognito: only people I like can see me',
     incognitoHint:
       "You can browse as usual. Others see your profile only after you like them; your matches aren't affected. Nobody is told you're incognito. Someone you like could still take a screenshot.",
+    metBadgeLabel: 'Show “Met someone here in person”',
+    metBadgeHint:
+      'A small badge on your profile once you and a match both confirmed you met. It tells others you go on real dates here, so it is off until you turn it on. No dates or numbers are shown.',
   },
   travel: {
     dataCredit: 'City data: GeoNames (CC BY 4.0)',
@@ -729,7 +732,12 @@ export const en = {
     tooMany: 'Too many attempts today. Please try again tomorrow.',
     cameraPermission: 'Allow camera access to take a selfie.',
   },
-  badge: { verified: 'Verified', verifiedLabel: 'Photo-verified profile' },
+  badge: {
+    verified: 'Verified',
+    verifiedLabel: 'Photo-verified profile',
+    met: 'Met in person',
+    metLabel: 'Met someone here in person, confirmed by both',
+  },
   account: {
     suspendedTitle: 'Your account is suspended',
     suspendedBody:
@@ -914,6 +922,43 @@ export const en = {
       'Matches can invite you to a call after you both wrote a few messages. You always choose whether to join.',
   },
   notFound: { title: 'Page not found', home: 'Go to the home screen' },
+  free: {
+    title: 'When I’m free',
+    intro:
+      'Mark the times you could meet in the next two weeks. {{name}} never sees your list, only the times you’re both free.',
+    count: '{{count}} of {{max}} times chosen',
+    tooMany: 'You can choose up to {{max}} times.',
+    parts: { morning: 'Morning', afternoon: 'Afternoon', evening: 'Evening' },
+    slot: '{{day}}, {{part}}',
+    overlap: 'You’re both free:',
+    planHint: 'Opens the date planner with this time',
+    invite: 'Share when you’re free, and see when you both are.',
+    theyShared: '{{name}} shared when they’re free. Add yours to see when you overlap.',
+    waiting: 'When {{name}} adds their free times, you’ll see when you overlap.',
+    noOverlap: 'No times in common yet. Try adding a few more.',
+    share: 'Share when I’m free',
+    edit: 'Edit my free times',
+  },
+  feedback: {
+    didYouMeet: 'Did you meet?',
+    private: 'Your answer is private. It’s never shown to the other person.',
+    metYes: 'Yes, we met',
+    metNo: 'No, we didn’t meet',
+    again: 'Would you like to see them again?',
+    againOptions: { yes: 'Yes', unsure: 'Not sure', no: 'No' },
+    savedMet: 'Thanks. You said you met. Again: {{again}}. Only you can see this.',
+    savedNotMet: 'Thanks. You said you didn’t meet. Only you can see this.',
+    change: 'Change my answer',
+    bothAgain: 'You both want to meet again 💜',
+    feltWrong: 'Something felt wrong?',
+    feltWrongHint: 'Report it privately. They aren’t told.',
+  },
+  focus: {
+    title: 'Your turn',
+    body: 'People waiting for your reply: {{count}}. Answer them before liking someone new. You can still pass.',
+    open: 'Go to my chats',
+    likeBlocked: 'Reply to the people waiting for you before liking someone new.',
+  },
 };
 
 type Widen<T> = { [K in keyof T]: T[K] extends string ? string : Widen<T[K]> };

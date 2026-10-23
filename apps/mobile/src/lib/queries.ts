@@ -23,6 +23,7 @@ import type {
   Place,
   TravelInput,
   TravelState,
+  YourTurn,
 } from '@nexaheart/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Platform } from 'react-native';
@@ -109,6 +110,11 @@ export const usePause = () =>
 export const useSetIncognito = () =>
   useBreakMutation((on: boolean) =>
     apiFetch('/v1/me/incognito', { method: 'PUT', body: json({ on }) }),
+  );
+/** "Met someone here in person" badge (phase 20): off by default. */
+export const useSetMetBadge = () =>
+  useBreakMutation((on: boolean) =>
+    apiFetch('/v1/me/met-badge', { method: 'PUT', body: json({ on }) }),
   );
 export const useResume = () =>
   useBreakMutation(() => apiFetch('/v1/me/pause', { method: 'DELETE' }));
@@ -221,6 +227,16 @@ function useDiscoveryMutation<TInput, TResult>(request: (input: TInput) => Promi
           client.invalidateQueries({ queryKey }),
         ),
       ),
+  });
+}
+
+/** Focus mode (phase 20): how many people are waiting for my reply. */
+export const yourTurnKey = ['your-turn'] as const;
+export function useYourTurn() {
+  return useQuery({
+    queryKey: yourTurnKey,
+    queryFn: () => apiFetch<YourTurn>('/v1/me/your-turn'),
+    refetchOnMount: 'always',
   });
 }
 

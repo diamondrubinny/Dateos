@@ -176,6 +176,8 @@ export const meResponseSchema = z.object({
   about: aboutSchema,
   dealbreakers: dealbreakersSchema,
   voicePrompt: myVoicePromptSchema.nullable(),
+  /** Show the "met in person" badge (phase 20, off by default). */
+  showMetBadge: z.boolean(),
   profile: profileInputSchema
     .extend({ bio: z.string().nullable(), age: z.number().int() })
     .nullable(),

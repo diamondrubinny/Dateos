@@ -18,6 +18,8 @@ export const ErrorCode = {
   /** Staff tools need a fresh TOTP check for this session. */
   MfaRequired: 'MFA_REQUIRED',
   ServiceUnavailable: 'SERVICE_UNAVAILABLE',
+  /** Focus mode (phase 20): reply to the people waiting before liking new ones. */
+  YourTurn: 'YOUR_TURN',
   Internal: 'INTERNAL_ERROR',
 } as const;
 

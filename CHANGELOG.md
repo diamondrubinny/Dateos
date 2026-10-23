@@ -6,6 +6,18 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Added
 
+- **When we're both free**: in a chat, mark the mornings, afternoons and evenings you're free in the
+  next two weeks. Only the times you're **both** free are shown, never the other person's list;
+  tapping one opens the date planner with that day and time filled in. The times are deleted when
+  the chat closes and once they've passed.
+- **Did you meet?**: two hours after an agreed date, the card asks each person privately whether you
+  met and whether you'd like to meet again. Nobody sees the other's answer; only when you both say
+  yes does the card show "You both want to meet again". "Something felt wrong?" opens a private
+  report.
+- **Met in person badge**: off by default; once turned on, the profile shows "Met in person" after
+  both people of a date confirmed meeting. A yes/no only, with no dates or counts.
+- **Your turn**: with six people waiting for your reply, Discover asks you to answer them before
+  liking someone new (passing still works).
 - **About me**: up to 10 interests from 40, children, smoking, drinking and height, all optional,
   shown on the profile as chips (shared interests are marked and nudge the ranking). Religious
   observance can be added with its own explicit consent; it's never used for ranking, and
@@ -28,6 +40,8 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Changed
 
+- Right-to-left text in the chat and call screens now aligns to the right on the web (it followed
+  the page direction only inside the standard screen layout).
 - **License: AGPL-3.0-or-later with a credit that must stay** (see [NOTICE](NOTICE)). Every copy,
   including forks and rebranded communities, shows "Powered by NexaHeart · Open source" (linking to
   nexaheart.com) on the app's welcome, sign-in, settings and legal screens, in the dashboard, on the

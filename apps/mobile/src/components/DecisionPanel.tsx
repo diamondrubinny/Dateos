@@ -2,11 +2,12 @@
 // Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 import type { PublicProfile } from '@nexaheart/shared';
+import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 import { ApiRequestError } from '../lib/api';
-import { useInteract } from '../lib/queries';
+import { useInteract, yourTurnKey } from '../lib/queries';
 import { radius, spacing, useColors } from '../lib/theme';
 import { AppText } from './AppText';
 import { Banner } from './Banner';
@@ -31,6 +32,7 @@ export function DecisionPanel({
   const { t } = useTranslation();
   const colors = useColors();
   const interact = useInteract();
+  const client = useQueryClient();
   const [target, setTarget] = useState<LikeTarget>();
   const [comment, setComment] = useState('');
   const [error, setError] = useState<string>();
@@ -49,6 +51,10 @@ export function DecisionPanel({
       onDecided({ kind, ...result });
     } catch (e) {
       if (e instanceof ApiRequestError && e.status === 429) return setError(t('discover.limit'));
+      if (e instanceof ApiRequestError && e.code === 'YOUR_TURN') {
+        void client.invalidateQueries({ queryKey: yourTurnKey });
+        return setError(t('focus.likeBlocked'));
+      }
       if (e instanceof ApiRequestError && (e.status === 404 || e.status === 409)) {
         return onDecided({ kind, matched: false, matchId: null }); // no longer available: move on
       }

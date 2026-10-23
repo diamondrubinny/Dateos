@@ -1,18 +1,19 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
-import type { MessageView } from '@nexaheart/shared';
+import { againAnswers, type AgainAnswer, type MessageView } from '@nexaheart/shared';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 import { ApiRequestError } from '../lib/api';
-import { useDateAction } from '../lib/date-queries';
+import { useDateAction, useDateFeedback } from '../lib/date-queries';
 import { useLocale } from '../lib/locale';
 import { radius, spacing, useColors } from '../lib/theme';
 import { AppText } from './AppText';
 import { Banner } from './Banner';
 import { Button } from './Button';
+import { ChoiceGroup } from './Choice';
 
 export function formatDateTime(iso: string, locale: string): string {
   return new Intl.DateTimeFormat(locale, {
@@ -25,7 +26,13 @@ export function formatDateTime(iso: string, locale: string): string {
 }
 
 /** A date idea in the chat: the place (a copy kept with the idea), the time, and what to do next. */
-export function DateCard({ message }: { message: MessageView }) {
+export function DateCard({
+  message,
+  other,
+}: {
+  message: MessageView;
+  other?: { id: string; name: string } | undefined;
+}) {
   const { t } = useTranslation();
   const { locale } = useLocale();
   const colors = useColors();
@@ -158,7 +165,110 @@ export function DateCard({ message }: { message: MessageView }) {
             />
           </View>
         ) : null}
+        {plan.status === 'accepted' && plan.feedback?.canGive ? (
+          <DateFeedback message={message} other={other} />
+        ) : null}
       </View>
+    </View>
+  );
+}
+
+/**
+ * "Did you meet?" (phase 20). The answers are private: the other person only ever sees "you both
+ * want to meet again", and only when both said so.
+ */
+function DateFeedback({
+  message,
+  other,
+}: {
+  message: MessageView;
+  other?: { id: string; name: string } | undefined;
+}) {
+  const { t } = useTranslation();
+  const send = useDateFeedback(message.matchId);
+  const plan = message.date!;
+  const feedback = plan.feedback!;
+  const [editing, setEditing] = useState(false);
+  const [met, setMet] = useState<boolean>();
+  const [error, setError] = useState<string>();
+
+  const save = (input: { met: boolean; again: AgainAnswer | null }) =>
+    send.mutate(
+      { id: plan.id, ...input },
+      {
+        onSuccess: () => {
+          setEditing(false);
+          setMet(undefined);
+          setError(undefined);
+        },
+        onError: () => setError(t('common.genericError')),
+      },
+    );
+
+  const asking = feedback.mine === null || editing;
+  return (
+    <View style={styles.feedback} testID="date-feedback">
+      {feedback.bothAgain ? (
+        <AppText variant="heading" tone="success" accessibilityRole="header">
+          {t('feedback.bothAgain')}
+        </AppText>
+      ) : null}
+      {error ? <Banner tone="error" message={error} /> : null}
+      {asking && met === undefined ? (
+        <>
+          <AppText variant="heading">{t('feedback.didYouMeet')}</AppText>
+          <AppText variant="caption" tone="muted">
+            {t('feedback.private')}
+          </AppText>
+          <View style={styles.actions}>
+            <Button label={t('feedback.metYes')} onPress={() => setMet(true)} />
+            <Button
+              variant="secondary"
+              label={t('feedback.metNo')}
+              loading={send.isPending}
+              onPress={() => save({ met: false, again: null })}
+            />
+          </View>
+        </>
+      ) : null}
+      {asking && met === true ? (
+        <ChoiceGroup
+          label={t('feedback.again')}
+          options={againAnswers.map((value) => ({
+            value,
+            label: t(`feedback.againOptions.${value}`),
+          }))}
+          selected={[]}
+          onChange={(next) => next[0] && save({ met: true, again: next[0] })}
+        />
+      ) : null}
+      {!asking && feedback.mine ? (
+        <>
+          <AppText variant="body" accessibilityLiveRegion="polite">
+            {feedback.mine.met
+              ? t('feedback.savedMet', {
+                  again: feedback.mine.again
+                    ? t(`feedback.againOptions.${feedback.mine.again}`)
+                    : '',
+                })
+              : t('feedback.savedNotMet')}
+          </AppText>
+          <Button variant="ghost" label={t('feedback.change')} onPress={() => setEditing(true)} />
+        </>
+      ) : null}
+      {other ? (
+        <Button
+          variant="ghost"
+          label={t('feedback.feltWrong')}
+          hint={t('feedback.feltWrongHint')}
+          onPress={() =>
+            router.push({
+              pathname: '/report/[id]',
+              params: { id: other.id, name: other.name, matchId: message.matchId },
+            })
+          }
+        />
+      ) : null}
     </View>
   );
 }
@@ -176,4 +286,5 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   actions: { gap: spacing.sm, marginTop: spacing.sm },
+  feedback: { gap: spacing.sm, marginTop: spacing.sm },
 });

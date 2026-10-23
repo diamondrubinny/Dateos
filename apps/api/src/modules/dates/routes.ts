@@ -1,7 +1,14 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
-import { messageViewSchema, proposeDateSchema, venueSchema } from '@nexaheart/shared';
+import {
+  availabilityInputSchema,
+  availabilitySchema,
+  dateFeedbackInputSchema,
+  messageViewSchema,
+  proposeDateSchema,
+  venueSchema,
+} from '@nexaheart/shared';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import type { Auth } from '../../auth/auth.js';
@@ -53,5 +60,29 @@ export const dateRoutes: FastifyPluginAsyncZod<{
     '/v1/dates/:id/cancel',
     { config: limit, schema: { params, response: { 200: messageViewSchema } } },
     async (request) => dates.cancel(request.params.id, currentUser(request).id),
+  );
+
+  // Phase 20: "did you meet?" (private) and when you're both free (only the overlap is shown).
+  app.post(
+    '/v1/dates/:id/feedback',
+    {
+      config: limit,
+      schema: { params, body: dateFeedbackInputSchema, response: { 200: messageViewSchema } },
+    },
+    async (request) => dates.feedback(request.params.id, currentUser(request).id, request.body),
+  );
+  app.get(
+    '/v1/matches/:id/availability',
+    { schema: { params, response: { 200: availabilitySchema } } },
+    async (request) => dates.availability(request.params.id, currentUser(request).id),
+  );
+  app.put(
+    '/v1/matches/:id/availability',
+    {
+      config: limit,
+      schema: { params, body: availabilityInputSchema, response: { 200: availabilitySchema } },
+    },
+    async (request) =>
+      dates.setAvailability(request.params.id, currentUser(request).id, request.body.slots),
   );
 };

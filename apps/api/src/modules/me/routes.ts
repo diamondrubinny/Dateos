@@ -137,6 +137,16 @@ export const meRoutes: FastifyPluginAsyncZod<{
     },
   );
 
+  // "Met in person" badge (phase 20, off by default).
+  app.put(
+    '/v1/me/met-badge',
+    { schema: { body: incognitoInputSchema, response: { 200: ok } } },
+    async (request) => {
+      await me.setMetBadge(currentUser(request).id, request.body.on);
+      return { ok: true as const };
+    },
+  );
+
   // Incognito (phase 18b).
   app.put(
     '/v1/me/incognito',

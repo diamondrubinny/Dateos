@@ -38,7 +38,8 @@ export function ChoiceGroup<T extends string>({
   return (
     <View
       style={styles.wrap}
-      accessibilityRole={multiple ? undefined : 'radiogroup'}
+      // A named group, so screen readers announce what the checkboxes or radios are about.
+      role={multiple ? 'group' : 'radiogroup'}
       accessibilityLabel={label}
     >
       <AppText variant="label">{label}</AppText>

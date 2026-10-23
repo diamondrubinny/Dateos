@@ -60,7 +60,16 @@ export function AppText({
       maxFontSizeMultiplier={2}
       style={[
         sizes[variant],
-        { color, textAlign: center ? 'center' : startAlign },
+        // User content on the web keeps CSS `text-align: start`, which follows its own `dir="auto"`
+        // (react-native-web would turn `start` into the app's side, e.g. Latin text aligned right).
+        {
+          color,
+          ...(center
+            ? { textAlign: 'center' as const }
+            : userContent && Platform.OS === 'web'
+              ? {}
+              : { textAlign: startAlign }),
+        },
         userContent && Platform.OS !== 'web' ? styles.auto : null,
         style,
       ]}

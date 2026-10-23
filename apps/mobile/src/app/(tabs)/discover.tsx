@@ -16,7 +16,7 @@ import { Screen } from '../../components/Screen';
 import { OnBreak } from '../../components/OnBreak';
 import { travelLine } from '../../components/TravelMode';
 import { useLocale } from '../../lib/locale';
-import { useDiscover, useMe, useTravel } from '../../lib/queries';
+import { useDiscover, useMe, useTravel, useYourTurn } from '../../lib/queries';
 import { radius, spacing, useColors } from '../../lib/theme';
 
 export default function Discover() {
@@ -25,6 +25,7 @@ export default function Discover() {
   const feed = useDiscover();
   const onBreak = Boolean(useMe().data?.pause);
   const travel = useTravel();
+  const yourTurn = useYourTurn();
   const { locale } = useLocale();
   const [index, setIndex] = useState(0);
   const [matchedWith, setMatchedWith] = useState<string>();
@@ -54,6 +55,17 @@ export default function Discover() {
       <AccountNotices />
       {travel.data ? <Banner tone="info" message={travelLine(travel.data, locale, t)} /> : null}
       {feed.error ? <Banner tone="error" message={t('common.genericError')} /> : null}
+      {yourTurn.data && yourTurn.data.waiting >= yourTurn.data.limit ? (
+        <View
+          testID="your-turn"
+          style={[styles.focus, { backgroundColor: colors.primarySoft }]}
+          accessibilityRole="summary"
+        >
+          <AppText variant="heading">{t('focus.title')}</AppText>
+          <AppText variant="body">{t('focus.body', { count: yourTurn.data.waiting })}</AppText>
+          <Button label={t('focus.open')} onPress={() => router.push('/matches')} />
+        </View>
+      ) : null}
       {matchedWith ? (
         <MatchCelebration name={matchedWith} onClose={() => setMatchedWith(undefined)} />
       ) : null}
@@ -80,4 +92,5 @@ export default function Discover() {
 
 const styles = StyleSheet.create({
   empty: { padding: spacing.xl, borderRadius: radius.lg, gap: spacing.md },
+  focus: { padding: spacing.md, borderRadius: radius.lg, gap: spacing.sm },
 });

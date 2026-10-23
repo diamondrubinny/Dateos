@@ -55,6 +55,7 @@ and members in their first week get a ×1.1 boost.
 - **Daily Picks:** the top 10 for you, chosen once a day and stable for that day. People you decide on drop out.
 - **Discover:** the next best people, excluding today's picks and anyone you already decided on.
 - **Likes You:** everyone who liked you, free. Liking back creates a match.
+- **Your turn (focus mode):** when 6 or more people are waiting for your reply (chats whose last message is theirs), a new like is refused with `YOUR_TURN` and Discover asks you to answer them first. Passing still works, and nothing about ranking changes. It's a burnout guard, not a penalty.
 
 ## What we deliberately do not use
 
