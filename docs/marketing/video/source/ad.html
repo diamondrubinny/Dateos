@@ -1,0 +1,345 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      @font-face {
+        font-family: Heebo;
+        src: url(heebo-hebrew-400-normal.woff2);
+        font-weight: 400;
+        unicode-range: U+0590-05FF, U+200C-2010, U+20AA, U+25CC, U+FB1D-FB4F;
+      }
+      @font-face {
+        font-family: Heebo;
+        src: url(heebo-hebrew-700-normal.woff2);
+        font-weight: 700;
+        unicode-range: U+0590-05FF, U+200C-2010, U+20AA, U+25CC, U+FB1D-FB4F;
+      }
+      @font-face {
+        font-family: Heebo;
+        src: url(heebo-hebrew-800-normal.woff2);
+        font-weight: 800;
+        unicode-range: U+0590-05FF, U+200C-2010, U+20AA, U+25CC, U+FB1D-FB4F;
+      }
+      @font-face {
+        font-family: Heebo;
+        src: url(heebo-latin-400-normal.woff2);
+        font-weight: 400;
+      }
+      @font-face {
+        font-family: Heebo;
+        src: url(heebo-latin-700-normal.woff2);
+        font-weight: 700;
+      }
+      @font-face {
+        font-family: Heebo;
+        src: url(heebo-latin-800-normal.woff2);
+        font-weight: 800;
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      html,
+      body {
+        width: 1080px;
+        height: 1920px;
+        overflow: hidden;
+        font-family: Heebo, sans-serif;
+        background: #2e1065;
+        color: #fff;
+      }
+      #stage {
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 1080px;
+        height: 1920px;
+        overflow: hidden;
+        background: radial-gradient(circle at 30% 15%, #8b5cf6 0%, #6d28d9 35%, #2e1065 100%);
+        color: #fff;
+      }
+      .glow {
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(90px);
+        opacity: 0.45;
+      }
+      .g1 {
+        width: 700px;
+        height: 700px;
+        background: #f472b6;
+        top: -200px;
+        inset-inline-end: -250px;
+        animation: drift 32s linear forwards;
+      }
+      .g2 {
+        width: 600px;
+        height: 600px;
+        background: #60a5fa;
+        bottom: -150px;
+        inset-inline-start: -250px;
+        animation: drift2 32s linear forwards;
+      }
+      @keyframes drift {
+        to {
+          transform: translate(-200px, 500px);
+        }
+      }
+      @keyframes drift2 {
+        to {
+          transform: translate(250px, -450px);
+        }
+      }
+      .scene {
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 150px 80px 0;
+        text-align: center;
+      }
+      .kicker {
+        font-size: 40px;
+        font-weight: 700;
+        color: #ddd6fe;
+        letter-spacing: 0.02em;
+        margin-bottom: 18px;
+      }
+      h1 {
+        font-size: 92px;
+        font-weight: 800;
+        line-height: 1.08;
+        margin-bottom: 26px;
+      }
+      p.sub {
+        font-size: 44px;
+        font-weight: 400;
+        line-height: 1.35;
+        color: #ede9fe;
+        max-width: 900px;
+      }
+      .phone {
+        position: absolute;
+        bottom: -260px;
+        width: 620px;
+        height: 1342px;
+        border-radius: 84px;
+        background: #111;
+        padding: 22px;
+        box-shadow:
+          0 50px 120px rgba(0, 0, 0, 0.5),
+          0 0 0 3px rgba(255, 255, 255, 0.15) inset;
+      }
+      .phone img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: top;
+        border-radius: 64px;
+        display: block;
+      }
+      .chips {
+        display: flex;
+        gap: 18px;
+        flex-wrap: wrap;
+        justify-content: center;
+        margin-top: 34px;
+      }
+      .chip {
+        background: rgba(255, 255, 255, 0.16);
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-radius: 999px;
+        padding: 16px 34px;
+        font-size: 38px;
+        font-weight: 700;
+      }
+      .logo {
+        width: 260px;
+        height: 260px;
+        border-radius: 64px;
+        box-shadow: 0 30px 80px rgba(0, 0, 0, 0.35);
+        margin: 330px 0 60px;
+      }
+      .brand {
+        font-size: 130px;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+      }
+      .cta {
+        margin-top: 60px;
+        background: #fff;
+        color: #5b21b6;
+        border-radius: 999px;
+        padding: 30px 70px;
+        font-size: 50px;
+        font-weight: 800;
+      }
+      .small {
+        position: absolute;
+        bottom: 90px;
+        font-size: 34px;
+        color: #c4b5fd;
+      }
+      /* each scene: fade+rise in, hold, fade out. --s = start (s), --d = duration */
+      .scene {
+        animation:
+          sceneIn 0.7s ease-out calc(var(--s) * 1s) forwards,
+          sceneOut 0.6s ease-in calc((var(--s) + var(--d) - 0.6) * 1s) forwards;
+      }
+      .scene.last {
+        animation: sceneIn 0.7s ease-out calc(var(--s) * 1s) forwards;
+      }
+      .scene .phone {
+        transform: translateY(300px);
+        animation: rise 1s cubic-bezier(0.2, 0.8, 0.2, 1) calc((var(--s) + 0.15) * 1s) forwards;
+      }
+      .scene h1,
+      .scene .kicker,
+      .scene p.sub,
+      .scene .chips,
+      .scene .cta {
+        transform: translateY(40px);
+        opacity: 0;
+        animation: textIn 0.7s ease-out forwards;
+      }
+      .scene .kicker {
+        animation-delay: calc(var(--s) * 1s + 0.05s);
+      }
+      .scene h1 {
+        animation-delay: calc(var(--s) * 1s + 0.15s);
+      }
+      .scene p.sub {
+        animation-delay: calc(var(--s) * 1s + 0.35s);
+      }
+      .scene .chips {
+        animation-delay: calc(var(--s) * 1s + 0.6s);
+      }
+      .scene .cta {
+        animation-delay: calc(var(--s) * 1s + 0.9s);
+      }
+      .scene .logo {
+        transform: scale(0.6);
+        animation: pop 0.9s cubic-bezier(0.2, 1.4, 0.4, 1) calc(var(--s) * 1s + 0.1s) forwards;
+      }
+      @keyframes sceneIn {
+        to {
+          opacity: 1;
+        }
+      }
+      @keyframes sceneOut {
+        from {
+          opacity: 1;
+        }
+        to {
+          opacity: 0;
+        }
+      }
+      @keyframes rise {
+        to {
+          transform: translateY(0);
+        }
+      }
+      @keyframes textIn {
+        to {
+          transform: none;
+          opacity: 1;
+        }
+      }
+      @keyframes pop {
+        to {
+          transform: scale(1);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="stage">
+      <div class="glow g1"></div>
+      <div class="glow g2"></div>
+      <div id="root"></div>
+    </div>
+    <script>
+      const L = new URLSearchParams(location.search).get('lang') || 'he';
+      const shots = (n) => `shots/${L}/${n}.png`;
+      const C = {
+        he: {
+          dir: 'rtl',
+          intro: ['היכרויות שמכבדות אותך'],
+          s: [
+            [
+              'חינם. לתמיד. לכולם.',
+              'בלי מנויים, בלי "בוסטים", בלי פרסומות',
+              '09-discover',
+              ['בלי פרסומות', 'בלי מכירת מידע'],
+            ],
+            ['התאמות שמסבירות את עצמן', 'רואים למה: "שניכם אוהבים טיולים"', '11-match'],
+            ['אדיבות מובנית בצ׳אט', '"בטוח/ה?" לפני הודעה שעלולה לפגוע', '20-chat-are-you-sure'],
+            ['בטיחות גם בדייט', 'צ׳ק-אין בטיחות וכפתור SOS', '41-checkin-active'],
+            ['אירועי קהילה', 'להכיר פנים אל פנים, במקום בטוח', '49-event-detail'],
+            ['קהילות שמתחברות', 'להכיר גם אנשים מקהילות שותפות, רק אם בוחרים', '103-partners-deck'],
+          ],
+          end: [
+            'הקהילה שלך. האפליקציה שלך.',
+            'קוד פתוח · פרטיות כבר בתכנון',
+            'nexaheart.com',
+            'עברית · English · العربية · Русский',
+          ],
+        },
+        en: {
+          dir: 'ltr',
+          intro: ['Dating that respects you'],
+          s: [
+            [
+              'Free. Forever. For everyone.',
+              'No subscriptions, no boosts, no ads',
+              '09-discover',
+              ['No ads', 'Never sells your data'],
+            ],
+            ['Matches that explain themselves', 'See why: “you both love hiking”', '11-match'],
+            [
+              'Kindness built into chat',
+              '“Are you sure?” before a hurtful message',
+              '20-chat-are-you-sure',
+            ],
+            ['Safety on the date, too', 'Safety check-in with an SOS button', '41-checkin-active'],
+            ['Community events', 'Meet in person, somewhere safe', '49-event-detail'],
+            [
+              'Communities that connect',
+              'Meet people from partner communities, only if you choose',
+              '103-partners-deck',
+            ],
+          ],
+          end: [
+            'Your community. Your app.',
+            'Open source · Private by design',
+            'nexaheart.com',
+            'English · עברית · العربية · Русский',
+          ],
+        },
+      }[L];
+      document.documentElement.dir = C.dir;
+      document.documentElement.lang = L;
+      const esc = (s) =>
+        s.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]);
+      let html = `<section class="scene" style="--s:0;--d:3.2"><img class="logo" src="icon.png" alt=""><div class="brand">NexaHeart</div><p class="sub" style="font-size:56px;opacity:1">${esc(C.intro[0])}</p></section>`;
+      let t = 3.2;
+      for (const [h, sub, shot, chips] of C.s) {
+        html += `<section class="scene" style="--s:${t};--d:4"><h1>${esc(h)}</h1><p class="sub">${esc(sub)}</p>${chips ? `<div class="chips">${chips.map((c) => `<span class="chip">${esc(c)}</span>`).join('')}</div>` : ''}<div class="phone"><img src="${shots(shot)}" alt=""></div></section>`;
+        t += 4;
+      }
+      html += `<section class="scene last" style="--s:${t};--d:5"><img class="logo" src="icon.png" alt="" style="margin-top:300px"><h1>${esc(C.end[0])}</h1><p class="sub">${esc(C.end[1])}</p><div class="cta">${esc(C.end[2])}</div><div class="small">${esc(C.end[3])}</div></section>`;
+      document.getElementById('root').innerHTML = html;
+      window.TOTAL = t + 5;
+      window.seek = (ms) => {
+        for (const a of document.getAnimations()) {
+          a.pause();
+          a.currentTime = ms;
+        }
+      };
+    </script>
+  </body>
+</html>
