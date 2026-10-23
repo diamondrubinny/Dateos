@@ -123,10 +123,15 @@ export function realtimeChannel(userId: string): string {
 }
 export const REALTIME_PATTERN = 'nexaheart:rt:user:*';
 
-export const chatSettingsSchema = z.object({ acceptVoice: z.boolean(), acceptCalls: z.boolean() });
+export const chatSettingsSchema = z.object({
+  acceptVoice: z.boolean(),
+  acceptCalls: z.boolean(),
+  /** Phase 26: people I send voice to may read it as text (made on this community's server). */
+  allowTranscripts: z.boolean(),
+});
 export const chatSettingsInputSchema = chatSettingsSchema
   .partial()
-  .refine((v) => v.acceptVoice !== undefined || v.acceptCalls !== undefined, 'Nothing to change');
+  .refine((v) => Object.values(v).some((x) => x !== undefined), 'Nothing to change');
 
 /** Expo push tokens look like ExponentPushToken[xxxxxxxx]. 📘 Expo push documentation. */
 export const pushTokenInputSchema = z.object({

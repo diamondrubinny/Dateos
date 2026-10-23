@@ -11,6 +11,7 @@ import { CallLine } from './CallLine';
 import { DateCard } from './DateCard';
 import { RemoteImage } from './RemoteImage';
 import { VoicePlayer } from './VoicePlayer';
+import { VoiceTranscript } from './VoiceTranscript';
 
 export function ScamBanner() {
   const { t } = useTranslation();
@@ -112,7 +113,13 @@ export function MessageBubble({
           {t('voice.rejected')}
         </AppText>
       );
-    else content = <VoicePlayer path={voice.url} durationMs={voice.durationMs} onPrimary={mine} />;
+    else
+      content = (
+        <View style={styles.voice}>
+          <VoicePlayer path={voice.url} durationMs={voice.durationMs} onPrimary={mine} />
+          <VoiceTranscript path={voice.url} onPrimary={mine} />
+        </View>
+      );
   } else {
     content = (
       <AppText variant="body" tone={tone} userContent selectable>
@@ -135,6 +142,7 @@ export function MessageBubble({
 }
 
 const styles = StyleSheet.create({
+  voice: { gap: spacing.xs },
   row: { gap: spacing.xs, marginVertical: 3 },
   rowMine: { alignItems: 'flex-end' },
   rowTheirs: { alignItems: 'flex-start' },

@@ -13,12 +13,12 @@ open source; you own the server and the data.
 
 ## What you need
 
-|          | Minimum                                      | Notes                                                                         |
-| -------- | -------------------------------------------- | ----------------------------------------------------------------------------- |
-| Server   | 2 vCPU, 4 GB RAM, 40 GB disk (Linux, x86-64) | +4 GB RAM for the optional local AI (Ollama). ClamAV alone needs about 1.5 GB |
-| Domain   | One domain or subdomain you control          | Three DNS names: `example.org`, `admin.example.org`, `api.example.org`        |
-| Email    | Any SMTP provider                            | Sign-in links are sent by email                                               |
-| Software | Docker with Compose v2, `git`, `openssl`     | Node is **not** needed on the server                                          |
+|          | Minimum                                      | Notes                                                                                                                        |
+| -------- | -------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| Server   | 2 vCPU, 4 GB RAM, 40 GB disk (Linux, x86-64) | +4 GB RAM for the optional local AI (Ollama). ClamAV alone needs about 1.5 GB; voice transcripts about 0.5 GB while they run |
+| Domain   | One domain or subdomain you control          | Three DNS names: `example.org`, `admin.example.org`, `api.example.org`                                                       |
+| Email    | Any SMTP provider                            | Sign-in links are sent by email                                                                                              |
+| Software | Docker with Compose v2, `git`, `openssl`     | Node is **not** needed on the server                                                                                         |
 
 ## 1. Install
 
@@ -124,6 +124,24 @@ several API replicas, set it to `false` and run `pnpm --filter @nexaheart/db db:
 admins can save settings in the dashboard's Integrations page. Variables already in your `.env`
 (SMTP, AI, push, LiveKit) keep working and lock their cards; remove one to manage it in the
 dashboard instead.
+
+**Updating from before phase 26?** Voice messages get a "Show text" button. The worker downloads
+an open speech model (about 77 MB, from Hugging Face) the first time someone asks, and keeps it in
+the `models-data` volume. Set `TRANSCRIPTS=off` in `.env` to turn this off, or see below.
+
+## Voice transcripts
+
+"Show text" under each voice message and voice prompt is made by Whisper, an open speech model, in
+the **worker on your server**: the voice never goes anywhere else. Nothing is transcribed until
+someone who may play the clip asks (members who shared "deaf or hard of hearing" get it by
+themselves), and a speaker can choose "voice only" in Settings.
+
+- **CPU:** about 2 seconds for 10 seconds of speech on one core, one clip at a time.
+- **Better Hebrew and Arabic:** `TRANSCRIPTS_MODEL=onnx-community/whisper-small` (about 250 MB, about
+  three times slower) 📘.
+- **Offline servers:** copy the model files into the volume (`TRANSCRIPTS_CACHE`, `/models` in
+  Docker) under the model's name; nothing is downloaded then.
+- **Off:** `TRANSCRIPTS=off` for both the API and the worker hides the button everywhere.
 
 ## Integrations (optional)
 

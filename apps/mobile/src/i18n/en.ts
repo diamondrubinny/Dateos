@@ -1325,6 +1325,17 @@ export const en = {
     textFirst:
       '{{name}}’s profile says they prefer texting before a call. You could send a message first.',
   },
+  transcript: {
+    show: 'Show text',
+    retry: 'Try again',
+    failed: 'This couldn’t be turned into text.',
+    voiceOnly: 'Voice only: the speaker prefers not to share it as text.',
+    pending: 'Turning the voice into text…',
+    automatic: 'Automatic transcript, made on this community’s server. It may contain mistakes.',
+    allowLabel: 'Let people read my voice messages as text',
+    allowHint:
+      'The text is made on this community’s server, only when someone asks for it. Turning this off deletes texts already made.',
+  },
 };
 
 type Widen<T> = { [K in keyof T]: T[K] extends string ? string : Widen<T[K]> };

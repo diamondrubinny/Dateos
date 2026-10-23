@@ -103,6 +103,7 @@ export class InstanceService {
       contactEmail: row?.contactEmail ?? null,
       setupRequired: Boolean(noAdmin.rows[0]?.none),
       calls: liveKitConfigured(env) && Boolean(row?.callsEnabled),
+      transcripts: env.TRANSCRIPTS === 'local',
       signup: (row?.signupMode ?? 'open') as SignupMode,
       poweredBy: poweredBy(env),
     };

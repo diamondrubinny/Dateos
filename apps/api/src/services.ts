@@ -16,10 +16,12 @@ import {
   createMediaQueue,
   createNotifyQueue,
   createOutboundQueue,
+  createTranscribeQueue,
   createProfileQueue,
   type MediaQueue,
   type NotifyQueue,
   type OutboundQueue,
+  type TranscribeQueue,
   type ProfileQueue,
 } from './lib/queue.js';
 import { AudioService } from './modules/chat/audio.js';
@@ -103,6 +105,8 @@ export interface ServiceOverrides {
   integrationsEnv?: Record<string, string | undefined>;
   integrationsKey?: Buffer | null;
   outboundQueue?: OutboundQueue;
+  /** Phase 26: voice transcripts; `null` turns them off (as `TRANSCRIPTS=off`). */
+  transcribeQueue?: TranscribeQueue | null;
   fetch?: typeof fetch;
   resolve?: (host: string) => Promise<string[]>;
 }
@@ -173,6 +177,13 @@ export function createServices(
   const instance = new InstanceService(dbHandle.db, env, photos);
   const audio = new AudioService(dbHandle.db, storage, mediaQueue);
   audio.useVisibility((viewerId, ownerId) => discovery.canView(viewerId, ownerId));
+  const transcribeQueue =
+    overrides.transcribeQueue !== undefined
+      ? overrides.transcribeQueue
+      : env.TRANSCRIPTS === 'local'
+        ? createTranscribeQueue(env.REDIS_URL)
+        : null;
+  if (transcribeQueue) audio.useTranscripts(transcribeQueue);
   const hashEmail = createEmailHasher(secrets.authSecret);
   const trust = new TrustService(
     dbHandle.db,
@@ -315,6 +326,11 @@ export function createServices(
       { name: 'profile-queue', isHealthy: async () => true, close: () => profileQueue.close() },
       { name: 'notify-queue', isHealthy: async () => true, close: () => notifyQueue.close() },
       { name: 'outbound-queue', isHealthy: async () => true, close: () => outboundQueue.close() },
+      {
+        name: 'transcribe-queue',
+        isHealthy: async () => true,
+        close: async () => transcribeQueue?.close(),
+      },
       { name: 'mailer', isHealthy: async () => true, close: async () => mailer.close() },
     ],
   };

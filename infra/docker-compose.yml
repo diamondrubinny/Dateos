@@ -155,6 +155,10 @@ services:
       OLLAMA_URL: http://ollama:11434
       LIVEKIT_API_URL: http://livekit:7880
       SMTP_HOST: ${SMTP_HOST_DOCKER:-${SMTP_HOST}}
+      # Voice transcripts (phase 26): the speech model is kept here across restarts.
+      TRANSCRIPTS_CACHE: /models
+    volumes:
+      - models-data:/models
     depends_on:
       postgres:
         condition: service_healthy
@@ -195,3 +199,4 @@ volumes:
   seaweedfs-data:
   clamav-data:
   ollama-data:
+  models-data:

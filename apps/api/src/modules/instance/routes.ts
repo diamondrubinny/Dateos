@@ -41,6 +41,7 @@ export function instanceInfo(env: Env): InstanceInfo {
     contactEmail: null,
     setupRequired: false,
     calls: false,
+    transcripts: false,
     signup: 'open',
     integrations: { captcha: null, analytics: null, webErrors: false },
     poweredBy: poweredBy(env),

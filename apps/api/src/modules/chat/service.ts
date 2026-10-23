@@ -12,6 +12,7 @@ import {
   MESSAGES_BEFORE_IMAGES,
   type MessagesPage,
   type MessageView,
+  type TranscriptLang,
   type PromptKey,
   scamSignals,
   FEEDBACK_AFTER_MINUTES,
@@ -347,7 +348,12 @@ export class ChatService {
   }
 
   /** Voice messages: same unlock rule as images, and only if the receiver accepts them. */
-  async sendVoice(matchId: string, senderId: string, buffer: Buffer): Promise<MessageView> {
+  async sendVoice(
+    matchId: string,
+    senderId: string,
+    buffer: Buffer,
+    lang?: TranscriptLang,
+  ): Promise<MessageView> {
     if (!this.audio)
       throw new HttpError(503, ErrorCode.ServiceUnavailable, 'Voice messages are unavailable.');
     const { otherId } = await this.participant(matchId, senderId);
@@ -361,7 +367,7 @@ export class ChatService {
     if (!(await this.acceptsVoice(otherId))) {
       throw new HttpError(403, ErrorCode.Forbidden, 'This person does not accept voice messages.');
     }
-    const clip = await this.audio.upload(senderId, buffer);
+    const clip = await this.audio.upload(senderId, buffer, undefined, lang);
     const clientId = `voice-${randomUUID()}`;
     await this.db
       .insert(messages)

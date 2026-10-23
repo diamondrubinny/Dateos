@@ -16,6 +16,8 @@ import {
   type ProcessAudioJob,
   type ProcessPhotoJob,
   type PushJob,
+  TRANSCRIBE_QUEUE,
+  TranscribeJob,
 } from '@nexaheart/shared';
 import { Queue } from 'bullmq';
 import { Redis } from 'ioredis';
@@ -141,6 +143,39 @@ export function createOutboundQueue(
     },
     async alert(job) {
       await queue.add(OutboundJob.Alert, job);
+    },
+    async close() {
+      await queue.close();
+      connection.disconnect();
+    },
+  };
+}
+
+export interface TranscribeQueue {
+  /** The API queues a clip once (an atomic update on the clip decides who does). */
+  transcribe(audioId: string): Promise<void>;
+  close(): Promise<void>;
+}
+
+/** Voice transcripts (phase 26): the worker runs a local speech model, one clip at a time. */
+export function createTranscribeQueue(
+  redisUrl: string,
+  name: string = TRANSCRIBE_QUEUE,
+): TranscribeQueue {
+  const connection = new Redis(redisUrl, { maxRetriesPerRequest: null });
+  connection.on('error', () => undefined);
+  const queue = new Queue(name, {
+    connection,
+    defaultJobOptions: {
+      attempts: 2,
+      backoff: { type: 'fixed', delay: 30_000 },
+      removeOnComplete: true,
+      removeOnFail: 100,
+    },
+  });
+  return {
+    async transcribe(audioId) {
+      await queue.add(TranscribeJob.Transcribe, { audioId });
     },
     async close() {
       await queue.close();

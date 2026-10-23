@@ -2,14 +2,20 @@
 // Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 import { schema, type Database } from '@nexaheart/db';
-import { ErrorCode, MAX_VOICE_PROMPT_SECONDS, type PromptKey } from '@nexaheart/shared';
+import {
+  ErrorCode,
+  MAX_VOICE_PROMPT_SECONDS,
+  type PromptKey,
+  type Transcript,
+  type TranscriptLang,
+} from '@nexaheart/shared';
 import { audioQuarantineKey, type Storage, type StoredObject } from '@nexaheart/storage';
-import { and, eq, sql } from 'drizzle-orm';
+import { and, eq, isNull, or, sql } from 'drizzle-orm';
 import { fileTypeFromBuffer } from 'file-type';
-import type { MediaQueue } from '../../lib/queue.js';
+import type { MediaQueue, TranscribeQueue } from '../../lib/queue.js';
 import { HttpError } from '../../plugins/error-handler.js';
 
-const { audioClips, profileAbout } = schema;
+const { audioClips, preferences, profileAbout } = schema;
 
 /** What phones and browsers record: M4A/MP4 (iOS, Android, Safari), WebM (Chrome), Ogg (Firefox). */
 const allowed = new Set([
@@ -43,12 +49,23 @@ export class AudioService {
     this.canView = canView;
   }
 
-  async upload(userId: string, buffer: Buffer, maxSeconds?: number): Promise<{ id: string }> {
+  /** Voice transcripts (phase 26): unset when the community turned them off. */
+  private transcripts?: TranscribeQueue;
+  useTranscripts(queue: TranscribeQueue): void {
+    this.transcripts = queue;
+  }
+
+  async upload(
+    userId: string,
+    buffer: Buffer,
+    maxSeconds?: number,
+    lang?: TranscriptLang,
+  ): Promise<{ id: string }> {
     const mime = await sniffAudioType(buffer);
     if (!mime) throw new HttpError(415, ErrorCode.BadRequest, 'Unsupported audio format.');
     const [row] = await this.db
       .insert(audioClips)
-      .values({ userId })
+      .values({ userId, ...(lang ? { lang } : {}) })
       .returning({ id: audioClips.id });
     const key = audioQuarantineKey(userId, row!.id);
     try {
@@ -77,8 +94,9 @@ export class AudioService {
     userId: string,
     promptKey: PromptKey,
     buffer: Buffer,
+    lang?: TranscriptLang,
   ): Promise<{ id: string }> {
-    const clip = await this.upload(userId, buffer, MAX_VOICE_PROMPT_SECONDS);
+    const clip = await this.upload(userId, buffer, MAX_VOICE_PROMPT_SECONDS, lang);
     const [before] = await this.db
       .select({ audioId: profileAbout.voiceAudioId })
       .from(profileAbout)
@@ -105,6 +123,40 @@ export class AudioService {
     await this.deleteClip(row.audioId);
   }
 
+  /**
+   * The text of a clip (phase 26), for someone who may play it. `request` queues it when nobody
+   * asked yet (or the last attempt failed); otherwise this only reads the state.
+   */
+  async transcript(viewerId: string, audioId: string, request: boolean): Promise<Transcript> {
+    const row = await this.playable(viewerId, audioId);
+    if (!row) throw notFound();
+    const unavailable: Transcript = { status: 'unavailable', text: null };
+    if (!this.transcripts) return unavailable;
+    const [pref] = await this.db
+      .select({ allow: preferences.allowTranscripts })
+      .from(preferences)
+      .where(eq(preferences.userId, row.user_id));
+    if (pref && !pref.allow) return unavailable;
+    if (row.transcript_status === 'done') return { status: 'done', text: row.transcript };
+    if (row.transcript_status === 'pending') return { status: 'pending', text: null };
+    if (!request) {
+      return { status: row.transcript_status === 'failed' ? 'failed' : 'none', text: null };
+    }
+    // Only one request queues the job, even when both people ask at the same moment.
+    const claimed = await this.db
+      .update(audioClips)
+      .set({ transcriptStatus: 'pending', transcript: null })
+      .where(
+        and(
+          eq(audioClips.id, audioId),
+          or(isNull(audioClips.transcriptStatus), eq(audioClips.transcriptStatus, 'failed')),
+        ),
+      )
+      .returning({ id: audioClips.id });
+    if (claimed.length > 0) await this.transcripts.transcribe(audioId);
+    return { status: 'pending', text: null };
+  }
+
   /** Deletes a clip row now and its stored files through the worker. */
   private async deleteClip(audioId: string): Promise<void> {
     const [clip] = await this.db
@@ -118,14 +170,20 @@ export class AudioService {
     });
   }
 
-  /** Only the two people of an active match where the clip was sent can play it. */
-  async open(
-    viewerId: string,
-    audioId: string,
-    format: 'aac' | 'opus' = 'aac',
-  ): Promise<StoredObject> {
-    const result = await this.db.execute<{ media_key: string | null; opus_key: string | null }>(sql`
-      SELECT a.media_key, a.opus_key FROM audio_clips a
+  /**
+   * The clip, if this person may play it: the two people of an active, unblocked match where it was
+   * sent, or (a voice prompt) anyone who may see the owner's profile. Transcripts use the same check.
+   */
+  private async playable(viewerId: string, audioId: string) {
+    type Row = {
+      user_id: string;
+      media_key: string | null;
+      opus_key: string | null;
+      transcript: string | null;
+      transcript_status: string | null;
+    };
+    const result = await this.db.execute<Row>(sql`
+      SELECT a.user_id, a.media_key, a.opus_key, a.transcript, a.transcript_status FROM audio_clips a
       JOIN messages m ON m.audio_id = a.id JOIN matches ma ON ma.id = m.match_id
       WHERE a.id = ${audioId} AND a.status = 'clean' AND ma.unmatched_at IS NULL
         AND (ma.user_a = ${viewerId} OR ma.user_b = ${viewerId})
@@ -134,25 +192,26 @@ export class AudioService {
           WHERE (b.blocker_id = ma.user_a AND b.blocked_id = ma.user_b) OR (b.blocker_id = ma.user_b AND b.blocked_id = ma.user_a)
         )
       LIMIT 1`);
-    let row = result.rows[0];
-    if (!row) {
-      // A voice prompt: anyone who may see the owner's profile can hear it.
-      const prompt = await this.db.execute<{
-        user_id: string;
-        media_key: string | null;
-        opus_key: string | null;
-      }>(sql`
-        SELECT a.user_id, a.media_key, a.opus_key FROM audio_clips a
-        JOIN profile_about pa ON pa.voice_audio_id = a.id AND pa.user_id = a.user_id
-        WHERE a.id = ${audioId} AND a.status = 'clean'`);
-      const owner = prompt.rows[0];
-      if (
-        owner &&
-        (owner.user_id === viewerId || (await this.canView?.(viewerId, owner.user_id)))
-      ) {
-        row = owner;
-      }
+    const sent = result.rows[0];
+    if (sent) return sent;
+    // A voice prompt: anyone who may see the owner's profile can hear it.
+    const prompt = await this.db.execute<Row>(sql`
+      SELECT a.user_id, a.media_key, a.opus_key, a.transcript, a.transcript_status FROM audio_clips a
+      JOIN profile_about pa ON pa.voice_audio_id = a.id AND pa.user_id = a.user_id
+      WHERE a.id = ${audioId} AND a.status = 'clean'`);
+    const owner = prompt.rows[0];
+    if (owner && (owner.user_id === viewerId || (await this.canView?.(viewerId, owner.user_id)))) {
+      return owner;
     }
+    return undefined;
+  }
+
+  async open(
+    viewerId: string,
+    audioId: string,
+    format: 'aac' | 'opus' = 'aac',
+  ): Promise<StoredObject> {
+    const row = await this.playable(viewerId, audioId);
     const key = format === 'opus' ? row?.opus_key : row?.media_key;
     if (!key) throw notFound();
     return this.storage.get(this.storage.buckets.media, key);

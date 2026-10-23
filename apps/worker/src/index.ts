@@ -8,6 +8,8 @@ import {
   MediaJob,
   NOTIFY_QUEUE,
   OUTBOUND_QUEUE,
+  TRANSCRIBE_QUEUE,
+  type TranscribeJobData,
   type PushJob,
   PROFILE_QUEUE,
   ProfileJob,
@@ -36,6 +38,8 @@ import { processAvailability } from './availability-jobs.js';
 import { processSignupRetention } from './signup-jobs.js';
 import { processFriendRetention } from './friend-jobs.js';
 import { processCalls } from './call-jobs.js';
+import { markTranscriptFailed, processTranscript } from './transcript-jobs.js';
+import { createWhisper } from './transcribe.js';
 import { IntegrationStore, parseIntegrationsKey } from '@nexaheart/integrations';
 import {
   dailySummary,
@@ -261,6 +265,33 @@ async function main(): Promise<void> {
     log.warn({ job: job?.name, attempt: job?.attemptsMade, err: error.message }, 'delivery failed'),
   );
 
+  // Voice transcripts (phase 26): a local model, one clip at a time so the CPU stays free.
+  const transcriber =
+    env.TRANSCRIPTS === 'local'
+      ? createWhisper({
+          model: env.TRANSCRIPTS_MODEL,
+          cacheDir: env.TRANSCRIPTS_CACHE,
+          ffmpeg: env.FFMPEG_PATH,
+        })
+      : null;
+  const transcriptWorker = transcriber
+    ? new Worker(
+        TRANSCRIBE_QUEUE,
+        async (job) => processTranscript(ctx, transcriber, job.data as TranscribeJobData),
+        { connection, concurrency: 1 },
+      )
+    : null;
+  transcriptWorker?.on('completed', (job, result) =>
+    log.info({ job: job.name, result }, 'job done'),
+  );
+  transcriptWorker?.on('failed', (job, error) => {
+    failed(job?.name, error);
+    // After the last attempt, asking again starts over.
+    if (job && job.attemptsMade >= (job.opts.attempts ?? 1)) {
+      void markTranscriptFailed(ctx, (job.data as TranscribeJobData).audioId);
+    }
+  });
+
   // Daily retention sweep (idempotent scheduler: safe with several workers).
   const scheduler = new Queue(PROFILE_QUEUE, { connection });
   await scheduler.upsertJobScheduler(
@@ -308,7 +339,12 @@ async function main(): Promise<void> {
   );
 
   log.info(
-    { scanningEnabled, embeddings: embeddings.model, push: env.PUSH_PROVIDER },
+    {
+      scanningEnabled,
+      embeddings: embeddings.model,
+      push: env.PUSH_PROVIDER,
+      transcripts: transcriber ? env.TRANSCRIPTS_MODEL : 'off',
+    },
     'worker started',
   );
   log.info(creditLine());
@@ -319,6 +355,7 @@ async function main(): Promise<void> {
     await profileWorker.close();
     await notifyWorker.close();
     await outboundWorker.close();
+    await transcriptWorker?.close();
     await scheduler.close();
     connection.disconnect();
     publisher.disconnect();

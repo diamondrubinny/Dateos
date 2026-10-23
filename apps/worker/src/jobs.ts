@@ -41,7 +41,10 @@ async function notifyChatImage(ctx: JobContext, photoId: string): Promise<void> 
   return notifyChatMedia(ctx, sql`m.photo_id = ${photoId}`);
 }
 
-async function notifyChatMedia(ctx: JobContext, where: ReturnType<typeof sql>): Promise<void> {
+export async function notifyChatMedia(
+  ctx: JobContext,
+  where: ReturnType<typeof sql>,
+): Promise<void> {
   if (!ctx.publish) return;
   const rows = await ctx.db.execute<{
     message_id: string;

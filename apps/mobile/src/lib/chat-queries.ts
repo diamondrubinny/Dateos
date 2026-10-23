@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
-import type { Conversation, MessagesPage, MessageView } from '@nexaheart/shared';
+import type { Conversation, MessagesPage, MessageView, Transcript } from '@nexaheart/shared';
 import {
   useInfiniteQuery,
   useMutation,
@@ -10,6 +10,7 @@ import {
   type InfiniteData,
 } from '@tanstack/react-query';
 import { Platform } from 'react-native';
+import i18n, { isAppLocale } from '../i18n';
 import { apiFetch, json } from './api';
 import type { PickedImage } from './queries';
 import { chatKeys, upsertMessage } from './realtime';
@@ -121,7 +122,11 @@ export function useSendVoice(matchId: string) {
           type: 'audio/mp4',
         } as unknown as Blob);
       }
-      return apiFetch<MessageView>(`/v1/matches/${matchId}/voice`, { method: 'POST', body: form });
+      // The app's language tells the speech model what it will hear (transcripts, phase 26).
+      return apiFetch<MessageView>(`/v1/matches/${matchId}/voice${recordingLang()}`, {
+        method: 'POST',
+        body: form,
+      });
     },
     onSuccess: (message) =>
       client.setQueryData<InfiniteData<MessagesPage>>(chatKeys.messages(matchId), (d) =>
@@ -136,9 +141,12 @@ export function useChatSettings() {
   return useQuery({
     queryKey: settingsKey,
     queryFn: () =>
-      apiFetch<{ acceptVoice: boolean; acceptCalls: boolean; pushDevices: number }>(
-        '/v1/me/settings',
-      ),
+      apiFetch<{
+        acceptVoice: boolean;
+        acceptCalls: boolean;
+        allowTranscripts: boolean;
+        pushDevices: number;
+      }>('/v1/me/settings'),
   });
 }
 
@@ -148,5 +156,39 @@ export function useSetAcceptVoice() {
     mutationFn: (acceptVoice: boolean) =>
       apiFetch('/v1/me/settings', { method: 'PUT', body: json({ acceptVoice }) }),
     onSuccess: () => client.invalidateQueries({ queryKey: settingsKey }),
+  });
+}
+
+/** Phase 26: may people I send voice to read it as text? Off also deletes texts already made. */
+export function useSetAllowTranscripts() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (allowTranscripts: boolean) =>
+      apiFetch('/v1/me/settings', { method: 'PUT', body: json({ allowTranscripts }) }),
+    onSuccess: () => client.invalidateQueries({ queryKey: settingsKey }),
+  });
+}
+
+/** `?lang=..` for a recording in the app's current language (phase 26). */
+export function recordingLang(prefix: '?' | '&' = '?'): string {
+  return isAppLocale(i18n.language) ? `${prefix}lang=${i18n.language}` : '';
+}
+
+/** Voice transcripts (phase 26): made on the community's server when someone asks. */
+export const transcriptKey = (path: string) => ['transcript', path] as const;
+export function useTranscript(path: string, enabled: boolean) {
+  return useQuery({
+    queryKey: transcriptKey(path),
+    queryFn: () => apiFetch<Transcript>(`${path}/transcript`),
+    enabled,
+    // While the worker is on it, check every few seconds.
+    refetchInterval: (query) => (query.state.data?.status === 'pending' ? 3000 : false),
+  });
+}
+export function useRequestTranscript(path: string) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: () => apiFetch<Transcript>(`${path}/transcript`, { method: 'POST' }),
+    onSuccess: (data) => client.setQueryData(transcriptKey(path), data),
   });
 }
