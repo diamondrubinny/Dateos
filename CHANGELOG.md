@@ -6,6 +6,12 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Added
 
+- **Easy mode and display settings**: larger text, higher contrast, reduced motion, and an easy
+  mode with three tabs, bigger buttons, fewer menus and a plain explanation under Like and Pass.
+  Offered on the welcome page; kept on the device only.
+- **Accessibility needs** (optional, with their own consent): step-free places come first in the
+  date planner, captions start by themselves in calls, and a short line can be shown on the profile.
+  Never used for ranking or as a filter by others, never sent to an AI model.
 - **Integrations in the dashboard**: connect email, sign-in with Google and Apple, a CAPTCHA
   (Cloudflare Turnstile or hCaptcha), the AI model, video (LiveKit), push, error monitoring (Sentry
   or GlitchTip), privacy-friendly analytics (Plausible, Umami, Matomo, only after consent), team

@@ -10,6 +10,9 @@ import {
   requiredConsents,
   SENSITIVE_CONSENT_VERSION,
   RELIGION_CONSENT_VERSION,
+  ACCESSIBILITY_CONSENT_VERSION,
+  type AccessNeed,
+  type AccessNeeds,
   emptyAbout,
   noDealbreakers,
   type About,
@@ -162,6 +165,10 @@ export class MeService {
             openingQuestion: about.openingQuestion,
           }
         : emptyAbout,
+      accessNeeds: {
+        needs: (about?.accessNeeds ?? []) as AccessNeed[],
+        show: about?.showAccessNeeds ?? false,
+      },
       voicePrompt:
         about?.voiceAudioId && about.voicePromptKey
           ? await this.myVoicePrompt(about.voiceAudioId, about.voicePromptKey as PromptKey)
@@ -250,6 +257,30 @@ export class MeService {
       throw new HttpError(400, ErrorCode.ValidationError, 'Please rephrase your question.');
     }
     const values = { ...about, updatedAt: new Date() };
+    await this.db
+      .insert(profileAbout)
+      .values({ userId, ...values })
+      .onConflictDoUpdate({ target: profileAbout.userId, set: values });
+  }
+
+  /**
+   * Accessibility needs (phase 25): special-category data, so they need their own consent. Choosing
+   * none also turns showing them off.
+   */
+  async setAccessNeeds(userId: string, input: AccessNeeds): Promise<void> {
+    await this.assertConsented(userId);
+    const consent = (await this.currentConsents(userId)).accessibility;
+    if (
+      input.needs.length > 0 &&
+      (!consent?.granted || consent.version !== ACCESSIBILITY_CONSENT_VERSION)
+    ) {
+      throw new HttpError(403, ErrorCode.Forbidden, 'Accessibility needs need your consent.');
+    }
+    const values = {
+      accessNeeds: input.needs,
+      showAccessNeeds: input.needs.length > 0 && input.show,
+      updatedAt: new Date(),
+    };
     await this.db
       .insert(profileAbout)
       .values({ userId, ...values })
@@ -465,6 +496,13 @@ export class MeService {
           .where(eq(profileAbout.userId, userId));
         await tx.update(preferences).set({ religionOk: [] }).where(eq(preferences.userId, userId));
       }
+      // Withdrawing the accessibility consent deletes the needs (phase 25).
+      if (items.some((item) => item.kind === 'accessibility' && !item.granted)) {
+        await tx
+          .update(profileAbout)
+          .set({ accessNeeds: [], showAccessNeeds: false })
+          .where(eq(profileAbout.userId, userId));
+      }
       if (sensitive) {
         await tx
           .update(user)
@@ -489,6 +527,7 @@ export class MeService {
       privacy: this.legal.privacyVersion,
       sensitive: SENSITIVE_CONSENT_VERSION,
       religion: RELIGION_CONSENT_VERSION,
+      accessibility: ACCESSIBILITY_CONSENT_VERSION,
     };
   }
 

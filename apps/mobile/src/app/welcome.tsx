@@ -6,10 +6,12 @@ import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 import { AppText } from '../components/AppText';
 import { Button } from '../components/Button';
+import { Checkbox } from '../components/Choice';
 import { LanguageSwitch } from '../components/LanguageSwitch';
 import { RemoteImage } from '../components/RemoteImage';
 import { Screen } from '../components/Screen';
 import { DEFAULT_TAGLINE } from '@nexaheart/shared';
+import { useDisplay } from '../lib/display';
 import { useInstance } from '../lib/queries';
 import { radius, spacing, useColors } from '../lib/theme';
 import { PoweredBy } from '../components/PoweredBy';
@@ -18,6 +20,7 @@ export default function Welcome() {
   const { t } = useTranslation();
   const colors = useColors();
   const instance = useInstance();
+  const display = useDisplay();
   const features = ['safety', 'free', 'ai'] as const;
   const icons = { safety: '🛡️', free: '💜', ai: '✨' };
 
@@ -59,6 +62,22 @@ export default function Welcome() {
         ))}
       </View>
       <LanguageSwitch />
+      {/* Phase 25: found before signing up, for anyone who wants bigger text and fewer menus. */}
+      <Checkbox
+        label={t('display.welcomeLabel')}
+        hint={t('display.welcomeHint')}
+        checked={display.easy}
+        onChange={(easy) =>
+          display.update(
+            easy
+              ? { easy, textSize: display.textSize === 'standard' ? 'large' : display.textSize }
+              : { easy, textSize: 'standard' },
+          )
+        }
+      />
+      <Link href="/display" style={[styles.link, { color: colors.primary }]}>
+        {t('display.title')}
+      </Link>
       <View style={styles.links}>
         <AppText variant="caption" tone="muted">
           {t('welcome.footer')}

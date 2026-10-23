@@ -28,7 +28,8 @@
     "load": "node --env-file=../.env --import tsx load.ts",
     "friends": "tsx friends.ts",
     "live-events": "tsx live-events.ts",
-    "integrations": "tsx integrations.ts"
+    "integrations": "tsx integrations.ts",
+    "easy": "tsx easy.ts"
   },
   "dependencies": {
     "@axe-core/playwright": "4.14.0",

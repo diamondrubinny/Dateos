@@ -168,6 +168,12 @@ export function ProfileCard({ profile, onLikeItem }: ProfileCardProps) {
             </AppText>
           ) : null}
         </View>
+        {profile.accessNeeds.length > 0 ? (
+          // Phase 25: only needs the member chose to show; one sentence for screen readers.
+          <AppText variant="body" testID="access-needs">
+            ♿ {profile.accessNeeds.map((need) => t(`access.short.${need}`)).join(' · ')}
+          </AppText>
+        ) : null}
 
         {profile.reasons.length > 0 ? (
           <View style={styles.section}>

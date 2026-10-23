@@ -5,6 +5,7 @@ import {
   consentsInputSchema,
   meResponseSchema,
   aboutSchema,
+  accessNeedsSchema,
   dealbreakersSchema,
   friendModeSchema,
   incognitoInputSchema,
@@ -122,6 +123,18 @@ export const meRoutes: FastifyPluginAsyncZod<{
     },
     async (request) => {
       await me.setAbout(currentUser(request).id, request.body);
+      return { ok: true as const };
+    },
+  );
+
+  app.put(
+    '/v1/me/access-needs',
+    {
+      schema: { body: accessNeedsSchema, response: { 200: ok } },
+      config: perUserLimit(60, 60 * 60 * 1000),
+    },
+    async (request) => {
+      await me.setAccessNeeds(currentUser(request).id, request.body);
       return { ok: true as const };
     },
   );

@@ -13,6 +13,7 @@ import { Button } from '../components/Button';
 import { Checkbox } from '../components/Choice';
 import { DownloadData } from '../components/DownloadData';
 import { LanguageSwitch } from '../components/LanguageSwitch';
+import { MoreOptions } from '../components/MoreOptions';
 import { RequireSession } from '../components/RequireSession';
 import { Screen } from '../components/Screen';
 import { authClient } from '../lib/auth-client';
@@ -106,24 +107,31 @@ function SettingsContent() {
       <LanguageSwitch />
       <Button
         variant="secondary"
-        label={t('settings.preferences')}
-        onPress={() => router.push('/preferences')}
+        label={t('display.title')}
+        onPress={() => router.push('/display')}
       />
-      <Button
-        variant="secondary"
-        label={t('deal.title')}
-        onPress={() => router.push('/dealbreakers')}
-      />
-      <Button
-        variant="secondary"
-        label={t('friends.modeTitle')}
-        onPress={() => router.push('/friend-mode')}
-      />
-      <Button
-        variant="secondary"
-        label={me.data?.verified ? `✓ ${t('verify.approved')}` : t('verify.entry')}
-        onPress={() => router.push('/verify')}
-      />
+      <MoreOptions>
+        <Button
+          variant="secondary"
+          label={t('settings.preferences')}
+          onPress={() => router.push('/preferences')}
+        />
+        <Button
+          variant="secondary"
+          label={t('deal.title')}
+          onPress={() => router.push('/dealbreakers')}
+        />
+        <Button
+          variant="secondary"
+          label={t('friends.modeTitle')}
+          onPress={() => router.push('/friend-mode')}
+        />
+        <Button
+          variant="secondary"
+          label={me.data?.verified ? `✓ ${t('verify.approved')}` : t('verify.entry')}
+          onPress={() => router.push('/verify')}
+        />
+      </MoreOptions>
 
       <AppText variant="heading">{t('settings.notifications')}</AppText>
       {Platform.OS === 'web' ? (
@@ -158,35 +166,37 @@ function SettingsContent() {
         />
       ) : null}
 
-      <AppText variant="heading">{t('visibility.title')}</AppText>
-      <Checkbox
-        label={t('visibility.incognitoLabel')}
-        hint={t('visibility.incognitoHint')}
-        checked={me.data?.incognito ?? false}
-        onChange={(v) =>
-          setIncognito.mutate(v, { onError: () => setError(t('common.genericError')) })
-        }
-      />
-      <Checkbox
-        label={t('visibility.metBadgeLabel')}
-        hint={t('visibility.metBadgeHint')}
-        checked={me.data?.showMetBadge ?? false}
-        onChange={(v) =>
-          setMetBadge.mutate(v, { onError: () => setError(t('common.genericError')) })
-        }
-      />
-      <Checkbox
-        label={t('visibility.eventBadgeLabel')}
-        hint={t('visibility.eventBadgeHint')}
-        checked={me.data?.showEventBadge ?? false}
-        onChange={(v) =>
-          setEventBadge.mutate(v, { onError: () => setError(t('common.genericError')) })
-        }
-      />
-      <TakeABreak />
-      <TravelMode />
+      <MoreOptions>
+        <AppText variant="heading">{t('visibility.title')}</AppText>
+        <Checkbox
+          label={t('visibility.incognitoLabel')}
+          hint={t('visibility.incognitoHint')}
+          checked={me.data?.incognito ?? false}
+          onChange={(v) =>
+            setIncognito.mutate(v, { onError: () => setError(t('common.genericError')) })
+          }
+        />
+        <Checkbox
+          label={t('visibility.metBadgeLabel')}
+          hint={t('visibility.metBadgeHint')}
+          checked={me.data?.showMetBadge ?? false}
+          onChange={(v) =>
+            setMetBadge.mutate(v, { onError: () => setError(t('common.genericError')) })
+          }
+        />
+        <Checkbox
+          label={t('visibility.eventBadgeLabel')}
+          hint={t('visibility.eventBadgeHint')}
+          checked={me.data?.showEventBadge ?? false}
+          onChange={(v) =>
+            setEventBadge.mutate(v, { onError: () => setError(t('common.genericError')) })
+          }
+        />
+        <TakeABreak />
+        <TravelMode />
 
-      <SecuritySettings />
+        <SecuritySettings />
+      </MoreOptions>
 
       <AppText variant="heading">{t('settings.privacy')}</AppText>
       <Checkbox

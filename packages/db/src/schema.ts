@@ -221,6 +221,13 @@ export const profileAbout = pgTable('profile_about', {
   /** Special-category data: only stored while the `religion` consent is given. */
   religion: varchar('religion', { length: 24 }),
   openingQuestion: varchar('opening_question', { length: 140 }),
+  /** Phase 25: special-category data, only stored while the `accessibility` consent is given. */
+  accessNeeds: text('access_needs')
+    .array()
+    .notNull()
+    .default(sql`'{}'::text[]`),
+  /** Phase 25: show the needs on the profile (off by default). */
+  showAccessNeeds: boolean('show_access_needs').notNull().default(false),
   /** Voice prompt: the prompt it answers and the clip (deleted with it). */
   voicePromptKey: varchar('voice_prompt_key', { length: 40 }),
   voiceAudioId: uuid('voice_audio_id').references(() => audioClips.id, { onDelete: 'set null' }),

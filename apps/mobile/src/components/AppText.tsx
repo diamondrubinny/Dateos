@@ -2,6 +2,7 @@
 // Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 import { Platform, StyleSheet, Text, type TextProps } from 'react-native';
+import { useDisplay } from '../lib/display';
 import { useColors } from '../lib/theme';
 
 type Variant = 'display' | 'title' | 'heading' | 'body' | 'label' | 'caption';
@@ -41,6 +42,8 @@ export function AppText({
   ...rest
 }: AppTextProps) {
   const colors = useColors();
+  const { scale } = useDisplay();
+  const size = sizes[variant];
   const color = {
     default: colors.text,
     muted: colors.muted,
@@ -57,9 +60,16 @@ export function AppText({
       {...dirProps}
       // Headings are exposed as such so screen-reader users can jump between sections.
       {...(isHeading ? { accessibilityRole: 'header' as const } : {})}
-      maxFontSizeMultiplier={2}
+      // The system's text size still applies on top of ours, capped so layouts hold (about ×2).
+      maxFontSizeMultiplier={Math.max(1.2, 2 / scale)}
       style={[
-        sizes[variant],
+        scale === 1
+          ? size
+          : {
+              ...size,
+              fontSize: Math.round(size.fontSize * scale),
+              lineHeight: Math.round(size.lineHeight * scale),
+            },
         // User content on the web keeps CSS `text-align: start`, which follows its own `dir="auto"`
         // (react-native-web would turn `start` into the app's side, e.g. Latin text aligned right).
         {

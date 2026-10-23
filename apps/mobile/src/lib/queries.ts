@@ -19,6 +19,7 @@ import type {
   PromptAnswer,
   PauseDuration,
   About,
+  AccessNeeds,
   Dealbreakers,
   Place,
   TravelInput,
@@ -127,6 +128,11 @@ export const useResume = () =>
 export const useSetAbout = () =>
   useBreakMutation((about: About) =>
     apiFetch('/v1/me/about', { method: 'PUT', body: json(about) }),
+  );
+/** Accessibility needs (phase 25): shown needs change what others see, so the feeds refresh. */
+export const useSetAccessNeeds = () =>
+  useBreakMutation((input: AccessNeeds) =>
+    apiFetch('/v1/me/access-needs', { method: 'PUT', body: json(input) }),
   );
 export const useSetDealbreakers = () =>
   useBreakMutation((d: Dealbreakers) =>

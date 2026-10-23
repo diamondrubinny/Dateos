@@ -10,12 +10,13 @@ the inventory must list it.]
 
 ## Web app
 
-| Name                                                                     | Type                                   | Purpose                                                                 | Duration                                                          |
-| ------------------------------------------------------------------------ | -------------------------------------- | ----------------------------------------------------------------------- | ----------------------------------------------------------------- |
-| `nexaheart.session_token` (on HTTPS: `__Secure-nexaheart.session_token`) | Cookie: HttpOnly, Secure, SameSite=Lax | Keeps you signed in                                                     | 30 days, renewed while you use the app; removed when you sign out |
-| `nexaheart.locale`                                                       | Browser storage                        | Remembers the language you chose                                        | Until you change it                                               |
-| `nexaheart.callNotice`                                                   | Browser storage                        | Remembers that you read the notice before your first call (video dates) | Until changed                                                     |
-| `nexaheart-admin-locale` (moderation dashboard only)                     | Browser storage                        | Language of the dashboard                                               | Until changed                                                     |
+| Name                                                                     | Type                                   | Purpose                                                                        | Duration                                                          |
+| ------------------------------------------------------------------------ | -------------------------------------- | ------------------------------------------------------------------------------ | ----------------------------------------------------------------- |
+| `nexaheart.session_token` (on HTTPS: `__Secure-nexaheart.session_token`) | Cookie: HttpOnly, Secure, SameSite=Lax | Keeps you signed in                                                            | 30 days, renewed while you use the app; removed when you sign out |
+| `nexaheart.locale`                                                       | Browser storage                        | Remembers the language you chose                                               | Until you change it                                               |
+| `nexaheart.callNotice`                                                   | Browser storage                        | Remembers that you read the notice before your first call (video dates)        | Until changed                                                     |
+| `nexaheart.display`                                                      | Browser storage                        | Text size, easy mode, contrast and motion you chose (never sent to the server) | Until changed                                                     |
+| `nexaheart-admin-locale` (moderation dashboard only)                     | Browser storage                        | Language of the dashboard                                                      | Until changed                                                     |
 
 ## iPhone and Android apps
 
@@ -26,6 +27,7 @@ the inventory must list it.]
 | `nexaheart.locale`       | Device keychain             | Your language                                             | Until changed                       |
 | `nexaheart.pushToken`    | Device keychain             | Only if you turn on notifications                         | Until you sign out or turn them off |
 | `nexaheart.callNotice`   | Device keychain             | Remembers that you read the notice before your first call | Until changed                       |
+| `nexaheart.display`      | Device keychain             | Text size, easy mode, contrast and motion you chose       | Until changed                       |
 
 ## Your control
 

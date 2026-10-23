@@ -18,6 +18,7 @@ import { MatchCelebration } from '../../components/MatchCelebration';
 import { Screen } from '../../components/Screen';
 import { OnBreak } from '../../components/OnBreak';
 import { travelLine } from '../../components/TravelMode';
+import { useDisplay } from '../../lib/display';
 import { useLocale } from '../../lib/locale';
 import { useDiscover, useMe, useTravel, useYourTurn } from '../../lib/queries';
 import { radius, spacing, useColors } from '../../lib/theme';
@@ -30,8 +31,11 @@ export default function Discover() {
   const travel = useTravel();
   const yourTurn = useYourTurn();
   const { locale } = useLocale();
+  const { easy } = useDisplay();
   const [index, setIndex] = useState(0);
   const [matchedWith, setMatchedWith] = useState<string>();
+  // Easy mode: confirm each like in words, so nothing happens silently.
+  const [liked, setLiked] = useState<string>();
   // Dating, friends (phase 22) or double dates (phase 22).
   const [deck, setDeck] = useState<'date' | 'friend' | 'double'>('date');
 
@@ -45,7 +49,23 @@ export default function Discover() {
       </Screen>
     );
   }
-  const deckSwitch = (
+  // Easy mode (phase 25): dating only, with Picks and Likes as plain buttons instead of tabs.
+  const deckSwitch = easy ? (
+    <View style={styles.easyLinks}>
+      <Button
+        variant="secondary"
+        label={`${t('tabs.picks')} ☀`}
+        hint={t('display.picksHint')}
+        onPress={() => router.push('/picks')}
+      />
+      <Button
+        variant="secondary"
+        label={`${t('tabs.likes')} ♥`}
+        hint={t('display.likesHint')}
+        onPress={() => router.push('/likes')}
+      />
+    </View>
+  ) : (
     <ChoiceGroup
       label={t('friends.deck')}
       options={(['date', 'friend', 'double'] as const).map((value) => ({
@@ -56,7 +76,7 @@ export default function Discover() {
       onChange={([v]) => v && setDeck(v)}
     />
   );
-  if (deck !== 'date') {
+  if (deck !== 'date' && !easy) {
     return (
       <Screen title={t('discover.title')}>
         <AccountNotices />
@@ -71,6 +91,7 @@ export default function Discover() {
 
   const onDecided = (result: DecisionResult) => {
     if (result.matched && current) setMatchedWith(current.displayName);
+    setLiked(easy && result.kind === 'like' && !result.matched ? current?.displayName : undefined);
     if (index + 1 >= profiles.length) void feed.refetch();
     else setIndex(index + 1);
   };
@@ -91,6 +112,12 @@ export default function Discover() {
           <AppText variant="body">{t('focus.body', { count: yourTurn.data.waiting })}</AppText>
           <Button label={t('focus.open')} onPress={() => router.push('/matches')} />
         </View>
+      ) : null}
+      {liked ? (
+        <Banner
+          tone="info"
+          message={t('display.likedSent', { name: liked, tab: t('tabs.matches') })}
+        />
       ) : null}
       {matchedWith ? (
         <MatchCelebration name={matchedWith} onClose={() => setMatchedWith(undefined)} />
@@ -118,5 +145,6 @@ export default function Discover() {
 
 const styles = StyleSheet.create({
   empty: { padding: spacing.xl, borderRadius: radius.lg, gap: spacing.md },
+  easyLinks: { gap: spacing.sm },
   focus: { padding: spacing.md, borderRadius: radius.lg, gap: spacing.sm },
 });

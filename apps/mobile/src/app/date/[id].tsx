@@ -1,7 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
-import { DATE_MIN_LEAD_MINUTES, MAX_DATE_NOTE_LENGTH, type VenueCategory } from '@nexaheart/shared';
+import {
+  DATE_MIN_LEAD_MINUTES,
+  MAX_DATE_NOTE_LENGTH,
+  STEP_FREE_NEEDS,
+  type VenueCategory,
+} from '@nexaheart/shared';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -9,16 +14,17 @@ import { StyleSheet, View } from 'react-native';
 import { AppText } from '../../components/AppText';
 import { Banner } from '../../components/Banner';
 import { Button } from '../../components/Button';
-import { ChoiceGroup } from '../../components/Choice';
+import { Checkbox, ChoiceGroup } from '../../components/Choice';
 import { formatDateTime } from '../../components/DateCard';
 import { Loading } from '../../components/Loading';
 import { RequireSession } from '../../components/RequireSession';
 import { Screen } from '../../components/Screen';
 import { TextField } from '../../components/TextField';
 import { ApiRequestError } from '../../lib/api';
-import { newClientId } from '../../lib/chat-queries';
+import { newClientId, useConversations } from '../../lib/chat-queries';
 import { useProposeDate, useVenues } from '../../lib/date-queries';
 import { useLocale } from '../../lib/locale';
+import { useMe } from '../../lib/queries';
 import { radius, spacing, useColors } from '../../lib/theme';
 
 const DAYS = 14;
@@ -44,6 +50,12 @@ function PlanDateScreen() {
     hour: wantedHour,
   } = useLocalSearchParams<{ id: string; name?: string; day?: string; hour?: string }>();
   const venues = useVenues();
+  // Phase 25: my own needs, or the ones the other person chose to show, put step-free places first.
+  const myNeeds = useMe().data?.accessNeeds.needs ?? [];
+  const theirNeeds =
+    useConversations().data?.find((c) => c.matchId === matchId)?.profile.accessNeeds ?? [];
+  const needsStepFree = [...myNeeds, ...theirNeeds].some((n) => STEP_FREE_NEEDS.includes(n));
+  const [stepFreeOnly, setStepFreeOnly] = useState<boolean>();
   const propose = useProposeDate(matchId);
   const [category, setCategory] = useState<'all' | VenueCategory>('all');
   const [venueId, setVenueId] = useState<string>();
@@ -66,7 +78,12 @@ function PlanDateScreen() {
 
   const list = venues.data ?? [];
   const categories = useMemo(() => [...new Set(list.map((v) => v.category))], [list]);
-  const shown = category === 'all' ? list : list.filter((v) => v.category === category);
+  const onlyStepFree = stepFreeOnly ?? needsStepFree;
+  const shown = list
+    .filter((v) => category === 'all' || v.category === category)
+    .filter((v) => !onlyStepFree || v.stepFree)
+    // Step-free places first whenever it matters to either person.
+    .sort((a, b) => (needsStepFree ? Number(b.stepFree) - Number(a.stepFree) : 0));
   const venue = list.find((v) => v.id === venueId);
 
   const startsAt = new Date(day(Number(dayOffset)));
@@ -132,6 +149,14 @@ function PlanDateScreen() {
               ]}
               selected={[category]}
               onChange={([v]) => v && setCategory(v)}
+            />
+          ) : null}
+          {list.some((v) => v.stepFree) ? (
+            <Checkbox
+              label={t('access.stepFreeOnly')}
+              {...(needsStepFree ? { hint: t('access.stepFreeOnlyHint') } : {})}
+              checked={onlyStepFree}
+              onChange={setStepFreeOnly}
             />
           ) : null}
           <ChoiceGroup

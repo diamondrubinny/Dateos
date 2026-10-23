@@ -301,6 +301,10 @@ function ChatScreen() {
         {callMenu && !callBlocked ? (
           <View style={[styles.pad, { borderBottomColor: colors.border }]}>
             <AppText variant="body">{t('call.choose', { name })}</AppText>
+            {conversation?.profile.accessNeeds.includes('text_first') ? (
+              // Phase 25: shown only because they chose to show it.
+              <Banner tone="info" message={t('access.textFirst', { name })} />
+            ) : null}
             <Button
               label={t('call.startVideo')}
               loading={startCall.isPending && startCall.variables === true}
