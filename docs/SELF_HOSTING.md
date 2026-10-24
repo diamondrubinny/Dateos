@@ -132,7 +132,7 @@ the `models-data` volume. Set `TRANSCRIPTS=off` in `.env` to turn this off, or s
 ## Communities that connect (optional)
 
 Two NexaHeart communities can connect so that members who choose to can be seen, and match, in
-both (chat across communities comes in a later step). Turn it on with `FEDERATION=on` (it needs `INTEGRATIONS_KEY`) and restart the API; admins
+both, and chat (text) with their matches there. Turn it on with `FEDERATION=on` (it needs `INTEGRATIONS_KEY`) and restart the API; admins
 then use **Partners** in the dashboard.
 
 - The server publishes its name, address and public key at `https://api.<domain>/.well-known/nexaheart`.

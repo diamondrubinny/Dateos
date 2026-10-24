@@ -78,6 +78,12 @@ export function RealtimeProvider({ enabled, children }: { enabled: boolean; chil
         void client.invalidateQueries({ queryKey: ['pairs-discover'] });
       } else if (event.type === 'availability.updated') {
         void client.invalidateQueries({ queryKey: ['availability', event.matchId] });
+      } else if (event.type === 'federated.message') {
+        // Partner communities (phase 28c).
+        void client.invalidateQueries({ queryKey: ['federated-messages', event.matchId] });
+        void client.invalidateQueries({ queryKey: ['federated-matches'] });
+      } else if (event.type === 'federated.matches') {
+        void client.invalidateQueries({ queryKey: ['federated-matches'] });
       } else if (event.type === 'match.new' || event.type === 'match.closed') {
         void client.invalidateQueries({ queryKey: chatKeys.conversations });
         void client.invalidateQueries({ queryKey: ['matches'] });

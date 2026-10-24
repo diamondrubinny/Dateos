@@ -109,7 +109,10 @@ export type RealtimeEvent =
   /** Double dates (phase 22): a new group chat of four, a message in it, or it closed. */
   | { type: 'double.new'; doubleId: string }
   | { type: 'double.message'; doubleId: string }
-  | { type: 'double.closed'; doubleId: string };
+  | { type: 'double.closed'; doubleId: string }
+  /** Partner communities (phase 28c): a message in a match across communities, or matches changed. */
+  | { type: 'federated.message'; matchId: string }
+  | { type: 'federated.matches' };
 
 /** Client → server WebSocket messages. */
 export const clientEventSchema = z.discriminatedUnion('type', [

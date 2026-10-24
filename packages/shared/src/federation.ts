@@ -2,6 +2,7 @@
 // Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 import { z } from 'zod';
+import { harmCategories, MAX_MESSAGE_LENGTH, scamSignals } from './chat.js';
 import { publicPhotoSchema } from './discovery.js';
 import {
   genderSchema,
@@ -225,5 +226,47 @@ export const federatedMatchSchema = z.object({
   displayName: z.string(),
   photo: publicPhotoSchema.nullable(),
   createdAt: z.string(),
+  /** 28c: the latest message and how many arrived since the member last opened the chat. */
+  lastMessage: z
+    .object({ body: z.string(), mine: z.boolean(), hidden: z.boolean(), createdAt: z.string() })
+    .nullable(),
+  unread: z.number().int(),
 });
 export type FederatedMatch = z.infer<typeof federatedMatchSchema>;
+
+// ---------------------------------------------------------------------------------------------
+// 28c: text chat across communities. Each server keeps its own member's side of the conversation.
+// ---------------------------------------------------------------------------------------------
+
+/** A message as it crosses between servers. */
+export const federatedWireMessageSchema = z
+  .object({
+    from: federationAliasSchema,
+    to: federationAliasSchema,
+    id: z.uuid(),
+    body: z.string().trim().min(1).max(MAX_MESSAGE_LENGTH),
+  })
+  .strict();
+export type FederatedWireMessage = z.infer<typeof federatedWireMessageSchema>;
+
+/** `delivered: false` means the match no longer exists on the receiving side. */
+export const federatedDeliveryResponseSchema = z.object({ delivered: z.boolean() });
+
+export const federatedMessageSchema = z.object({
+  id: z.uuid(),
+  mine: z.boolean(),
+  body: z.string(),
+  /** A hurtful message arrives hidden for the receiver ("show anyway"). */
+  hidden: z.boolean(),
+  harm: z.array(z.enum(harmCategories)),
+  scam: z.array(z.enum(scamSignals)),
+  createdAt: z.string(),
+});
+export type FederatedMessage = z.infer<typeof federatedMessageSchema>;
+
+export const federatedMessagesPageSchema = z.object({
+  messages: z.array(federatedMessageSchema),
+  /** Cursor for older messages, or null at the start. */
+  before: z.string().nullable(),
+});
+export type FederatedMessagesPage = z.infer<typeof federatedMessagesPageSchema>;

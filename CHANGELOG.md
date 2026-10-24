@@ -6,6 +6,10 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Added
 
+- **Partner communities: chat**: matches from partner communities can now write to each other
+  (text). Each community keeps its own member's side; "Are you sure?" and each community's own
+  filters (hurtful messages hidden, scam warnings) apply; live updates and content-free
+  notifications; the conversation is deleted on both sides with the match.
 - **Partner communities: discovery and matching**: members can join (off by default, an explicit
   consent) to see and be seen by members of partner communities who joined too, matched both ways
   by gender, interest, age and intention. Partners know each member only by a random code name;

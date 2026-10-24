@@ -1398,7 +1398,11 @@ export const en = {
     join: 'Join',
     joined: 'You’ve joined. You can leave at any time.',
     matchesTitle: 'From partner communities',
-    chatSoon: 'Chatting across communities is coming soon.',
+    openChat: 'Chat with {{name}}',
+    chatNote:
+      'Text only. {{community}} keeps its side of this chat; deleted when either of you unmatches or leaves.',
+    chatEmpty: 'Say hello to {{name}}.',
+    chatEnded: 'This match has ended.',
     unmatch: 'Unmatch {{name}}',
     unmatchConfirm: 'Unmatch {{name}}? Their community is told too.',
     unmatchYes: 'Unmatch',

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
+import { router } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
@@ -10,7 +11,7 @@ import { AppText } from './AppText';
 import { Button } from './Button';
 import { RemoteImage } from './RemoteImage';
 
-/** Matches with people from partner communities (phase 28b). Chat across communities is next. */
+/** Matches with people from partner communities (phase 28b), and their chats (28c). */
 export function PartnerMatches() {
   const { t } = useTranslation();
   const colors = useColors();
@@ -28,17 +29,29 @@ export function PartnerMatches() {
               <RemoteImage path={m.photo.url} label={m.displayName} style={styles.photo} />
             ) : null}
             <View style={styles.text}>
-              <AppText variant="label" userContent>
-                {m.displayName}
-              </AppText>
+              <AppText variant="label">{m.displayName}</AppText>
               <AppText variant="caption" tone="muted" userContent>
                 {t('partners.from', { community: m.community })}
               </AppText>
             </View>
           </View>
-          <AppText variant="body" tone="muted">
-            {t('partners.chatSoon')}
-          </AppText>
+          {m.lastMessage ? (
+            <AppText variant="body" tone="muted" userContent numberOfLines={2}>
+              {m.lastMessage.hidden
+                ? t('chat.hidden')
+                : m.lastMessage.mine
+                  ? t('chat.you', { text: m.lastMessage.body })
+                  : m.lastMessage.body}
+            </AppText>
+          ) : null}
+          <Button
+            label={
+              m.unread > 0
+                ? `${t('partners.openChat', { name: m.displayName })} · ${t('chat.unread', { count: m.unread })}`
+                : t('partners.openChat', { name: m.displayName })
+            }
+            onPress={() => router.push({ pathname: '/partner-chat/[id]', params: { id: m.id } })}
+          />
           {confirm === m.id ? (
             <>
               <AppText variant="body">

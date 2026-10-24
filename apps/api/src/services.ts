@@ -2,6 +2,7 @@
 // Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 import { createDb, type DbHandle } from '@nexaheart/db';
+import type { RealtimeEvent } from '@nexaheart/shared';
 import { createStorage, type Storage } from '@nexaheart/storage';
 import type { Redis } from 'ioredis';
 import { createAuth, type Auth } from './auth/auth.js';
@@ -25,6 +26,7 @@ import {
   type ProfileQueue,
 } from './lib/queue.js';
 import { AudioService } from './modules/chat/audio.js';
+import { FederatedChat } from './modules/federation/chat.js';
 import { FederatedMembers } from './modules/federation/members.js';
 import { FederationService } from './modules/federation/service.js';
 import { llmIcebreakers, templateIcebreakers, type TextModel } from '@nexaheart/ai';
@@ -64,6 +66,7 @@ export interface Services {
   audio: AudioService;
   federation: FederationService;
   federated: FederatedMembers;
+  federatedChat: FederatedChat;
   discovery: DiscoveryService;
   realtime: Realtime;
   chat: ChatService;
@@ -280,6 +283,15 @@ export function createServices(
   );
   // 28b: partners' members, and ours at partners.
   const federated = new FederatedMembers(dbHandle.db, federation, storage, today);
+  const publish = (userId: string, event: RealtimeEvent) =>
+    void realtime.publish(userId, event).catch(() => undefined);
+  federated.useRealtime(publish);
+  // 28c: chat across communities.
+  const federatedChat = new FederatedChat(dbHandle.db, federation, federated, {
+    publish,
+    pushMessage: (userId, matchId) =>
+      notifyQueue.push({ userId, kind: 'partner_message', matchId }),
+  });
   discovery.onSeparation((a, b) => (b ? Promise.resolve() : federated.endAllMatches(a)));
   const me = new MeService(dbHandle.db, mediaQueue, legal, today, profileQueue);
   me.beforeDelete((userId) => federated.forgetEverywhere(userId));
@@ -295,6 +307,7 @@ export function createServices(
     audio,
     federation,
     federated,
+    federatedChat,
     discovery,
     mailer,
     me,

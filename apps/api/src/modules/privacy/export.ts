@@ -3,7 +3,7 @@
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 import { schema, type Database } from '@nexaheart/db';
 import type { Storage } from '@nexaheart/storage';
-import { asc, desc, eq, or, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, or, sql } from 'drizzle-orm';
 import { strToU8, zipSync, type Zippable } from 'fflate';
 
 const t = schema;
@@ -132,6 +132,18 @@ export async function exportMemberData(
     .from(t.federationMatches)
     .innerJoin(t.federationPartners, eq(t.federationPartners.id, t.federationMatches.partnerId))
     .where(eq(t.federationMatches.userId, userId));
+  // 28c: the messages you sent to people in partner communities.
+  const federatedSent = await db
+    .select({
+      community: partnerName,
+      to: t.federationMatches.name,
+      body: t.federationMessages.body,
+      at: t.federationMessages.createdAt,
+    })
+    .from(t.federationMessages)
+    .innerJoin(t.federationMatches, eq(t.federationMatches.id, t.federationMessages.matchId))
+    .innerJoin(t.federationPartners, eq(t.federationPartners.id, t.federationMatches.partnerId))
+    .where(and(eq(t.federationMatches.userId, userId), eq(t.federationMessages.mine, true)));
   const sent = await db
     .select({
       matchId: t.messages.matchId,
@@ -453,6 +465,7 @@ export async function exportMemberData(
       aliases: federatedAliases.map((a) => ({ ...a, since: iso(a.since) })),
       decisions: federatedDecisions.map((d) => ({ ...d, at: iso(d.at) })),
       matches: federatedMatches.map((m) => ({ ...m, at: iso(m.at) })),
+      messagesSent: federatedSent.map((m) => ({ ...m, at: iso(m.at) })),
     },
     matches: matches.map((m) => ({
       id: m.id,

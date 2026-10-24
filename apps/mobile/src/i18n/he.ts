@@ -1361,7 +1361,11 @@ export const he: Translations = {
     join: 'הצטרפות',
     joined: 'הצטרפת. אפשר לצאת בכל עת.',
     matchesTitle: 'מקהילות שותפות',
-    chatSoon: 'צ׳אט בין קהילות יגיע בקרוב.',
+    openChat: 'צ׳אט עם {{name}}',
+    chatNote:
+      'טקסט בלבד. {{community}} שומרת את הצד שלה בשיחה; היא נמחקת כשמישהו מכם מבטל את ההתאמה או יוצא.',
+    chatEmpty: 'אפשר להגיד שלום ל{{name}}.',
+    chatEnded: 'ההתאמה הזאת הסתיימה.',
     unmatch: 'ביטול ההתאמה עם {{name}}',
     unmatchConfirm: 'לבטל את ההתאמה עם {{name}}? גם הקהילה שלהם תקבל הודעה.',
     unmatchYes: 'ביטול ההתאמה',
