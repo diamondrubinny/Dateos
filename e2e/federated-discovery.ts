@@ -146,7 +146,7 @@ async function run(browser: Browser, locale: L) {
     // 4. Matches: from partner communities, chat comes next.
     await S.page.goto(`${WEB}/matches`);
     await S.page.getByTestId('partner-matches').waitFor();
-    await S.page.getByText(p.chatSoon).first().waitFor();
+    await S.page.getByRole('button', { name: p.openChat.replace('{{name}}', 'Dan') }).waitFor();
     await shot(S.page, `${locale}/104-partners-match`);
     await S.page.getByRole('button', { name: p.unmatch.replace('{{name}}', 'Dan') }).click();
     await S.page.getByRole('button', { name: p.unmatchYes, exact: true }).click();

@@ -26,6 +26,7 @@ import {
   type Gender,
   type Intention,
   type PromptKey,
+  type RealtimeEvent,
 } from '@nexaheart/shared';
 import type { Storage, StoredObject } from '@nexaheart/storage';
 import { and, asc, desc, eq, inArray, sql, type SQL } from 'drizzle-orm';
@@ -81,6 +82,12 @@ export class FederatedMembers {
     private readonly today: () => string,
   ) {}
 
+  /** Live updates to members here (phase 28c): their matches across communities changed. */
+  private notify: (userId: string, event: RealtimeEvent) => void = () => undefined;
+  useRealtime(notify: (userId: string, event: RealtimeEvent) => void): void {
+    this.notify = notify;
+  }
+
   // ---------------------------------------------------------------- helpers
 
   private async joined(userId: string): Promise<boolean> {
@@ -91,7 +98,7 @@ export class FederatedMembers {
   }
 
   /** The member may act across communities right now (else 403). */
-  private async requireTakingPart(userId: string): Promise<void> {
+  async requireTakingPart(userId: string): Promise<void> {
     const { rows } = await this.db.execute<{ ok: boolean }>(sql`
       SELECT EXISTS (
         SELECT 1 FROM profiles p JOIN "user" u ON u.id = p.user_id
@@ -108,7 +115,7 @@ export class FederatedMembers {
   }
 
   /** This member's alias at a partner, made on first use. */
-  private async aliasOf(partnerId: string, userId: string): Promise<string> {
+  async aliasOf(partnerId: string, userId: string): Promise<string> {
     await this.db
       .insert(federationAliases)
       .values({ partnerId, userId, alias: newAlias() })
@@ -121,7 +128,7 @@ export class FederatedMembers {
   }
 
   /** The member here behind an alias we gave a partner, if they still take part. */
-  private async memberOf(partnerId: string, alias: string): Promise<string | null> {
+  async memberOf(partnerId: string, alias: string): Promise<string | null> {
     const { rows } = await this.db.execute<{ id: string }>(sql`
       SELECT p.user_id AS id
       FROM federation_aliases fa
@@ -404,7 +411,25 @@ export class FederatedMembers {
     const partners = new Map((await this.federation.activePartners()).map((p) => [p.id, p]));
     if (partners.size === 0) return [];
     const rows = await this.db
-      .select()
+      .select({
+        id: federationMatches.id,
+        partnerId: federationMatches.partnerId,
+        alias: federationMatches.alias,
+        name: federationMatches.name,
+        photoId: federationMatches.photoId,
+        createdAt: federationMatches.createdAt,
+        last: sql<{
+          body: string;
+          mine: boolean;
+          flags: string[];
+          created_at: string;
+        } | null>`(SELECT json_build_object('body', fm.body, 'mine', fm.mine, 'flags', fm.flags, 'created_at', fm.created_at)
+          FROM federation_messages fm WHERE fm.match_id = federation_matches.id
+          ORDER BY fm.created_at DESC, fm.id DESC LIMIT 1)`,
+        unread: sql<number>`(SELECT count(*)::int FROM federation_messages fm
+          WHERE fm.match_id = federation_matches.id AND NOT fm.mine
+            AND fm.created_at > COALESCE(federation_matches.read_at, 'epoch'))`,
+      })
       .from(federationMatches)
       .where(
         and(
@@ -412,7 +437,12 @@ export class FederatedMembers {
           inArray(federationMatches.partnerId, [...partners.keys()]),
         ),
       )
-      .orderBy(desc(federationMatches.createdAt));
+      // The most recent conversation first.
+      .orderBy(
+        desc(
+          sql`COALESCE((SELECT max(fm.created_at) FROM federation_messages fm WHERE fm.match_id = federation_matches.id), federation_matches.created_at)`,
+        ),
+      );
     return rows.map((r) => ({
       id: r.id,
       partnerId: r.partnerId,
@@ -423,6 +453,15 @@ export class FederatedMembers {
         ? { id: r.photoId, url: this.photoUrl(r.partnerId, r.photoId), width: null, height: null }
         : null,
       createdAt: r.createdAt.toISOString(),
+      lastMessage: r.last
+        ? {
+            body: r.last.body,
+            mine: r.last.mine,
+            hidden: !r.last.mine && r.last.flags.some((f) => f.startsWith('harm:')),
+            createdAt: new Date(r.last.created_at).toISOString(),
+          }
+        : null,
+      unread: r.unread,
     }));
   }
 
@@ -617,6 +656,7 @@ export class FederatedMembers {
         photoId: like.photoId,
       })
       .onConflictDoNothing();
+    this.notify(userId, { type: 'federated.matches' });
     const [me] = await this.db
       .select({ name: profiles.displayName })
       .from(profiles)
@@ -648,6 +688,7 @@ export class FederatedMembers {
           eq(federationMatches.alias, parsed.data.from),
         ),
       );
+    this.notify(owner.userId, { type: 'federated.matches' });
   }
 
   /** A partner's member left (or deleted their account): forget everything about that alias. */
@@ -657,11 +698,11 @@ export class FederatedMembers {
     if (!parsed.success) throw badRequest();
     const { alias } = parsed.data;
     await this.db.transaction(async (tx) => {
-      await tx
+      const ended = await tx
         .delete(federationMatches)
-        .where(
-          and(eq(federationMatches.partnerId, partner.id), eq(federationMatches.alias, alias)),
-        );
+        .where(and(eq(federationMatches.partnerId, partner.id), eq(federationMatches.alias, alias)))
+        .returning({ userId: federationMatches.userId });
+      for (const m of ended) this.notify(m.userId, { type: 'federated.matches' });
       await tx
         .delete(federationDecisions)
         .where(

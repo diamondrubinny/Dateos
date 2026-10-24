@@ -140,8 +140,13 @@ export async function buildApp(env: Env, deps: AppDependencies): Promise<Fastify
     await typed.register(federationRoutes, {
       federation: services.federation,
       members: services.federated,
+      chat: services.federatedChat,
     });
-    await typed.register(federatedRoutes, { auth: services.auth, members: services.federated });
+    await typed.register(federatedRoutes, {
+      auth: services.auth,
+      members: services.federated,
+      chat: services.federatedChat,
+    });
     await typed.register(signupRoutes, { trust: services.trust });
     await typed.register(takePublicRoutes, { takes: services.takes });
     await typed.register(friendRoutes, {

@@ -3,6 +3,9 @@
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 import {
   federatedInteractionSchema,
+  federatedMessageSchema,
+  federatedMessagesPageSchema,
+  sendMessageSchema,
   federatedJoinSchema,
   federatedMatchSchema,
   federatedProfileSchema,
@@ -13,6 +16,7 @@ import { z } from 'zod';
 import type { Auth } from '../../auth/auth.js';
 import { currentUser, requireUser } from '../../auth/session.js';
 import { perUserLimit } from '../../plugins/security.js';
+import type { FederatedChat } from './chat.js';
 import type { FederatedMembers } from './members.js';
 
 const MINUTE = 60 * 1000;
@@ -22,7 +26,8 @@ const ok = z.object({ ok: z.literal(true) });
 export const federatedRoutes: FastifyPluginAsyncZod<{
   auth: Auth;
   members: FederatedMembers;
-}> = async (app, { auth, members }) => {
+  chat: FederatedChat;
+}> = async (app, { auth, members, chat }) => {
   app.addHook('preHandler', requireUser(auth));
 
   app.get(
@@ -99,5 +104,42 @@ export const federatedRoutes: FastifyPluginAsyncZod<{
         .header('x-content-type-options', 'nosniff')
         .send(image);
     },
+  );
+
+  // 28c: text chat across communities.
+  const matchParams = z.object({ id: z.uuid() });
+  app.get(
+    '/v1/federated/matches/:id/messages',
+    {
+      schema: {
+        params: matchParams,
+        querystring: z.object({ before: z.uuid().optional() }),
+        response: { 200: federatedMessagesPageSchema },
+      },
+    },
+    async (request) =>
+      chat.messages(currentUser(request).id, request.params.id, request.query.before),
+  );
+  app.post(
+    '/v1/federated/matches/:id/messages',
+    {
+      config: perUserLimit(60, MINUTE),
+      schema: {
+        params: matchParams,
+        body: sendMessageSchema,
+        response: { 201: federatedMessageSchema },
+      },
+    },
+    async (request, reply) =>
+      reply
+        .status(201)
+        .send(
+          await chat.send(
+            currentUser(request).id,
+            request.params.id,
+            request.body.text,
+            request.body.clientId,
+          ),
+        ),
   );
 };

@@ -1423,9 +1423,42 @@ export const federationMatches = pgTable(
     name: varchar('name', { length: 40 }).notNull(),
     photoId: uuid('photo_id'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    /** 28c: when the member here last opened the chat (for "unread"); never sent anywhere. */
+    readAt: timestamp('read_at', { withTimezone: true }),
   },
   (t) => [
     uniqueIndex('federation_matches_pair_uq').on(t.partnerId, t.userId, t.alias),
     index('federation_matches_user_idx').on(t.userId),
+  ],
+);
+
+/**
+ * 28c: this server's member's side of a chat across communities. `messageId` is shared by both
+ * servers (so a retry is never stored twice); deleted with the match.
+ */
+export const federationMessages = pgTable(
+  'federation_messages',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    matchId: uuid('match_id')
+      .notNull()
+      .references(() => federationMatches.id, { onDelete: 'cascade' }),
+    messageId: uuid('message_id').notNull(),
+    /** Sent by the member here (else received from the partner's member). */
+    mine: boolean('mine').notNull(),
+    /** The app's id for a message being sent, so retrying never sends it twice. */
+    clientId: varchar('client_id', { length: 64 }),
+    body: varchar('body', { length: 2000 }).notNull(),
+    /** This server's own filters: `harm:<category>`, `scam:<signal>`. */
+    flags: text('flags')
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex('federation_messages_id_uq').on(t.matchId, t.messageId),
+    uniqueIndex('federation_messages_client_uq').on(t.matchId, t.clientId),
+    index('federation_messages_match_created_idx').on(t.matchId, t.createdAt),
   ],
 );

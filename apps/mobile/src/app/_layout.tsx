@@ -41,6 +41,12 @@ function Navigator() {
         /^[0-9a-f-]{36}$/.test(data.matchId)
       ) {
         router.push({ pathname: '/events/[id]', params: { id: data.matchId } });
+      } else if (
+        data.type === 'partner_message' &&
+        typeof data.matchId === 'string' &&
+        /^[0-9a-f-]{36}$/.test(data.matchId)
+      ) {
+        router.push({ pathname: '/partner-chat/[id]', params: { id: data.matchId } });
       } else if (typeof data.matchId === 'string' && /^[0-9a-f-]{36}$/.test(data.matchId)) {
         router.push({ pathname: '/chat/[id]', params: { id: data.matchId } });
       }

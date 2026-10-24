@@ -64,7 +64,8 @@ const texts = {
  */
 export function pushContent(kind: PushJob['kind'], locale: string, instanceName: string) {
   const lang = Object.hasOwn(texts, locale) ? (locale as keyof typeof texts) : 'en';
-  return { title: instanceName, body: texts[lang][kind] };
+  // A message from a partner community (phase 28c) reads like any other message.
+  return { title: instanceName, body: texts[lang][kind === 'partner_message' ? 'message' : kind] };
 }
 
 export type PushResult = 'disabled' | 'inactive' | 'online' | 'throttled' | 'no-devices' | 'sent';
@@ -74,6 +75,17 @@ export async function sendPush(ctx: PushContext, job: PushJob): Promise<PushResu
   if (job.kind === 'checkin') return sendToDevices(ctx, job); // safety: no match or presence check
   if (job.kind === 'event') return sendToDevices(ctx, job); // not about a conversation
   if (job.kind === 'visible') return sendToDevices(ctx, job); // about the member's own profile
+  if (job.kind === 'partner_message') {
+    // Still a match across communities, and the member still active?
+    const live = await ctx.db.execute<{ ok: boolean }>(sql`
+      SELECT EXISTS (
+        SELECT 1 FROM federation_matches fm JOIN "user" u ON u.id = fm.user_id
+        WHERE fm.id = ${job.matchId} AND fm.user_id = ${job.userId} AND u.status = 'active'
+      ) AS ok`);
+    if (!live.rows[0]?.ok) return 'inactive';
+    if (await ctx.redis.exists(`nexaheart:presence:${job.userId}`)) return 'online';
+    return sendToDevices(ctx, job);
+  }
   // Still a valid conversation? (Unmatch, block or suspension since the job was queued.)
   const active = await ctx.db.execute<{ ok: boolean }>(sql`
     SELECT EXISTS (

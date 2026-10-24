@@ -4,6 +4,7 @@
 import {
   ErrorCode,
   FEDERATION_WELL_KNOWN,
+  federatedDeliveryResponseSchema,
   federatedDiscoverResponseSchema,
   federatedLikeResponseSchema,
   federationIdentitySchema,
@@ -12,6 +13,7 @@ import { HttpError } from '../../plugins/error-handler.js';
 import type { FastifyRequest } from 'fastify';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';
+import type { FederatedChat } from './chat.js';
 import type { FederatedMembers } from './members.js';
 import type { FederationService, IncomingSigned } from './service.js';
 
@@ -31,7 +33,8 @@ declare module 'fastify' {
 export const federationRoutes: FastifyPluginAsyncZod<{
   federation: FederationService;
   members: FederatedMembers;
-}> = async (app, { federation, members }) => {
+  chat: FederatedChat;
+}> = async (app, { federation, members, chat }) => {
   // Keep the raw body: the signature covers the exact bytes that were sent.
   app.addContentTypeParser(
     'application/json',
@@ -145,5 +148,10 @@ export const federationRoutes: FastifyPluginAsyncZod<{
         .header('cache-control', 'private, max-age=300')
         .send(object.body);
     },
+  );
+  app.post(
+    '/v1/federation/messages',
+    { config: busy, schema: { response: { 200: federatedDeliveryResponseSchema } } },
+    async (request) => chat.receive(incoming(request)),
   );
 };

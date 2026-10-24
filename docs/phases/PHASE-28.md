@@ -1,6 +1,6 @@
 # Phase 28 (proposal): Communities that connect
 
-> Status: ✅ **28a** and **28b done** (2026-10-23); 28c (chat across communities) next. The owner delegated the decisions; chosen:
+> Status: ✅ **28a**, **28b** (2026-10-23) and **28c** (2026-10-24) **done**; 28d (reports, suspension, deletion with retries) next. The owner delegated the decisions; chosen:
 > **A (partnerships)**; **discovery and matching first**, chat across communities later (28c);
 > members **off by default**, and federation itself off on a server until its admin turns it on.
 > 📘 = verify against official docs, ⚖️ = needs legal review.
@@ -215,7 +215,7 @@ ending the partnership. e2e in the app in four languages.
     a pass leaves out, a block ends the match on both and hides both ways; unmatch tells the
     partner; leaving, deleting the account and ending the partnership delete what crossed on both
     servers; unsigned requests, a malformed signed request, the generic consent route and an old
-    consent version are refused. All 234 integration tests pass.
+    consent version are refused. All 229 integration tests pass.
   - e2e `pnpm --dir e2e federated-discovery` between **two real servers** (each with its own
     database and worker), in English, Hebrew, Arabic and Russian: join (needs the consent ticked),
     the deck with the photo through community A, a like back is a match on both servers, unmatch
@@ -225,3 +225,55 @@ ending the partnership. e2e in the app in four languages.
 - **Still to check:** ⚖️ the consent text and the privacy policy lines (special-category data sent
   to another operator, possibly abroad); ⚖️ a partner that can't be reached when someone leaves keeps
   what it had until 28d adds retries; 📘 real devices.
+
+## 28c in detail (this step)
+
+**Text chat between a member here and a match from a partner community.** Voice, photos and calls
+stay local for now (they need media through both servers).
+
+- **Sending:** the app sends to its own server, which sends the message signed to the partner
+  (`POST /v1/federation/messages`: from alias, to alias, a message id, the text). It's stored here
+  only once the partner accepted it; if the partner can't be reached the member is told and can
+  retry (the same message id, so never twice). Before sending, the app asks "Are you sure?" for
+  hurtful words, as in local chats.
+- **Receiving:** the partner's server checks the match still exists on its side (else the match
+  ends here too), stores the message, runs **its own** filters (hurtful messages arrive hidden
+  behind "show anyway", scam warnings), and tells its member live and with a content-free push.
+- **Each server keeps its own member's side**: the messages they sent and received in that match.
+  Nothing is kept about anyone else. No read receipts or typing across communities.
+- **Ends with the match:** unmatch, block, leaving, account deletion, suspension and ending the
+  partnership delete the conversation on this server, and the partner is told (as in 28b) so it
+  deletes its side ⚖️ (a partner that can't be reached keeps its copy until 28d's retries).
+- **Data export:** the messages the member sent.
+
+| Method | Path                                         | What                                   |
+| ------ | -------------------------------------------- | -------------------------------------- |
+| GET    | `/v1/federated/matches/:id/messages`         | the conversation (newest 50, `before`) |
+| POST   | `/v1/federated/matches/:id/messages`         | `{ text, clientId }` → the message     |
+| POST   | `/v1/federation/messages` (server to server) | signed; `{ delivered }`                |
+
+## 28c results
+
+- **Built:** `federation_messages` and the match's own `read_at` (migration `0034_federated_chat`);
+  the signed `POST /v1/federation/messages`; the members' chat API; in the app a chat screen for
+  matches from partner communities (text only, with a note saying the other community keeps its
+  side), **Chat with …** with the latest message and unread count in Matches, live updates, and a
+  content-free push (`partner_message`) that opens the chat. Four languages; the data export
+  includes the messages the member sent.
+- **Safety:** "Are you sure?" before a hurtful message (checked here before anything leaves); the
+  receiving community runs its own filters (hurtful messages arrive hidden, scams flagged). A
+  message is stored only once the other side accepted it; a retry with the same id is never sent
+  twice; if the other side no longer has the match, it ends here too.
+- **Tests:**
+  - Integration: 6 new with two complete servers: a message crosses and both keep their own copy
+    (the same id), unread and push; a retry is sent once; the receiving side's own filters; ending
+    with the match on both sides; a match the other side lost ends when writing; only the two
+    people in the match, only signed, length limit. All 235 integration tests pass.
+  - e2e `pnpm --dir e2e federated-chat` between two real servers in English, Hebrew, Arabic and
+    Russian: Noa writes in the app, it arrives at B; Dan's answer and a scam warning appear live
+    for Noa; when Dan unmatches her open chat ends; axe 0 violations. Screenshot `105-partners-chat`.
+- **Found and fixed:** Drizzle writes a column without its table inside a subquery, so the
+  latest-message preview matched the wrong id (now spelled out); a member who isn't in a match got
+  403 instead of 404; a Latin name in a right-to-left header sat on the wrong side.
+- **Still to check:** ⚖️ messages stored by another operator (the agreement must cover them, and
+  deletion when a partner can't be reached waits for 28d's retries); 📘 real devices.

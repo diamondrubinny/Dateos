@@ -4,8 +4,11 @@
 import type {
   FederatedInteraction,
   FederatedMatch,
+  FederatedMessage,
+  FederatedMessagesPage,
   FederatedProfile,
   FederatedStatus,
+  MessageView,
   PublicProfile,
 } from '@nexaheart/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -117,5 +120,64 @@ export function asPublicProfile(p: FederatedProfile): PublicProfile {
     visiting: null,
     verified: p.verified,
     reasons: [],
+  };
+}
+
+// ---------------------------------------------------------------- 28c: chat
+
+export const federatedChatKey = (matchId: string) => ['federated-messages', matchId] as const;
+
+/** Newest first; refreshed live (realtime) and, as a fallback, every 15 seconds. */
+export function useFederatedMessages(matchId: string) {
+  const client = useQueryClient();
+  return useQuery({
+    queryKey: federatedChatKey(matchId),
+    refetchInterval: 15_000,
+    queryFn: async () => {
+      const page = await apiFetch<FederatedMessagesPage>(
+        `/v1/federated/matches/${matchId}/messages`,
+      );
+      // Opening the chat marks it read: refresh the unread counts.
+      void client.invalidateQueries({ queryKey: federatedKeys.matches });
+      return page;
+    },
+  });
+}
+
+export function useSendFederatedMessage(matchId: string) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { text: string; clientId: string }) =>
+      apiFetch<FederatedMessage>(`/v1/federated/matches/${matchId}/messages`, {
+        method: 'POST',
+        body: json(input),
+      }),
+    onSuccess: (message) => {
+      client.setQueryData<FederatedMessagesPage>(federatedChatKey(matchId), (page) =>
+        page && !page.messages.some((m) => m.id === message.id)
+          ? { ...page, messages: [message, ...page.messages] }
+          : page,
+      );
+      void client.invalidateQueries({ queryKey: federatedKeys.matches });
+    },
+  });
+}
+
+/** The shape the chat bubble shows: text only across communities (for now). */
+export function asMessageView(m: FederatedMessage, matchId: string): MessageView {
+  return {
+    id: m.id,
+    matchId,
+    mine: m.mine,
+    kind: 'text',
+    body: m.body,
+    image: null,
+    voice: null,
+    date: null,
+    call: null,
+    hidden: m.hidden,
+    harm: m.harm,
+    scam: m.scam,
+    createdAt: m.createdAt,
   };
 }
