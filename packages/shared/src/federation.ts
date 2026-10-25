@@ -3,6 +3,7 @@
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 import { z } from 'zod';
 import { harmCategories, MAX_MESSAGE_LENGTH, scamSignals } from './chat.js';
+import { MAX_REPORT_DETAILS, MAX_REPORT_EVIDENCE, reportCategories } from './moderation.js';
 import { publicPhotoSchema } from './discovery.js';
 import {
   genderSchema,
@@ -48,9 +49,16 @@ export type FederationIdentity = z.infer<typeof federationIdentitySchema>;
 
 /**
  * `invited_out`: we invited them, waiting for them to accept. `invited_in`: they invited us, waiting
- * for our admin. `active`: both agreed. `ended`: either side ended it.
+ * for our admin. `active`: both agreed. `suspended` (28d): our admin paused it; nothing crosses,
+ * nothing is deleted. `ended`: either side ended it.
  */
-export const partnerStatuses = ['invited_out', 'invited_in', 'active', 'ended'] as const;
+export const partnerStatuses = [
+  'invited_out',
+  'invited_in',
+  'active',
+  'suspended',
+  'ended',
+] as const;
 export type PartnerStatus = (typeof partnerStatuses)[number];
 
 export const partnerSchema = z.object({
@@ -65,6 +73,14 @@ export const partnerSchema = z.object({
   endedAt: z.string().nullable(),
   lastSeenAt: z.string().nullable(),
   lastError: z.string().nullable(),
+  /** 28d: reports our members sent to them, how many they reviewed, and reports from them. */
+  reports: z.object({
+    sent: z.number().int(),
+    reviewed: z.number().int(),
+    received: z.number().int(),
+  }),
+  /** 28d: messages waiting in the outbox for this partner. */
+  outbox: z.number().int(),
 });
 export type Partner = z.infer<typeof partnerSchema>;
 
@@ -270,3 +286,46 @@ export const federatedMessagesPageSchema = z.object({
   before: z.string().nullable(),
 });
 export type FederatedMessagesPage = z.infer<typeof federatedMessagesPageSchema>;
+
+// ---------------------------------------------------------------------------------------------
+// 28d: reports across communities, and their outcome (reviewed, never what was decided).
+// ---------------------------------------------------------------------------------------------
+
+export const federatedReportInputSchema = z
+  .object({
+    partnerId: z.uuid(),
+    alias: federationAliasSchema,
+    category: z.enum(reportCategories),
+    details: z.string().trim().max(MAX_REPORT_DETAILS).optional(),
+    /** Reporting blocks the person too, unless the reporter opts out. */
+    block: z.boolean().default(true),
+    /** The latest messages of the chat go with it as evidence, unless the reporter opts out. */
+    attach: z.boolean().default(true),
+  })
+  .strict();
+export type FederatedReportInput = z.input<typeof federatedReportInputSchema>;
+
+/** A report as it crosses: evidence is the reporter's own chat with the person, copied by the server. */
+export const federatedWireReportSchema = z
+  .object({
+    id: z.uuid(),
+    from: federationAliasSchema,
+    about: federationAliasSchema,
+    category: z.enum(reportCategories),
+    details: z.string().max(MAX_REPORT_DETAILS).nullable(),
+    evidence: z
+      .array(
+        z.object({
+          fromReported: z.boolean(),
+          body: z.string().min(1).max(MAX_MESSAGE_LENGTH),
+          sentAt: z.iso.datetime(),
+        }),
+      )
+      .max(MAX_REPORT_EVIDENCE),
+  })
+  .strict();
+export type FederatedWireReport = z.infer<typeof federatedWireReportSchema>;
+
+export const federatedReportOutcomeSchema = z
+  .object({ reportId: z.uuid(), outcome: z.literal('reviewed') })
+  .strict();

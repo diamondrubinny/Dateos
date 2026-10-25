@@ -6,6 +6,10 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Added
 
+- **Partner communities: safety**: members can report someone from a partner community; the report,
+  with the chat as evidence, goes to that person's own community's moderators, and only "reviewed"
+  comes back. Admins can suspend and resume a partnership (nothing crosses, nothing is deleted).
+  Deletions, unmatches and reports that can't reach a partner are retried for up to 7 days.
 - **Partner communities: chat**: matches from partner communities can now write to each other
   (text). Each community keeps its own member's side; "Are you sure?" and each community's own
   filters (hurtful messages hidden, scam warnings) apply; live updates and content-free

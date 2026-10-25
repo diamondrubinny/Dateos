@@ -3,6 +3,8 @@
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 import {
   federatedInteractionSchema,
+  federatedReportInputSchema,
+  reportResultSchema,
   federatedMessageSchema,
   federatedMessagesPageSchema,
   sendMessageSchema,
@@ -18,6 +20,7 @@ import { currentUser, requireUser } from '../../auth/session.js';
 import { perUserLimit } from '../../plugins/security.js';
 import type { FederatedChat } from './chat.js';
 import type { FederatedMembers } from './members.js';
+import type { FederatedSafety } from './safety.js';
 
 const MINUTE = 60 * 1000;
 const ok = z.object({ ok: z.literal(true) });
@@ -27,7 +30,8 @@ export const federatedRoutes: FastifyPluginAsyncZod<{
   auth: Auth;
   members: FederatedMembers;
   chat: FederatedChat;
-}> = async (app, { auth, members, chat }) => {
+  safety: FederatedSafety;
+}> = async (app, { auth, members, chat, safety }) => {
   app.addHook('preHandler', requireUser(auth));
 
   app.get(
@@ -141,5 +145,16 @@ export const federatedRoutes: FastifyPluginAsyncZod<{
             request.body.clientId,
           ),
         ),
+  );
+
+  // 28d: a report goes to the reported person's own community.
+  app.post(
+    '/v1/federated/reports',
+    {
+      config: perUserLimit(20, 24 * 60 * MINUTE),
+      schema: { body: federatedReportInputSchema, response: { 201: reportResultSchema } },
+    },
+    async (request, reply) =>
+      reply.status(201).send(await safety.report(currentUser(request).id, request.body)),
   );
 };

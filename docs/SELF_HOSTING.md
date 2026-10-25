@@ -143,6 +143,8 @@ then use **Partners** in the dashboard.
   age, gender, intention, bio, prompts, photo ids, languages, verified) under a random code name per
   partner; photos are served through the member's own server, never copied. Never: email,
   location, religion, accessibility needs, voice, messages or reports.
+- Reports about your members from a partner land in your own moderation queue; deletions and
+  reports that can't reach a partner are retried by the API for 7 days (no extra service needed).
 - ⚖️ The two operators share responsibility for what members share: sign a data-sharing agreement
   first. The dashboard asks both admins to confirm it.
 

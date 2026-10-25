@@ -22,7 +22,7 @@ import {
   type PartnersResponse,
   type PartnerStatus,
 } from '@nexaheart/shared';
-import { and, desc, eq, ne, sql } from 'drizzle-orm';
+import { and, desc, eq, inArray, isNotNull, lte, ne, sql } from 'drizzle-orm';
 import type { Redis } from 'ioredis';
 import { audit } from '../../lib/audit.js';
 import {
@@ -39,7 +39,10 @@ const {
   federationDecisions,
   federationKeys,
   federationMatches,
+  federationOutbox,
   federationPartners,
+  federationReportsOut,
+  reports,
 } = schema;
 type PartnerRow = typeof federationPartners.$inferSelect;
 
@@ -49,6 +52,12 @@ export const MAX_PENDING_INVITATIONS = 20;
 /** A partner's JSON answer and a partner's photo, at most. */
 const MAX_JSON_BYTES = 512 * 1024;
 const MAX_IMAGE_BYTES = 6 * 1024 * 1024;
+/** 28d: the outbox retries for this long, with a pause from 1 minute growing to 6 hours. */
+export const OUTBOX_GIVE_UP_MS = 7 * 24 * 60 * 60 * 1000;
+const OUTBOX_FIRST_PAUSE_MS = 60 * 1000;
+const OUTBOX_MAX_PAUSE_MS = 6 * 60 * 60 * 1000;
+export const outboxPause = (attempts: number) =>
+  Math.min(OUTBOX_FIRST_PAUSE_MS * 2 ** Math.max(0, attempts - 1), OUTBOX_MAX_PAUSE_MS);
 const notFound = () => new HttpError(404, ErrorCode.NotFound, 'Resource not found.');
 const unauthorized = (why: string) => new HttpError(401, ErrorCode.Unauthorized, why);
 
@@ -254,6 +263,95 @@ export class FederationService {
     return readCapped(res, MAX_IMAGE_BYTES);
   }
 
+  // ------------------------------------------------------------------ outbox (28d)
+
+  /**
+   * Sends something a partner must eventually receive (forget, unmatch, a report, an outcome). If
+   * it can't be delivered now, it waits in the outbox and is retried. Returns whether it arrived.
+   */
+  async deliver(partner: PartnerRow, path: string, payload: object): Promise<boolean> {
+    try {
+      await this.send(partner.url, 'POST', path, payload);
+      return true;
+    } catch (error) {
+      const now = this.now();
+      await this.db.insert(federationOutbox).values({
+        partnerId: partner.id,
+        path,
+        payload,
+        attempts: 1,
+        nextAttemptAt: new Date(now + outboxPause(1)),
+        lastError: (error as Error).message.slice(0, 200),
+        createdAt: new Date(now),
+      });
+      return false;
+    }
+  }
+
+  /** Retries what's due (still delivered to a suspended partner); gives up after 7 days. */
+  async drainOutbox(limit = 50): Promise<{ sent: number; retry: number; dropped: number }> {
+    const result = { sent: 0, retry: 0, dropped: 0 };
+    if (!this.enabled) return result;
+    const now = this.now();
+    const due = await this.db
+      .select({ row: federationOutbox, url: federationPartners.url })
+      .from(federationOutbox)
+      .innerJoin(federationPartners, eq(federationPartners.id, federationOutbox.partnerId))
+      .where(
+        and(
+          lte(federationOutbox.nextAttemptAt, new Date(now)),
+          inArray(federationPartners.status, ['active', 'suspended']),
+        ),
+      )
+      .orderBy(federationOutbox.nextAttemptAt)
+      .limit(limit);
+    for (const { row, url } of due) {
+      try {
+        await this.send(url, 'POST', row.path, row.payload as object);
+        await this.db.delete(federationOutbox).where(eq(federationOutbox.id, row.id));
+        result.sent += 1;
+      } catch (error) {
+        if (now - row.createdAt.getTime() >= OUTBOX_GIVE_UP_MS) {
+          await this.db.delete(federationOutbox).where(eq(federationOutbox.id, row.id));
+          await audit(this.db, {
+            actorId: null,
+            action: 'federation.outbox_dropped',
+            targetType: 'partner',
+            targetId: url,
+            meta: { path: row.path, attempts: row.attempts },
+          });
+          result.dropped += 1;
+          continue;
+        }
+        const attempts = row.attempts + 1;
+        await this.db
+          .update(federationOutbox)
+          .set({
+            attempts,
+            nextAttemptAt: new Date(now + outboxPause(attempts)),
+            lastError: (error as Error).message.slice(0, 200),
+          })
+          .where(eq(federationOutbox.id, row.id));
+        result.retry += 1;
+      }
+    }
+    return result;
+  }
+
+  /** Runs the outbox every minute; one API instance at a time (a Redis lock). */
+  startOutbox(onError: (error: unknown) => void): () => void {
+    const timer = setInterval(() => {
+      void (async () => {
+        if (!this.enabled) return;
+        const lock = await this.redis.set('nexaheart:fed:outbox-lock', '1', 'EX', 55, 'NX');
+        if (lock !== 'OK') return;
+        await this.drainOutbox();
+      })().catch(onError);
+    }, 60_000);
+    timer.unref();
+    return () => clearInterval(timer);
+  }
+
   // ------------------------------------------------------------------ incoming
 
   /**
@@ -341,6 +439,15 @@ export class FederationService {
       .orderBy(federationPartners.activatedAt);
   }
 
+  /** 28d: active or suspended: they still receive deletions (forget, unmatch, outcomes). */
+  async reachablePartners(): Promise<PartnerRow[]> {
+    if (!this.enabled) return [];
+    return this.db
+      .select()
+      .from(federationPartners)
+      .where(inArray(federationPartners.status, ['active', 'suspended']));
+  }
+
   async activePartner(id: string): Promise<PartnerRow | null> {
     if (!this.enabled) return null;
     const [row] = await this.db
@@ -413,11 +520,39 @@ export class FederationService {
       .select()
       .from(federationPartners)
       .orderBy(desc(federationPartners.createdAt));
+    const sent = await this.db
+      .select({
+        id: federationReportsOut.partnerId,
+        n: sql<number>`count(*)::int`,
+        reviewed: sql<number>`count(${federationReportsOut.reviewedAt})::int`,
+      })
+      .from(federationReportsOut)
+      .groupBy(federationReportsOut.partnerId);
+    const received = await this.db
+      .select({ id: reports.partnerId, n: sql<number>`count(*)::int` })
+      .from(reports)
+      .where(isNotNull(reports.partnerId))
+      .groupBy(reports.partnerId);
+    const waiting = await this.db
+      .select({ id: federationOutbox.partnerId, n: sql<number>`count(*)::int` })
+      .from(federationOutbox)
+      .groupBy(federationOutbox.partnerId);
+    const counts = (id: string) => {
+      const s = sent.find((x) => x.id === id);
+      return {
+        reports: {
+          sent: s?.n ?? 0,
+          reviewed: s?.reviewed ?? 0,
+          received: received.find((x) => x.id === id)?.n ?? 0,
+        },
+        outbox: waiting.find((x) => x.id === id)?.n ?? 0,
+      };
+    };
     return {
       enabled: reason === null,
       reason,
       self: reason === null ? await this.identity() : null,
-      partners: rows.map(toPartner),
+      partners: rows.map((r) => ({ ...toPartner(r), ...counts(r.id) })),
     };
   }
 
@@ -533,6 +668,43 @@ export class FederationService {
     return this.list();
   }
 
+  /** 28d: pauses a partnership: nothing crosses either way, nothing is deleted. Admins only. */
+  async suspend(actorId: string, id: string): Promise<PartnersResponse> {
+    const partner = await this.partner(id);
+    if (partner.status !== 'active') {
+      throw new HttpError(409, ErrorCode.Conflict, 'Only connected communities can be suspended.');
+    }
+    await this.db
+      .update(federationPartners)
+      .set({ status: 'suspended' })
+      .where(eq(federationPartners.id, id));
+    await audit(this.db, {
+      actorId,
+      action: 'federation.suspend',
+      targetType: 'partner',
+      targetId: partner.url,
+    });
+    return this.list();
+  }
+
+  async resume(actorId: string, id: string): Promise<PartnersResponse> {
+    const partner = await this.partner(id);
+    if (partner.status !== 'suspended') {
+      throw new HttpError(409, ErrorCode.Conflict, 'This partnership isn’t suspended.');
+    }
+    await this.db
+      .update(federationPartners)
+      .set({ status: 'active' })
+      .where(eq(federationPartners.id, id));
+    await audit(this.db, {
+      actorId,
+      action: 'federation.resume',
+      targetType: 'partner',
+      targetId: partner.url,
+    });
+    return this.list();
+  }
+
   private async partner(id: string): Promise<PartnerRow> {
     const [row] = await this.db
       .select()
@@ -559,11 +731,13 @@ export class FederationService {
       await tx.delete(federationAliases).where(eq(federationAliases.partnerId, id));
       await tx.delete(federationDecisions).where(eq(federationDecisions.partnerId, id));
       await tx.delete(federationMatches).where(eq(federationMatches.partnerId, id));
+      await tx.delete(federationOutbox).where(eq(federationOutbox.partnerId, id));
+      await tx.delete(federationReportsOut).where(eq(federationReportsOut.partnerId, id));
     });
   }
 }
 
-function toPartner(r: PartnerRow): Partner {
+function toPartner(r: PartnerRow): Omit<Partner, 'reports' | 'outbox'> {
   return {
     id: r.id,
     url: r.url,

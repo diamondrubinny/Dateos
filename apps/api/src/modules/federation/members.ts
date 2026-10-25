@@ -210,14 +210,13 @@ export class FederatedMembers {
       .select({ partnerId: federationAliases.partnerId, alias: federationAliases.alias })
       .from(federationAliases)
       .where(eq(federationAliases.userId, userId));
-    const partners = new Map((await this.federation.activePartners()).map((p) => [p.id, p]));
+    // Suspended partners are told too; one that can't be reached now gets it from the outbox (28d).
+    const partners = new Map((await this.federation.reachablePartners()).map((p) => [p.id, p]));
     await Promise.all(
       aliases.map(async (a) => {
         const partner = partners.get(a.partnerId);
         if (!partner) return;
-        await this.federation
-          .send(partner.url, 'POST', '/v1/federation/forget', { alias: a.alias })
-          .catch(() => undefined);
+        await this.federation.deliver(partner, '/v1/federation/forget', { alias: a.alias });
       }),
     );
     await this.db.transaction(async (tx) => {
@@ -483,7 +482,7 @@ export class FederatedMembers {
     myAlias: string,
     theirAlias: string,
   ): Promise<void> {
-    await this.db
+    const ended = await this.db
       .delete(federationMatches)
       .where(
         and(
@@ -491,10 +490,15 @@ export class FederatedMembers {
           eq(federationMatches.userId, userId),
           eq(federationMatches.alias, theirAlias),
         ),
-      );
-    await this.federation
-      .send(partner.url, 'POST', '/v1/federation/unmatch', { from: myAlias, to: theirAlias })
-      .catch(() => undefined);
+      )
+      .returning({ id: federationMatches.id });
+    // Only a match that ended needs telling (a block also hides them here either way); retried
+    // from the outbox if their server is down (28d).
+    if (ended.length === 0) return;
+    await this.federation.deliver(partner, '/v1/federation/unmatch', {
+      from: myAlias,
+      to: theirAlias,
+    });
   }
 
   /** Suspended or lost access: every match across communities ends. */

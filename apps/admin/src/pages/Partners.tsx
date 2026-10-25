@@ -7,11 +7,17 @@ import { api } from '../api';
 import { format, useLocale } from '../i18n';
 import { Badge, ErrorBox, formatDate, Loading } from '../components/ui';
 
-const tones = { active: 'ok', invited_in: 'high', invited_out: 'normal', ended: 'muted' } as const;
+const tones = {
+  active: 'ok',
+  invited_in: 'high',
+  invited_out: 'normal',
+  suspended: 'urgent',
+  ended: 'muted',
+} as const;
 
 /**
- * Communities that connect (phase 28a): partnerships with other NexaHeart communities. No member
- * data crosses yet; this is the trust between the two servers. Moderators can read, admins decide.
+ * Communities that connect (phase 28): partnerships with other NexaHeart communities, and (28d)
+ * suspending one and the reports between them. Moderators can read, admins decide.
  */
 export function Partners({ isAdmin }: { isAdmin: boolean }) {
   const { t, locale } = useLocale();
@@ -86,6 +92,17 @@ export function Partners({ isAdmin }: { isAdmin: boolean }) {
           : format(p.created, { when: formatDate(x.createdAt, locale) })}
         {x.lastSeenAt ? ` · ${format(p.lastSeen, { when: formatDate(x.lastSeenAt, locale) })}` : ''}
       </p>
+      {x.status === 'active' || x.status === 'suspended' ? (
+        <p className="muted">
+          {format(p.counts, {
+            sent: x.reports.sent,
+            reviewed: x.reports.reviewed,
+            received: x.reports.received,
+          })}
+          {x.outbox > 0 ? ` · ${format(p.outbox, { n: x.outbox })}` : ''}
+        </p>
+      ) : null}
+      {x.status === 'suspended' ? <p className="muted">{p.suspendedNote}</p> : null}
       {x.lastError ? (
         <p className="alert alert-error" dir="auto">
           {x.lastError}
@@ -114,6 +131,28 @@ export function Partners({ isAdmin }: { isAdmin: boolean }) {
               onClick={() => void run(() => api.testPartner(x.id), p.tested)}
             >
               {p.test}
+              <span className="visually-hidden"> {x.name}</span>
+            </button>
+          ) : null}
+          {x.status === 'active' ? (
+            <button
+              type="button"
+              className="button small"
+              disabled={busy}
+              onClick={() => void run(() => api.suspendPartner(x.id), p.suspendedDone)}
+            >
+              {p.suspend}
+              <span className="visually-hidden"> {x.name}</span>
+            </button>
+          ) : null}
+          {x.status === 'suspended' ? (
+            <button
+              type="button"
+              className="button small primary"
+              disabled={busy}
+              onClick={() => void run(() => api.resumePartner(x.id), p.resumedDone)}
+            >
+              {p.resume}
               <span className="visually-hidden"> {x.name}</span>
             </button>
           ) : null}

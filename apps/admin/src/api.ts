@@ -180,6 +180,10 @@ export const api = {
     request<PartnersResponse>('POST', `/v1/admin/partners/${encodeURIComponent(id)}/end`),
   testPartner: (id: string) =>
     request<PartnersResponse>('POST', `/v1/admin/partners/${encodeURIComponent(id)}/test`),
+  suspendPartner: (id: string) =>
+    request<PartnersResponse>('POST', `/v1/admin/partners/${encodeURIComponent(id)}/suspend`),
+  resumePartner: (id: string) =>
+    request<PartnersResponse>('POST', `/v1/admin/partners/${encodeURIComponent(id)}/resume`),
   checkIn: (id: string) =>
     request<AdminCheckIn>('GET', `/v1/admin/events/${encodeURIComponent(id)}/check-in`),
   createVenue: (input: Omit<VenueInput, 'active'>) =>

@@ -44,6 +44,8 @@ async function main(): Promise<void> {
 
   await app.listen({ host: env.HOST, port: env.PORT });
   app.log.info(creditLine());
+  // Partner communities (phase 28d): retry what couldn't reach a partner yet.
+  services.federation.startOutbox((error) => app.log.warn({ err: error }, 'federation outbox'));
 }
 
 main().catch((error: unknown) => {

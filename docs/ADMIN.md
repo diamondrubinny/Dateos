@@ -162,8 +162,15 @@ the app (Settings, or Discover → Show → Partner communities). It's off for e
 person turns it on; leaving or deleting the account tells every partner to forget them. Ending a
 partnership deletes everything that crossed with that community on this server (the code names,
 likes, passes, matches and their chats) and tells the other side to do the same. Chats across
-communities (phase 28c) are not in the moderation queue yet: reports across communities come in
-the next step (28d); until then members can block, which ends the match and the chat on both sides.
+communities (phase 28c) stay between the two people.
+
+**Reports and suspension (phase 28d).** A report about one of your members from a partner
+community appears in **Reports** like any other, the reporter shown as "a member of …" (who it
+was stays with them), with the chat as evidence. Handle it with your own rules; the partner hears
+only that it was reviewed. On **Partners**, each connection shows the reports sent, reviewed and
+received, and **Suspend** pauses it at once: nothing crosses either way, nothing is deleted, and
+**Resume** brings it back. Deletions you owe a partner that can't be reached wait in an outbox and
+are retried for 7 days.
 
 ## 8. Integrations (phase 24, admins only)
 

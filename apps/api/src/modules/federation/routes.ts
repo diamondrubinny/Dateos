@@ -15,6 +15,7 @@ import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import type { FederatedChat } from './chat.js';
 import type { FederatedMembers } from './members.js';
+import type { FederatedSafety } from './safety.js';
 import type { FederationService, IncomingSigned } from './service.js';
 
 const ok = z.object({ ok: z.literal(true) });
@@ -34,7 +35,8 @@ export const federationRoutes: FastifyPluginAsyncZod<{
   federation: FederationService;
   members: FederatedMembers;
   chat: FederatedChat;
-}> = async (app, { federation, members, chat }) => {
+  safety: FederatedSafety;
+}> = async (app, { federation, members, chat, safety }) => {
   // Keep the raw body: the signature covers the exact bytes that were sent.
   app.addContentTypeParser(
     'application/json',
@@ -153,5 +155,20 @@ export const federationRoutes: FastifyPluginAsyncZod<{
     '/v1/federation/messages',
     { config: busy, schema: { response: { 200: federatedDeliveryResponseSchema } } },
     async (request) => chat.receive(incoming(request)),
+  );
+
+  // ---------------------------------------------------------------- 28d: safety
+  app.post(
+    '/v1/federation/reports',
+    { config: limit, schema: { response: { 200: z.object({ accepted: z.boolean() }) } } },
+    async (request) => safety.receiveReport(incoming(request)),
+  );
+  app.post(
+    '/v1/federation/report-outcomes',
+    { config: limit, schema: { response: { 200: ok } } },
+    async (request) => {
+      await safety.receiveOutcome(incoming(request));
+      return { ok: true as const };
+    },
   );
 };

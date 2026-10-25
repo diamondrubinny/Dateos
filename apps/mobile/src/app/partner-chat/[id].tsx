@@ -112,6 +112,29 @@ function PartnerChat() {
               </AppText>
             ) : null}
           </View>
+          {match ? (
+            <Pressable
+              onPress={() =>
+                router.push({
+                  pathname: '/partner-report',
+                  params: {
+                    partnerId: match.partnerId,
+                    alias: match.alias,
+                    name: match.displayName,
+                    community: match.community,
+                    matched: '1',
+                  },
+                })
+              }
+              accessibilityRole="button"
+              accessibilityLabel={t('partners.report', { name })}
+              style={styles.iconBtn}
+            >
+              <AppText variant="label" tone="danger">
+                {t('report.open')}
+              </AppText>
+            </Pressable>
+          ) : null}
         </View>
 
         {match ? (
