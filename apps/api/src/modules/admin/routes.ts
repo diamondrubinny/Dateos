@@ -551,6 +551,19 @@ export const adminRoutes: FastifyPluginAsyncZod<{
       return federation.test(staff.id, request.params.id);
     },
   );
+  // A new signing key for this community; partners are told with the old one.
+  app.post(
+    '/v1/admin/federation/rotate-key',
+    {
+      config: perUserLimit(10, 60 * 60 * 1000),
+      schema: { response: { 200: partnersResponseSchema } },
+    },
+    async (request) => {
+      const staff = currentUser(request);
+      adminOnly(staff.role);
+      return federation.rotateKey(staff.id);
+    },
+  );
   // 28d: suspend (nothing crosses, nothing deleted) and resume.
   for (const action of ['suspend', 'resume'] as const) {
     app.post(

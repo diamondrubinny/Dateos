@@ -15,8 +15,11 @@ import {
   FEDERATION_NONCE_SECONDS,
   FEDERATION_VERSION,
   FEDERATION_WELL_KNOWN,
+  FEDERATION_PREVIOUS_KEY_DAYS,
   FederationHeader,
   federationIdentitySchema,
+  federationKeyChangeSchema,
+  type FederationKeyChange,
   type FederationIdentity,
   type Partner,
   type PartnersResponse,
@@ -141,6 +144,114 @@ export class FederationService {
     return this.keys();
   }
 
+  /** The key before the last rotation, for a week, only to announce the new one. */
+  private async previousKey(): Promise<string | null> {
+    const [row] = await this.db.select().from(federationKeys).where(eq(federationKeys.id, 1));
+    if (!row?.previousPrivateKeySealed || !row.rotatedAt) return null;
+    if (this.now() - row.rotatedAt.getTime() > FEDERATION_PREVIOUS_KEY_DAYS * 86_400_000) {
+      return null;
+    }
+    return decryptSecret(this.deps.sealKey!, KEY_CONTEXT, row.previousPrivateKeySealed);
+  }
+
+  /**
+   * Rotates this community's signing key (admins). Partners are told the new key in a message
+   * signed with the old one, plus a proof signed with the new one; a partner that can't be
+   * reached gets it from the outbox. Refused while an earlier announcement still waits.
+   */
+  async rotateKey(actorId: string): Promise<PartnersResponse> {
+    this.requireEnabled();
+    const [waiting] = await this.db
+      .select({ n: sql<number>`count(*)::int` })
+      .from(federationOutbox)
+      .where(eq(federationOutbox.signWithPrevious, true));
+    if ((waiting?.n ?? 0) > 0) {
+      throw new HttpError(
+        409,
+        ErrorCode.Conflict,
+        'Some partners haven’t received the last new key yet.',
+      );
+    }
+    const current = await this.keys();
+    const [row] = await this.db.select().from(federationKeys).where(eq(federationKeys.id, 1));
+    const fresh = generateFederationKeys();
+    const rotatedAt = new Date(this.now());
+    await this.db
+      .update(federationKeys)
+      .set({
+        publicKey: fresh.publicKey,
+        privateKeySealed: encryptSecret(this.deps.sealKey!, KEY_CONTEXT, fresh.privateKey),
+        previousPublicKey: current.publicKey,
+        previousPrivateKeySealed: row!.privateKeySealed,
+        rotatedAt,
+      })
+      .where(eq(federationKeys.id, 1));
+    const announcement: FederationKeyChange = {
+      publicKey: fresh.publicKey,
+      rotatedAt: rotatedAt.toISOString(),
+      proof: signParts(fresh.privateKey, keyProofParts(this.self, fresh.publicKey, rotatedAt)),
+    };
+    for (const partner of await this.reachablePartners()) {
+      try {
+        await this.send(
+          partner.url,
+          'POST',
+          FEDERATION_KEY_PATH,
+          announcement,
+          undefined,
+          'previous',
+        );
+      } catch (error) {
+        await this.db.insert(federationOutbox).values({
+          partnerId: partner.id,
+          path: FEDERATION_KEY_PATH,
+          payload: announcement,
+          attempts: 1,
+          nextAttemptAt: new Date(this.now() + outboxPause(1)),
+          lastError: (error as Error).message.slice(0, 200),
+          createdAt: new Date(this.now()),
+          signWithPrevious: true,
+        });
+      }
+    }
+    await audit(this.db, {
+      actorId,
+      action: 'federation.key_rotated',
+      targetType: 'instance',
+      targetId: this.self,
+    });
+    return this.list();
+  }
+
+  /** A partner announces its new key: signed with the key we know, and proven with the new one. */
+  async receiveKeyChange(incoming: IncomingSigned): Promise<void> {
+    const { partner } = await this.verify(incoming);
+    if (!partner || partner.status === 'ended') throw unauthorized('Unknown community.');
+    let body: unknown = null;
+    try {
+      body = JSON.parse(incoming.body);
+    } catch {
+      // handled below
+    }
+    const parsed = federationKeyChangeSchema.safeParse(body);
+    if (!parsed.success) throw new HttpError(400, ErrorCode.BadRequest, 'Malformed request.');
+    const change = parsed.data;
+    const parts = keyProofParts(partner.url, change.publicKey, new Date(change.rotatedAt));
+    if (!verifyParts(change.publicKey, parts, change.proof)) {
+      throw unauthorized('The new key isn’t proven.');
+    }
+    await this.db
+      .update(federationPartners)
+      .set({ publicKey: change.publicKey })
+      .where(eq(federationPartners.id, partner.id));
+    await audit(this.db, {
+      actorId: null,
+      action: 'federation.key_changed',
+      targetType: 'partner',
+      targetId: partner.url,
+    });
+  }
+
   /** What `/.well-known/nexaheart` publishes. */
   async identity(): Promise<FederationIdentity> {
     this.requireEnabled();
@@ -190,8 +301,13 @@ export class FederationService {
     path: string,
     payload?: object,
     timeoutMs?: number,
+    signWith?: 'previous',
   ): Promise<Response> {
-    const { privateKey } = await this.keys();
+    const privateKey =
+      signWith === 'previous' ? await this.previousKey() : (await this.keys()).privateKey;
+    if (!privateKey) {
+      throw new HttpError(502, ErrorCode.BadGateway, 'The previous key is no longer kept.');
+    }
     const body = payload ? JSON.stringify(payload) : '';
     const date = new Date(this.now()).toISOString();
     const nonce = newNonce();
@@ -241,8 +357,9 @@ export class FederationService {
     path: string,
     payload?: object,
     timeoutMs?: number,
+    signWith?: 'previous',
   ): Promise<unknown> {
-    const res = await this.signedFetch(to, method, path, payload, timeoutMs);
+    const res = await this.signedFetch(to, method, path, payload, timeoutMs, signWith);
     const bytes = await readCapped(res, MAX_JSON_BYTES);
     if (!bytes) return null;
     try {
@@ -307,7 +424,14 @@ export class FederationService {
       .limit(limit);
     for (const { row, url } of due) {
       try {
-        await this.send(url, 'POST', row.path, row.payload as object);
+        await this.send(
+          url,
+          'POST',
+          row.path,
+          row.payload as object,
+          undefined,
+          row.signWithPrevious ? 'previous' : undefined,
+        );
         await this.db.delete(federationOutbox).where(eq(federationOutbox.id, row.id));
         result.sent += 1;
       } catch (error) {
@@ -548,10 +672,24 @@ export class FederationService {
         outbox: waiting.find((x) => x.id === id)?.n ?? 0,
       };
     };
+    const self = reason === null ? await this.identity() : null;
+    const [keyRow] = self
+      ? await this.db
+          .select({ rotatedAt: federationKeys.rotatedAt })
+          .from(federationKeys)
+          .where(eq(federationKeys.id, 1))
+      : [];
+    const [announcing] = await this.db
+      .select({ n: sql<number>`count(*)::int` })
+      .from(federationOutbox)
+      .where(eq(federationOutbox.signWithPrevious, true));
     return {
       enabled: reason === null,
       reason,
-      self: reason === null ? await this.identity() : null,
+      self,
+      key: self
+        ? { rotatedAt: keyRow?.rotatedAt?.toISOString() ?? null, waiting: announcing?.n ?? 0 }
+        : null,
       partners: rows.map((r) => ({ ...toPartner(r), ...counts(r.id) })),
     };
   }
@@ -774,4 +912,18 @@ async function readCapped(res: Response, max: number): Promise<Buffer | null> {
     chunks.push(Buffer.from(value));
   }
   return Buffer.concat(chunks);
+}
+
+export const FEDERATION_KEY_PATH = '/v1/federation/key';
+
+/** What the new key signs to prove it belongs to whoever announces it. */
+function keyProofParts(origin: string, publicKey: string, rotatedAt: Date) {
+  return {
+    method: 'KEY',
+    path: FEDERATION_KEY_PATH,
+    origin,
+    date: rotatedAt.toISOString(),
+    nonce: 'rotation',
+    body: publicKey,
+  };
 }

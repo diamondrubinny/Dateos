@@ -1354,6 +1354,13 @@ export const federationKeys = pgTable('federation_keys', {
   publicKey: text('public_key').notNull(),
   privateKeySealed: text('private_key_sealed').notNull(),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  /**
+   * Key rotation: the key before the last rotation, kept (sealed) only to sign the announcement of
+   * the new key to partners that couldn't be reached yet, for a week.
+   */
+  previousPublicKey: text('previous_public_key'),
+  previousPrivateKeySealed: text('previous_private_key_sealed'),
+  rotatedAt: timestamp('rotated_at', { withTimezone: true }),
 });
 
 /** Another community this one invited, was invited by, or is connected to. No member data. */
@@ -1504,6 +1511,8 @@ export const federationOutbox = pgTable(
     nextAttemptAt: timestamp('next_attempt_at', { withTimezone: true }).notNull().defaultNow(),
     lastError: varchar('last_error', { length: 200 }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    /** The announcement of a new key, signed with the key partners still know. */
+    signWithPrevious: boolean('sign_with_previous').notNull().default(false),
   },
   (t) => [index('federation_outbox_due_idx').on(t.nextAttemptAt)],
 );

@@ -172,6 +172,10 @@ received, and **Suspend** pauses it at once: nothing crosses either way, nothing
 **Resume** brings it back. Deletions you owe a partner that can't be reached wait in an outbox and
 are retried for 7 days.
 
+**Replacing the signing key.** If the server's key may have leaked (or as routine), **Replace the
+signing key** on Partners makes a new one and tells every partner, signed with the old key. A
+partner that's down is told within a week; after that, renew that partnership.
+
 ## 8. Integrations (phase 24, admins only)
 
 The **Integrations** page connects outside services: see [INTEGRATIONS.md](INTEGRATIONS.md).
