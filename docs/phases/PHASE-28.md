@@ -1,6 +1,6 @@
 # Phase 28 (proposal): Communities that connect
 
-> Status: ✅ **28a**, **28b** (2026-10-23) and **28c** (2026-10-24) **done**; 28d (reports, suspension, deletion with retries) next. The owner delegated the decisions; chosen:
+> Status: ✅ **done**: 28a, 28b (2026-10-23), 28c (2026-10-24) and 28d (2026-10-25). Open: the ⚖️ items below and 📘 real devices. The owner delegated the decisions; chosen:
 > **A (partnerships)**; **discovery and matching first**, chat across communities later (28c);
 > members **off by default**, and federation itself off on a server until its admin turns it on.
 > 📘 = verify against official docs, ⚖️ = needs legal review.
@@ -277,3 +277,51 @@ stay local for now (they need media through both servers).
   403 instead of 404; a Latin name in a right-to-left header sat on the wrong side.
 - **Still to check:** ⚖️ messages stored by another operator (the agreement must cover them, and
   deletion when a partner can't be reached waits for 28d's retries); 📘 real devices.
+
+## 28d in detail (this step)
+
+- **Reports across communities.** A member reports someone from a partner community (from the card
+  or the chat), with a category and optional details; reporting also blocks, unless they choose
+  not to. Their server sends it signed (`POST /v1/federation/reports`) with the last messages of
+  their chat as evidence (copied by the server, never taken from the app). The reported person's
+  community puts it in **its own** moderation queue ("from a member of …"), handles it with its
+  own rules, and sends back only that it was **reviewed** (`POST /v1/federation/report-outcomes`),
+  never what was decided. Urgent categories alert that community's staff, as for local reports.
+- **Suspending a partner.** An admin can suspend a partnership in one click (and resume it): nothing
+  crosses either way while suspended (their requests are refused, their members disappear here),
+  but nothing is deleted, unlike ending it. The Partners page shows, per partner, reports sent and
+  reviewed, and reports received, to help decide.
+- **Deletion with retries (an outbox).** Telling a partner to forget someone, to end a match or
+  about a report, and the outcome of a report, are kept in an outbox when the partner can't be
+  reached, and retried with a growing pause (1 minute up to 6 hours) for up to 7 days; then given up
+  and noted in the audit log. Partners still receive these while suspended.
+- **Audit:** reports sent and received, outcomes, suspensions, and outbox give-ups (ids only).
+- **Later:** exchanging lists of banned photo hashes between partners (phase 21) ⚖️.
+
+## 28d results
+
+- **Built:** `federation_reports_out`, `federation_outbox`, and `reports.partner_id` /
+  `partner_report_id` (migration `0035_federated_safety`); the signed `reports` and
+  `report-outcomes` endpoints; `POST /v1/federated/reports`; `suspend` / `resume` (admins only);
+  the outbox, retried every minute by one API instance (a Redis lock). In the app: **Report** on a
+  partner's card and in the chat, with what happens to the report spelled out; in the dashboard:
+  the reporter shown as "a member of …" on such a report, **Suspend** / **Resume** and the report
+  and outbox counts on Partners. Four languages in the app, English and Hebrew in the dashboard.
+- **Tests:**
+  - Integration: 5 new with two complete servers: a report reaches the reported person's queue
+    with the chat as evidence and no reporter, urgent alerts staff there, a second report is
+    refused, the decision comes back only as "reviewed"; suspending stops everything both ways
+    without deleting, only admins can resume; the outbox keeps a deletion while the partner is
+    down, retries with a longer pause, delivers when it's back; it gives up after 7 days with an
+    audit entry; unsigned, malformed and unknown-partner reports are refused. All 240 integration
+    tests pass.
+  - e2e `pnpm --dir e2e federated-safety` between two real servers: Noa reports Dan from the chat
+    (4 languages), B sees it with the evidence, reviews it, A learns it was reviewed; A's dashboard
+    shows a report from B's member, suspends and resumes (English and Hebrew); axe 0 violations.
+    Screenshots `106-partners-report`, `admin-19-partner-report`, `admin-20-partner-suspended`.
+- **Found and fixed:** a block always sent an "unmatch" to the partner even without a match, which
+  filled the outbox while a partner was down; now only a match that ended is told.
+- **Known limits:** someone who leaves partner communities can't be reported from the other side
+  afterwards (their alias is gone, by design); ending a partnership while the other side is down
+  isn't retried (they notice when their requests are refused). ⚖️ Moderators of one community act
+  on evidence from another; the agreement should say how reports are handled and how fast.

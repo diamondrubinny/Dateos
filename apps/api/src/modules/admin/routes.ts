@@ -551,6 +551,18 @@ export const adminRoutes: FastifyPluginAsyncZod<{
       return federation.test(staff.id, request.params.id);
     },
   );
+  // 28d: suspend (nothing crosses, nothing deleted) and resume.
+  for (const action of ['suspend', 'resume'] as const) {
+    app.post(
+      `/v1/admin/partners/:id/${action}`,
+      { schema: { params: idParams, response: { 200: partnersResponseSchema } } },
+      async (request) => {
+        const staff = currentUser(request);
+        adminOnly(staff.role);
+        return federation[action](staff.id, request.params.id);
+      },
+    );
+  }
 
   // Integrations (phase 24): admins only. Secrets go in, never come out.
   const integrationParams = z.object({ id: z.enum(integrationIds) });

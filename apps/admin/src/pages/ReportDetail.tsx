@@ -112,6 +112,8 @@ export function ReportDetail({ id, staff }: { id: string; staff: StaffMe }) {
             {t.detail.reporter}:{' '}
             {report.automatic ? (
               t.detail.automaticReporter
+            ) : report.partnerCommunity !== null ? (
+              <bdi>{format(t.detail.partnerReporter, { community: report.partnerCommunity })}</bdi>
             ) : (
               <bdi>{report.reporter.displayName ?? t.detail.deletedReporter}</bdi>
             )}

@@ -7,6 +7,7 @@ import type {
   FederatedMessage,
   FederatedMessagesPage,
   FederatedProfile,
+  FederatedReportInput,
   FederatedStatus,
   MessageView,
   PublicProfile,
@@ -180,4 +181,21 @@ export function asMessageView(m: FederatedMessage, matchId: string): MessageView
     scam: m.scam,
     createdAt: m.createdAt,
   };
+}
+
+// ---------------------------------------------------------------- 28d: reports
+
+export function useFederatedReport() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (input: FederatedReportInput) =>
+      apiFetch<{ reportId: string }>('/v1/federated/reports', {
+        method: 'POST',
+        body: json(input),
+      }),
+    onSuccess: async () => {
+      await client.invalidateQueries({ queryKey: federatedKeys.matches });
+      await client.invalidateQueries({ queryKey: federatedKeys.deck });
+    },
+  });
 }

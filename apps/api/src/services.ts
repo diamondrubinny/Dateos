@@ -28,6 +28,7 @@ import {
 import { AudioService } from './modules/chat/audio.js';
 import { FederatedChat } from './modules/federation/chat.js';
 import { FederatedMembers } from './modules/federation/members.js';
+import { FederatedSafety } from './modules/federation/safety.js';
 import { FederationService } from './modules/federation/service.js';
 import { llmIcebreakers, templateIcebreakers, type TextModel } from '@nexaheart/ai';
 import { AiGate } from './lib/ai-gate.js';
@@ -67,6 +68,7 @@ export interface Services {
   federation: FederationService;
   federated: FederatedMembers;
   federatedChat: FederatedChat;
+  federatedSafety: FederatedSafety;
   discovery: DiscoveryService;
   realtime: Realtime;
   chat: ChatService;
@@ -294,6 +296,20 @@ export function createServices(
   });
   discovery.onSeparation((a, b) => (b ? Promise.resolve() : federated.endAllMatches(a)));
   const me = new MeService(dbHandle.db, mediaQueue, legal, today, profileQueue);
+  // 28d: reports across communities, and their outcomes.
+  const reports = new ReportService(
+    dbHandle.db,
+    discovery,
+    mailer,
+    env.INSTANCE_NAME,
+    onMailError,
+    storage,
+  );
+  const moderation = new ModerationService(dbHandle.db, discovery, hashEmail, today);
+  const federatedSafety = new FederatedSafety(dbHandle.db, federation, federated, () =>
+    reports.alertStaff(),
+  );
+  moderation.usePartnerOutcomes((settled) => federatedSafety.sendOutcomes(settled));
   me.beforeDelete((userId) => federated.forgetEverywhere(userId));
 
   const services: Services = {
@@ -308,6 +324,7 @@ export function createServices(
     federation,
     federated,
     federatedChat,
+    federatedSafety,
     discovery,
     mailer,
     me,
@@ -328,14 +345,7 @@ export function createServices(
       overrides.now,
       { appUrl: appUrl(env), speedAvailable: async () => (await calls.enabled()) !== null },
     ),
-    reports: new ReportService(
-      dbHandle.db,
-      discovery,
-      mailer,
-      env.INSTANCE_NAME,
-      onMailError,
-      storage,
-    ),
+    reports,
     verification,
     staffMfa: new StaffMfaService(
       dbHandle.db,
@@ -343,7 +353,7 @@ export function createServices(
       env.INSTANCE_NAME,
       overrides.now,
     ),
-    moderation: new ModerationService(dbHandle.db, discovery, hashEmail, today),
+    moderation,
     instance,
     trust,
     takes,

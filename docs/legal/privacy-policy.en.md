@@ -72,7 +72,7 @@ You must be 18 or older; accounts with a birth date under 18 are suspended immed
   (first name, age, gender, what you're looking for, bio, prompts, photos, languages, verified) under
   a code name, and, when you search, your gender, who you're interested in and your age range. Your
   likes go to them, and a match, and the messages you exchange in it, are kept by both until either of you ends it. Never your email, location, religion,
-  accessibility needs, voice or messages. Leaving tells them to forget you.
+  accessibility needs, voice or messages. Leaving tells them to forget you. If you report someone from a partner community, your report and the latest messages of your chat go to that community's moderators.
 - **Authorities**, only when the law requires it.
 
 We do not sell or rent personal data and do not use it for advertising.

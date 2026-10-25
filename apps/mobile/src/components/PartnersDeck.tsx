@@ -132,11 +132,29 @@ export function PartnersDeck() {
               />
             </View>
           ) : (
-            <Button
-              variant="ghost"
-              label={t('partners.block', { name: current.displayName })}
-              onPress={() => setConfirmBlock(true)}
-            />
+            <>
+              <Button
+                variant="ghost"
+                label={t('partners.block', { name: current.displayName })}
+                onPress={() => setConfirmBlock(true)}
+              />
+              <Button
+                variant="dangerGhost"
+                label={t('partners.report', { name: current.displayName })}
+                onPress={() =>
+                  router.push({
+                    pathname: '/partner-report',
+                    params: {
+                      partnerId: current.partnerId,
+                      alias: current.alias,
+                      name: current.displayName,
+                      community: current.community,
+                      matched: '0',
+                    },
+                  })
+                }
+              />
+            </>
           )}
         </View>
       ) : (

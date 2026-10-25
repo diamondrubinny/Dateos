@@ -599,6 +599,12 @@ export const reports = pgTable(
     details: varchar('details', { length: 1000 }),
     /** Opened by an automatic check (phase 21), not by a member. */
     automatic: boolean('automatic').notNull().default(false),
+    /** 28d: sent by a member of this partner community (the reporter is unknown here). */
+    partnerId: uuid('partner_id').references((): AnyPgColumn => federationPartners.id, {
+      onDelete: 'set null',
+    }),
+    /** 28d: the report's id on the reporter's server, for sending back that it was reviewed. */
+    partnerReportId: uuid('partner_report_id'),
     status: reportStatusEnum('status').notNull().default('open'),
     resolvedBy: text('resolved_by').references(() => user.id, { onDelete: 'set null' }),
     resolvedAction: moderationActionEnum('resolved_action'),
@@ -609,6 +615,7 @@ export const reports = pgTable(
   (t) => [
     index('reports_queue_idx').on(t.status, t.priority, t.createdAt),
     index('reports_reported_idx').on(t.reportedId, t.status),
+    uniqueIndex('reports_partner_report_uq').on(t.partnerId, t.partnerReportId),
     // One open report per reporter and target: repeated reports add nothing but noise.
     uniqueIndex('reports_open_pair_uq')
       .on(t.reporterId, t.reportedId)
@@ -1461,4 +1468,42 @@ export const federationMessages = pgTable(
     uniqueIndex('federation_messages_client_uq').on(t.matchId, t.clientId),
     index('federation_messages_match_created_idx').on(t.matchId, t.createdAt),
   ],
+);
+
+/** 28d: reports our members sent to partner communities (the outcome is only "reviewed"). */
+export const federationReportsOut = pgTable(
+  'federation_reports_out',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: ownerId(),
+    partnerId: uuid('partner_id')
+      .notNull()
+      .references(() => federationPartners.id, { onDelete: 'cascade' }),
+    alias: varchar('alias', { length: 22 }).notNull(),
+    category: reportCategoryEnum('category').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    reviewedAt: timestamp('reviewed_at', { withTimezone: true }),
+  },
+  (t) => [index('federation_reports_out_partner_idx').on(t.partnerId)],
+);
+
+/**
+ * 28d: signed requests to a partner that couldn't be delivered yet (forget, unmatch, reports and
+ * their outcomes), retried with a growing pause for up to 7 days.
+ */
+export const federationOutbox = pgTable(
+  'federation_outbox',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    partnerId: uuid('partner_id')
+      .notNull()
+      .references(() => federationPartners.id, { onDelete: 'cascade' }),
+    path: varchar('path', { length: 64 }).notNull(),
+    payload: jsonb('payload').notNull(),
+    attempts: integer('attempts').notNull().default(0),
+    nextAttemptAt: timestamp('next_attempt_at', { withTimezone: true }).notNull().defaultNow(),
+    lastError: varchar('last_error', { length: 200 }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index('federation_outbox_due_idx').on(t.nextAttemptAt)],
 );

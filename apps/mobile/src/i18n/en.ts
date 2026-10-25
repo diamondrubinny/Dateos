@@ -1352,6 +1352,12 @@ export const en = {
     tooMany: 'Wait for an answer before asking more.',
   },
   partners: {
+    report: 'Report {{name}}',
+    reportIntro:
+      'Your report goes to the moderators of {{community}}, where {{name}} is a member. They handle it with their rules; you’ll hear when it’s reviewed, not what they decided.',
+    reportAttachHint:
+      'Your latest messages with them are sent to {{community}}’s moderators, and only to them.',
+    reportDone: 'Thank you. Your report was sent to {{community}}’s moderators.',
     deck: 'Partner communities',
     title: 'Partner communities',
     offTitle: 'Meet people from partner communities',

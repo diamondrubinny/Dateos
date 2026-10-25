@@ -160,7 +160,7 @@ export class ReportService {
   }
 
   /** Tells staff that an urgent report is waiting. The email carries no report content. */
-  private async alertStaff(): Promise<void> {
+  async alertStaff(): Promise<void> {
     const staff = await this.db
       .select({ email: user.email })
       .from(user)

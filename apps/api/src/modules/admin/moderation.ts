@@ -49,6 +49,16 @@ export class ModerationService {
   /** Integrations listen here (phase 24). */
   appEvents: AppEvents = noEvents;
 
+  /** 28d: reports from partner communities that were settled, so the partner hears "reviewed". */
+  private partnerOutcomes: (
+    settled: { partnerId: string; partnerReportId: string }[],
+  ) => Promise<void> = async () => undefined;
+  usePartnerOutcomes(
+    fn: (settled: { partnerId: string; partnerReportId: string }[]) => Promise<void>,
+  ): void {
+    this.partnerOutcomes = fn;
+  }
+
   queue(status: 'open' | 'closed'): Promise<ReportSummary[]> {
     return status === 'open'
       ? this.summaries(eq(reports.status, 'open'), [priorityOrder, asc(reports.createdAt)])
@@ -91,6 +101,12 @@ export class ModerationService {
     const [summary] = await this.summaries(eq(reports.id, reportId), []);
     if (!summary) throw notFound();
     const [report] = await this.db.select().from(reports).where(eq(reports.id, reportId));
+    const [partner] = report!.partnerId
+      ? await this.db
+          .select({ name: schema.federationPartners.name })
+          .from(schema.federationPartners)
+          .where(eq(schema.federationPartners.id, report!.partnerId))
+      : [];
     const reporterName = report!.reporterId
       ? ((
           await this.db
@@ -153,6 +169,7 @@ export class ModerationService {
       ...summary,
       details: report!.details,
       reporter: { id: report!.reporterId, displayName: reporterName },
+      partnerCommunity: report!.partnerId ? (partner?.name ?? '') : null,
       automatic: report!.automatic,
       evidence: evidence.map((e) => ({
         id: e.id,
@@ -218,7 +235,7 @@ export class ModerationService {
     if (action === 'ban' && staff.role !== 'admin') throw forbidden('Only admins can ban.');
 
     const removesAccess = action === 'suspend' || action === 'ban';
-    await this.db.transaction(async (tx) => {
+    const settled = await this.db.transaction(async (tx) => {
       const now = new Date();
       const resolution = {
         status: action === 'dismiss' ? ('dismissed' as const) : ('actioned' as const),
@@ -228,14 +245,15 @@ export class ModerationService {
         resolvedAt: now,
       };
       // Suspending or banning settles every open report against the same member.
-      await tx
+      const updated = await tx
         .update(reports)
         .set(resolution)
         .where(
           removesAccess
             ? and(eq(reports.reportedId, report.reportedId), eq(reports.status, 'open'))
             : eq(reports.id, reportId),
-        );
+        )
+        .returning({ partnerId: reports.partnerId, partnerReportId: reports.partnerReportId });
       if (action !== 'dismiss') {
         await tx.insert(moderationLog).values({
           targetId: report.reportedId,
@@ -271,8 +289,14 @@ export class ModerationService {
         targetId: report.reportedId,
         meta: { report: reportId, category: report.category },
       });
+      return updated.flatMap((u) =>
+        u.partnerId && u.partnerReportId
+          ? [{ partnerId: u.partnerId, partnerReportId: u.partnerReportId }]
+          : [],
+      );
     });
     if (removesAccess) await this.discovery.closeAllMatches(report.reportedId);
+    if (settled.length > 0) await this.partnerOutcomes(settled).catch(() => undefined);
     this.appEvents.emit({ type: 'report.resolved', reportId });
   }
 
