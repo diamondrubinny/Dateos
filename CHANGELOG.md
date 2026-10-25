@@ -6,6 +6,9 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Added
 
+- **Partner communities: replacing the signing key** from the dashboard, without ending
+  partnerships: partners are told with the old key and a proof from the new one; one that's down
+  is told within a week.
 - **Partner communities: safety**: members can report someone from a partner community; the report,
   with the chat as evidence, goes to that person's own community's moderators, and only "reviewed"
   comes back. Admins can suspend and resume a partnership (nothing crosses, nothing is deleted).

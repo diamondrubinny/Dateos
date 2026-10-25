@@ -94,6 +94,15 @@ export const federationRoutes: FastifyPluginAsyncZod<{
       return { ok: true as const };
     },
   );
+  // A partner announces its new signing key (signed with the old one).
+  app.post(
+    '/v1/federation/key',
+    { config: limit, schema: { response: { 200: ok } } },
+    async (request) => {
+      await federation.receiveKeyChange(incoming(request));
+      return { ok: true as const };
+    },
+  );
   app.get(
     '/v1/federation/ping',
     { config: limit, schema: { response: { 200: ok } } },

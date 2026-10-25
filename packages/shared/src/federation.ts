@@ -26,6 +26,8 @@ export const FEDERATION_WELL_KNOWN = '/.well-known/nexaheart';
 export const FEDERATION_MAX_SKEW_SECONDS = 300;
 /** A nonce is remembered this long, so a captured request can't be replayed. */
 export const FEDERATION_NONCE_SECONDS = 600;
+/** After a key rotation, the previous key may still sign the announcement this long (days). */
+export const FEDERATION_PREVIOUS_KEY_DAYS = 7;
 
 export const FederationHeader = {
   Origin: 'x-nexaheart-origin',
@@ -84,12 +86,28 @@ export const partnerSchema = z.object({
 });
 export type Partner = z.infer<typeof partnerSchema>;
 
+/**
+ * Key rotation: the new key, signed (the request) with the key the partner knows, plus `proof`, a
+ * signature with the new key over this community's origin and the new key, so only its holder can
+ * announce it.
+ */
+export const federationKeyChangeSchema = z
+  .object({
+    publicKey: z.string().min(40).max(200),
+    rotatedAt: z.iso.datetime(),
+    proof: z.string().min(40).max(200),
+  })
+  .strict();
+export type FederationKeyChange = z.infer<typeof federationKeyChangeSchema>;
+
 export const partnersResponseSchema = z.object({
   /** `FEDERATION=on` and `INTEGRATIONS_KEY` set. */
   enabled: z.boolean(),
   /** Why it's off, for the dashboard. */
   reason: z.enum(['off', 'no_key']).nullable(),
   self: federationIdentitySchema.nullable(),
+  /** When this community's key was last rotated, and how many partners still wait for it. */
+  key: z.object({ rotatedAt: z.string().nullable(), waiting: z.number().int() }).nullable(),
   partners: z.array(partnerSchema),
 });
 export type PartnersResponse = z.infer<typeof partnersResponseSchema>;

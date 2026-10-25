@@ -253,6 +253,13 @@
       "when": 1792947487282,
       "tag": "0035_federated_safety",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1792951417630,
+      "tag": "0036_federation_key_rotation",
+      "breakpoints": true
     }
   ]
 }

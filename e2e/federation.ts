@@ -4,7 +4,8 @@
 /**
  * Communities that connect, step 28a, end to end between two real servers: community A (the usual
  * dev API) invites community B (a second API with its own database, see below) from the dashboard,
- * B's admin accepts, A tests the signed connection, and A ends it. In English and Hebrew.
+ * B's admin accepts, A tests the signed connection, replaces its signing key (B learns it) and tests
+ * again, and A ends it. In English and Hebrew.
  *
  * Needs both APIs with FEDERATION=on and INTEGRATIONS_ALLOW_PRIVATE=true (local addresses):
  *   A: the dev API on :4000;  B: PORT=4100 PUBLIC_API_URL=http://localhost:4100 and another
@@ -110,6 +111,18 @@ async function run(
       'A and B are connected; the signed ping works',
     );
     await shot(S.page, `${locale}/admin-18-partners`);
+
+    // 3b. A replaces its signing key; B is told (signed with the old key) and the ping still works.
+    await S.page.getByRole('button', { name: p.rotate }).click();
+    await S.page.getByRole('button', { name: p.rotateYes }).click();
+    await S.page.getByText(p.rotated).waitFor();
+    await S.page.getByRole('button', { name: `${p.test} Haifa Rainbow` }).click();
+    await S.page.getByText(p.tested).waitFor();
+    const rotated = await a.call<PartnersResponse>('GET', '/v1/admin/partners');
+    check(
+      rotated.partners[0]?.lastError === null,
+      'after replacing the key, the signed connection still works',
+    );
 
     // 4. A ends it; B is told.
     await S.page.getByRole('button', { name: `${p.end} Haifa Rainbow` }).click();

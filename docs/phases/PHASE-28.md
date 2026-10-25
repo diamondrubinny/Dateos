@@ -132,8 +132,8 @@ Each step is its own PR, with two-server integration tests and e2e in four langu
     B sees it ended; English and Hebrew; axe 0 violations. Screenshot `admin-18-partners`.
 - **Found and fixed:** anyone with a domain can sign an invitation, so at most 20 may wait for an
   admin; an invitation that the other side refuses is removed instead of left half-made.
-- **Still to check:** ⚖️ the agreement template between operators; 📘 key rotation (not built: a
-  new key means ending and re-inviting partners).
+- **Still to check:** ⚖️ the agreement template between operators. Key rotation: built after 28d
+  (below).
 
 ## 28b in detail (this step)
 
@@ -325,3 +325,18 @@ stay local for now (they need media through both servers).
   afterwards (their alias is gone, by design); ending a partnership while the other side is down
   isn't retried (they notice when their requests are refused). ⚖️ Moderators of one community act
   on evidence from another; the agreement should say how reports are handled and how fast.
+
+## Key rotation (after 28d)
+
+- **Dashboard → Partners → Replace the signing key** (admins). A new key is made and used at once;
+  `/.well-known/nexaheart` publishes it. Each partner is told with `POST /v1/federation/key`,
+  **signed with the old key** (which the partner trusts) and carrying a **proof** signed with the
+  new key over this community's address and the key, so only whoever holds it can announce it.
+- A partner that can't be reached gets the announcement from the outbox, still signed with the old
+  key, kept (sealed) for **7 days** only for that; after that it's given up (audit log) and the
+  partnership has to be renewed. Replacing the key again is refused while an announcement waits.
+- **Tests:** integration (two servers, 4): rotate and both directions still work; a partner that was
+  down gets it later, and A's new signatures are refused there until then; after a week the
+  waiting announcement is given up; a new key signed by someone else, or without a valid proof, is
+  refused. e2e `pnpm --dir e2e federation`: replace the key in the dashboard, then the signed test
+  still passes (English and Hebrew).

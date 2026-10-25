@@ -31,6 +31,7 @@ export function Partners({ isAdmin }: { isAdmin: boolean }) {
   const [accepting, setAccepting] = useState<string | null>(null);
   const [acceptAgreed, setAcceptAgreed] = useState(false);
   const [ending, setEnding] = useState<string | null>(null);
+  const [rotating, setRotating] = useState(false);
   const statusRef = useRef<HTMLParagraphElement>(null);
 
   useEffect(() => {
@@ -234,6 +235,45 @@ export function Partners({ isAdmin }: { isAdmin: boolean }) {
           <p>
             {p.selfAddress} <code dir="ltr">{data.self.url}</code>
           </p>
+          <p className="muted">
+            {data.key?.rotatedAt
+              ? format(p.keyRotated, { when: formatDate(data.key.rotatedAt, locale) })
+              : p.keyNever}
+            {data.key && data.key.waiting > 0
+              ? ` · ${format(p.keyWaiting, { n: data.key.waiting })}`
+              : ''}
+          </p>
+          {isAdmin ? (
+            rotating ? (
+              <div className="row-actions">
+                <span role="alert">{p.rotateConfirm}</span>
+                <button
+                  type="button"
+                  className="button small danger"
+                  disabled={busy}
+                  onClick={() =>
+                    void run(() => api.rotateFederationKey(), p.rotated).then(() =>
+                      setRotating(false),
+                    )
+                  }
+                >
+                  {p.rotateYes}
+                </button>
+                <button type="button" className="button small" onClick={() => setRotating(false)}>
+                  {p.endNo}
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                className="button small"
+                disabled={busy || (data.key?.waiting ?? 0) > 0}
+                onClick={() => setRotating(true)}
+              >
+                {p.rotate}
+              </button>
+            )
+          ) : null}
           {isAdmin ? (
             <form className="stack" onSubmit={invite}>
               <label htmlFor="partner-url">{p.inviteLabel}</label>
