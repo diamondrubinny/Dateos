@@ -116,6 +116,18 @@ Full inventory: [PRIVACY.md](PRIVACY.md). ☐ Confirm each legal basis ⚖️.
 - ☐ DPA with each provider; DPIA ([PRIVACY.md §6](PRIVACY.md)); Israeli registration / privacy officer
   questions ([§7](PRIVACY.md)); EU representative if needed.
 
+### Partner communities (only if `FEDERATION=on`) ⚖️
+
+- ☐ For each partner: the [partnership agreement](legal/partnership-agreement.en.md) reviewed by
+  counsel in both countries and signed **before** confirming it in the dashboard (joint control,
+  sensitive data, transfers, review times for reports).
+- ☐ The `federation` consent text in the app and the partner lines in the privacy policy reviewed;
+  bump `FEDERATION_CONSENT_VERSION` when the wording changes.
+- ✅ Two-server tests: discovery, matching, chat, reports, suspension, the outbox and key rotation
+  (`pnpm --dir e2e federation`, `federated-discovery`, `federated-chat`, `federated-safety`).
+- ☐ `INTEGRATIONS_KEY` backed up (it seals the signing key); a contact for urgent safety cases with
+  each partner.
+
 ## 13. Accessibility ♿
 
 - ✅ axe-core WCAG 2.1 A/AA on every screen in the e2e suites: 0 violations; keyboard-only sign-in with

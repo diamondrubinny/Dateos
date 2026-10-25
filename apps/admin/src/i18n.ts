@@ -328,6 +328,8 @@ const en = {
     agreementInvite:
       'We signed a data-sharing agreement with this community (both operators are responsible for what members share) ⚖️',
     agreement: 'We signed a data-sharing agreement with {{name}} ⚖️',
+    agreementTemplate:
+      'A draft agreement to start from, for both operators’ lawyers to review: docs/legal/partnership-agreement.en.md (Hebrew: partnership-agreement.he.md) ⚖️.',
     invite: 'Send invitation',
     invited: 'Invitation sent.',
     accept: 'Accept',
@@ -934,6 +936,8 @@ const he: Messages = {
     inviteLabel: 'כתובת ה־API של הקהילה השנייה',
     agreementInvite:
       'חתמנו על הסכם שיתוף מידע עם הקהילה הזו (שני המפעילים אחראים למה שחברי הקהילה משתפים) ⚖️',
+    agreementTemplate:
+      'טיוטת הסכם להתחלה, לבדיקה של עורכי הדין של שני המפעילים: docs/legal/partnership-agreement.he.md ⚖️.',
     agreement: 'חתמנו על הסכם שיתוף מידע עם {{name}} ⚖️',
     invite: 'שליחת הזמנה',
     invited: 'ההזמנה נשלחה.',

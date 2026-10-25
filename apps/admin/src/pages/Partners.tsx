@@ -274,6 +274,7 @@ export function Partners({ isAdmin }: { isAdmin: boolean }) {
               </button>
             )
           ) : null}
+          <p className="muted">{p.agreementTemplate}</p>
           {isAdmin ? (
             <form className="stack" onSubmit={invite}>
               <label htmlFor="partner-url">{p.inviteLabel}</label>
