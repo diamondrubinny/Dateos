@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
+// Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
+/* global document, window -- these run inside the page (page.evaluate). */
 // Renders ad.html frame by frame (deterministic animation seek) into an MP4 via ffmpeg.
 import { spawn } from 'node:child_process';
 import { createRequire } from 'node:module';
@@ -51,6 +55,6 @@ if (onlyFrames) {
   }
   ff.stdin.end();
   await new Promise((r) => ff.on('close', r));
-  console.log(`${out}: ${frames} frames, ${total}s`);
+  process.stdout.write(`${out}: ${frames} frames, ${total}s\n`);
 }
 await browser.close();
