@@ -7,7 +7,7 @@ import json, subprocess, wave, numpy as np
 # (window start, window end, text shown, text spoken)
 LINES = [
     (0.3, 2.4, 'Hi! I’m <span class="hl">Nexa</span>', "Hi! I'm Necksa."),
-    (2.6, 6.0, 'Tired of paying just to see who liked you?', "Tired of paying, just to see, who likes you?"),
+    (2.6, 6.0, 'Tired of paying just to find out who likes you?', "Tired of paying, just to find out who likes you?"),
     (6.2, 9.3, 'On NexaHeart it’s <span class="hl">free</span>. Everything. Always.', "On Nexa Heart, it's free. Everything. Always."),
     (9.5, 13.0, 'No advertising. And we never sell your data.', "No advertising. And we never sell your data."),
     (13.2, 17.1, 'Your matches tell you <span class="hl">why</span>. And there\u2019s a safety check-in for dates.', "Your matches tell you why. And there is a safety check-in, for your dates."),
@@ -23,12 +23,18 @@ for i, (a, b, shown, spoken) in enumerate(LINES):
     raw = f'voice-en/raw{i}.wav'; out = f'voice-en/line{i}.wav'
     text = spoken.replace("'", "’").replace(':', ' ')
     sh('ffmpeg','-y','-loglevel','error','-f','lavfi','-i',f"flite=text='{text}':voice=slt",raw)
-    # +2 semitones (brighter, character-like), same pace; warm EQ, gentle compression, a touch of room.
+    # Warm: a touch lower (-0.5 semitone) and slower, more body at 150-400 Hz, softer 3-7 kHz, a
+    # subtle doubling (chorus) and a small warm room. Sped up only if a line wouldn't fit its slot.
     base = dur(raw); window = b - a
-    tempo = max(1.0, min(1.25, (base * 0.97) / window))  # speed up only if it wouldn't fit
-    f = (f"aresample={SR},asetrate={SR}*1.1225,aresample={SR},atempo={1/1.1225*tempo:.4f},"
-         "highpass=f=110,lowpass=f=9000,equalizer=f=250:t=q:w=1:g=2,equalizer=f=3200:t=q:w=1.2:g=3,"
-         "acompressor=threshold=-20dB:ratio=3:attack=5:release=80,aecho=0.8:0.6:40:0.12,volume=1.6")
+    pitch = 0.9715  # -0.5 semitone
+    slow = 0.95
+    tempo = max(slow, min(1.15, (base / pitch / slow * 0.97) / window * slow))
+    f = (f"aresample={SR},asetrate={SR}*{pitch},aresample={SR},atempo={1/pitch*tempo:.4f},"
+         "highpass=f=85,equalizer=f=170:t=q:w=0.9:g=4,equalizer=f=380:t=q:w=1:g=2.5,"
+         "equalizer=f=1800:t=q:w=1:g=2.5,equalizer=f=3000:t=q:w=1.2:g=-1.5,equalizer=f=6500:t=q:w=1:g=-3,lowpass=f=8500,"
+         "chorus=0.8:0.9:45:0.15:0.25:1.8,"
+         "acompressor=threshold=-22dB:ratio=2.5:attack=10:release=150,"
+         "aecho=0.85:0.7:55|110:0.16|0.08,volume=1.5")
     sh('ffmpeg','-y','-loglevel','error','-i',raw,'-af',f,'-ac','1','-ar',str(SR),out)
     d = dur(out)
     times.append([a, round(a + d, 3), shown])
