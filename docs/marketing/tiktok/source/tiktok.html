@@ -1,0 +1,663 @@
+<!doctype html>
+<!--
+  SPDX-License-Identifier: AGPL-3.0-or-later
+  Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
+  Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
+-->
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      @font-face {
+        font-family: Heebo;
+        src: url(heebo-hebrew-400-normal.woff2);
+        font-weight: 400;
+        unicode-range: U+0590-05FF, U+200C-2010, U+20AA, U+25CC, U+FB1D-FB4F;
+      }
+      @font-face {
+        font-family: Heebo;
+        src: url(heebo-hebrew-700-normal.woff2);
+        font-weight: 700;
+        unicode-range: U+0590-05FF, U+200C-2010, U+20AA, U+25CC, U+FB1D-FB4F;
+      }
+      @font-face {
+        font-family: Heebo;
+        src: url(heebo-hebrew-800-normal.woff2);
+        font-weight: 800;
+        unicode-range: U+0590-05FF, U+200C-2010, U+20AA, U+25CC, U+FB1D-FB4F;
+      }
+      @font-face {
+        font-family: Heebo;
+        src: url(heebo-latin-400-normal.woff2);
+        font-weight: 400;
+      }
+      @font-face {
+        font-family: Heebo;
+        src: url(heebo-latin-700-normal.woff2);
+        font-weight: 700;
+      }
+      @font-face {
+        font-family: Heebo;
+        src: url(heebo-latin-800-normal.woff2);
+        font-weight: 800;
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      html,
+      body {
+        width: 1080px;
+        height: 1920px;
+        overflow: hidden;
+        font-family: Heebo, sans-serif;
+        background: #ffe9dc;
+      }
+      #stage {
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 1080px;
+        height: 1920px;
+        overflow: hidden;
+      }
+      #bg {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(180deg, #fff3e8 0%, #ffd9c4 45%, #ffc4d8 100%);
+      }
+      .bokeh {
+        position: absolute;
+        border-radius: 50%;
+        background: radial-gradient(
+          circle,
+          rgba(255, 255, 255, 0.95) 0%,
+          rgba(255, 255, 255, 0.35) 55%,
+          rgba(255, 255, 255, 0) 72%
+        );
+      }
+      .blob {
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(120px);
+        opacity: 0.6;
+      }
+      .abs {
+        position: absolute;
+      }
+      .phone {
+        position: absolute;
+        width: 560px;
+        height: 1212px;
+        border-radius: 76px;
+        background: #0d0d12;
+        padding: 18px;
+        box-shadow:
+          0 50px 110px rgba(120, 50, 60, 0.35),
+          0 0 0 3px rgba(255, 255, 255, 0.14) inset;
+      }
+      .phone .screen {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        border-radius: 60px;
+        overflow: hidden;
+        background: #fff;
+      }
+      .phone img {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: top;
+      }
+      .caption {
+        position: absolute;
+        left: 70px;
+        right: 170px;
+        text-align: center;
+        color: #fff;
+        font-weight: 800;
+        font-size: 66px;
+        line-height: 1.18;
+        text-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+      }
+      .caption span.hl {
+        color: #fde047;
+      }
+      .caption .box {
+        display: inline;
+        background: rgba(24, 8, 48, 0.82);
+        padding: 6px 26px;
+        border-radius: 22px;
+        -webkit-box-decoration-clone: clone;
+        box-decoration-break: clone;
+        line-height: 1.5;
+      }
+      .chip {
+        position: absolute;
+        padding: 18px 38px;
+        border-radius: 999px;
+        background: #fff;
+        color: #5b21b6;
+        font-weight: 800;
+        font-size: 46px;
+        box-shadow: 0 18px 40px rgba(0, 0, 0, 0.3);
+        white-space: nowrap;
+      }
+      .paywall {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 26px;
+        background: rgba(30, 11, 61, 0.55);
+        backdrop-filter: blur(14px);
+        color: #fff;
+        text-align: center;
+        padding: 40px;
+      }
+      .paywall .lock {
+        font-size: 120px;
+        line-height: 1;
+      }
+      .paywall .price {
+        font-size: 64px;
+        font-weight: 800;
+      }
+      .paywall .small {
+        font-size: 34px;
+        font-weight: 700;
+        opacity: 0.9;
+      }
+      .strike {
+        position: absolute;
+        height: 14px;
+        background: #f43f5e;
+        border-radius: 8px;
+        transform-origin: right center;
+      }
+      .brand {
+        position: absolute;
+        width: 100%;
+        text-align: center;
+        color: #4c1d95;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+      }
+      .cta {
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        background: linear-gradient(90deg, #ec4899, #7c3aed);
+        color: #fff;
+        font-weight: 800;
+        font-size: 50px;
+        padding: 26px 64px;
+        border-radius: 999px;
+        white-space: nowrap;
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
+      }
+      .heart {
+        position: absolute;
+        color: #ec4899;
+        font-family: sans-serif;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="stage">
+      <div id="bg">
+        <div class="blob" id="b1" style="width: 900px; height: 900px; background: #ffb38a"></div>
+        <div class="blob" id="b2" style="width: 800px; height: 800px; background: #f9a8d4"></div>
+        <div class="blob" id="b3" style="width: 700px; height: 700px; background: #fde68a"></div>
+      </div>
+      <div id="hearts"></div>
+
+      <!-- Phones (several, for the "every community its own app" scene) -->
+      <div class="phone" id="phone">
+        <div class="screen">
+          <img id="s-likes" data-src="13-likes.png" alt="" />
+          <img id="s-discover" data-src="09-discover.png" alt="" />
+          <img id="s-match" data-src="11-match.png" alt="" />
+          <img id="s-checkin" data-src="41-checkin-active.png" alt="" />
+          <img id="s-chat" data-src="19-chat-live.png" alt="" />
+          <div class="paywall" id="paywall">
+            <div class="lock">🔒</div>
+            <div class="small" id="pw-q">רוצה לראות מי עשה לך לייק?</div>
+            <div class="price" id="pw-price">₪49.90 לחודש</div>
+            <div class="strike" id="strike" style="width: 420px; top: 54%"></div>
+          </div>
+        </div>
+      </div>
+      <div class="phone" id="p2">
+        <div class="screen"><img data-src="103-partners-deck.png" alt="" /></div>
+      </div>
+      <div class="phone" id="p3">
+        <div class="screen"><img data-src="103-partners-deck.png" alt="" /></div>
+      </div>
+      <div class="phone" id="p4">
+        <div class="screen"><img data-src="103-partners-deck.png" alt="" /></div>
+      </div>
+
+      <div class="chip" id="chip1">בלי פרסומות</div>
+      <div class="chip" id="chip2">בלי מכירת מידע</div>
+      <div class="chip" id="chip3">הכול חינם</div>
+
+      <!-- Nexa, the character: a heart with a face -->
+      <svg
+        id="nexa"
+        class="abs"
+        width="460"
+        height="460"
+        viewBox="-230 -230 460 460"
+        style="overflow: visible"
+      >
+        <defs>
+          <linearGradient id="g" x1="0" y1="-1" x2="0" y2="1">
+            <stop offset="0" stop-color="#f472b6" />
+            <stop offset="1" stop-color="#8b5cf6" />
+          </linearGradient>
+          <radialGradient id="shine" cx="-0.35" cy="-0.45" r="0.6">
+            <stop offset="0" stop-color="#fff" stop-opacity="0.55" />
+            <stop offset="1" stop-color="#fff" stop-opacity="0" />
+          </radialGradient>
+        </defs>
+        <g id="body">
+          <ellipse id="shadow" cx="0" cy="215" rx="120" ry="18" fill="rgba(0,0,0,0.25)" />
+          <!-- arms -->
+          <g id="armL"><ellipse cx="-175" cy="20" rx="34" ry="56" fill="#c084fc" /></g>
+          <g id="armR"><ellipse cx="175" cy="20" rx="34" ry="56" fill="#c084fc" /></g>
+          <path
+            d="M0 190 C -60 140 -205 70 -205 -40 C -205 -130 -130 -185 -62 -185 C -25 -185 -8 -165 0 -140 C 8 -165 25 -185 62 -185 C 130 -185 205 -130 205 -40 C 205 70 60 140 0 190 Z"
+            fill="url(#g)"
+          />
+          <path
+            d="M0 190 C -60 140 -205 70 -205 -40 C -205 -130 -130 -185 -62 -185 C -25 -185 -8 -165 0 -140 C 8 -165 25 -185 62 -185 C 130 -185 205 -130 205 -40 C 205 70 60 140 0 190 Z"
+            fill="url(#shine)"
+          />
+          <!-- cheeks -->
+          <ellipse cx="-118" cy="38" rx="30" ry="18" fill="#fb7185" opacity="0.55" />
+          <ellipse cx="118" cy="38" rx="30" ry="18" fill="#fb7185" opacity="0.55" />
+          <!-- eyes -->
+          <g id="eyes">
+            <g transform="translate(-64,-38)">
+              <ellipse rx="40" ry="48" fill="#fff" />
+              <g id="pupilL">
+                <ellipse rx="22" ry="27" fill="#1e1035" />
+                <circle cx="-8" cy="-11" r="8" fill="#fff" />
+              </g>
+              <rect id="lidL" x="-44" y="-52" width="88" height="0" fill="#e879f9" rx="10" />
+            </g>
+            <g transform="translate(64,-38)">
+              <ellipse rx="40" ry="48" fill="#fff" />
+              <g id="pupilR">
+                <ellipse rx="22" ry="27" fill="#1e1035" />
+                <circle cx="-8" cy="-11" r="8" fill="#fff" />
+              </g>
+              <rect id="lidR" x="-44" y="-52" width="88" height="0" fill="#c084fc" rx="10" />
+            </g>
+          </g>
+          <!-- brows -->
+          <path
+            id="browL"
+            d="M-96 -104 Q -64 -118 -32 -106"
+            stroke="#4c1d95"
+            stroke-width="9"
+            fill="none"
+            stroke-linecap="round"
+          />
+          <path
+            id="browR"
+            d="M32 -106 Q 64 -118 96 -104"
+            stroke="#4c1d95"
+            stroke-width="9"
+            fill="none"
+            stroke-linecap="round"
+          />
+          <!-- mouth -->
+          <path id="mouth" d="" fill="#4c1d95" />
+          <path id="tongue" d="" fill="#fb7185" />
+        </g>
+      </svg>
+
+      <div class="caption" id="cap"></div>
+      <div class="brand" id="brand" style="font-size: 132px">NexaHeart</div>
+      <div class="brand" id="tag" style="font-size: 58px; font-weight: 700">
+        היכרויות שמכבדות אותך
+      </div>
+      <div class="cta" id="cta">חינם · קוד פתוח</div>
+    </div>
+
+    <script>
+      // ---------------------------------------------------------------- timeline
+      // Each line: start, end (seconds), text. The voice-over is recorded to these times.
+      const LINES = [
+        [0.3, 2.3, 'היי! אני <span class="hl">נקסה</span>'],
+        [2.6, 5.9, 'נמאס לשלם כדי לגלות מי עשה לכם לייק?'],
+        [6.2, 9.2, 'ב־NexaHeart זה <span class="hl">חינם</span>. הכול. תמיד.'],
+        [9.5, 12.9, 'בלי פרסומות, ובלי למכור את המידע שלכם.'],
+        [13.2, 17.0, 'התאמות שמסבירות <span class="hl">למה</span>, וצ׳ק־אין בטיחות בדייט.'],
+        [17.3, 20.7, 'וכל קהילה יכולה להפעיל אפליקציה <span class="hl">משלה</span>.'],
+        [21.0, 24.0, 'NexaHeart. היכרויות שמכבדות אותך.'],
+      ];
+      // English (phase: TikTok EN): ?lang=en switches texts, screens and direction.
+      const LANG = new URLSearchParams(location.search).get('lang') || 'he';
+      const EN = {
+        q: 'Want to see who liked you?',
+        price: '$14.99/mo',
+        chips: ['No ads', 'Never sells your data', 'All free'],
+        tag: 'Dating that respects you',
+        cta: 'Free · Open source',
+      };
+      if (LANG === 'en') {
+        document.documentElement.lang = 'en';
+        document.documentElement.dir = 'ltr';
+        document.getElementById('pw-q').textContent = EN.q;
+        document.getElementById('pw-price').textContent = EN.price;
+        ['chip1', 'chip2', 'chip3'].forEach(
+          (id, i) => (document.getElementById(id).textContent = EN.chips[i]),
+        );
+        document.getElementById('tag').textContent = EN.tag;
+        document.getElementById('cta').textContent = EN.cta;
+        // The English discover screenshot shows a Hebrew name: show the chat instead.
+        document.getElementById('s-discover').dataset.src = '19-chat-live.png';
+      }
+      document
+        .querySelectorAll('img[data-src]')
+        .forEach((img) => (img.src = `shots/${LANG}/${img.dataset.src}`));
+      /** The recorded voice: real line times, and the mouth envelope (one value per 1/30 s). */
+      window.applyVoice = ({ lines, env }) => {
+        LINES.length = 0;
+        lines.forEach((l) => LINES.push(l));
+        window.ENV = env;
+      };
+      window.TOTAL = 26;
+      window.LINES = LINES;
+
+      const $ = (id) => document.getElementById(id);
+      const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+      const ease = (x) => {
+        x = clamp(x);
+        return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+      };
+      const back = (x) => {
+        x = clamp(x);
+        const c = 1.7;
+        return 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2);
+      };
+      const lerp = (a, b, x) => a + (b - a) * x;
+      /** 0→1 between t0 and t1 (eased). */
+      const prog = (t, t0, t1, f = ease) => f((t - t0) / (t1 - t0));
+      const between = (t, a, b) => t >= a && t < b;
+
+      // Soft bokeh lights drifting up (warm background).
+      const bokeh = [];
+      for (let i = 0; i < 18; i++) {
+        const b = document.createElement('div');
+        b.className = 'bokeh';
+        $('bg').appendChild(b);
+        bokeh.push({
+          el: b,
+          x: (i * 263) % 1080,
+          y: (i * 457) % 1920,
+          r: 60 + ((i * 53) % 140),
+          v: 12 + ((i * 7) % 20),
+          o: 0.25 + ((i * 13) % 40) / 100,
+        });
+      }
+      // Pre-made floating hearts for the ending.
+      const hearts = [];
+      for (let i = 0; i < 16; i++) {
+        const h = document.createElement('div');
+        h.className = 'heart';
+        h.textContent = '♥';
+        $('hearts').appendChild(h);
+        hearts.push({
+          el: h,
+          x: 80 + ((i * 137) % 920),
+          d: (i * 0.23) % 2.4,
+          s: 40 + ((i * 29) % 70),
+          sw: (i % 3) - 1,
+        });
+      }
+
+      function speaking(t) {
+        return LINES.some(([a, b]) => t >= a && t <= b);
+      }
+      /** Mouth openness while talking: syllable-like pulses. */
+      function mouthOpen(t) {
+        if (window.ENV) return clamp((window.ENV[Math.floor(t * 30)] ?? 0) * 1.15);
+        if (!speaking(t)) return 0;
+        const v = Math.abs(Math.sin(t * 15.7)) * (0.55 + 0.45 * Math.abs(Math.sin(t * 4.3 + 1)));
+        return clamp(v * 1.1);
+      }
+
+      function setMouth(open, smile) {
+        // A smile curve whose height opens with the voice.
+        const w = 62 + 10 * smile;
+        const top = 52 - 6 * smile;
+        const h = 10 + 46 * open + 10 * smile;
+        $('mouth').setAttribute(
+          'd',
+          `M ${-w} ${top} Q 0 ${top + 18 * smile} ${w} ${top} Q 0 ${top + h + 20} ${-w} ${top} Z`,
+        );
+        // The mouth's lower curve reaches top + (h + 20) / 2; the tongue sits just inside it.
+        const d = h + 20;
+        $('tongue').setAttribute(
+          'd',
+          open > 0.35
+            ? `M -24 ${top + d * 0.33} Q 0 ${top + d * 0.6} 24 ${top + d * 0.33} Q 0 ${top + d * 0.22} -24 ${top + d * 0.33} Z`
+            : '',
+        );
+      }
+
+      function nexa(t, x, y, scale, opts = {}) {
+        const bob = Math.sin(t * 3.1) * 10;
+        const squash = 1 + Math.sin(t * 6.2) * 0.012;
+        const el = $('nexa');
+        el.style.left = `${x - 230}px`;
+        el.style.top = `${y - 230 + bob}px`;
+        el.style.transform = `scale(${scale * squash}, ${scale / squash}) rotate(${opts.tilt ?? 0}deg)`;
+        el.style.opacity = opts.opacity ?? 1;
+        // Blink every ~3.2 s.
+        const ph = (t + 0.4) % 3.2;
+        const lid = ph < 0.14 ? Math.sin((ph / 0.14) * Math.PI) * 100 : 0;
+        $('lidL').setAttribute('height', lid);
+        $('lidR').setAttribute('height', lid);
+        // Look direction.
+        const lx = opts.lookX ?? Math.sin(t * 0.9) * 6;
+        const ly = opts.lookY ?? 0;
+        $('pupilL').setAttribute('transform', `translate(${lx},${ly})`);
+        $('pupilR').setAttribute('transform', `translate(${lx},${ly})`);
+        // Brows: raised (curious), level, or worried.
+        const b = opts.brow ?? 0;
+        $('browL').setAttribute('transform', `translate(0,${-b * 14}) rotate(${b * -8} -64 -108)`);
+        $('browR').setAttribute('transform', `translate(0,${-b * 14}) rotate(${b * 8} 64 -108)`);
+        // Waving right arm.
+        const wave = opts.wave ? Math.sin(t * 12) * 26 - 55 : 0;
+        $('armR').setAttribute('transform', `rotate(${wave} 160 40)`);
+        $('armL').setAttribute(
+          'transform',
+          `rotate(${opts.cheer ? Math.sin(t * 10) * 18 + 50 : 0} -160 40)`,
+        );
+        setMouth(mouthOpen(t), opts.smile ?? 1);
+      }
+
+      function phone(x, y, scale, rot = 0, opacity = 1, el = 'phone') {
+        const p = $(el);
+        p.style.left = `${x - 280}px`;
+        p.style.top = `${y - 606}px`;
+        p.style.transform = `scale(${scale}) rotate(${rot}deg)`;
+        p.style.opacity = opacity;
+      }
+      function show(id, o) {
+        $(id).style.opacity = o;
+      }
+
+      function caption(t) {
+        // The ending shows the logo and tagline instead of a caption.
+        const line = t >= 21 ? undefined : LINES.find(([a, b]) => t >= a - 0.15 && t <= b + 0.35);
+        const cap = $('cap');
+        if (!line) {
+          cap.style.opacity = 0;
+          return;
+        }
+        const [a, b, html] = line;
+        if (cap.dataset.html !== html) {
+          cap.innerHTML = `<span class="box">${html}</span>`;
+          cap.dataset.html = html;
+        }
+        const pin = prog(t, a - 0.15, a + 0.2, back);
+        const pout = 1 - prog(t, b + 0.1, b + 0.35);
+        cap.style.opacity = Math.min(pin, pout);
+        cap.style.transform = `translateY(${(1 - pin) * 40}px) scale(${0.9 + 0.1 * pin})`;
+      }
+
+      window.seek = (ms) => {
+        const t = ms / 1000;
+        // Background drift.
+        $('b1').style.transform =
+          `translate(${-200 + Math.sin(t * 0.4) * 120}px, ${-260 + t * 18}px)`;
+        $('b2').style.transform =
+          `translate(${400 + Math.cos(t * 0.35) * 140}px, ${900 - t * 14}px)`;
+        $('b3').style.transform =
+          `translate(${-250 + Math.sin(t * 0.3) * 100}px, ${1300 - t * 10}px)`;
+        bokeh.forEach((b, i) => {
+          const y = ((((b.y - t * b.v) % 2100) + 2100) % 2100) - 180;
+          b.el.style.width = b.el.style.height = `${b.r}px`;
+          b.el.style.left = `${b.x + Math.sin(t * 0.5 + i) * 30}px`;
+          b.el.style.top = `${y}px`;
+          b.el.style.opacity = b.o * (0.75 + 0.25 * Math.sin(t * 1.3 + i));
+        });
+
+        // Defaults.
+        [
+          'phone',
+          'p2',
+          'p3',
+          'p4',
+          'chip1',
+          'chip2',
+          'chip3',
+          'brand',
+          'tag',
+          'cta',
+          'paywall',
+        ].forEach((id) => show(id, 0));
+        ['s-likes', 's-discover', 's-match', 's-checkin', 's-chat'].forEach((id) => show(id, 0));
+        hearts.forEach((h) => (h.el.style.opacity = 0));
+        $('cap').style.top = '1290px';
+
+        if (t < 2.6) {
+          // Hook: Nexa pops in and waves.
+          const s = prog(t, 0, 0.6, back);
+          nexa(t, 540, 760, 1.55 * s, { wave: true, brow: 0.6, smile: 1 });
+          $('cap').style.top = '1180px';
+        } else if (t < 6.2) {
+          // The paywall other apps charge for.
+          const k = prog(t, 2.6, 3.2);
+          nexa(t, lerp(540, 860, k), lerp(760, 330, k), lerp(1.55, 0.7, k), {
+            brow: -0.6,
+            smile: -0.4,
+            lookX: -10,
+            lookY: 8,
+            tilt: -6,
+          });
+          phone(lerp(540, 470, k), lerp(1500, 930, k), 1, -3, k);
+          show('s-likes', 1);
+          show('paywall', 1);
+          $('strike').style.transform = 'scaleX(0)';
+        } else if (t < 9.5) {
+          // Free: the paywall is crossed out and goes away.
+          nexa(t, 860, 330, 0.7, { cheer: true, brow: 0.5, smile: 1.2, lookX: -12, lookY: 10 });
+          phone(470, 930, 1, -3 + prog(t, 6.2, 6.8) * 3);
+          show('s-likes', 1);
+          $('strike').style.transform = `scaleX(${prog(t, 6.2, 6.7)}) rotate(-8deg)`;
+          show('paywall', 1 - prog(t, 7.0, 7.6));
+          show('chip3', prog(t, 7.4, 7.8, back));
+          $('chip3').style.left = '640px';
+          $('chip3').style.top = '560px';
+          $('chip3').style.transform = `rotate(8deg) scale(${prog(t, 7.4, 7.8, back)})`;
+        } else if (t < 13.2) {
+          // No ads, no selling data.
+          nexa(t, 860, 330, 0.7, { brow: 0.3, smile: 1, lookX: -8, lookY: 10 });
+          phone(470, 930, 1, 0);
+          show('s-discover', 1);
+          show('paywall', 0);
+          [
+            ['chip1', 9.7, 560, 640, -6],
+            ['chip2', 10.6, LANG === 'en' ? 420 : 640, 760, 5],
+          ].forEach(([id, at, x, y, r]) => {
+            const p = prog(t, at, at + 0.4, back);
+            show(id, clamp(p * 2));
+            $(id).style.left = `${x}px`;
+            $(id).style.top = `${y}px`;
+            $(id).style.transform = `rotate(${r}deg) scale(${p})`;
+          });
+        } else if (t < 17.3) {
+          // Matches that explain themselves, safety check-in.
+          nexa(t, 860, 330, 0.7, {
+            brow: 0.4,
+            smile: 1.1,
+            lookX: -10,
+            lookY: 10,
+            wave: t > 15.2 && t < 16.2,
+          });
+          const swap = prog(t, 15.0, 15.4);
+          phone(470 - swap * 30, 930, 1, swap * -2);
+          show('paywall', 0);
+          show('s-match', 1 - swap);
+          show('s-checkin', swap);
+        } else if (t < 21.0) {
+          // Every community, its own app (three colours).
+          const k = prog(t, 17.3, 17.9);
+          nexa(t, 540, 300, 0.55, { cheer: true, brow: 0.6, smile: 1.2, lookY: 14 });
+          show('paywall', 0);
+          [
+            ['p2', 0, 300, -9],
+            ['p3', 1, 540, 0],
+            ['p4', 2, 780, 9],
+          ].forEach(([id, i, x, r]) => {
+            const p = prog(t, 17.3 + i * 0.15, 17.9 + i * 0.15, back);
+            phone(x, 980 + (i === 1 ? -40 : 30), 0.52 * p, r, clamp(p * 1.5), id);
+          });
+          $('p2').querySelector('img').style.filter = 'hue-rotate(110deg)';
+          $('p4').querySelector('img').style.filter = 'hue-rotate(220deg)';
+          $('cap').style.top = '1420px';
+          void k;
+        } else {
+          // Ending: logo, tagline, hearts.
+          const s = prog(t, 21.0, 21.6, back);
+          nexa(t, 540, 720, 1.25 * clamp(0.6 + s * 0.4), {
+            wave: t < 23.2,
+            cheer: t >= 23.2,
+            brow: 0.5,
+            smile: 1.3,
+          });
+          show('brand', prog(t, 21.3, 21.8));
+          $('brand').style.top = '1050px';
+          show('tag', prog(t, 21.7, 22.2));
+          $('tag').style.top = '1210px';
+          show('cta', prog(t, 22.4, 22.9));
+          $('cta').style.top = '1330px';
+          $('cta').style.transform = `translateX(-50%) scale(${prog(t, 22.4, 22.9, back)})`;
+          $('cap').style.top = '1520px';
+          hearts.forEach((h) => {
+            const p = (t - 21.2 - h.d) / 3.2;
+            if (p < 0 || p > 1) return;
+            h.el.style.opacity = Math.sin(p * Math.PI) * 0.9;
+            h.el.style.left = `${h.x + Math.sin(p * 6 + h.sw) * 40}px`;
+            h.el.style.top = `${1700 - p * 1500}px`;
+            h.el.style.fontSize = `${h.s}px`;
+          });
+        }
+        caption(t);
+      };
+    </script>
+  </body>
+</html>
