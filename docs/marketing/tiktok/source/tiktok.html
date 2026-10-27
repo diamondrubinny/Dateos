@@ -210,27 +210,27 @@
       <!-- Phones (several, for the "every community its own app" scene) -->
       <div class="phone" id="phone">
         <div class="screen">
-          <img id="s-likes" src="shots/13-likes.png" alt="" />
-          <img id="s-discover" src="shots/09-discover.png" alt="" />
-          <img id="s-match" src="shots/11-match.png" alt="" />
-          <img id="s-checkin" src="shots/41-checkin-active.png" alt="" />
-          <img id="s-chat" src="shots/19-chat-live.png" alt="" />
+          <img id="s-likes" data-src="13-likes.png" alt="" />
+          <img id="s-discover" data-src="09-discover.png" alt="" />
+          <img id="s-match" data-src="11-match.png" alt="" />
+          <img id="s-checkin" data-src="41-checkin-active.png" alt="" />
+          <img id="s-chat" data-src="19-chat-live.png" alt="" />
           <div class="paywall" id="paywall">
             <div class="lock">🔒</div>
-            <div class="small">רוצה לראות מי עשה לך לייק?</div>
-            <div class="price">₪49.90 לחודש</div>
+            <div class="small" id="pw-q">רוצה לראות מי עשה לך לייק?</div>
+            <div class="price" id="pw-price">₪49.90 לחודש</div>
             <div class="strike" id="strike" style="width: 420px; top: 54%"></div>
           </div>
         </div>
       </div>
       <div class="phone" id="p2">
-        <div class="screen"><img src="shots/103-partners-deck.png" alt="" /></div>
+        <div class="screen"><img data-src="103-partners-deck.png" alt="" /></div>
       </div>
       <div class="phone" id="p3">
-        <div class="screen"><img src="shots/103-partners-deck.png" alt="" /></div>
+        <div class="screen"><img data-src="103-partners-deck.png" alt="" /></div>
       </div>
       <div class="phone" id="p4">
-        <div class="screen"><img src="shots/103-partners-deck.png" alt="" /></div>
+        <div class="screen"><img data-src="103-partners-deck.png" alt="" /></div>
       </div>
 
       <div class="chip" id="chip1">בלי פרסומות</div>
@@ -334,6 +334,37 @@
         [17.3, 20.7, 'וכל קהילה יכולה להפעיל אפליקציה <span class="hl">משלה</span>.'],
         [21.0, 24.0, 'NexaHeart. היכרויות שמכבדות אותך.'],
       ];
+      // English (phase: TikTok EN): ?lang=en switches texts, screens and direction.
+      const LANG = new URLSearchParams(location.search).get('lang') || 'he';
+      const EN = {
+        q: 'Want to see who liked you?',
+        price: '$14.99/mo',
+        chips: ['No ads', 'Never sells your data', 'All free'],
+        tag: 'Dating that respects you',
+        cta: 'Free · Open source',
+      };
+      if (LANG === 'en') {
+        document.documentElement.lang = 'en';
+        document.documentElement.dir = 'ltr';
+        document.getElementById('pw-q').textContent = EN.q;
+        document.getElementById('pw-price').textContent = EN.price;
+        ['chip1', 'chip2', 'chip3'].forEach(
+          (id, i) => (document.getElementById(id).textContent = EN.chips[i]),
+        );
+        document.getElementById('tag').textContent = EN.tag;
+        document.getElementById('cta').textContent = EN.cta;
+        // The English discover screenshot shows a Hebrew name: show the chat instead.
+        document.getElementById('s-discover').dataset.src = '19-chat-live.png';
+      }
+      document
+        .querySelectorAll('img[data-src]')
+        .forEach((img) => (img.src = `shots/${LANG}/${img.dataset.src}`));
+      /** The recorded voice: real line times, and the mouth envelope (one value per 1/30 s). */
+      window.applyVoice = ({ lines, env }) => {
+        LINES.length = 0;
+        lines.forEach((l) => LINES.push(l));
+        window.ENV = env;
+      };
       window.TOTAL = 26;
       window.LINES = LINES;
 
@@ -374,6 +405,7 @@
       }
       /** Mouth openness while talking: syllable-like pulses. */
       function mouthOpen(t) {
+        if (window.ENV) return clamp((window.ENV[Math.floor(t * 30)] ?? 0) * 1.15);
         if (!speaking(t)) return 0;
         const v = Math.abs(Math.sin(t * 15.7)) * (0.55 + 0.45 * Math.abs(Math.sin(t * 4.3 + 1)));
         return clamp(v * 1.1);
@@ -388,10 +420,12 @@
           'd',
           `M ${-w} ${top} Q 0 ${top + 18 * smile} ${w} ${top} Q 0 ${top + h + 20} ${-w} ${top} Z`,
         );
+        // The mouth's lower curve reaches top + (h + 20) / 2; the tongue sits just inside it.
+        const d = h + 20;
         $('tongue').setAttribute(
           'd',
           open > 0.35
-            ? `M -26 ${top + h * 0.75} Q 0 ${top + h + 4} 26 ${top + h * 0.75} Q 0 ${top + h * 0.55} -26 ${top + h * 0.75} Z`
+            ? `M -24 ${top + d * 0.33} Q 0 ${top + d * 0.6} 24 ${top + d * 0.33} Q 0 ${top + d * 0.22} -24 ${top + d * 0.33} Z`
             : '',
         );
       }
@@ -524,7 +558,7 @@
           show('paywall', 0);
           [
             ['chip1', 9.7, 560, 640, -6],
-            ['chip2', 10.6, 640, 760, 5],
+            ['chip2', 10.6, LANG === 'en' ? 420 : 640, 760, 5],
           ].forEach(([id, at, x, y, r]) => {
             const p = prog(t, at, at + 0.4, back);
             show(id, clamp(p * 2));

@@ -1,5 +1,16 @@
 # TikTok video: "Hi, I'm Nexa"
 
+| File                            | What                                                                    |
+| ------------------------------- | ----------------------------------------------------------------------- |
+| `nexaheart-tiktok-en.mp4`       | **English, with voice**: 26 s, 1080×1920; captions in `captions-en.srt` |
+| `nexaheart-tiktok-he-music.mp4` | Hebrew, music only, ready for a recorded voice (below)                  |
+
+**The English voice** is made on this machine with flite (`slt`), shaped into a brighter character
+voice (+2 semitones, warm EQ, light room), and Nexa's mouth follows its real loudness frame by
+frame (`source/voice-en.py`, `source/voice-en.json`). A local speech recogniser (Whisper) transcribes
+every sentence correctly, music included; "NexaHeart" is heard as "Nexa-har" (the captions show it).
+It's a synthetic voice: for a warmer, human one, record the same lines and replace the track.
+
 `nexaheart-tiktok-he-music.mp4`: 26 seconds, vertical 1080×1920, Hebrew. **Nexa**, a friendly heart
 character (blinking, waving, speaking), walks viewers through what makes NexaHeart different, with
 big TikTok-style captions, real screens from the app (`docs/screenshots/he`) and an original
