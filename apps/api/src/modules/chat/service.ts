@@ -17,6 +17,8 @@ import {
   scamSignals,
   FEEDBACK_AFTER_MINUTES,
   type AgainAnswer,
+  reactionEmojis,
+  type ReactionEmoji,
   type DateFeedbackView,
 } from '@nexaheart/shared';
 import { randomUUID } from 'node:crypto';
@@ -30,6 +32,7 @@ import type { AudioService } from './audio.js';
 
 const {
   messages,
+  messageReactions,
   matches,
   matchReads,
   photos,
@@ -47,11 +50,21 @@ type MessageRow = typeof messages.$inferSelect & {
   audioDurationMs: number | null;
   plan: typeof datePlans.$inferSelect | null;
   call: typeof calls.$inferSelect | null;
+  /** Phase 29b: who reacted with what (at most one each). */
+  reactions?: { userId: string; emoji: string }[] | null;
 };
+
+const asReaction = (emoji: string | undefined): ReactionEmoji | null =>
+  emoji && (reactionEmojis as readonly string[]).includes(emoji) ? (emoji as ReactionEmoji) : null;
 
 /** A receiver sees media only after it passed scanning; senders see their own uploads. */
 const visibleTo = (viewerId: string) =>
   sql`(${messages.kind} IN ('text', 'date', 'call') OR ${messages.senderId} = ${viewerId} OR ${photos.status} = 'clean' OR ${audioClips.status} = 'clean')`;
+
+/** A photo or voice message that isn't clean yet: its receiver doesn't see it. */
+const isPendingMedia = (view: MessageView) =>
+  (view.image !== null && view.image.status !== 'clean') ||
+  (view.voice !== null && view.voice.status !== 'clean');
 
 const mediaStatus = (status: string | null) =>
   status === 'clean'
@@ -170,6 +183,10 @@ export function toView(row: MessageRow, viewerId: string, now = Date.now()): Mes
     hidden: !mine && harm.length > 0,
     harm,
     scam: mine ? [] : scam,
+    reactions: {
+      mine: asReaction(row.reactions?.find((r) => r.userId === viewerId)?.emoji),
+      theirs: asReaction(row.reactions?.find((r) => r.userId !== viewerId)?.emoji),
+    },
     createdAt: row.createdAt.toISOString(),
   };
 }
@@ -236,6 +253,9 @@ export class ChatService {
         callId: messages.callId,
         plan: datePlans,
         call: calls,
+        reactions: sql<{ userId: string; emoji: string }[] | null>`(
+          SELECT json_agg(json_build_object('userId', r.user_id, 'emoji', r.emoji))
+          FROM message_reactions r WHERE r.message_id = "messages"."id")`,
       })
       .from(messages)
       .leftJoin(photos, eq(photos.id, messages.photoId))
@@ -417,6 +437,44 @@ export class ChatService {
       throw new HttpError(409, ErrorCode.Conflict, 'Message id already used.');
     if (inserted.length > 0) await this.deliver(row, senderId, otherId);
     return toView(row, senderId, this.now());
+  }
+
+  /**
+   * React to a message, or remove my reaction (phase 29b). Only in an active match, only on a
+   * message the other person can see whole: not one hidden by the harm filter. The other person
+   * sees it live; there is no push notification.
+   */
+  async react(
+    matchId: string,
+    messageId: string,
+    viewerId: string,
+    emoji: ReactionEmoji | null,
+  ): Promise<MessageView> {
+    const { otherId } = await this.participant(matchId, viewerId);
+    const [row] = await this.rows(and(eq(messages.id, messageId), eq(messages.matchId, matchId)));
+    if (!row) throw notFound();
+    const view = toView(row, viewerId, this.now());
+    // A receiver can't see a hidden message (or media still being scanned), so can't react to it.
+    if (row.flags.some((f) => f.startsWith('harm:')) || (!view.mine && isPendingMedia(view))) {
+      throw new HttpError(409, ErrorCode.Conflict, 'This message can’t have reactions.');
+    }
+    if (emoji === null) {
+      await this.db
+        .delete(messageReactions)
+        .where(
+          and(eq(messageReactions.messageId, messageId), eq(messageReactions.userId, viewerId)),
+        );
+    } else {
+      await this.db
+        .insert(messageReactions)
+        .values({ messageId, userId: viewerId, emoji })
+        .onConflictDoUpdate({
+          target: [messageReactions.messageId, messageReactions.userId],
+          set: { emoji, createdAt: new Date() },
+        });
+    }
+    await this.announceUpdated(matchId, messageId, [viewerId, otherId]);
+    return this.messageView(messageId, viewerId);
   }
 
   async sendImage(matchId: string, senderId: string, buffer: Buffer): Promise<MessageView> {

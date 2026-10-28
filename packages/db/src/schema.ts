@@ -560,6 +560,23 @@ export const messages = pgTable(
   ],
 );
 
+/**
+ * Reactions to messages (phase 29b): one emoji per person per message, from a fixed list. Deleted
+ * with the message (and so with the match's retention) or the account.
+ */
+export const messageReactions = pgTable(
+  'message_reactions',
+  {
+    messageId: uuid('message_id')
+      .notNull()
+      .references(() => messages.id, { onDelete: 'cascade' }),
+    userId: ownerId(),
+    emoji: varchar('emoji', { length: 8 }).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.messageId, t.userId] })],
+);
+
 export const matchReads = pgTable(
   'match_reads',
   {

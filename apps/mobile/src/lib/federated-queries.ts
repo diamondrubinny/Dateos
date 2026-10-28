@@ -179,6 +179,8 @@ export function asMessageView(m: FederatedMessage, matchId: string): MessageView
     hidden: m.hidden,
     harm: m.harm,
     scam: m.scam,
+    // Reactions stay within one community (phase 29b).
+    reactions: { mine: null, theirs: null },
     createdAt: m.createdAt,
   };
 }

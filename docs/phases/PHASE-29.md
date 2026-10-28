@@ -1,6 +1,6 @@
 # Phase 29: Account security, "undo", reactions, and the developer's credit (v1.2)
 
-> Status: 29a ✅ done (2026-10-28), 29b 🚧 in progress. Two PRs: 29a (security and credit), 29b (features).
+> Status: ✅ done (2026-10-28). Two PRs: 29a (security and credit), 29b (features).
 > 📘 = verify against official docs, ⚖️ = needs legal review.
 
 ## 29a. Account security
@@ -41,7 +41,8 @@ token could move it to their own account, and the other person would stop receiv
 
 ### Undo a pass
 
-- After passing on someone in Discover, Picks or Friends, **Undo** brings them back. It works for
+- After passing on someone in Discover (dating or friends), **Undo** (right under the buttons)
+  brings them back. Picks is a list, not a deck, so it has nothing to undo. It works for
   the last pass only, for 10 minutes. It's free, like everything else.
 - Likes can't be undone this way: the other person may already have matched or been notified.
 - `POST /v1/interactions/undo` → `{ profile }` (the profile is checked again: still a candidate,
@@ -49,23 +50,24 @@ token could move it to their own account, and the other person would stop receiv
 
 ### Reactions to messages
 
-- Long-press (or the accessible action "React") on a message to react with one of six emoji:
+- A small "React" button under each message (a real button, so it works with a keyboard and a screen
+  reader) opens six choices:
   ❤️ 😂 😮 😢 👍 🔥. Each person can add one reaction per message; tapping it again removes it.
-- The other person sees it live (realtime `chat.reaction`). There's no push notification.
+- Partner-community chats (phase 28c) have no reactions: they stay within one community.
+- The other person sees it live (`message.updated`). There's no push notification.
 - Not on messages hidden by the harm filter, and not after the match ends. Deleted with the message.
-- Accessible: each reaction has a label ("Dana reacted with a heart"), and the picker works with
-  the keyboard and a screen reader.
+- Accessible: each reaction has a spoken label ("Dana reacted with a heart").
 
 ## API
 
-| Method | Path                                  | Who                                    |
-| ------ | ------------------------------------- | -------------------------------------- |
-| GET    | `/v1/me/sessions`                     | signed-in member                       |
-| DELETE | `/v1/me/sessions/:id`                 | the session's owner (other ids: 404)   |
-| POST   | `/v1/me/sessions/sign-out-others`     | signed-in member                       |
-| POST   | `/v1/me/push-tokens`                  | now with `deviceSecret`                |
-| POST   | `/v1/interactions/undo`               | signed-in member                       |
-| PUT    | `/v1/matches/:id/messages/:mid/react` | a member of the match (`emoji` / null) |
+| Method | Path                                     | Who                                    |
+| ------ | ---------------------------------------- | -------------------------------------- |
+| GET    | `/v1/me/sessions`                        | signed-in member                       |
+| DELETE | `/v1/me/sessions/:id`                    | the session's owner (other ids: 404)   |
+| POST   | `/v1/me/sessions/sign-out-others`        | signed-in member                       |
+| POST   | `/v1/me/push-tokens`                     | now with `deviceSecret`                |
+| POST   | `/v1/interactions/undo`                  | signed-in member                       |
+| PUT    | `/v1/matches/:id/messages/:mid/reaction` | a member of the match (`emoji` / null) |
 
 ## Data
 
@@ -73,7 +75,8 @@ token could move it to their own account, and the other person would stop receiv
 - `push_tokens.device_secret_hash` (char 64).
 - `message_reactions` (message, member, emoji, time), unique per message and member, deleted with
   the message or the account.
-- Migration `0037_phase29.sql`.
+- Migrations `0037_account_security.sql` (29a) and `0038_message_reactions.sql` (29b).
+- "Download my data" includes the signed-in devices and my reactions.
 
 ## Security checks
 

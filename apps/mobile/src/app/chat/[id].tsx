@@ -34,6 +34,7 @@ import {
   useConversations,
   useIcebreakers,
   useMessages,
+  useReact,
   useSendImage,
   useSendMessage,
   useSendVoice,
@@ -55,6 +56,7 @@ function ChatScreen() {
   const conversation = conversations.data?.find((c) => c.matchId === matchId);
   const messages = useMessages(matchId);
   const send = useSendMessage(matchId);
+  const react = useReact(matchId);
   const sendImage = useSendImage(matchId);
   const sendVoice = useSendVoice(matchId);
   const [recording, setRecording] = useState(false);
@@ -337,6 +339,8 @@ function ChatScreen() {
             <MessageBubble
               message={item}
               other={conversation ? { id: conversation.profile.id, name } : undefined}
+              onReact={(emoji) => react.mutate({ messageId: item.id, emoji })}
+              reacting={react.isPending && react.variables?.messageId === item.id}
               seen={item.id === lastMineId && otherReadAt !== null && otherReadAt >= item.createdAt}
             />
           )}

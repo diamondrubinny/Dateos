@@ -6,6 +6,7 @@ import {
   discoverQuerySchema,
   interactionInputSchema,
   interactionResultSchema,
+  undoPassResultSchema,
   likeReceivedSchema,
   locationInputSchema,
   matchSummarySchema,
@@ -109,6 +110,12 @@ export const discoveryRoutes: FastifyPluginAsyncZod<{
       config: perUserLimit(60, 60_000),
     },
     async (request) => discovery.interact(currentUser(request).id, request.body),
+  );
+
+  app.post(
+    '/v1/interactions/undo',
+    { schema: { response: { 200: undoPassResultSchema } }, config: perUserLimit(30, 60_000) },
+    async (request) => discovery.undoPass(currentUser(request).id),
   );
 
   app.get(

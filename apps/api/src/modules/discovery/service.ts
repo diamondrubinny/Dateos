@@ -26,6 +26,8 @@ import {
   CLOSED_CARD_DAYS,
   type ClosedConversation,
   YOUR_TURN_LIMIT,
+  UNDO_PASS_MINUTES,
+  type UndoPassResult,
   type MatchMode,
   MAX_SHOWN_TAKES,
   type PublicTake,
@@ -491,6 +493,41 @@ export class DiscoveryService {
       this.appEvents.emit({ type: 'match.created', matchId: result.matchId });
     }
     return result;
+  }
+
+  /**
+   * Undo a pass (phase 29b): only the member's latest decision, only if it was a pass, and only
+   * within UNDO_PASS_MINUTES. Likes can't be undone (the other person may already have matched).
+   * The profile comes back only if it may still be shown (not blocked, still a candidate).
+   */
+  async undoPass(actorId: string): Promise<UndoPassResult> {
+    if (!(await this.isActive(actorId))) {
+      throw new HttpError(403, ErrorCode.Forbidden, 'Your profile is paused.');
+    }
+    const [found] = await this.db
+      .select({
+        row: interactions,
+        fresh: sql<boolean>`${interactions.createdAt} > now() - make_interval(mins => ${UNDO_PASS_MINUTES})`,
+      })
+      .from(interactions)
+      .where(eq(interactions.actorId, actorId))
+      .orderBy(desc(interactions.createdAt))
+      .limit(1);
+    if (!found || found.row.kind !== 'pass' || !found.fresh) throw notFound();
+    const last = found.row;
+    const deleted = await this.db
+      .delete(interactions)
+      .where(and(eq(interactions.id, last.id), eq(interactions.actorId, actorId)))
+      .returning({ id: interactions.id });
+    if (deleted.length === 0) throw notFound(); // undone twice at once
+    // Candidacy depends on there being no decision, so it's checked after the delete; a profile
+    // that may no longer be shown keeps its pass.
+    if (!(await this.canView(actorId, last.targetId))) {
+      await this.db.insert(interactions).values(last).onConflictDoNothing();
+      throw notFound();
+    }
+    const profile = await this.profile(actorId, last.targetId);
+    return { profile, mode: last.mode === 'friend' ? 'friend' : 'date' };
   }
 
   /**

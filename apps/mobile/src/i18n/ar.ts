@@ -973,6 +973,26 @@ export const ar: Translations = {
     open: 'إلى محادثاتي',
     likeBlocked: 'ردّ على من ينتظرونك قبل الإعجاب بشخص جديد.',
   },
+  reactions: {
+    react: 'إضافة تفاعل',
+    mine: 'تفاعلت بـ{{emoji}}',
+    theirs: '{{name}}: تفاعل بـ{{emoji}}',
+    removeHint: 'يزيل تفاعلك',
+    names: {
+      heart: 'قلب',
+      laugh: 'ضحك',
+      wow: 'دهشة',
+      sad: 'حزن',
+      thumbsUp: 'إعجاب',
+      fire: 'نار',
+    },
+  },
+  undo: {
+    passed: 'تخطّيت {{name}}.',
+    button: 'تراجع',
+    hint: 'يعرض {{name}} مرة أخرى',
+    tooLate: 'لم يعد من الممكن التراجع.',
+  },
   devices: {
     title: 'أجهزتك',
     intro:

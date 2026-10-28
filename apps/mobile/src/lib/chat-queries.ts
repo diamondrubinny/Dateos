@@ -1,7 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
-import type { Conversation, MessagesPage, MessageView, Transcript } from '@nexaheart/shared';
+import type {
+  Conversation,
+  MessagesPage,
+  MessageView,
+  ReactionEmoji,
+  Transcript,
+} from '@nexaheart/shared';
 import {
   useInfiniteQuery,
   useMutation,
@@ -53,6 +59,23 @@ export function useSendMessage(matchId: string) {
         upsertMessage(d, message),
       );
       void client.invalidateQueries({ queryKey: chatKeys.conversations });
+    },
+  });
+}
+
+/** React to a message, or remove my reaction with null (phase 29b). */
+export function useReact(matchId: string) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: ({ messageId, emoji }: { messageId: string; emoji: ReactionEmoji | null }) =>
+      apiFetch<MessageView>(
+        `/v1/matches/${matchId}/messages/${encodeURIComponent(messageId)}/reaction`,
+        { method: 'PUT', body: json({ emoji }) },
+      ),
+    onSuccess: (message) => {
+      client.setQueryData<InfiniteData<MessagesPage>>(chatKeys.messages(matchId), (d) =>
+        upsertMessage(d, message),
+      );
     },
   });
 }

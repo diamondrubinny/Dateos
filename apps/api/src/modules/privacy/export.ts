@@ -338,6 +338,16 @@ export async function exportMemberData(
     })
     .from(t.pushTokens)
     .where(eq(t.pushTokens.userId, userId));
+  // My reactions to messages (phase 29b).
+  const reactions = await db
+    .select({
+      messageId: t.messageReactions.messageId,
+      emoji: t.messageReactions.emoji,
+      createdAt: t.messageReactions.createdAt,
+    })
+    .from(t.messageReactions)
+    .where(eq(t.messageReactions.userId, userId))
+    .orderBy(asc(t.messageReactions.createdAt));
   // "Your devices" (phase 29): only the coarse label and dates are stored.
   const sessions = await db
     .select({
@@ -559,6 +569,7 @@ export async function exportMemberData(
       signedInAt: iso(d.createdAt),
       lastActiveAt: iso(d.updatedAt),
     })),
+    reactions: reactions.map((r) => ({ ...r, createdAt: iso(r.createdAt) })),
   };
   files['data.json'] = strToU8(JSON.stringify(data, null, 2));
   files['README.txt'] = strToU8(

@@ -2,6 +2,7 @@
 // Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 import { router } from 'expo-router';
+import type { PublicProfile } from '@nexaheart/shared';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
@@ -12,6 +13,7 @@ import { Banner } from './Banner';
 import { Button } from './Button';
 import { DecisionPanel, type DecisionResult } from './DecisionPanel';
 import { Loading } from './Loading';
+import { UndoPass } from './UndoPass';
 
 /** Friends mode (phase 22): its own deck, only people who turned it on too. */
 export function FriendsDeck() {
@@ -22,6 +24,9 @@ export function FriendsDeck() {
   const deck = useFriendsDiscover(on);
   const [index, setIndex] = useState(0);
   const [matched, setMatched] = useState<string>();
+  // Undo a pass (phase 29b).
+  const [passed, setPassed] = useState<string>();
+  const [restored, setRestored] = useState<PublicProfile>();
 
   useEffect(() => setIndex(0), [deck.dataUpdatedAt]);
 
@@ -39,9 +44,11 @@ export function FriendsDeck() {
   }
   if (deck.isPending) return <Loading />;
   const people = deck.data ?? [];
-  const current = people[index];
+  const current = restored ?? people[index];
   const onDecided = (result: DecisionResult) => {
     if (result.matched && current) setMatched(current.displayName);
+    setPassed(result.kind === 'pass' ? current?.displayName : undefined);
+    if (restored) return setRestored(undefined);
     if (index + 1 >= people.length) void deck.refetch();
     else setIndex(index + 1);
   };
@@ -66,6 +73,17 @@ export function FriendsDeck() {
           />
         </View>
       )}
+      {passed && !restored ? (
+        <UndoPass
+          key={passed}
+          name={passed}
+          onRestored={(profile) => {
+            setRestored(profile);
+            setPassed(undefined);
+          }}
+          onGone={() => setPassed(undefined)}
+        />
+      ) : null}
     </View>
   );
 }
