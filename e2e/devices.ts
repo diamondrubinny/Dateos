@@ -106,6 +106,21 @@ try {
     await page.reload();
     await card.waitFor();
     check(page.url().includes('/settings'), 'this browser is still signed in');
+
+    // Account activity (phase 31): the sign-ins and "signed out everywhere else" are listed.
+    const activity = page.getByTestId('account-activity');
+    await activity.scrollIntoViewIfNeeded();
+    await activity
+      .getByText(t.activity.signedOutOthers.replace('{{count}}', '1'))
+      .waitFor({ timeout: 10_000 });
+    check(true, 'account activity shows "signed out everywhere else"');
+    const signIn = t.activity.signedIn.replace(
+      '{{device}}',
+      t.devices.web.replace('{{browser}}', 'Chrome').replace('{{os}}', 'Windows'),
+    );
+    check((await activity.getByText(signIn).count()) >= 1, `account activity shows "${signIn}"`);
+    await audit(page, `${locale}/account-activity`);
+    await shot(page, `${locale}/101-account-activity`);
     await context.close();
   }
 } finally {

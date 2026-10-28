@@ -68,7 +68,8 @@ export function pushContent(kind: PushJob['kind'], locale: string, instanceName:
   return { title: instanceName, body: texts[lang][kind === 'partner_message' ? 'message' : kind] };
 }
 
-export type PushResult = 'disabled' | 'inactive' | 'online' | 'throttled' | 'no-devices' | 'sent';
+export type PushResult =
+  'disabled' | 'inactive' | 'online' | 'muted' | 'throttled' | 'no-devices' | 'sent';
 
 export async function sendPush(ctx: PushContext, job: PushJob): Promise<PushResult> {
   if (ctx.provider === 'disabled') return 'disabled';
@@ -96,6 +97,12 @@ export async function sendPush(ctx: PushContext, job: PushJob): Promise<PushResu
         AND NOT EXISTS (SELECT 1 FROM blocks bl WHERE (bl.blocker_id = m.user_a AND bl.blocked_id = m.user_b) OR (bl.blocker_id = m.user_b AND bl.blocked_id = m.user_a))
     ) AS ok`);
   if (!active.rows[0]?.ok) return 'inactive';
+  // A chat the member muted (phase 31): no message pushes. Calls and safety alerts aren't muted.
+  if (job.kind === 'message') {
+    const muted = await ctx.db.execute(sql`
+      SELECT 1 FROM match_prefs WHERE match_id = ${job.matchId} AND user_id = ${job.userId} AND muted`);
+    if (muted.rows.length > 0) return 'muted';
+  }
   // Someone with the app open sees the message live; no need to buzz their phone.
   if (await ctx.redis.exists(`nexaheart:presence:${job.userId}`)) return 'online';
   return sendToDevices(ctx, job);

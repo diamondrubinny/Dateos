@@ -15,6 +15,7 @@ import {
   messagesPageSchema,
   messagesQuerySchema,
   messageViewSchema,
+  matchPrefsInputSchema,
   reactInputSchema,
   sendMessageSchema,
   transcriptSchema,
@@ -102,6 +103,20 @@ export const chatRoutes: FastifyPluginAsyncZod<ChatRouteOptions> = async (
         request.body.clientId,
         request.body.replyToId,
       ),
+  );
+
+  // Mute or archive a chat, privately (phase 31).
+  app.put(
+    '/v1/matches/:id/prefs',
+    {
+      schema: {
+        params: matchParams,
+        body: matchPrefsInputSchema,
+        response: { 200: z.object({ muted: z.boolean(), archived: z.boolean() }) },
+      },
+      config: perUserLimit(60, 60_000),
+    },
+    async (request) => chat.setPrefs(request.params.id, currentUser(request).id, request.body),
   );
 
   // Unsend my own message (phase 30).

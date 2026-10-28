@@ -12,6 +12,7 @@ import { magicLink } from 'better-auth/plugins/magic-link';
 import type { Redis } from 'ioredis';
 import { appUrl, type Env } from '../config/env.js';
 import { createEmailHasher, isBanned } from '../lib/banned.js';
+import { audit } from '../lib/audit.js';
 import { deviceLabel } from '../lib/device-label.js';
 import { magicLinkEmail, type Mailer } from '../lib/mailer.js';
 import type { TrustService } from '../modules/trust/service.js';
@@ -126,7 +127,18 @@ export function createAuth({ env, secret, db, redis, mailer, onMailError, signup
           before: async (s) => ({
             data: { ...s, deviceLabel: deviceLabel(s.userAgent), ipAddress: null, userAgent: null },
           }),
-          after: async (s) => touchLastSeen(s.userId),
+          after: async (s) => {
+            await touchLastSeen(s.userId);
+            // Account activity (phase 31): the sign-in, with the coarse device code only.
+            const device = (s as typeof s & { deviceLabel?: string | null }).deviceLabel;
+            await audit(db, {
+              actorId: s.userId,
+              action: 'session.created',
+              targetType: 'user',
+              targetId: s.userId,
+              ...(device ? { meta: { device } } : {}),
+            });
+          },
         },
         update: { after: async (s) => (s.userId ? touchLastSeen(s.userId) : undefined) },
       },

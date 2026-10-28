@@ -19,6 +19,7 @@ import {
 import { AppText } from './AppText';
 import { Banner } from './Banner';
 import { Button } from './Button';
+import { AccountActivity } from './AccountActivity';
 import { SignedInDevices } from './SignedInDevices';
 
 /**
@@ -93,6 +94,7 @@ export function SecuritySettings() {
       ) : null}
 
       <SignedInDevices />
+      <AccountActivity />
 
       <Button
         variant="secondary"

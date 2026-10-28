@@ -63,6 +63,23 @@ export function useSendMessage(matchId: string) {
   });
 }
 
+/** Mute or archive a chat, privately (phase 31). */
+export function useChatPrefs(matchId: string) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { muted?: boolean; archived?: boolean }) =>
+      apiFetch<{ muted: boolean; archived: boolean }>(
+        `/v1/matches/${encodeURIComponent(matchId)}/prefs`,
+        { method: 'PUT', body: json(input) },
+      ),
+    onSuccess: (prefs) => {
+      client.setQueryData<Conversation[]>(chatKeys.conversations, (list) =>
+        list?.map((c) => (c.matchId === matchId ? { ...c, ...prefs } : c)),
+      );
+    },
+  });
+}
+
 /** Unsend my own message (phase 30): both people see "Message unsent". */
 export function useUnsend(matchId: string) {
   const client = useQueryClient();

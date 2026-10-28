@@ -588,6 +588,22 @@ export const messageReactions = pgTable(
   (t) => [primaryKey({ columns: [t.messageId, t.userId] })],
 );
 
+/** Per-member chat preferences (phase 31): private, never shown to the other person. */
+export const matchPrefs = pgTable(
+  'match_prefs',
+  {
+    matchId: uuid('match_id')
+      .notNull()
+      .references(() => matches.id, { onDelete: 'cascade' }),
+    userId: ownerId(),
+    /** No push notifications for new messages (calls and safety alerts still come). */
+    muted: boolean('muted').notNull().default(false),
+    /** In the "Archived" section; a new message from the other person brings it back. */
+    archived: boolean('archived').notNull().default(false),
+  },
+  (t) => [primaryKey({ columns: [t.matchId, t.userId] })],
+);
+
 export const matchReads = pgTable(
   'match_reads',
   {

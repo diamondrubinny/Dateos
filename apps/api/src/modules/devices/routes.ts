@@ -2,8 +2,14 @@
 // Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 import { schema, type Database } from '@nexaheart/db';
-import { ErrorCode, signedInDevicesSchema } from '@nexaheart/shared';
-import { and, desc, eq, gt, ne } from 'drizzle-orm';
+import {
+  ACCOUNT_ACTIVITY_DAYS,
+  accountActivitySchema,
+  ErrorCode,
+  signedInDevicesSchema,
+  type AccountActivity,
+} from '@nexaheart/shared';
+import { and, desc, eq, gt, inArray, ne } from 'drizzle-orm';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import type { Auth } from '../../auth/auth.js';
@@ -13,7 +19,15 @@ import { parseDeviceLabel } from '../../lib/device-label.js';
 import { HttpError } from '../../plugins/error-handler.js';
 import { perUserLimit } from '../../plugins/security.js';
 
-const { session } = schema;
+const { auditLogs, session } = schema;
+
+/** Phase 31: which audit actions a member sees as their own account activity. */
+const ACTIVITY: Record<string, AccountActivity['events'][number]['kind']> = {
+  'session.created': 'signed_in',
+  'session.revoked': 'device_signed_out',
+  'session.revoked_others': 'signed_out_others',
+  'account.exported': 'data_downloaded',
+};
 const ok = z.object({ ok: z.literal(true) });
 const limit = perUserLimit(30, 60 * 1000);
 
@@ -51,6 +65,43 @@ export const deviceRoutes: FastifyPluginAsyncZod<{
           lastActiveAt: row.updatedAt.toISOString(),
           current: row.id === me.sessionId,
         })),
+      };
+    },
+  );
+
+  // Account activity (phase 31): my own security events, from a fixed list of actions.
+  app.get(
+    '/v1/me/activity',
+    { schema: { response: { 200: accountActivitySchema } }, config: limit },
+    async (request) => {
+      const me = currentUser(request);
+      const rows = await db
+        .select({ action: auditLogs.action, meta: auditLogs.meta, at: auditLogs.createdAt })
+        .from(auditLogs)
+        .where(
+          and(
+            eq(auditLogs.actorId, me.id),
+            inArray(auditLogs.action, Object.keys(ACTIVITY)),
+            gt(auditLogs.createdAt, new Date(now() - ACCOUNT_ACTIVITY_DAYS * 86_400_000)),
+          ),
+        )
+        .orderBy(desc(auditLogs.createdAt))
+        .limit(50);
+      return {
+        events: rows.map((row) => {
+          const meta = (row.meta ?? {}) as Record<string, unknown>;
+          return {
+            kind: ACTIVITY[row.action]!,
+            at: row.at.toISOString(),
+            device:
+              row.action === 'session.created' && typeof meta.device === 'string'
+                ? parseDeviceLabel(meta.device)
+                : row.action === 'session.created'
+                  ? parseDeviceLabel(null)
+                  : null,
+            count: typeof meta.count === 'number' ? meta.count : null,
+          };
+        }),
       };
     },
   );

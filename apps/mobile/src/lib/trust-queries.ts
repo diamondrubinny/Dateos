@@ -9,6 +9,7 @@ import {
   type JoinWaitlistInput,
   type RedeemInviteInput,
   type SignedInDevice,
+  type AccountActivity,
 } from '@nexaheart/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as Crypto from 'expo-crypto';
@@ -160,12 +161,23 @@ export function useSignedInDevices() {
   });
 }
 
+/** Account activity (phase 31). */
+export function useAccountActivity() {
+  return useQuery({
+    queryKey: ['account-activity'],
+    queryFn: async () => (await apiFetch<AccountActivity>('/v1/me/activity')).events,
+  });
+}
+
 export function useSignOutDevice() {
   const client = useQueryClient();
   return useMutation({
     mutationFn: (id: string) =>
       apiFetch<{ ok: true }>(`/v1/me/sessions/${encodeURIComponent(id)}`, { method: 'DELETE' }),
-    onSuccess: () => client.invalidateQueries({ queryKey: devicesKey }),
+    onSuccess: async () => {
+      await client.invalidateQueries({ queryKey: devicesKey });
+      await client.invalidateQueries({ queryKey: ['account-activity'] });
+    },
   });
 }
 
@@ -176,6 +188,9 @@ export function useSignOutOthers() {
       apiFetch<{ ok: true; signedOut: number }>('/v1/me/sessions/sign-out-others', {
         method: 'POST',
       }),
-    onSuccess: () => client.invalidateQueries({ queryKey: devicesKey }),
+    onSuccess: async () => {
+      await client.invalidateQueries({ queryKey: devicesKey });
+      await client.invalidateQueries({ queryKey: ['account-activity'] });
+    },
   });
 }

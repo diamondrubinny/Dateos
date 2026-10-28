@@ -6,6 +6,11 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Added
 
+- **Account activity** (Settings → Security): your sign-ins (with a coarse device name), devices
+  signed out and data downloads of the last 90 days. Only you see it; staff don't, and it's
+  deleted with the account.
+- **Mute and archive a chat**: no message notifications from a muted chat (calls still ring);
+  archived chats move to their own section until a new message brings them back. Private.
 - **Unsend a message** (within 15 minutes): both people see "Message unsent". For safety, the
   content is kept 30 days only for moderation: a report from the other person adds it as evidence
   automatically. Then it's deleted.
