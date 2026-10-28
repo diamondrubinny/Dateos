@@ -44,7 +44,8 @@
     "chat-control": "tsx chat-control.ts",
     "later-notify": "tsx later-notify.ts",
     "anti-bot": "tsx anti-bot.ts",
-    "blocks": "tsx blocks.ts"
+    "blocks": "tsx blocks.ts",
+    "overview": "tsx overview.ts"
   },
   "dependencies": {
     "@axe-core/playwright": "4.14.0",

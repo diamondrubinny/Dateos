@@ -658,6 +658,8 @@ export const ar: Translations = {
     invalidAge: 'يجب أن تكون الأعمار بين 18 و100، ولا يمكن أن يتجاوز الحد الأدنى الحد الأقصى.',
   },
   chat: {
+    newAccountLimit:
+      'يمكن للحسابات الجديدة بدء {{count}} محادثات يوميًا. لا حدّ للردود في محادثاتك.',
     answerQuestion: '{{name}} يسأل:',
     answerQuestionHint: 'يبدأ رسالتك بسؤاله',
     title: 'دردشة مع {{name}}',

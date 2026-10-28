@@ -1,7 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
-import { MESSAGES_BEFORE_IMAGES, REPLY_PREVIEW_LENGTH, type MessageView } from '@nexaheart/shared';
+import {
+  MESSAGES_BEFORE_IMAGES,
+  NEW_ACCOUNT_CHAT_STARTS,
+  REPLY_PREVIEW_LENGTH,
+  type MessageView,
+} from '@nexaheart/shared';
 import * as ImagePicker from 'expo-image-picker';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useRef, useState, type ComponentRef } from 'react';
@@ -137,7 +142,10 @@ function ChatScreen() {
       setConfirming(undefined);
     } catch (e) {
       if (e instanceof ApiRequestError && e.status === 404) setClosed(true);
-      else setError(t('chat.failed'));
+      // A gentle start (phase 36): a brand-new account starting many chats.
+      else if (e instanceof ApiRequestError && e.code === 'SLOW_DOWN') {
+        setError(t('chat.newAccountLimit', { count: NEW_ACCOUNT_CHAT_STARTS }));
+      } else setError(t('chat.failed'));
     }
   };
 

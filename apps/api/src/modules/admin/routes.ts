@@ -13,6 +13,7 @@ import {
   mfaSetupSchema,
   reportDetailSchema,
   reportSummarySchema,
+  safetyOverviewSchema,
   resolveReportSchema,
   staffMeSchema,
   totpCodeSchema,
@@ -142,6 +143,11 @@ export const adminRoutes: FastifyPluginAsyncZod<{
       await mfa.verify(currentUser(request), request.body.code);
       return { ok: true as const };
     },
+  );
+
+  // Overview (phase 36): counts only, for every staff member.
+  app.get('/v1/admin/overview', { schema: { response: { 200: safetyOverviewSchema } } }, async () =>
+    moderation.overview(),
   );
 
   app.get(

@@ -17,6 +17,11 @@ export const MAX_VOICE_SECONDS = 60;
 export const MAX_AUDIO_BYTES = 2 * 1024 * 1024;
 /** Messages in unmatched chats are purged after this many days. */
 export const UNMATCHED_CHAT_RETENTION_DAYS = 30;
+/**
+ * A gentle start (phase 36): an account less than a day old can start (send the first message in)
+ * this many conversations in 24 hours. Replies and later messages are never limited.
+ */
+export const NEW_ACCOUNT_CHAT_STARTS = 10;
 
 export const harmCategories = ['insult', 'sexual', 'threat'] as const;
 export const scamSignals = ['money', 'crypto', 'gift_card', 'off_platform', 'link'] as const;

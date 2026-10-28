@@ -6,6 +6,11 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Added
 
+- **Dashboard → Overview** (moderators and admins): the open queue by priority and category, the
+  oldest open report, the last 7 days (reports from members and automatic ones by reason, resolved,
+  median time to resolve, new accounts, suspensions) and verifications waiting. Counts only.
+- **A gentle start for new accounts**: an account under a day old can start 10 conversations a day
+  (replies are never limited), so a fresh spam account can't message everyone at once.
 - **Blocked people** (Settings → Security): who you blocked, by name only, with Unblock after a
   confirmation. They're never told; a match the block ended stays ended.
 - **Profile strength** on the Profile tab: what's left to add (photos, bio, prompts, interests,

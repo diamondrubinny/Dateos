@@ -655,6 +655,8 @@ export const he: Translations = {
     invalidAge: 'הגיל צריך להיות בין 18 ל-100, והמינימום לא יכול להיות גבוה מהמקסימום.',
   },
   chat: {
+    newAccountLimit:
+      'חשבונות חדשים יכולים לפתוח {{count}} שיחות ביום. אין הגבלה על תשובות בשיחות קיימות.',
     answerQuestion: 'השאלה של {{name}}:',
     answerQuestionHint: 'פותח את ההודעה שלך בשאלה ששאלו',
     title: 'צ׳אט עם {{name}}',

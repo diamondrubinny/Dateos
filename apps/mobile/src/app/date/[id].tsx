@@ -6,6 +6,7 @@ import {
   MAX_DATE_NOTE_LENGTH,
   STEP_FREE_NEEDS,
   type VenueCategory,
+  NEW_ACCOUNT_CHAT_STARTS,
 } from '@nexaheart/shared';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
@@ -108,13 +109,15 @@ function PlanDateScreen() {
         onSuccess: () => router.back(),
         onError: (e) =>
           setError(
-            e instanceof ApiRequestError && e.status === 409
-              ? t('datePlan.alreadyOpen')
-              : e instanceof ApiRequestError && e.status === 422 && note.trim()
-                ? t('datePlan.kinder')
-                : e instanceof ApiRequestError && e.status === 404
-                  ? t('datePlan.placeGone')
-                  : t('common.genericError'),
+            e instanceof ApiRequestError && e.code === 'SLOW_DOWN'
+              ? t('chat.newAccountLimit', { count: NEW_ACCOUNT_CHAT_STARTS })
+              : e instanceof ApiRequestError && e.status === 409
+                ? t('datePlan.alreadyOpen')
+                : e instanceof ApiRequestError && e.status === 422 && note.trim()
+                  ? t('datePlan.kinder')
+                  : e instanceof ApiRequestError && e.status === 404
+                    ? t('datePlan.placeGone')
+                    : t('common.genericError'),
           ),
       },
     );

@@ -226,3 +226,29 @@ export const VERIFICATION_RECORD_RETENTION_DAYS = 730;
 export const AUDIT_LOG_RETENTION_DAYS = 730;
 /** Warning period before an inactive account is deleted (when the operator enables it). */
 export const INACTIVITY_NOTICE_DAYS = 30;
+
+/**
+ * Dashboard → Overview (phase 36): counts only, no names or ids. Hours are whole hours; medians and
+ * ages are null when there is nothing to measure.
+ */
+export const OVERVIEW_DAYS = 7;
+export const safetyOverviewSchema = z.object({
+  open: z.object({
+    total: z.number().int(),
+    byPriority: z.record(z.enum(reportPriorities), z.number().int()),
+    byCategory: z.record(z.string(), z.number().int()),
+    oldestHours: z.number().int().nullable(),
+  }),
+  recent: z.object({
+    days: z.number().int(),
+    fromMembers: z.number().int(),
+    automatic: z.number().int(),
+    automaticByReason: z.record(z.string(), z.number().int()),
+    resolved: z.number().int(),
+    medianResolveHours: z.number().int().nullable(),
+    newAccounts: z.number().int(),
+    suspensions: z.number().int(),
+  }),
+  verificationsWaiting: z.number().int(),
+});
+export type SafetyOverview = z.infer<typeof safetyOverviewSchema>;

@@ -18,6 +18,8 @@ import type { AuthUser } from '../../auth/session.js';
 import type { DiscoveryService } from '../discovery/service.js';
 import type { AppEvents } from '../../lib/app-events.js';
 import { noEvents } from '../../lib/app-events.js';
+import { safetyOverview } from './overview.js';
+import type { SafetyOverview } from '@nexaheart/shared';
 
 const {
   reports,
@@ -45,6 +47,11 @@ export class ModerationService {
     private readonly hashEmail: EmailHasher,
     private readonly today: () => string,
   ) {}
+
+  /** Dashboard → Overview (phase 36): counts only. */
+  overview(): Promise<SafetyOverview> {
+    return safetyOverview(this.db);
+  }
 
   /** Integrations listen here (phase 24). */
   appEvents: AppEvents = noEvents;

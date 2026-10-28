@@ -669,6 +669,8 @@ export const en = {
     invalidAge: 'Ages must be 18–100, and the minimum can’t be above the maximum.',
   },
   chat: {
+    newAccountLimit:
+      'New accounts can start {{count}} conversations a day. Replies in your chats aren’t limited.',
     answerQuestion: '{{name}} asks:',
     answerQuestionHint: 'Starts your message with their question',
     title: 'Chat with {{name}}',
