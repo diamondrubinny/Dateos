@@ -178,6 +178,7 @@ export class ModerationService {
         body: e.body,
         durationMs: e.durationMs,
         flags: e.flags,
+        unsent: e.unsent,
         sentAt: e.sentAt.toISOString(),
       })),
       resolution:

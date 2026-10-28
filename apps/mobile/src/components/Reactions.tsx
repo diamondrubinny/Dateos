@@ -22,7 +22,7 @@ export function canReact(message: MessageView): boolean {
 }
 
 /**
- * Reactions under a message (phase 29b): what each of us chose, and a small button that opens
+ * Reactions under a message (phase 29b), and the message's other actions (phase 30): what each of us chose, and a small button that opens
  * the six choices. Everything is a real button with a spoken name, so it works with a keyboard
  * and a screen reader, not only with a long press.
  */
@@ -30,11 +30,16 @@ export function Reactions({
   message,
   otherName,
   onReact,
+  onReply,
+  onUnsend,
   busy,
 }: {
   message: MessageView;
   otherName: string;
   onReact: (emoji: ReactionEmoji | null) => void;
+  /** Phase 30: the same menu also replies and, for my recent messages, unsends. */
+  onReply?: () => void;
+  onUnsend?: () => void;
   busy?: boolean;
 }) {
   const { t } = useTranslation();
@@ -71,7 +76,7 @@ export function Reactions({
       ) : null}
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={t('reactions.react')}
+        accessibilityLabel={t('chatControl.actions')}
         accessibilityState={{ expanded: open }}
         onPress={() => setOpen(!open)}
         hitSlop={8}
@@ -106,6 +111,36 @@ export function Reactions({
               <AppText variant="heading">{emoji}</AppText>
             </Pressable>
           ))}
+          {onReply ? (
+            <Pressable
+              accessibilityRole="menuitem"
+              onPress={() => {
+                setOpen(false);
+                onReply();
+              }}
+              style={styles.action}
+            >
+              <AppText variant="label" tone="primary">
+                ↩ {t('chatControl.reply')}
+              </AppText>
+            </Pressable>
+          ) : null}
+          {onUnsend ? (
+            <Pressable
+              accessibilityRole="menuitem"
+              accessibilityHint={t('chatControl.unsendHint')}
+              disabled={busy}
+              onPress={() => {
+                setOpen(false);
+                onUnsend();
+              }}
+              style={styles.action}
+            >
+              <AppText variant="label" tone="danger">
+                {t('chatControl.unsend')}
+              </AppText>
+            </Pressable>
+          ) : null}
         </View>
       ) : null}
     </View>
@@ -140,6 +175,12 @@ const styles = StyleSheet.create({
     padding: spacing.xs,
     borderRadius: radius.pill,
     borderWidth: 1,
+  },
+  action: {
+    minHeight: 44,
+    justifyContent: 'center',
+    paddingHorizontal: spacing.sm,
+    borderRadius: radius.pill,
   },
   choice: {
     minWidth: 44,

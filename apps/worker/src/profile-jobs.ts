@@ -7,6 +7,7 @@ import {
   MODERATION_LOG_RETENTION_DAYS,
   RESOLVED_REPORT_RETENTION_DAYS,
   UNMATCHED_CHAT_RETENTION_DAYS,
+  UNSENT_KEEP_DAYS,
   VERIFICATION_RECORD_RETENTION_DAYS,
   type EmbedProfileJob,
 } from '@nexaheart/shared';
@@ -57,6 +58,60 @@ export async function cleanupDiscovery(
     sql`DELETE FROM daily_picks WHERE served_on < current_date - ${days}`,
   );
   return { impressions: impressions.rowCount ?? 0, picks: picks.rowCount ?? 0 };
+}
+
+/**
+ * Unsent messages (phase 30) keep their content UNSENT_KEEP_DAYS for moderation only (a report
+ * copies what it needs as evidence); after that the text, photo and recording are deleted. The row
+ * stays, so both people still see "Message unsent" in its place.
+ */
+export async function purgeUnsent(
+  db: Database,
+  storage: Storage,
+): Promise<{ unsentPurged: number }> {
+  const days = sql.raw(String(UNSENT_KEEP_DAYS));
+  const old = sql`m.unsent_at < now() - interval '${days} days'`;
+  const images = await db.execute<{
+    id: string;
+    media_key: string | null;
+    quarantine_key: string | null;
+  }>(sql`
+    SELECT p.id, p.media_key, p.quarantine_key FROM photos p JOIN messages m ON m.photo_id = p.id
+    WHERE p.purpose = 'chat' AND ${old}`);
+  const clips = await db.execute<{
+    id: string;
+    media_key: string | null;
+    opus_key: string | null;
+    quarantine_key: string | null;
+  }>(sql`
+    SELECT a.id, a.media_key, a.opus_key, a.quarantine_key FROM audio_clips a
+    JOIN messages m ON m.audio_id = a.id WHERE ${old}`);
+  const keys = <T extends Record<string, string | null>>(rows: T[], field: keyof T) =>
+    rows.flatMap((r) => (r[field] ? [r[field] as string] : []));
+  await storage.delete(storage.buckets.media, [
+    ...keys(images.rows, 'media_key'),
+    ...keys(clips.rows, 'media_key'),
+    ...keys(clips.rows, 'opus_key'),
+  ]);
+  await storage.delete(storage.buckets.quarantine, [
+    ...keys(images.rows, 'quarantine_key'),
+    ...keys(clips.rows, 'quarantine_key'),
+  ]);
+  const purged = await db.execute(sql`
+    UPDATE messages m SET body = NULL, photo_id = NULL, audio_id = NULL
+    WHERE ${old} AND (m.body IS NOT NULL OR m.photo_id IS NOT NULL OR m.audio_id IS NOT NULL)`);
+  for (const [table, rows] of [
+    ['photos', images.rows],
+    ['audio_clips', clips.rows],
+  ] as const) {
+    if (rows.length === 0) continue;
+    const ids = sql.join(
+      rows.map((r) => sql`${r.id}::uuid`),
+      sql`, `,
+    );
+    await db.execute(sql`DELETE FROM ${sql.raw(table)} WHERE id IN (${ids})`);
+  }
+  return { unsentPurged: purged.rowCount ?? 0 };
 }
 
 /**

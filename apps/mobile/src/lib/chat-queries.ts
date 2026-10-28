@@ -49,10 +49,27 @@ export function newClientId(): string {
 export function useSendMessage(matchId: string) {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (input: { text: string; clientId: string }) =>
+    mutationFn: (input: { text: string; clientId: string; replyToId?: string }) =>
       apiFetch<MessageView>(`/v1/matches/${matchId}/messages`, {
         method: 'POST',
         body: json(input),
+      }),
+    onSuccess: (message) => {
+      client.setQueryData<InfiniteData<MessagesPage>>(chatKeys.messages(matchId), (d) =>
+        upsertMessage(d, message),
+      );
+      void client.invalidateQueries({ queryKey: chatKeys.conversations });
+    },
+  });
+}
+
+/** Unsend my own message (phase 30): both people see "Message unsent". */
+export function useUnsend(matchId: string) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (messageId: string) =>
+      apiFetch<MessageView>(`/v1/matches/${matchId}/messages/${encodeURIComponent(messageId)}`, {
+        method: 'DELETE',
       }),
     onSuccess: (message) => {
       client.setQueryData<InfiniteData<MessagesPage>>(chatKeys.messages(matchId), (d) =>
@@ -168,6 +185,7 @@ export function useChatSettings() {
         acceptVoice: boolean;
         acceptCalls: boolean;
         allowTranscripts: boolean;
+        readReceipts: boolean;
         pushDevices: number;
       }>('/v1/me/settings'),
   });
@@ -188,6 +206,16 @@ export function useSetAllowTranscripts() {
   return useMutation({
     mutationFn: (allowTranscripts: boolean) =>
       apiFetch('/v1/me/settings', { method: 'PUT', body: json({ allowTranscripts }) }),
+    onSuccess: () => client.invalidateQueries({ queryKey: settingsKey }),
+  });
+}
+
+/** Read receipts, both ways (phase 30). */
+export function useSetReadReceipts() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (readReceipts: boolean) =>
+      apiFetch('/v1/me/settings', { method: 'PUT', body: json({ readReceipts }) }),
     onSuccess: () => client.invalidateQueries({ queryKey: settingsKey }),
   });
 }

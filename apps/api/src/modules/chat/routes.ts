@@ -100,7 +100,22 @@ export const chatRoutes: FastifyPluginAsyncZod<ChatRouteOptions> = async (
         currentUser(request).id,
         request.body.text,
         request.body.clientId,
+        request.body.replyToId,
       ),
+  );
+
+  // Unsend my own message (phase 30).
+  app.delete(
+    '/v1/matches/:id/messages/:messageId',
+    {
+      schema: {
+        params: matchParams.extend({ messageId: z.uuid() }),
+        response: { 200: messageViewSchema },
+      },
+      config: perUserLimit(30, 60_000),
+    },
+    async (request) =>
+      chat.unsend(request.params.id, request.params.messageId, currentUser(request).id),
   );
 
   // Reactions (phase 29b): set or remove mine.

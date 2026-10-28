@@ -134,6 +134,12 @@ export function ReportDetail({ id, staff }: { id: string; staff: StaffMe }) {
                       {m.from === 'reported' ? t.detail.fromReported : t.detail.fromReporter}
                     </strong>{' '}
                     <time dateTime={m.sentAt}>{formatDate(m.sentAt, locale)}</time>
+                    {m.unsent ? (
+                      <>
+                        {' '}
+                        <Badge tone="normal">{t.detail.unsent}</Badge>
+                      </>
+                    ) : null}
                     {m.flags.length > 0 ? (
                       <>
                         {' '}

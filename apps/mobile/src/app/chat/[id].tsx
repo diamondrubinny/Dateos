@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
-import { MESSAGES_BEFORE_IMAGES, type MessageView } from '@nexaheart/shared';
+import { MESSAGES_BEFORE_IMAGES, REPLY_PREVIEW_LENGTH, type MessageView } from '@nexaheart/shared';
 import * as ImagePicker from 'expo-image-picker';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type ComponentRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   FlatList,
@@ -22,6 +22,7 @@ import { Button } from '../../components/Button';
 import { Loading } from '../../components/Loading';
 import { FreeTimes } from '../../components/FreeTimes';
 import { MessageBubble } from '../../components/MessageBubble';
+import { ReplyQuote } from '../../components/ReplyQuote';
 import { RemoteImage } from '../../components/RemoteImage';
 import { RequireSession } from '../../components/RequireSession';
 import { VoiceRecorder, type Recording } from '../../components/VoiceRecorder';
@@ -35,6 +36,7 @@ import {
   useIcebreakers,
   useMessages,
   useReact,
+  useUnsend,
   useSendImage,
   useSendMessage,
   useSendVoice,
@@ -57,6 +59,9 @@ function ChatScreen() {
   const messages = useMessages(matchId);
   const send = useSendMessage(matchId);
   const react = useReact(matchId);
+  const unsend = useUnsend(matchId);
+  // Phase 30: the message being replied to.
+  const [replyingTo, setReplyingTo] = useState<MessageView>();
   const sendImage = useSendImage(matchId);
   const sendVoice = useSendVoice(matchId);
   const [recording, setRecording] = useState(false);
@@ -70,6 +75,7 @@ function ChatScreen() {
   const [typing, setTyping] = useState(false);
   const [closed, setClosed] = useState(false);
   const lastTyping = useRef(0);
+  const inputRef = useRef<ComponentRef<typeof TextInput>>(null);
 
   const all: MessageView[] = useMemo(
     () => (messages.data ? [...messages.data.pages].reverse().flatMap((p) => p.messages) : []),
@@ -116,8 +122,13 @@ function ChatScreen() {
   const deliver = async (body: string, clientId: string) => {
     setError(undefined);
     try {
-      await send.mutateAsync({ text: body, clientId });
+      await send.mutateAsync({
+        text: body,
+        clientId,
+        ...(replyingTo ? { replyToId: replyingTo.id } : {}),
+      });
       setText('');
+      setReplyingTo(undefined);
       setConfirming(undefined);
     } catch (e) {
       if (e instanceof ApiRequestError && e.status === 404) setClosed(true);
@@ -340,6 +351,13 @@ function ChatScreen() {
               message={item}
               other={conversation ? { id: conversation.profile.id, name } : undefined}
               onReact={(emoji) => react.mutate({ messageId: item.id, emoji })}
+              onReply={() => {
+                setReplyingTo(item);
+                inputRef.current?.focus();
+              }}
+              onUnsend={() =>
+                unsend.mutate(item.id, { onError: () => setError(t('chatControl.unsendFailed')) })
+              }
               reacting={react.isPending && react.variables?.messageId === item.id}
               seen={item.id === lastMineId && otherReadAt !== null && otherReadAt >= item.createdAt}
             />
@@ -458,6 +476,34 @@ function ChatScreen() {
           </View>
         ) : null}
 
+        {!closed && !recording && replyingTo ? (
+          <View style={[styles.replyBar, { borderTopColor: colors.border }]} testID="replying-to">
+            <View style={styles.replyText}>
+              <ReplyQuote
+                quote={{
+                  id: replyingTo.id,
+                  mine: replyingTo.mine,
+                  kind: replyingTo.kind,
+                  preview: replyingTo.body?.slice(0, REPLY_PREVIEW_LENGTH) ?? null,
+                  state: 'shown',
+                }}
+                otherName={name}
+              />
+            </View>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t('chatControl.cancelReply')}
+              onPress={() => setReplyingTo(undefined)}
+              hitSlop={8}
+              style={styles.iconBtn}
+            >
+              <AppText variant="heading" tone="muted">
+                ✕
+              </AppText>
+            </Pressable>
+          </View>
+        ) : null}
+
         {!closed && !recording ? (
           <View style={[styles.composer, { borderTopColor: colors.border }]}>
             <Pressable
@@ -509,6 +555,7 @@ function ChatScreen() {
               </AppText>
             </Pressable>
             <TextInput
+              ref={inputRef}
               value={text}
               onChangeText={onChange}
               placeholder={t('chat.placeholder')}
@@ -587,6 +634,15 @@ const styles = StyleSheet.create({
   },
   typing: { paddingVertical: spacing.xs },
   confirm: { margin: spacing.md, padding: spacing.lg, borderRadius: radius.lg, gap: spacing.sm },
+  replyBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.sm,
+    borderTopWidth: 1,
+  },
+  replyText: { flex: 1 },
   composer: {
     flexDirection: 'row',
     alignItems: 'flex-end',

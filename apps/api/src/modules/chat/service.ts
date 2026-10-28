@@ -18,11 +18,15 @@ import {
   FEEDBACK_AFTER_MINUTES,
   type AgainAnswer,
   reactionEmojis,
+  REPLY_PREVIEW_LENGTH,
+  UNSEND_MINUTES,
   type ReactionEmoji,
   type DateFeedbackView,
 } from '@nexaheart/shared';
 import { randomUUID } from 'node:crypto';
 import { and, asc, desc, eq, isNull, lt, or, sql } from 'drizzle-orm';
+import { alias } from 'drizzle-orm/pg-core';
+import { audit } from '../../lib/audit.js';
 import type { Realtime } from '../../lib/realtime.js';
 import { HttpError } from '../../plugins/error-handler.js';
 import type { DiscoveryService } from '../discovery/service.js';
@@ -52,7 +56,34 @@ type MessageRow = typeof messages.$inferSelect & {
   call: typeof calls.$inferSelect | null;
   /** Phase 29b: who reacted with what (at most one each). */
   reactions?: { userId: string; emoji: string }[] | null;
+  /** Phase 30: the quoted message. */
+  reply?: {
+    id: string | null;
+    senderId: string | null;
+    kind: MessageView['kind'] | null;
+    body: string | null;
+    flags: string[] | null;
+    unsentAt: Date | null;
+  } | null;
 };
+
+/** What a viewer may see of a quoted message (phase 30). */
+function replyView(reply: MessageRow['reply'], viewerId: string): MessageView['replyTo'] {
+  if (!reply?.id || !reply.senderId || !reply.kind) return null;
+  const mine = reply.senderId === viewerId;
+  const harmful = (reply.flags ?? []).some((f) => f.startsWith('harm:'));
+  const state = reply.unsentAt ? 'unsent' : harmful && !mine ? 'hidden' : 'shown';
+  return {
+    id: reply.id,
+    mine,
+    kind: reply.kind,
+    preview:
+      state === 'shown' && reply.kind === 'text' && reply.body
+        ? reply.body.slice(0, REPLY_PREVIEW_LENGTH)
+        : null,
+    state,
+  };
+}
 
 const asReaction = (emoji: string | undefined): ReactionEmoji | null =>
   emoji && (reactionEmojis as readonly string[]).includes(emoji) ? (emoji as ReactionEmoji) : null;
@@ -60,6 +91,9 @@ const asReaction = (emoji: string | undefined): ReactionEmoji | null =>
 /** A receiver sees media only after it passed scanning; senders see their own uploads. */
 const visibleTo = (viewerId: string) =>
   sql`(${messages.kind} IN ('text', 'date', 'call') OR ${messages.senderId} = ${viewerId} OR ${photos.status} = 'clean' OR ${audioClips.status} = 'clean')`;
+
+/** The quoted message of a reply (phase 30). */
+const replied = alias(messages, 'replied');
 
 /** A photo or voice message that isn't clean yet: its receiver doesn't see it. */
 const isPendingMedia = (view: MessageView) =>
@@ -137,6 +171,27 @@ export function feedbackView(
 /** What a given participant sees. Harmful messages arrive hidden for the receiver only. */
 export function toView(row: MessageRow, viewerId: string, now = Date.now()): MessageView {
   const mine = row.senderId === viewerId;
+  // Unsent (phase 30): nothing of it reaches either person; the server keeps it for moderation.
+  if (row.unsentAt) {
+    return {
+      id: row.id,
+      matchId: row.matchId,
+      mine,
+      kind: row.kind,
+      body: null,
+      image: null,
+      voice: null,
+      date: null,
+      call: null,
+      hidden: false,
+      harm: [],
+      scam: [],
+      reactions: { mine: null, theirs: null },
+      unsent: true,
+      replyTo: null,
+      createdAt: row.createdAt.toISOString(),
+    };
+  }
   const harm = harmCategories.filter((c) => row.flags.includes(`harm:${c}`));
   const scam = scamSignals.filter((s) => row.flags.includes(`scam:${s}`));
   const status = mediaStatus(row.photoStatus);
@@ -187,6 +242,8 @@ export function toView(row: MessageRow, viewerId: string, now = Date.now()): Mes
       mine: asReaction(row.reactions?.find((r) => r.userId === viewerId)?.emoji),
       theirs: asReaction(row.reactions?.find((r) => r.userId !== viewerId)?.emoji),
     },
+    unsent: false,
+    replyTo: replyView(row.reply, viewerId),
     createdAt: row.createdAt.toISOString(),
   };
 }
@@ -245,6 +302,8 @@ export class ChatService {
         photoId: messages.photoId,
         audioId: messages.audioId,
         flags: messages.flags,
+        unsentAt: messages.unsentAt,
+        replyToId: messages.replyToId,
         createdAt: messages.createdAt,
         photoStatus: photos.status,
         audioStatus: audioClips.status,
@@ -256,8 +315,17 @@ export class ChatService {
         reactions: sql<{ userId: string; emoji: string }[] | null>`(
           SELECT json_agg(json_build_object('userId', r.user_id, 'emoji', r.emoji))
           FROM message_reactions r WHERE r.message_id = "messages"."id")`,
+        reply: {
+          id: replied.id,
+          senderId: replied.senderId,
+          kind: replied.kind,
+          body: replied.body,
+          flags: replied.flags,
+          unsentAt: replied.unsentAt,
+        },
       })
       .from(messages)
+      .leftJoin(replied, eq(replied.id, messages.replyToId))
       .leftJoin(photos, eq(photos.id, messages.photoId))
       .leftJoin(audioClips, eq(audioClips.id, messages.audioId))
       .leftJoin(datePlans, eq(datePlans.id, messages.datePlanId))
@@ -349,10 +417,12 @@ export class ChatService {
       .select({ at: matchReads.lastReadAt })
       .from(matchReads)
       .where(and(eq(matchReads.matchId, matchId), eq(matchReads.userId, otherId)));
+    // Read receipts (phase 30) are shown only when both people have them on.
+    const receipts = await this.readReceipts(viewerId, otherId);
     return {
       messages: page.reverse().map((r) => toView(r, viewerId, this.now())),
       before: rows.length > limit ? page[0]!.createdAt.toISOString() : null,
-      otherReadAt: read?.at.toISOString() ?? null,
+      otherReadAt: receipts ? (read?.at.toISOString() ?? null) : null,
       imagesUnlocked: await this.imagesUnlocked(matchId, viewerId, otherId),
       otherAcceptsVoice: await this.acceptsVoice(otherId),
       callsAvailable: await this.callsAvailable(matchId, viewerId, otherId),
@@ -415,8 +485,19 @@ export class ChatService {
     senderId: string,
     text: string,
     clientId: string,
+    replyToId?: string,
   ): Promise<MessageView> {
     const { otherId } = await this.participant(matchId, senderId);
+    // A reply quotes a message of this chat only, so it can't reveal another conversation.
+    if (replyToId) {
+      const [quoted] = await this.db
+        .select({ id: messages.id })
+        .from(messages)
+        .where(and(eq(messages.id, replyToId), eq(messages.matchId, matchId)));
+      if (!quoted) {
+        throw new HttpError(400, ErrorCode.ValidationError, 'You can only reply to this chat.');
+      }
+    }
     const total = [...(await this.counts(matchId)).values()].reduce((a, b) => a + b, 0);
     const inserted = await this.db
       .insert(messages)
@@ -427,6 +508,7 @@ export class ChatService {
         kind: 'text',
         body: text,
         flags: messageFlags(text, total),
+        replyToId: replyToId ?? null,
       })
       .onConflictDoNothing()
       .returning({ id: messages.id });
@@ -529,7 +611,68 @@ export class ChatService {
         target: [matchReads.matchId, matchReads.userId],
         set: { lastReadAt: at },
       });
-    await this.realtime.publish(otherId, { type: 'message.read', matchId, at: at.toISOString() });
+    // My unread count still updates; "Seen" goes out only when both people allow it (phase 30).
+    if (await this.readReceipts(viewerId, otherId)) {
+      await this.realtime.publish(otherId, { type: 'message.read', matchId, at: at.toISOString() });
+    }
+  }
+
+  /** True when both people share read receipts (phase 30); a missing row means the default, on. */
+  private async readReceipts(a: string, b: string): Promise<boolean> {
+    const rows = await this.db
+      .select({ on: preferences.readReceipts })
+      .from(preferences)
+      .where(
+        and(
+          or(eq(preferences.userId, a), eq(preferences.userId, b)),
+          eq(preferences.readReceipts, false),
+        ),
+      );
+    return rows.length === 0;
+  }
+
+  /**
+   * Unsend my own message (phase 30): within UNSEND_MINUTES, text, photo or voice only. It's
+   * hidden from both people at once, but kept UNSENT_KEEP_DAYS for moderation (a report from the
+   * other person adds it as evidence), then purged by the worker.
+   */
+  async unsend(matchId: string, messageId: string, viewerId: string): Promise<MessageView> {
+    const { otherId } = await this.participant(matchId, viewerId);
+    const [row] = await this.db
+      .select({
+        senderId: messages.senderId,
+        kind: messages.kind,
+        unsentAt: messages.unsentAt,
+        // The database's clock, the same one that dated the message.
+        inTime: sql<boolean>`${messages.createdAt} > now() - make_interval(mins => ${UNSEND_MINUTES})`,
+      })
+      .from(messages)
+      .where(and(eq(messages.id, messageId), eq(messages.matchId, matchId)));
+    // Someone else's message looks like one that doesn't exist.
+    if (!row || row.senderId !== viewerId) throw notFound();
+    if (!row.unsentAt) {
+      if (!['text', 'image', 'voice'].includes(row.kind)) {
+        throw new HttpError(409, ErrorCode.Conflict, 'This message can’t be unsent.');
+      }
+      if (!row.inTime) {
+        throw new HttpError(409, ErrorCode.Conflict, 'It’s too late to unsend this message.');
+      }
+      await this.db.transaction(async (tx) => {
+        await tx
+          .update(messages)
+          .set({ unsentAt: sql`now()` })
+          .where(and(eq(messages.id, messageId), isNull(messages.unsentAt)));
+        await tx.delete(messageReactions).where(eq(messageReactions.messageId, messageId));
+        await audit(tx, {
+          actorId: viewerId,
+          action: 'message.unsent',
+          targetType: 'message',
+          targetId: messageId,
+        });
+      });
+      await this.announceUpdated(matchId, messageId, [viewerId, otherId]);
+    }
+    return this.messageView(messageId, viewerId);
   }
 
   async typing(matchId: string, viewerId: string): Promise<void> {

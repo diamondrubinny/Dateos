@@ -19,7 +19,12 @@ import { Screen } from '../components/Screen';
 import { useFederatedStatus } from '../lib/federated-queries';
 import { authClient } from '../lib/auth-client';
 import { useSetAcceptCalls } from '../lib/call-queries';
-import { useChatSettings, useSetAcceptVoice, useSetAllowTranscripts } from '../lib/chat-queries';
+import {
+  useChatSettings,
+  useSetAcceptVoice,
+  useSetAllowTranscripts,
+  useSetReadReceipts,
+} from '../lib/chat-queries';
 import { useLocale } from '../lib/locale';
 import { disablePush, enablePush, pushEnabledOnThisDevice } from '../lib/push';
 import {
@@ -50,6 +55,7 @@ function SettingsContent() {
   const chatSettings = useChatSettings();
   const setAcceptVoice = useSetAcceptVoice();
   const setAllowTranscripts = useSetAllowTranscripts();
+  const setReadReceipts = useSetReadReceipts();
   const setAcceptCalls = useSetAcceptCalls();
   const setIncognito = useSetIncognito();
   const setMetBadge = useSetMetBadge();
@@ -163,6 +169,14 @@ function SettingsContent() {
         checked={chatSettings.data?.acceptVoice ?? true}
         onChange={(v) =>
           setAcceptVoice.mutate(v, { onError: () => setError(t('common.genericError')) })
+        }
+      />
+      <Checkbox
+        label={t('chatControl.receiptsLabel')}
+        hint={t('chatControl.receiptsHint')}
+        checked={chatSettings.data?.readReceipts ?? true}
+        onChange={(v) =>
+          setReadReceipts.mutate(v, { onError: () => setError(t('common.genericError')) })
         }
       />
       {instance.data?.transcripts ? (

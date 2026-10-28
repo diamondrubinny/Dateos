@@ -251,6 +251,8 @@ export const preferences = pgTable(
     acceptVoice: boolean('accept_voice').notNull().default(true),
     /** Phase 26: people I send voice to may read it as text (made on this server). */
     allowTranscripts: boolean('allow_transcripts').notNull().default(true),
+    /** Phase 30: "Seen" both ways; off hides mine and theirs. */
+    readReceipts: boolean('read_receipts').notNull().default(true),
     /** Receiver control: people can turn video and voice calls off (phase 15). */
     acceptCalls: boolean('accept_calls').notNull().default(true),
     /** Dealbreakers (phase 19): empty means any; a missing answer always passes. */
@@ -552,6 +554,15 @@ export const messages = pgTable(
       .array()
       .notNull()
       .default(sql`'{}'::text[]`),
+    /**
+     * Unsent by the sender (phase 30): hidden from both people, content kept 30 days for
+     * moderation only, then purged.
+     */
+    unsentAt: timestamp('unsent_at', { withTimezone: true }),
+    /** The message this one replies to, in the same chat (phase 30). */
+    replyToId: uuid('reply_to_id').references((): AnyPgColumn => messages.id, {
+      onDelete: 'set null',
+    }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
@@ -660,6 +671,8 @@ export const reportEvidence = pgTable(
       .array()
       .notNull()
       .default(sql`'{}'::text[]`),
+    /** The sender unsent it (phase 30); added automatically, since the reporter can't see it. */
+    unsent: boolean('unsent').notNull().default(false),
     sentAt: timestamp('sent_at', { withTimezone: true }).notNull(),
   },
   (t) => [index('report_evidence_report_idx').on(t.reportId)],
