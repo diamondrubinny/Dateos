@@ -14,6 +14,7 @@ import { appUrl, type Env } from '../config/env.js';
 import { createEmailHasher, isBanned } from '../lib/banned.js';
 import { audit } from '../lib/audit.js';
 import { deviceLabel } from '../lib/device-label.js';
+import { maybeAlertNewDevice } from '../lib/signin-alert.js';
 import { magicLinkEmail, type Mailer } from '../lib/mailer.js';
 import type { TrustService } from '../modules/trust/service.js';
 
@@ -138,6 +139,14 @@ export function createAuth({ env, secret, db, redis, mailer, onMailError, signup
               targetId: s.userId,
               ...(device ? { meta: { device } } : {}),
             });
+            // A new kind of device (phase 32): an email, never blocking the sign-in.
+            if (device) {
+              void maybeAlertNewDevice(
+                { db, redis, mailer, instanceName: env.INSTANCE_NAME },
+                s.userId,
+                device,
+              ).catch(onMailError);
+            }
           },
         },
         update: { after: async (s) => (s.userId ? touchLastSeen(s.userId) : undefined) },

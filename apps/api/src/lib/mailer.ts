@@ -181,3 +181,42 @@ export function waitlistApprovedEmail(
     { url: appUrl, he: 'כניסה', en: 'Sign in' },
   );
 }
+
+/**
+ * A new kind of device signed in (phase 32). Deliberately without a link: a real alert never asks
+ * you to click, so this email can't be imitated for phishing. No IP address, no location.
+ */
+export function signinAlertEmail(
+  instanceName: string,
+  device: { he: string; en: string },
+  at: Date,
+): Omit<MailMessage, 'to'> {
+  const when = (locale: string) =>
+    `${at.toLocaleString(locale, {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      timeZone: 'UTC',
+    })} UTC`;
+  return bilingualNotice(
+    `${instanceName}: כניסה ממכשיר חדש / New sign-in`,
+    {
+      title: `כניסה חדשה לחשבון ב-${instanceName}`,
+      body: [
+        `מכשיר: ${device.he}. מתי: ${when('he-IL')}.`,
+        'אם זה היה אצלך, אין צורך לעשות דבר.',
+        'אם לא: באפליקציה, הגדרות ← אבטחה ← "ניתוק מכל שאר המכשירים", ובדיקה של חשבון האימייל. מייל אמיתי מאיתנו אף פעם לא מבקש ללחוץ על קישור.',
+      ],
+    },
+    {
+      title: `New sign-in to your ${instanceName} account`,
+      body: [
+        `Device: ${device.en}. When: ${when('en-GB')}.`,
+        'If this was you, there’s nothing to do.',
+        'If not: in the app, Settings → Security → “Sign out everywhere else”, and check your email account. A real email from us never asks you to click a link.',
+      ],
+    },
+  );
+}

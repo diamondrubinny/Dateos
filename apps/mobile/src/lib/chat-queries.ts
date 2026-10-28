@@ -6,6 +6,7 @@ import type {
   MessagesPage,
   MessageView,
   ReactionEmoji,
+  ChatSearchResult,
   Transcript,
 } from '@nexaheart/shared';
 import {
@@ -203,6 +204,7 @@ export function useChatSettings() {
         acceptCalls: boolean;
         allowTranscripts: boolean;
         readReceipts: boolean;
+        signinAlerts: boolean;
         pushDevices: number;
       }>('/v1/me/settings'),
   });
@@ -224,6 +226,29 @@ export function useSetAllowTranscripts() {
     mutationFn: (allowTranscripts: boolean) =>
       apiFetch('/v1/me/settings', { method: 'PUT', body: json({ allowTranscripts }) }),
     onSuccess: () => client.invalidateQueries({ queryKey: settingsKey }),
+  });
+}
+
+/** Email me about sign-ins from a new kind of device (phase 32). */
+export function useSetSigninAlerts() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (signinAlerts: boolean) =>
+      apiFetch('/v1/me/settings', { method: 'PUT', body: json({ signinAlerts }) }),
+    onSuccess: () => client.invalidateQueries({ queryKey: settingsKey }),
+  });
+}
+
+/** Search a chat (phase 32): only when there's something to search for. */
+export function useChatSearch(matchId: string, q: string) {
+  const term = q.trim();
+  return useQuery({
+    queryKey: ['chat-search', matchId, term],
+    enabled: term.length >= 2,
+    queryFn: () =>
+      apiFetch<ChatSearchResult>(
+        `/v1/matches/${encodeURIComponent(matchId)}/messages/search?q=${encodeURIComponent(term)}`,
+      ),
   });
 }
 

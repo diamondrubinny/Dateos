@@ -6,6 +6,9 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Added
 
+- **An email when a new kind of device signs in** (no link in it, at most 3 a day; can be turned
+  off in Settings → Security).
+- **Search in a chat**: text messages, newest first; never unsent or hidden messages.
 - **Account activity** (Settings → Security): your sign-ins (with a coarse device name), devices
   signed out and data downloads of the last 90 days. Only you see it; staff don't, and it's
   deleted with the account.
@@ -29,6 +32,8 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Security
 
+- **Request logs keep the path only**: the query string (which carried the one-time sign-in token
+  of a magic link) is no longer logged.
 - **Push tokens are bound to the device**: knowing someone's push token is no longer enough to move
   it to another account and silence their notifications (closes an accepted risk from phase 7).
 

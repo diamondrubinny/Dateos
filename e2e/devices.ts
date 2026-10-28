@@ -13,6 +13,7 @@ import { he } from '../apps/mobile/src/i18n/he.ts';
 import { ru } from '../apps/mobile/src/i18n/ru.ts';
 import {
   API,
+  MAILPIT,
   audit,
   LOCALE_TAGS,
   locales,
@@ -53,6 +54,26 @@ try {
     const phone = await signInHttp(member.email, API, ANDROID_APP);
     const phoneMe = () => fetch(`${API}/v1/me`, { headers: { cookie: phone.header } });
     check((await phoneMe()).status === 200, 'the phone is signed in');
+
+    // Phase 32: a new kind of device → an email, with no link in it.
+    let alert: { Text: string; HTML: string } | undefined;
+    for (let i = 0; i < 20 && !alert; i += 1) {
+      const found = (await (
+        await fetch(
+          `${MAILPIT}/api/v1/search?query=${encodeURIComponent(`to:"${member.email}" subject:"New sign-in"`)}`,
+        )
+      ).json()) as { messages: { ID: string }[] };
+      if (found.messages[0]) {
+        alert = (await (
+          await fetch(`${MAILPIT}/api/v1/message/${found.messages[0].ID}`)
+        ).json()) as { Text: string; HTML: string };
+      } else await new Promise((r) => setTimeout(r, 250));
+    }
+    check(alert?.Text.includes('NexaHeart app on Android') ?? false, 'a new-device email arrived');
+    check(
+      alert !== undefined && !/https?:\/\//.test(alert.Text) && !alert.HTML.includes('<a '),
+      'the alert has no link',
+    );
 
     const laptop = await signInHttp(member.email, API, CHROME_WINDOWS);
     const context = await browser.newContext({

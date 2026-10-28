@@ -260,7 +260,10 @@ export async function signIn(
   });
   if (res.statusCode !== 200) throw new Error(`sign-in failed: ${res.statusCode} ${res.body}`);
   await new Promise((r) => setTimeout(r, 20));
-  const message = ctx.mail.slice(before).find((m) => m.to === email);
+  // The sign-in email (other emails, like a new-device alert, have no link).
+  const message = ctx.mail
+    .slice(before)
+    .find((m) => m.to === email && /https?:\/\/\S+/.test(m.text));
   if (!message) throw new Error('no magic link email captured');
   const link = new URL(/https?:\/\/\S+/.exec(message.text)![0]);
   const verify = await ctx.app.inject({

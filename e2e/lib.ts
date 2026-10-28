@@ -24,7 +24,10 @@ export const OUT = new URL('../docs/screenshots/', import.meta.url).pathname;
 export async function magicLink(email: string): Promise<string> {
   for (let i = 0; i < 40; i += 1) {
     const list = (await (
-      await fetch(`${MAILPIT}/api/v1/search?query=${encodeURIComponent(`to:"${email}"`)}`)
+      await fetch(
+        // The sign-in email only (a new-device alert, phase 32, goes to the same address).
+        `${MAILPIT}/api/v1/search?query=${encodeURIComponent(`to:"${email}" subject:"Sign in"`)}`,
+      )
     ).json()) as {
       messages: { ID: string }[];
     };

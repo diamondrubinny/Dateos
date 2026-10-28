@@ -253,6 +253,8 @@ export const preferences = pgTable(
     allowTranscripts: boolean('allow_transcripts').notNull().default(true),
     /** Phase 30: "Seen" both ways; off hides mine and theirs. */
     readReceipts: boolean('read_receipts').notNull().default(true),
+    /** Phase 32: an email when a new kind of device signs in. */
+    signinAlerts: boolean('signin_alerts').notNull().default(true),
     /** Receiver control: people can turn video and voice calls off (phase 15). */
     acceptCalls: boolean('accept_calls').notNull().default(true),
     /** Dealbreakers (phase 19): empty means any; a missing answer always passes. */
