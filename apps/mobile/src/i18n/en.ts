@@ -780,6 +780,13 @@ export const en = {
     warningBody:
       'A report about you was reviewed and found to break our guidelines: {{category}}. Repeated violations lead to suspension.',
     warningAck: 'I understand',
+    reviewedTitle: 'Your report was reviewed',
+    reviewedAbout: 'Your report from {{date}} ({{category}}) was looked at by our moderators.',
+    reviewedActioned: 'We took action. We don’t share what action, to protect everyone’s privacy.',
+    reviewedNone:
+      'We didn’t find a rule broken this time. If someone makes you uncomfortable, you can always block them.',
+    reviewedThanks: 'Thank you for helping keep the community safe.',
+    reviewedOk: 'OK',
   },
   voice: {
     record: 'Record a voice message',

@@ -9,22 +9,54 @@ import { radius, spacing, useColors } from '../lib/theme';
 import { AppText } from './AppText';
 import { Button } from './Button';
 
-/** Moderator warnings the member has not acknowledged yet. Shows the category only. */
+/**
+ * Moderator warnings the member has not acknowledged yet (the category only), then "Your report was
+ * reviewed" (phase 37): whether something was done, never which action.
+ */
 export function AccountNotices() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const colors = useColors();
   const me = useMe();
   const ack = useAcknowledgeNotice();
   const notice = me.data?.notices[0];
   if (!notice) return null;
+  const category = t(`report.categories.${notice.category}`);
+  if (notice.kind === 'report_reviewed') {
+    const date = new Date(notice.createdAt).toLocaleDateString(i18n.language, {
+      day: 'numeric',
+      month: 'short',
+    });
+    return (
+      <View
+        style={[styles.card, { backgroundColor: colors.primarySoft }]}
+        accessibilityRole="summary"
+        testID="report-reviewed"
+      >
+        <AppText variant="heading">{t('account.reviewedTitle')}</AppText>
+        <AppText variant="body">{t('account.reviewedAbout', { category, date })}</AppText>
+        <AppText variant="body">
+          {notice.outcome === 'actioned'
+            ? t('account.reviewedActioned')
+            : t('account.reviewedNone')}
+        </AppText>
+        <AppText variant="caption" tone="muted">
+          {t('account.reviewedThanks')}
+        </AppText>
+        <Button
+          variant="secondary"
+          label={t('account.reviewedOk')}
+          loading={ack.isPending}
+          onPress={() => ack.mutate(notice.id)}
+        />
+      </View>
+    );
+  }
   return (
     <View style={[styles.card, { backgroundColor: colors.dangerSoft }]} accessibilityRole="alert">
       <AppText variant="heading" tone="danger">
         {t('account.warningTitle')}
       </AppText>
-      <AppText variant="body">
-        {t('account.warningBody', { category: t(`report.categories.${notice.category}`) })}
-      </AppText>
+      <AppText variant="body">{t('account.warningBody', { category })}</AppText>
       <Button
         variant="secondary"
         label={t('account.warningAck')}

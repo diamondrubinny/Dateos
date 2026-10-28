@@ -56,10 +56,15 @@ export const reportResultSchema = z.object({ reportId: z.uuid() });
 // Account notices shown to the member (warnings, suspension)
 // ---------------------------------------------------------------------------
 
+/** How long "Your report was reviewed" stays available after the decision (phase 37). */
+export const REPORT_OUTCOME_DAYS = 30;
 export const accountNoticeSchema = z.object({
   id: z.uuid(),
-  kind: z.literal('warning'),
+  /** A warning to me, or the outcome of a report I sent (phase 37). */
+  kind: z.enum(['warning', 'report_reviewed']),
   category: z.enum(reportCategories),
+  /** report_reviewed only: whether something was done (never which action). */
+  outcome: z.enum(['actioned', 'dismissed']).optional(),
   createdAt: z.string(),
 });
 export type AccountNotice = z.infer<typeof accountNoticeSchema>;
