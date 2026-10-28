@@ -24,6 +24,7 @@ import {
   type ReactionEmoji,
   type DateFeedbackView,
   NEW_ACCOUNT_CHAT_STARTS,
+  MAX_PINNED_CHATS,
 } from '@nexaheart/shared';
 import { randomUUID } from 'node:crypto';
 import { and, asc, desc, eq, isNull, lt, or, sql } from 'drizzle-orm';
@@ -809,23 +810,63 @@ export class ChatService {
     };
   }
 
-  /** Mute or archive a chat, privately (phase 31). */
+  /**
+   * Mute, archive or pin a chat, privately (phases 31, 38). Pinning brings an archived chat back;
+   * archiving unpins. At most MAX_PINNED_CHATS pinned at once.
+   */
   async setPrefs(
     matchId: string,
     viewerId: string,
-    input: { muted?: boolean | undefined; archived?: boolean | undefined },
-  ): Promise<{ muted: boolean; archived: boolean }> {
+    input: {
+      muted?: boolean | undefined;
+      archived?: boolean | undefined;
+      pinned?: boolean | undefined;
+    },
+  ): Promise<{ muted: boolean; archived: boolean; pinned: boolean }> {
     await this.participant(matchId, viewerId);
-    const set = {
-      ...(input.muted !== undefined ? { muted: input.muted } : {}),
-      ...(input.archived !== undefined ? { archived: input.archived } : {}),
-    };
-    const [row] = await this.db
-      .insert(matchPrefs)
-      .values({ matchId, userId: viewerId, ...set })
-      .onConflictDoUpdate({ target: [matchPrefs.matchId, matchPrefs.userId], set })
-      .returning({ muted: matchPrefs.muted, archived: matchPrefs.archived });
-    return row!;
+    return this.db.transaction(async (tx) => {
+      // One member's pins are decided one at a time, so two quick taps can't pass the limit.
+      await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${`pins:${viewerId}`}))`);
+      const set: Partial<typeof matchPrefs.$inferInsert> = {};
+      if (input.muted !== undefined) set.muted = input.muted;
+      if (input.archived !== undefined) set.archived = input.archived;
+      if (input.archived === true) set.pinnedAt = null;
+      if (input.pinned === false) set.pinnedAt = null;
+      if (input.pinned === true && input.archived !== true) {
+        const [current] = await tx
+          .select({ pinnedAt: matchPrefs.pinnedAt })
+          .from(matchPrefs)
+          .where(and(eq(matchPrefs.matchId, matchId), eq(matchPrefs.userId, viewerId)));
+        if (!current?.pinnedAt) {
+          const [{ n }] = (await tx
+            .select({ n: sql<number>`count(*)::int` })
+            .from(matchPrefs)
+            .innerJoin(matches, eq(matches.id, matchPrefs.matchId))
+            .where(
+              and(
+                eq(matchPrefs.userId, viewerId),
+                sql`${matchPrefs.pinnedAt} IS NOT NULL`,
+                isNull(matches.unmatchedAt),
+              ),
+            )) as [{ n: number }];
+          if (n >= MAX_PINNED_CHATS) {
+            throw new HttpError(409, ErrorCode.Conflict, 'Unpin a chat first.');
+          }
+          set.pinnedAt = new Date(this.now());
+        }
+        set.archived = false;
+      }
+      const [row] = await tx
+        .insert(matchPrefs)
+        .values({ matchId, userId: viewerId, ...set })
+        .onConflictDoUpdate({ target: [matchPrefs.matchId, matchPrefs.userId], set })
+        .returning({
+          muted: matchPrefs.muted,
+          archived: matchPrefs.archived,
+          pinnedAt: matchPrefs.pinnedAt,
+        });
+      return { muted: row!.muted, archived: row!.archived, pinned: row!.pinnedAt !== null };
+    });
   }
 
   async inbox(viewerId: string): Promise<Conversation[]> {
@@ -837,6 +878,7 @@ export class ChatService {
             matchId: matchPrefs.matchId,
             muted: matchPrefs.muted,
             archived: matchPrefs.archived,
+            pinnedAt: matchPrefs.pinnedAt,
           })
           .from(matchPrefs)
           .where(eq(matchPrefs.userId, viewerId))
@@ -870,10 +912,13 @@ export class ChatService {
         mode: m.mode,
         muted: prefs.get(m.id)?.muted ?? false,
         archived: prefs.get(m.id)?.archived ?? false,
+        pinned: Boolean(prefs.get(m.id)?.pinnedAt),
       });
     }
+    // Pinned chats first, most recently pinned first (phase 38); then by latest activity.
+    const pinnedAt = (c: Conversation) => prefs.get(c.matchId)?.pinnedAt?.getTime() ?? 0;
     const activity = (c: Conversation) => c.lastMessage?.createdAt ?? c.createdAt;
-    return out.sort((a, b) => activity(b).localeCompare(activity(a)));
+    return out.sort((a, b) => pinnedAt(b) - pinnedAt(a) || activity(b).localeCompare(activity(a)));
   }
 
   async suggestIcebreakers(matchId: string, viewerId: string, locale: Locale): Promise<string[]> {

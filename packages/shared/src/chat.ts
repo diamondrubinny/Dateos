@@ -141,6 +141,8 @@ export const conversationSchema = z.object({
   /** Phase 31: my private choices for this chat. */
   muted: z.boolean(),
   archived: z.boolean(),
+  /** Phase 38: pinned to the top of Matches. */
+  pinned: z.boolean(),
 });
 
 /** Search in a chat (phase 32). */
@@ -152,9 +154,24 @@ export const chatSearchResultSchema = z.object({
 });
 export type ChatSearchResult = z.infer<typeof chatSearchResultSchema>;
 
+/** Pinned chats (phase 38): at most this many at once. */
+export const MAX_PINNED_CHATS = 3;
 export const matchPrefsInputSchema = z
-  .object({ muted: z.boolean().optional(), archived: z.boolean().optional() })
-  .refine((v) => v.muted !== undefined || v.archived !== undefined, 'Nothing to change');
+  .object({
+    muted: z.boolean().optional(),
+    archived: z.boolean().optional(),
+    pinned: z.boolean().optional(),
+  })
+  .refine(
+    (v) => v.muted !== undefined || v.archived !== undefined || v.pinned !== undefined,
+    'Nothing to change',
+  );
+export const matchPrefsSchema = z.object({
+  muted: z.boolean(),
+  archived: z.boolean(),
+  pinned: z.boolean(),
+});
+export type MatchPrefs = z.infer<typeof matchPrefsSchema>;
 export type Conversation = z.infer<typeof conversationSchema>;
 
 export const icebreakersSchema = z.object({ suggestions: z.array(z.string()) });

@@ -3,6 +3,7 @@
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 import { SENSITIVE_CONSENT_VERSION } from '@nexaheart/shared';
 import { Link, router } from 'expo-router';
+import { clearDrafts } from '../lib/drafts';
 import * as WebBrowser from 'expo-web-browser';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -92,6 +93,7 @@ function SettingsContent() {
 
   const signOut = async () => {
     await disablePush(); // this device should stop receiving this account's notifications
+    await clearDrafts(); // a shared device keeps no drafts (phase 38)
     await authClient.signOut();
     router.replace('/welcome');
   };
@@ -99,6 +101,7 @@ function SettingsContent() {
   const remove = async () => {
     try {
       await deleteAccount.mutateAsync();
+      await clearDrafts(); // a shared device keeps no drafts (phase 38)
       await authClient.signOut().catch(() => undefined);
       router.replace('/welcome');
     } catch {

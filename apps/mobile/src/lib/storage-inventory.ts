@@ -7,12 +7,14 @@
  * All entries are strictly necessary or remember a choice the person made; there is no tracking.
  */
 export interface StorageItem {
+  /** A name ending in `*` stands for every key with that prefix (one per chat, phase 38). */
   name: string;
   kind: 'cookie' | 'localStorage' | 'secureStore';
   platform: 'web' | 'native';
   /** i18n key suffix under cookies.purpose / cookies.duration */
-  purpose: 'session' | 'sessionCache' | 'language' | 'pushToken' | 'callNotice' | 'display';
-  duration: 'days30' | 'untilChanged' | 'untilSignOut';
+  purpose:
+    'session' | 'sessionCache' | 'language' | 'pushToken' | 'callNotice' | 'display' | 'drafts';
+  duration: 'days30' | 'untilChanged' | 'untilSignOut' | 'days30Draft';
 }
 
 export const storageInventory: StorageItem[] = [
@@ -87,5 +89,34 @@ export const storageInventory: StorageItem[] = [
     platform: 'native',
     purpose: 'display',
     duration: 'untilChanged',
+  },
+  {
+    // Phase 38: message drafts, one per chat, plus their index; never sent to the server.
+    name: 'nexaheart.drafts',
+    kind: 'localStorage',
+    platform: 'web',
+    purpose: 'drafts',
+    duration: 'days30Draft',
+  },
+  {
+    name: 'nexaheart.draft.*',
+    kind: 'localStorage',
+    platform: 'web',
+    purpose: 'drafts',
+    duration: 'days30Draft',
+  },
+  {
+    name: 'nexaheart.drafts',
+    kind: 'secureStore',
+    platform: 'native',
+    purpose: 'drafts',
+    duration: 'days30Draft',
+  },
+  {
+    name: 'nexaheart.draft.*',
+    kind: 'secureStore',
+    platform: 'native',
+    purpose: 'drafts',
+    duration: 'days30Draft',
   },
 ];

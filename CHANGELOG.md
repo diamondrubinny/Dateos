@@ -6,6 +6,10 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Added
 
+- **Pinned chats**: pin up to 3 chats to the top of Matches (private; pinning unarchives, archiving
+  unpins).
+- **Message drafts**: what you typed and didn't send stays in the chat and shows as "Draft: …" in
+  Matches. On this device only, never sent to the server; removed on sign-out.
 - **"Your report was reviewed"**: after a moderator decides, the member who reported sees whether
   action was taken (never which action) or that no rule was found broken, with a reminder that
   blocking is always available. Shown for 30 days, until dismissed.

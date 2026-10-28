@@ -2,6 +2,7 @@
 // Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 import {
+  MAX_PINNED_CHATS,
   MESSAGES_BEFORE_IMAGES,
   NEW_ACCOUNT_CHAT_STARTS,
   REPLY_PREVIEW_LENGTH,
@@ -48,6 +49,7 @@ import {
   useSendMessage,
   useSendVoice,
 } from '../../lib/chat-queries';
+import { useDrafts, useSaveDraft } from '../../lib/drafts';
 import { useLocale } from '../../lib/locale';
 import { useRealtime } from '../../lib/realtime';
 import { useStartCall } from '../../lib/call-queries';
@@ -86,6 +88,21 @@ function ChatScreen() {
   const [closed, setClosed] = useState(false);
   const lastTyping = useRef(0);
   const inputRef = useRef<ComponentRef<typeof TextInput>>(null);
+  // Drafts (phase 38): restored once when the chat opens, saved on this device as you type.
+  const drafts = useDrafts();
+  const saveDraft = useSaveDraft(matchId);
+  const restored = useRef(false);
+  useEffect(() => {
+    if (restored.current || !drafts.data) return;
+    restored.current = true;
+    const draft = drafts.data[matchId];
+    if (draft) setText((current) => current || draft);
+  }, [drafts.data, matchId]);
+  useEffect(() => {
+    if (!restored.current) return;
+    const timer = setTimeout(() => void saveDraft(text), 400);
+    return () => clearTimeout(timer);
+  }, [text, saveDraft]);
 
   const all: MessageView[] = useMemo(
     () => (messages.data ? [...messages.data.pages].reverse().flatMap((p) => p.messages) : []),
@@ -322,6 +339,32 @@ function ChatScreen() {
             >
               <AppText variant="caption" tone="muted">
                 {conversation.muted ? `🔕 ${t('chatPrefs.unmute')}` : t('chatPrefs.mute')}
+              </AppText>
+            </Pressable>
+          ) : null}
+          {conversation ? (
+            <Pressable
+              onPress={() =>
+                prefs.mutate(
+                  { pinned: !conversation.pinned },
+                  {
+                    onError: (e) =>
+                      setError(
+                        e instanceof ApiRequestError && e.status === 409
+                          ? t('chatPrefs.pinLimit', { count: MAX_PINNED_CHATS })
+                          : t('common.genericError'),
+                      ),
+                  },
+                )
+              }
+              accessibilityRole="button"
+              accessibilityState={{ checked: conversation.pinned }}
+              accessibilityHint={t('chatPrefs.pinHint')}
+              style={styles.iconBtn}
+              testID="pin-chat"
+            >
+              <AppText variant="caption" tone="muted">
+                {conversation.pinned ? `📌 ${t('chatPrefs.unpin')}` : t('chatPrefs.pin')}
               </AppText>
             </Pressable>
           ) : null}

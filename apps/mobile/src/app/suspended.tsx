@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
+import { clearDrafts } from '../lib/drafts';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -28,6 +29,7 @@ function SuspendedScreen() {
   const [error, setError] = useState<string>();
 
   const signOut = async () => {
+    await clearDrafts(); // a shared device keeps no drafts (phase 38)
     await authClient.signOut().catch(() => undefined);
     router.replace('/welcome');
   };
