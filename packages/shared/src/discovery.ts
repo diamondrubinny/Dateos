@@ -136,6 +136,14 @@ export const interactionResultSchema = z.object({
   matchId: z.uuid().nullable(),
 });
 
+/** Undo a pass (phase 29b): only the latest one, only for this long. */
+export const UNDO_PASS_MINUTES = 10;
+export const undoPassResultSchema = z.object({
+  profile: publicProfileSchema,
+  mode: matchModeSchema,
+});
+export type UndoPassResult = z.infer<typeof undoPassResultSchema>;
+
 export const likeReceivedSchema = z.object({
   profile: publicProfileSchema,
   comment: z.string().nullable(),

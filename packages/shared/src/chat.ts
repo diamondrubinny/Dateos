@@ -36,6 +36,22 @@ export const messageCheckResultSchema = z.object({
   categories: z.array(z.enum(harmCategories)),
 });
 
+/** Reactions to messages (phase 29b): a fixed list keeps them translatable and free of abuse. */
+export const reactionEmojis = ['❤️', '😂', '😮', '😢', '👍', '🔥'] as const;
+export const reactionEmojiSchema = z.enum(reactionEmojis);
+export type ReactionEmoji = z.infer<typeof reactionEmojiSchema>;
+/** Words for screen readers, per emoji (the apps translate them). */
+export const reactionKeys: Record<ReactionEmoji, string> = {
+  '❤️': 'heart',
+  '😂': 'laugh',
+  '😮': 'wow',
+  '😢': 'sad',
+  '👍': 'thumbsUp',
+  '🔥': 'fire',
+};
+/** null removes my reaction. */
+export const reactInputSchema = z.object({ emoji: reactionEmojiSchema.nullable() });
+
 export const messageViewSchema = z.object({
   id: z.uuid(),
   matchId: z.uuid(),
@@ -60,6 +76,11 @@ export const messageViewSchema = z.object({
   hidden: z.boolean(),
   harm: z.array(z.enum(harmCategories)),
   scam: z.array(z.enum(scamSignals)),
+  /** Phase 29b: one each at most, in a chat of two. */
+  reactions: z.object({
+    mine: reactionEmojiSchema.nullable(),
+    theirs: reactionEmojiSchema.nullable(),
+  }),
   createdAt: z.string(),
 });
 export type MessageView = z.infer<typeof messageViewSchema>;

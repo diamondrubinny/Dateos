@@ -267,6 +267,13 @@
       "when": 1793192455058,
       "tag": "0037_account_security",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1793194347292,
+      "tag": "0038_message_reactions",
+      "breakpoints": true
     }
   ]
 }

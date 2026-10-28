@@ -15,6 +15,7 @@ import {
   messagesPageSchema,
   messagesQuerySchema,
   messageViewSchema,
+  reactInputSchema,
   sendMessageSchema,
   transcriptSchema,
   voicePromptQuerySchema,
@@ -99,6 +100,26 @@ export const chatRoutes: FastifyPluginAsyncZod<ChatRouteOptions> = async (
         currentUser(request).id,
         request.body.text,
         request.body.clientId,
+      ),
+  );
+
+  // Reactions (phase 29b): set or remove mine.
+  app.put(
+    '/v1/matches/:id/messages/:messageId/reaction',
+    {
+      schema: {
+        params: matchParams.extend({ messageId: z.uuid() }),
+        body: reactInputSchema,
+        response: { 200: messageViewSchema },
+      },
+      config: perUserLimit(120, 60_000),
+    },
+    async (request) =>
+      chat.react(
+        request.params.id,
+        request.params.messageId,
+        currentUser(request).id,
+        request.body.emoji,
       ),
   );
 
