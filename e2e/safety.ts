@@ -225,10 +225,12 @@ async function run(locale: 'en' | 'he', browser: Browser) {
     await S.page.getByRole('heading', { name: a.reports.title }).waitFor();
     await S.page.getByText(s.reported.name).first().waitFor();
     await shot(S.page, `${locale}/admin-03-reports`);
-    await S.page
-      .getByRole('link', { name: new RegExp(a.reports.view) })
-      .first()
-      .click();
+    // Open this run's report: the queue also holds reports from other runs and automatic ones.
+    const { rows: mine } = await pool.query<{ id: string }>(
+      'SELECT id FROM reports WHERE reported_id = $1 ORDER BY created_at DESC LIMIT 1',
+      [reported.id],
+    );
+    await S.page.locator(`a[href="#/reports/${mine[0]!.id}"]`).click();
     await S.page.getByText(s.scam).waitFor();
     await S.page.getByText(s.details).waitFor();
     await S.page.locator('img.photo').first().waitFor();

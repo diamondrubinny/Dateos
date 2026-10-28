@@ -33,12 +33,16 @@ import {
   MAX_SHOWN_TAKES,
   type PublicTake,
   type TakeRelation,
+  type BlockedPerson,
 } from '@nexaheart/shared';
 import type { Realtime } from '../../lib/realtime.js';
 import { and, asc, desc, eq, gt, inArray, isNull, or, sql } from 'drizzle-orm';
 import { audit } from '../../lib/audit.js';
 import { openAutoReport } from '../safety/auto-report.js';
 import { HttpError } from '../../plugins/error-handler.js';
+
+/** The longest blocked-people list shown (phase 35). */
+const BLOCKED_LIST_MAX = 200;
 import { photoUrl } from '../me/service.js';
 import type { CityIndex } from '../places/cities.js';
 import {
@@ -160,6 +164,7 @@ export class DiscoveryService {
       excludeSaved?: boolean;
       mode?: MatchMode;
       onlyIds?: string[];
+      limit?: number;
     },
   ) {
     // drizzle's node-postgres database exposes its pool as $client.
@@ -230,8 +235,14 @@ export class DiscoveryService {
   }
 
   /** Dating candidates of a member (phase 22: double dates intersect two of these lists). */
-  async candidateIds(viewerId: string): Promise<Set<string>> {
-    return new Set((await this.candidates(viewerId, {})).map((r) => r.id));
+  /**
+   * Which of `among` the viewer may see as dating candidates. Always scoped to a list: an open
+   * query stops at its row limit in no particular order, so it can miss people.
+   */
+  async candidateIds(viewerId: string, among: string[]): Promise<Set<string>> {
+    if (among.length === 0) return new Set();
+    const rows = await this.candidates(viewerId, { onlyIds: among, limit: among.length });
+    return new Set(rows.map((r) => r.id));
   }
 
   /** Whether the viewer may see the target as a dating candidate (both ways, every rule). */
@@ -832,6 +843,44 @@ export class DiscoveryService {
     for (const m of closed)
       this.notify([blockerId, blockedId], { type: 'match.closed', matchId: m.id });
     this.separated(blockerId, blockedId);
+  }
+
+  /** People this member blocked (phase 35): name only, newest first. */
+  async blocked(blockerId: string): Promise<BlockedPerson[]> {
+    const { rows } = await this.db.execute<{
+      user_id: string;
+      display_name: string | null;
+      created_at: string | Date;
+    }>(sql`
+      SELECT b.blocked_id AS user_id, p.display_name, b.created_at
+      FROM blocks b LEFT JOIN profiles p ON p.user_id = b.blocked_id
+      WHERE b.blocker_id = ${blockerId}
+      ORDER BY b.created_at DESC LIMIT ${BLOCKED_LIST_MAX}`);
+    return rows.map((r) => ({
+      userId: r.user_id,
+      displayName: r.display_name ?? '',
+      blockedAt: new Date(r.created_at).toISOString(),
+    }));
+  }
+
+  /**
+   * Take back a block (phase 35). A match the block closed stays closed; the other person is
+   * never told.
+   */
+  async unblock(blockerId: string, blockedId: string): Promise<void> {
+    await this.db.transaction(async (tx) => {
+      const removed = await tx
+        .delete(blocks)
+        .where(and(eq(blocks.blockerId, blockerId), eq(blocks.blockedId, blockedId)))
+        .returning({ id: blocks.blockedId });
+      if (removed.length === 0) throw new HttpError(404, ErrorCode.NotFound, 'Not found.');
+      await audit(tx, {
+        actorId: blockerId,
+        action: 'block.removed',
+        targetType: 'user',
+        targetId: blockedId,
+      });
+    });
   }
 
   /**

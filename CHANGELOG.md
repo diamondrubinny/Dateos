@@ -6,6 +6,10 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Added
 
+- **Blocked people** (Settings → Security): who you blocked, by name only, with Unblock after a
+  confirmation. They're never told; a match the block ended stays ended.
+- **Profile strength** on the Profile tab: what's left to add (photos, bio, prompts, interests,
+  photo verification, voice prompt), each a link to where it's done. Computed on the device.
 - **Anti-bot and fake-profile checks** (phase 34): the same message to 5+ chats in a day, scam
   signals from an account under a day old in 3+ chats, and profile text copied from another
   account each open an automatic report for a moderator (with the reason; nothing is decided
@@ -194,6 +198,8 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Fixed
 
+- Double dates could miss pairs once more than 300 people were nearby; pair discovery now checks
+  the newest undecided pairs directly.
 - "Your turn" (focus mode) counted 0 people waiting as soon as anyone, anywhere, had unmatched: a
   query helper's alias shadowed the caller's. Each helper now uses its own aliases; regression test.
 - Link, number, date and time fields in the dashboard had no styling (the Branding page's donation

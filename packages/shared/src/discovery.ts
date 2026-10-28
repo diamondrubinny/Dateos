@@ -165,6 +165,14 @@ export type MatchSummary = z.infer<typeof matchSummarySchema>;
 
 export const blockInputSchema = z.object({ userId: z.string().min(1).max(64) });
 
+/** Someone I blocked (phase 35): the name only, never photos, newest first. */
+export const blockedPersonSchema = z.object({
+  userId: z.string(),
+  displayName: z.string(),
+  blockedAt: z.string(),
+});
+export type BlockedPerson = z.infer<typeof blockedPersonSchema>;
+
 /** "Maybe later" (phase 33). */
 export const MAX_SAVED_PROFILES = 30;
 export const saveProfileInputSchema = z.object({ targetId: z.string().min(1).max(64) });

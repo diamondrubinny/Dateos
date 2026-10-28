@@ -24,14 +24,13 @@ export const OUT = new URL('../docs/screenshots/', import.meta.url).pathname;
 export async function magicLink(email: string): Promise<string> {
   for (let i = 0; i < 40; i += 1) {
     const list = (await (
-      await fetch(
-        // The sign-in email only (a new-device alert, phase 32, goes to the same address).
-        `${MAILPIT}/api/v1/search?query=${encodeURIComponent(`to:"${email}" subject:"Sign in"`)}`,
-      )
+      await fetch(`${MAILPIT}/api/v1/search?query=${encodeURIComponent(`to:"${email}"`)}`)
     ).json()) as {
-      messages: { ID: string }[];
+      messages: { ID: string; Subject: string }[];
     };
-    const id = list.messages[0]?.ID;
+    // Any email but the new-device alert (phase 32), which goes to the same address: the sign-in
+    // link, or the "how to join" email (phase 21) when sign-up needs an invite.
+    const id = list.messages.find((m) => !m.Subject.includes('New sign-in'))?.ID;
     if (id) {
       const message = (await (await fetch(`${MAILPIT}/api/v1/message/${id}`)).json()) as {
         Text: string;
@@ -40,7 +39,7 @@ export async function magicLink(email: string): Promise<string> {
         method: 'DELETE',
         body: JSON.stringify({ IDs: [id] }),
       });
-      return /https?:\/\/\S+/.exec(message.Text)![0];
+      return /https?:\/\/\S+/.exec(message.Text)?.[0] ?? '';
     }
     await new Promise((r) => setTimeout(r, 250));
   }

@@ -113,6 +113,11 @@ export function SecuritySettings() {
         label={t('contacts.open')}
         onPress={() => router.push('/hide-contacts')}
       />
+      <Button
+        variant="secondary"
+        label={t('blocked.open')}
+        onPress={() => router.push('/blocked')}
+      />
 
       <AppText variant="caption" tone="muted">
         {screenCaptureBlocked ? t('security.screenshotsNative') : t('security.screenshotsWeb')}

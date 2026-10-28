@@ -16,6 +16,7 @@ import {
   closedConversationSchema,
   YOUR_TURN_LIMIT,
   yourTurnSchema,
+  blockedPersonSchema,
 } from '@nexaheart/shared';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { perUserLimit } from '../../plugins/security.js';
@@ -197,6 +198,28 @@ export const discoveryRoutes: FastifyPluginAsyncZod<{
     { schema: { params: z.object({ id: z.uuid() }), response: { 200: ok } } },
     async (request) => {
       await discovery.dismissClosed(currentUser(request).id, request.params.id);
+      return { ok: true as const };
+    },
+  );
+
+  // Blocked people (phase 35): see and take back my own blocks.
+  app.get(
+    '/v1/blocks',
+    {
+      schema: { response: { 200: z.object({ blocked: z.array(blockedPersonSchema) }) } },
+      config: perUserLimit(60, 60_000),
+    },
+    async (request) => ({ blocked: await discovery.blocked(currentUser(request).id) }),
+  );
+
+  app.delete(
+    '/v1/blocks/:userId',
+    {
+      schema: { params: z.object({ userId: z.string().min(1).max(64) }), response: { 200: ok } },
+      config: perUserLimit(30, 60_000),
+    },
+    async (request) => {
+      await discovery.unblock(currentUser(request).id, request.params.userId);
       return { ok: true as const };
     },
   );
