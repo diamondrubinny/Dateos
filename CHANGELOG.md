@@ -6,6 +6,10 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Added
 
+- **Undo a pass**: right after passing on someone in Discover, Undo brings them back (the last
+  pass, for 10 minutes; likes can't be undone).
+- **Reactions to messages**: ❤️ 😂 😮 😢 👍 🔥, one each per message, seen live by the other person,
+  with a picker that works with a keyboard and a screen reader. Not on hidden (harmful) messages.
 - **Your devices** (Settings → Security): see where you're signed in (a coarse name such as
   "Chrome · Windows" or "NexaHeart app on Android", never an IP address), and sign out of one
   device or everywhere else. Open live connections of a signed-out device close within a minute.

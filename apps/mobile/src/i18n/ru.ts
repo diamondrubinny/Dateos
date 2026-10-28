@@ -995,6 +995,26 @@ export const ru: Translations = {
     open: 'К моим чатам',
     likeBlocked: 'Сначала ответьте тем, кто вас ждёт, потом можно ставить новые лайки.',
   },
+  reactions: {
+    react: 'Добавить реакцию',
+    mine: 'Ваша реакция: {{emoji}}',
+    theirs: '{{name}}: реакция — {{emoji}}',
+    removeHint: 'Убирает вашу реакцию',
+    names: {
+      heart: 'сердце',
+      laugh: 'смех',
+      wow: 'удивление',
+      sad: 'грусть',
+      thumbsUp: 'палец вверх',
+      fire: 'огонь',
+    },
+  },
+  undo: {
+    passed: 'Вы пропустили: {{name}}.',
+    button: 'Отменить',
+    hint: 'Снова показать: {{name}}',
+    tooLate: 'Это уже нельзя отменить.',
+  },
   devices: {
     title: 'Ваши устройства',
     intro:

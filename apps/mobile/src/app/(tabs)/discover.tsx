@@ -2,6 +2,7 @@
 // Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 import { router } from 'expo-router';
+import type { PublicProfile } from '@nexaheart/shared';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
@@ -15,6 +16,7 @@ import { DoubleDeck } from '../../components/DoubleDeck';
 import { FriendsDeck } from '../../components/FriendsDeck';
 import { PartnersDeck } from '../../components/PartnersDeck';
 import { Loading } from '../../components/Loading';
+import { UndoPass } from '../../components/UndoPass';
 import { MatchCelebration } from '../../components/MatchCelebration';
 import { Screen } from '../../components/Screen';
 import { OnBreak } from '../../components/OnBreak';
@@ -38,6 +40,9 @@ export default function Discover() {
   const [matchedWith, setMatchedWith] = useState<string>();
   // Easy mode: confirm each like in words, so nothing happens silently.
   const [liked, setLiked] = useState<string>();
+  // Undo a pass (phase 29b): who was just passed on, and a profile brought back.
+  const [passed, setPassed] = useState<string>();
+  const [restored, setRestored] = useState<PublicProfile>();
   // Dating, friends (phase 22) or double dates (phase 22).
   // ...and, when this community has partners, people from partner communities (phase 28b).
   const [deck, setDeck] = useState<'date' | 'friend' | 'double' | 'partners'>('date');
@@ -100,11 +105,14 @@ export default function Discover() {
   }
   if (feed.isPending) return <Loading />;
   const profiles = feed.data ?? [];
-  const current = profiles[index];
+  const current = restored ?? profiles[index];
 
   const onDecided = (result: DecisionResult) => {
     if (result.matched && current) setMatchedWith(current.displayName);
     setLiked(easy && result.kind === 'like' && !result.matched ? current?.displayName : undefined);
+    setPassed(result.kind === 'pass' ? current?.displayName : undefined);
+    // A profile brought back by Undo sits in front of the deck; the deck itself didn't move.
+    if (restored) return setRestored(undefined);
     if (index + 1 >= profiles.length) void feed.refetch();
     else setIndex(index + 1);
   };
@@ -152,6 +160,17 @@ export default function Discover() {
           />
         </View>
       )}
+      {passed && !restored ? (
+        <UndoPass
+          key={passed}
+          name={passed}
+          onRestored={(profile) => {
+            setRestored(profile);
+            setPassed(undefined);
+          }}
+          onGone={() => setPassed(undefined)}
+        />
+      ) : null}
     </Screen>
   );
 }

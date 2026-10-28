@@ -985,6 +985,26 @@ export const en = {
     open: 'Go to my chats',
     likeBlocked: 'Reply to the people waiting for you before liking someone new.',
   },
+  reactions: {
+    react: 'React',
+    mine: 'You reacted with {{emoji}}',
+    theirs: '{{name}} reacted with {{emoji}}',
+    removeHint: 'Removes your reaction',
+    names: {
+      heart: 'a heart',
+      laugh: 'laughter',
+      wow: 'surprise',
+      sad: 'sadness',
+      thumbsUp: 'a thumbs up',
+      fire: 'fire',
+    },
+  },
+  undo: {
+    passed: 'You passed on {{name}}.',
+    button: 'Undo',
+    hint: 'Shows {{name}} again',
+    tooLate: 'This can’t be undone any more.',
+  },
   devices: {
     title: 'Your devices',
     intro:

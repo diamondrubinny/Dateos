@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
-import type { MessageView } from '@nexaheart/shared';
+import type { MessageView, ReactionEmoji } from '@nexaheart/shared';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
@@ -9,6 +9,7 @@ import { radius, spacing, useColors } from '../lib/theme';
 import { AppText } from './AppText';
 import { CallLine } from './CallLine';
 import { DateCard } from './DateCard';
+import { Reactions, canReact } from './Reactions';
 import { RemoteImage } from './RemoteImage';
 import { VoicePlayer } from './VoicePlayer';
 import { VoiceTranscript } from './VoiceTranscript';
@@ -30,11 +31,16 @@ export function MessageBubble({
   message,
   seen,
   other,
+  onReact,
+  reacting,
 }: {
   message: MessageView;
   seen: boolean;
   /** The other person, for "something felt wrong?" on a date card. */
   other?: { id: string; name: string } | undefined;
+  /** Reactions (phase 29b); without it (partner chats) none are shown. */
+  onReact?: (emoji: ReactionEmoji | null) => void;
+  reacting?: boolean;
 }) {
   const { t } = useTranslation();
   const colors = useColors();
@@ -132,6 +138,14 @@ export function MessageBubble({
     <View style={[styles.row, mine ? styles.rowMine : styles.rowTheirs]}>
       {message.scam.length > 0 ? <ScamBanner /> : null}
       <View style={bubble}>{content}</View>
+      {onReact && canReact(message) && (!message.hidden || revealed) ? (
+        <Reactions
+          message={message}
+          otherName={other?.name ?? ''}
+          onReact={onReact}
+          busy={reacting}
+        />
+      ) : null}
       {mine && seen ? (
         <AppText variant="caption" tone="muted" style={styles.seen}>
           ✓✓ {t('chat.seen')}

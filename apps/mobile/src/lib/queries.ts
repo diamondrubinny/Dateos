@@ -25,6 +25,7 @@ import type {
   TravelInput,
   TravelState,
   YourTurn,
+  UndoPassResult,
 } from '@nexaheart/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Platform } from 'react-native';
@@ -262,6 +263,11 @@ export const useInteract = () =>
       body: json(input),
     }),
   );
+/** Undo the last pass (phase 29b): the server returns the profile to show again. */
+export const useUndoPass = () =>
+  useMutation({
+    mutationFn: () => apiFetch<UndoPassResult>('/v1/interactions/undo', { method: 'POST' }),
+  });
 export const useBlock = () =>
   useDiscoveryMutation((userId: string) =>
     apiFetch('/v1/blocks', { method: 'POST', body: json({ userId }) }),

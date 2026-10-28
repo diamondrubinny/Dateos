@@ -966,6 +966,26 @@ export const he: Translations = {
     open: 'לשיחות שלי',
     likeBlocked: 'קודם לענות למי שמחכים לך, ואז אפשר לעשות לייק חדש.',
   },
+  reactions: {
+    react: 'הוספת תגובה',
+    mine: 'הגבת עם {{emoji}}',
+    theirs: '{{name}}: תגובה עם {{emoji}}',
+    removeHint: 'מסיר את התגובה שלך',
+    names: {
+      heart: 'לב',
+      laugh: 'צחוק',
+      wow: 'הפתעה',
+      sad: 'עצב',
+      thumbsUp: 'אגודל למעלה',
+      fire: 'אש',
+    },
+  },
+  undo: {
+    passed: 'דילגת על {{name}}.',
+    button: 'ביטול',
+    hint: 'יציג שוב את {{name}}',
+    tooLate: 'כבר אי אפשר לבטל.',
+  },
   devices: {
     title: 'המכשירים שלך',
     intro:
