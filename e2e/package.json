@@ -42,7 +42,8 @@
     "devices": "tsx devices.ts",
     "reactions-undo": "tsx reactions-undo.ts",
     "chat-control": "tsx chat-control.ts",
-    "later-notify": "tsx later-notify.ts"
+    "later-notify": "tsx later-notify.ts",
+    "anti-bot": "tsx anti-bot.ts"
   },
   "dependencies": {
     "@axe-core/playwright": "4.14.0",

@@ -130,6 +130,8 @@ export const preferencesSchema = z
     ageMax: z.number().int().min(MIN_AGE).max(MAX_AGE),
     maxDistanceKm: z.number().int().min(1).max(500),
     intentions: z.array(intentionSchema).max(intentions.length),
+    /** Phase 34: only people whose photos a moderator verified. */
+    verifiedOnly: z.boolean().optional(),
   })
   .refine((p) => p.ageMin <= p.ageMax, { message: 'ageMin must be <= ageMax', path: ['ageMin'] });
 export type Preferences = z.infer<typeof preferencesSchema>;
@@ -202,6 +204,8 @@ export const meResponseSchema = z.object({
       ageMax: z.number(),
       maxDistanceKm: z.number(),
       intentions: z.array(intentionSchema),
+      /** Phase 34. */
+      verifiedOnly: z.boolean(),
     })
     .nullable(),
   prompts: z.array(promptAnswerSchema),

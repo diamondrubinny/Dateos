@@ -32,7 +32,8 @@ import {
   type FriendMode,
 } from '@nexaheart/shared';
 import { checkHarm } from '@nexaheart/ai';
-import { and, asc, desc, eq, isNull, ne } from 'drizzle-orm';
+import { and, asc, desc, eq, isNull, ne, sql } from 'drizzle-orm';
+import { normalizedText, openAutoReport } from '../safety/auto-report.js';
 import { HttpError } from '../../plugins/error-handler.js';
 import type { MediaQueue, ProfileQueue } from '../../lib/queue.js';
 import { audit } from '../../lib/audit.js';
@@ -64,6 +65,9 @@ export function todayUtc(): string {
 export function photoUrl(photoId: string): string {
   return `/v1/photos/${photoId}`;
 }
+
+/** Phase 34: profile texts this long or more are compared with other accounts'. */
+export const COPIED_TEXT_MIN_LENGTH = 40;
 
 export class MeService {
   constructor(
@@ -209,6 +213,7 @@ export class MeService {
             ageMax: prefs.ageMax,
             maxDistanceKm: prefs.maxDistanceKm,
             intentions: prefs.intentions,
+            verifiedOnly: prefs.verifiedOnly,
           }
         : null,
       prompts: promptRows,
@@ -430,6 +435,30 @@ export class MeService {
     });
     await this.profileQueue?.embedProfile(userId);
     this.appEvents.emit({ type: 'member.joined', memberId: userId });
+    void this.copiedTextCheck(userId).catch(() => undefined);
+  }
+
+  /**
+   * Phase 34: a bio or prompt answer (40+ characters) identical to another active account's opens
+   * an automatic report on the account that saved it, for a moderator to compare. Never blocks.
+   */
+  async copiedTextCheck(userId: string): Promise<boolean> {
+    const min = COPIED_TEXT_MIN_LENGTH;
+    const { rows } = await this.db.execute<{ copied: boolean }>(sql`
+      SELECT EXISTS (
+        SELECT 1 FROM profiles mine JOIN profiles other ON other.user_id <> mine.user_id
+        JOIN "user" ou ON ou.id = other.user_id AND ou.status = 'active'
+        WHERE mine.user_id = ${userId} AND length(mine.bio) >= ${min}
+          AND ${normalizedText(sql`other.bio`)} = ${normalizedText(sql`mine.bio`)}
+      ) OR EXISTS (
+        SELECT 1 FROM prompts mine JOIN prompts other ON other.user_id <> mine.user_id
+        JOIN "user" ou ON ou.id = other.user_id AND ou.status = 'active'
+        WHERE mine.user_id = ${userId} AND length(mine.answer) >= ${min}
+          AND ${normalizedText(sql`other.answer`)} = ${normalizedText(sql`mine.answer`)}
+      ) AS copied`);
+    if (!rows[0]?.copied) return false;
+    await openAutoReport(this.db, userId, 'fake_profile', 'normal', 'copied_profile_text');
+    return true;
   }
 
   async updateProfile(userId: string, input: ProfileUpdate): Promise<void> {
@@ -453,6 +482,7 @@ export class MeService {
     if (values.bio !== undefined || values.intention !== undefined) {
       await this.profileQueue?.embedProfile(userId);
     }
+    if (values.bio) void this.copiedTextCheck(userId).catch(() => undefined);
   }
 
   async setPreferences(userId: string, input: Preferences): Promise<void> {
@@ -472,6 +502,7 @@ export class MeService {
       }
     });
     await this.profileQueue?.embedProfile(userId);
+    void this.copiedTextCheck(userId).catch(() => undefined);
   }
 
   async recordConsents(userId: string, items: ConsentInput[]): Promise<void> {

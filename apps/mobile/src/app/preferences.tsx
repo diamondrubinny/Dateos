@@ -7,7 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 import { Banner } from '../components/Banner';
 import { Button } from '../components/Button';
-import { ChoiceGroup } from '../components/Choice';
+import { ChoiceGroup, Checkbox } from '../components/Choice';
 import { Loading } from '../components/Loading';
 import { RequireSession } from '../components/RequireSession';
 import { Screen } from '../components/Screen';
@@ -25,6 +25,8 @@ function PreferencesContent() {
   const [ageMax, setAgeMax] = useState('');
   const [distance, setDistance] = useState<(typeof distances)[number]>('50');
   const [wanted, setWanted] = useState<Intention[]>([]);
+  // Phase 34: only people a moderator verified.
+  const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [notice, setNotice] = useState<'saved' | 'invalid' | 'error'>();
 
   const prefs = me.data?.preferences;
@@ -35,6 +37,7 @@ function PreferencesContent() {
     const closest = distances.find((d) => Number(d) >= prefs.maxDistanceKm) ?? '250';
     setDistance(closest);
     setWanted(prefs.intentions);
+    setVerifiedOnly(prefs.verifiedOnly);
   }, [prefs]);
 
   if (!me.data) return <Loading />;
@@ -57,6 +60,7 @@ function PreferencesContent() {
         ageMax: max,
         maxDistanceKm: Number(distance),
         intentions: wanted,
+        verifiedOnly,
       });
       setNotice('saved');
     } catch {
@@ -107,6 +111,12 @@ function PreferencesContent() {
         options={intentions.map((value) => ({ value, label: t(`intention.${value}`) }))}
         selected={wanted}
         onChange={setWanted}
+      />
+      <Checkbox
+        label={`✓ ${t('preferences.verifiedOnly')}`}
+        hint={t('preferences.verifiedOnlyHint')}
+        checked={verifiedOnly}
+        onChange={setVerifiedOnly}
       />
     </Screen>
   );

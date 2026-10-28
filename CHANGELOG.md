@@ -6,6 +6,11 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Added
 
+- **Anti-bot and fake-profile checks** (phase 34): the same message to 5+ chats in a day, scam
+  signals from an account under a day old in 3+ chats, and profile text copied from another
+  account each open an automatic report for a moderator (with the reason; nothing is decided
+  automatically). Liking faster than a person reads (40+ likes in 10 minutes) asks to slow down.
+- **Verified profiles only**: a Preferences switch to see only people whose photos were verified.
 - **Notifications your way**: turn new-match, new-message and community-event notifications on
   or off. Calls and safety check-in alerts are always on.
 - **Maybe later**: put a profile aside in Discover without deciding; it waits, privately, under
@@ -189,6 +194,8 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Fixed
 
+- "Your turn" (focus mode) counted 0 people waiting as soon as anyone, anywhere, had unmatched: a
+  query helper's alias shadowed the caller's. Each helper now uses its own aliases; regression test.
 - Link, number, date and time fields in the dashboard had no styling (the Branding page's donation
   link included).
 - Arabic and Russian were missing from the native apps' language list (iOS and Android).

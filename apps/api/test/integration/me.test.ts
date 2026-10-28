@@ -107,7 +107,13 @@ describe.skipIf(!integrationEnabled)('auth + profile (integration)', () => {
       age: 31,
       interestedIn: ['man', 'woman'],
     });
-    expect(body.preferences).toEqual({ ageMin: 26, ageMax: 36, maxDistanceKm: 50, intentions: [] });
+    expect(body.preferences).toEqual({
+      ageMin: 26,
+      ageMax: 36,
+      maxDistanceKm: 50,
+      intentions: [],
+      verifiedOnly: false,
+    });
 
     const again = await ctx.app.inject({
       method: 'POST',

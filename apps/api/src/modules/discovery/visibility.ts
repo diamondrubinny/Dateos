@@ -75,14 +75,17 @@ export function notContactHidden(a: SQL, b: SQL): SQL {
 
 /** Both users are active and not separated by a block or an unmatch. */
 export function notSeparated(a: SQL, b: SQL): SQL {
+  // Aliases unique to this helper: callers pass columns like `m.user_a`, which an inner `m` would
+  // shadow (the check then matched any unmatched pair at all).
   return sql`NOT EXISTS (
-      SELECT 1 FROM blocks bl
-      WHERE (bl.blocker_id = ${a} AND bl.blocked_id = ${b}) OR (bl.blocker_id = ${b} AND bl.blocked_id = ${a})
+      SELECT 1 FROM blocks ns_bl
+      WHERE (ns_bl.blocker_id = ${a} AND ns_bl.blocked_id = ${b})
+        OR (ns_bl.blocker_id = ${b} AND ns_bl.blocked_id = ${a})
     )
     AND NOT EXISTS (
-      SELECT 1 FROM matches m
-      WHERE m.unmatched_at IS NOT NULL
-        AND ((m.user_a = ${a} AND m.user_b = ${b}) OR (m.user_a = ${b} AND m.user_b = ${a}))
+      SELECT 1 FROM matches ns_m
+      WHERE ns_m.unmatched_at IS NOT NULL
+        AND ((ns_m.user_a = ${a} AND ns_m.user_b = ${b}) OR (ns_m.user_a = ${b} AND ns_m.user_b = ${a}))
     )`;
 }
 
@@ -127,6 +130,8 @@ export function candidateSql(q: CandidateQuery): SQL {
       SELECT p.user_id, p.gender, p.interested_in, p.intention, p.languages,
              date_part('year', age(${today}, p.birth_date))::int AS age,
              pr.age_min, pr.age_max, pr.max_distance_km, pr.intentions AS wants,
+             -- Verified profiles only (phase 34).
+             pr.verified_only,
              -- Travel mode (phase 18c): a traveller looks from the city they're visiting.
              CASE WHEN l.travel_until > now() THEN l.travel_geo ELSE l.geo END AS geo,
              e.embedding, e.model,
@@ -192,6 +197,8 @@ export function candidateSql(q: CandidateQuery): SQL {
       ${q.targetId ? sql`AND c.user_id = ${q.targetId}` : sql``}
       ${q.onlyIds ? sql`AND c.user_id = ANY(${sql.param(q.onlyIds)}::text[])` : sql``}
       ${q.excludeDecided ? sql`AND NOT EXISTS (SELECT 1 FROM interactions i WHERE i.actor_id = me.user_id AND i.target_id = c.user_id)` : sql``}
+      -- Verified profiles only (phase 34): someone a moderator verified, in Discover and Picks.
+      ${q.excludeDecided ? sql`AND (NOT me.verified_only OR c.verified_at IS NOT NULL)` : sql``}
       ${q.excludeSaved ? sql`AND NOT EXISTS (SELECT 1 FROM saved_profiles sp WHERE sp.user_id = me.user_id AND sp.target_id = c.user_id)` : sql``}
       -- One array parameter keeps the statement text stable, so it can be prepared once.
       AND NOT (c.user_id = ANY(${sql.param(q.excludeIds ?? [])}::text[]))

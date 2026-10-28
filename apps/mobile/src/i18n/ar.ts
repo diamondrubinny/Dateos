@@ -581,6 +581,7 @@ export const ar: Translations = {
     pass: 'تخطٍّ',
     likeLabel: 'الإعجاب بـ{{name}}',
     passLabel: 'تخطي {{name}}',
+    slowDown: 'إعجابات كثيرة خلال دقائق. تمهّل قليلًا وامنح كل ملف شخصي لحظة.',
     likeItem: 'أعجبني هذا',
     likeItemLabel: 'الإعجاب بـ«{{item}}»',
     likePhotoLabel: 'الإعجاب بهذه الصورة',
@@ -644,6 +645,8 @@ export const ar: Translations = {
     unavailable: 'هذا الملف الشخصي لم يعد متاحًا.',
   },
   preferences: {
+    verifiedOnly: 'الملفات الموثّقة فقط',
+    verifiedOnlyHint: 'اعرض فقط من تحقّق مشرف من صورهم. عدد أقل، ثقة أكبر.',
     title: 'تفضيلات الاستكشاف',
     ageMin: 'الحد الأدنى للعمر',
     ageMax: 'الحد الأقصى للعمر',

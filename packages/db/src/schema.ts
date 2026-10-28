@@ -259,6 +259,8 @@ export const preferences = pgTable(
     notifyMatches: boolean('notify_matches').notNull().default(true),
     notifyMessages: boolean('notify_messages').notNull().default(true),
     notifyEvents: boolean('notify_events').notNull().default(true),
+    /** Phase 34: Discover and Picks show only people whose photos a moderator verified. */
+    verifiedOnly: boolean('verified_only').notNull().default(false),
     /** Receiver control: people can turn video and voice calls off (phase 15). */
     acceptCalls: boolean('accept_calls').notNull().default(true),
     /** Dealbreakers (phase 19): empty means any; a missing answer always passes. */

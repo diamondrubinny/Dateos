@@ -590,6 +590,8 @@ export const en = {
     pass: 'Pass',
     likeLabel: 'Like {{name}}',
     passLabel: 'Pass on {{name}}',
+    slowDown:
+      'That’s a lot of likes in a few minutes. Slow down a little and take a moment with each profile.',
     likeItem: 'Like this',
     likeItemLabel: 'Like “{{item}}”',
     likePhotoLabel: 'Like this photo',
@@ -653,6 +655,9 @@ export const en = {
     unavailable: 'This profile is no longer available.',
   },
   preferences: {
+    verifiedOnly: 'Verified profiles only',
+    verifiedOnlyHint:
+      'Show only people whose photos a moderator verified. Fewer people, more confidence.',
     title: 'Discovery preferences',
     ageMin: 'Minimum age',
     ageMax: 'Maximum age',
