@@ -7,10 +7,11 @@ import {
   interactionInputSchema,
   interactionResultSchema,
   undoPassResultSchema,
+  saveProfileInputSchema,
+  publicProfileSchema,
   likeReceivedSchema,
   locationInputSchema,
   matchSummarySchema,
-  publicProfileSchema,
   closeMatchSchema,
   closedConversationSchema,
   YOUR_TURN_LIMIT,
@@ -110,6 +111,40 @@ export const discoveryRoutes: FastifyPluginAsyncZod<{
       config: perUserLimit(60, 60_000),
     },
     async (request) => discovery.interact(currentUser(request).id, request.body),
+  );
+
+  // "Maybe later" (phase 33): private, up to 30.
+  app.get(
+    '/v1/saved',
+    {
+      schema: { response: { 200: z.object({ profiles: z.array(publicProfileSchema) }) } },
+      config: perUserLimit(60, 60_000),
+    },
+    async (request) => ({ profiles: await discovery.saved(currentUser(request).id) }),
+  );
+
+  app.post(
+    '/v1/saved',
+    {
+      schema: { body: saveProfileInputSchema, response: { 200: ok } },
+      config: perUserLimit(60, 60_000),
+    },
+    async (request) => {
+      await discovery.saveForLater(currentUser(request).id, request.body.targetId);
+      return { ok: true as const };
+    },
+  );
+
+  app.delete(
+    '/v1/saved/:id',
+    {
+      schema: { params: z.object({ id: z.string().min(1).max(64) }), response: { 200: ok } },
+      config: perUserLimit(60, 60_000),
+    },
+    async (request) => {
+      await discovery.removeSaved(currentUser(request).id, request.params.id);
+      return { ok: true as const };
+    },
   );
 
   app.post(

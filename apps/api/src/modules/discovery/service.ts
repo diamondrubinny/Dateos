@@ -27,6 +27,7 @@ import {
   type ClosedConversation,
   YOUR_TURN_LIMIT,
   UNDO_PASS_MINUTES,
+  MAX_SAVED_PROFILES,
   type UndoPassResult,
   type MatchMode,
   MAX_SHOWN_TAKES,
@@ -54,6 +55,7 @@ const {
   prompts,
   photos,
   interactions,
+  savedProfiles,
   matches,
   blocks,
   dailyPicks,
@@ -149,6 +151,7 @@ export class DiscoveryService {
       excludeIds?: string[];
       targetId?: string;
       excludeDecided?: boolean;
+      excludeSaved?: boolean;
       mode?: MatchMode;
       onlyIds?: string[];
     },
@@ -206,7 +209,11 @@ export class DiscoveryService {
       .from(dailyPicks)
       .where(and(eq(dailyPicks.userId, viewerId), eq(dailyPicks.servedOn, this.today())));
     const ranked = this.score(
-      await this.candidates(viewerId, { excludeDecided: true, excludeIds: picks.map((p) => p.id) }),
+      await this.candidates(viewerId, {
+        excludeDecided: true,
+        excludeSaved: true,
+        excludeIds: picks.map((p) => p.id),
+      }),
     ).slice(0, limit);
     await this.recordImpressions(
       viewerId,
@@ -267,7 +274,7 @@ export class DiscoveryService {
   async discoverFriends(viewerId: string, limit: number): Promise<PublicProfile[]> {
     if (!(await this.friendModeOn(viewerId))) return [];
     const ranked = this.score(
-      await this.candidates(viewerId, { excludeDecided: true, mode: 'friend' }),
+      await this.candidates(viewerId, { excludeDecided: true, excludeSaved: true, mode: 'friend' }),
     ).slice(0, limit);
     return this.toProfiles(viewerId, ranked);
   }
@@ -463,6 +470,10 @@ export class DiscoveryService {
         .returning({ id: interactions.id });
       if (inserted.length === 0)
         throw new HttpError(409, ErrorCode.Conflict, 'You already decided on this profile.');
+      // Deciding clears "Maybe later" (phase 33).
+      await tx
+        .delete(savedProfiles)
+        .where(and(eq(savedProfiles.userId, actorId), eq(savedProfiles.targetId, input.targetId)));
       if (input.kind !== 'like') return { matched: false, matchId: null };
 
       const [reverse] = await tx
@@ -493,6 +504,46 @@ export class DiscoveryService {
       this.appEvents.emit({ type: 'match.created', matchId: result.matchId });
     }
     return result;
+  }
+
+  // ---------------------------------------------------------------- maybe later (phase 33)
+
+  /** Put a profile aside without deciding. Only someone the member may see now. */
+  async saveForLater(viewerId: string, targetId: string): Promise<void> {
+    if (targetId === viewerId || !(await this.canView(viewerId, targetId))) throw notFound();
+    await this.db.transaction(async (tx) => {
+      // Count and insert under one per-member lock, so parallel requests can't pass the limit.
+      await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${`saved:${viewerId}`}))`);
+      const [{ n }] = (await tx
+        .select({ n: sql<number>`count(*)::int` })
+        .from(savedProfiles)
+        .where(eq(savedProfiles.userId, viewerId))) as [{ n: number }];
+      if (n >= MAX_SAVED_PROFILES) {
+        throw new HttpError(409, ErrorCode.Conflict, 'Your “Maybe later” list is full.');
+      }
+      await tx.insert(savedProfiles).values({ userId: viewerId, targetId }).onConflictDoNothing();
+    });
+  }
+
+  async removeSaved(viewerId: string, targetId: string): Promise<void> {
+    await this.db
+      .delete(savedProfiles)
+      .where(and(eq(savedProfiles.userId, viewerId), eq(savedProfiles.targetId, targetId)));
+  }
+
+  /** My "Maybe later" list, newest first; profiles that can't be shown any more are left out. */
+  async saved(viewerId: string): Promise<PublicProfile[]> {
+    const rows = await this.db
+      .select({ id: savedProfiles.targetId })
+      .from(savedProfiles)
+      .where(eq(savedProfiles.userId, viewerId))
+      .orderBy(desc(savedProfiles.createdAt));
+    const out: PublicProfile[] = [];
+    for (const row of rows) {
+      if (!(await this.canView(viewerId, row.id))) continue;
+      out.push(await this.profile(viewerId, row.id));
+    }
+    return out;
   }
 
   /**

@@ -340,6 +340,11 @@ export async function exportMemberData(
     })
     .from(t.pushTokens)
     .where(eq(t.pushTokens.userId, userId));
+  // My "Maybe later" list (phase 33): who, and when.
+  const savedForLater = await db
+    .select({ profileId: t.savedProfiles.targetId, savedAt: t.savedProfiles.createdAt })
+    .from(t.savedProfiles)
+    .where(eq(t.savedProfiles.userId, userId));
   // My private chat choices (phase 31).
   const chatPrefs = await db
     .select({
@@ -582,6 +587,7 @@ export async function exportMemberData(
     })),
     reactions: reactions.map((r) => ({ ...r, createdAt: iso(r.createdAt) })),
     chatPreferences: chatPrefs,
+    savedForLater: savedForLater.map((s) => ({ ...s, savedAt: iso(s.savedAt) })),
   };
   files['data.json'] = strToU8(JSON.stringify(data, null, 2));
   files['README.txt'] = strToU8(

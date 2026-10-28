@@ -8,7 +8,7 @@ import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 import { ApiRequestError } from '../lib/api';
 import { useDisplay } from '../lib/display';
-import { useInteract, yourTurnKey } from '../lib/queries';
+import { useInteract, yourTurnKey, useSaveForLater } from '../lib/queries';
 import { radius, spacing, useColors } from '../lib/theme';
 import { AppText } from './AppText';
 import { Banner } from './Banner';
@@ -17,7 +17,8 @@ import { ProfileCard, type LikeTarget } from './ProfileCard';
 import { TextField } from './TextField';
 
 export interface DecisionResult {
-  kind: 'like' | 'pass';
+  /** 'later' (phase 33): put aside without deciding. */
+  kind: 'like' | 'pass' | 'later';
   matched: boolean;
   matchId: string | null;
 }
@@ -27,11 +28,14 @@ export function DecisionPanel({
   profile,
   onDecided,
   mode = 'date',
+  allowLater = false,
 }: {
   profile: PublicProfile;
   onDecided: (result: DecisionResult) => void;
   /** Friends mode (phase 22) has its own deck; likes there are friend likes. */
   mode?: MatchMode;
+  /** Decks (phase 33): "Maybe later" puts the profile aside without deciding. */
+  allowLater?: boolean;
 }) {
   const { t } = useTranslation();
   const colors = useColors();
@@ -41,6 +45,20 @@ export function DecisionPanel({
   const [target, setTarget] = useState<LikeTarget>();
   const [comment, setComment] = useState('');
   const [error, setError] = useState<string>();
+
+  const saveForLater = useSaveForLater();
+  const later = () => {
+    setError(undefined);
+    saveForLater.mutate(profile.id, {
+      onSuccess: () => onDecided({ kind: 'later', matched: false, matchId: null }),
+      onError: (e) =>
+        setError(
+          e instanceof ApiRequestError && e.status === 409
+            ? t('later.full')
+            : t('common.genericError'),
+        ),
+    });
+  };
 
   const decide = async (kind: 'like' | 'pass') => {
     setError(undefined);
@@ -114,6 +132,16 @@ export function DecisionPanel({
           </View>
         </View>
       )}
+      {allowLater && !target ? (
+        <Button
+          variant="ghost"
+          label={`⏳ ${t('later.button')}`}
+          hint={t('later.hint', { name: profile.displayName })}
+          loading={saveForLater.isPending}
+          disabled={interact.isPending}
+          onPress={later}
+        />
+      ) : null}
       {easy && !target ? (
         // Easy mode (phase 25): what each button does, in plain words.
         <AppText variant="body" tone="muted">

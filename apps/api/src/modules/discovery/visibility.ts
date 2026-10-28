@@ -19,6 +19,8 @@ export interface CandidateQuery {
   targetId?: string;
   /** Hide people the viewer already liked or passed (feeds). */
   excludeDecided?: boolean;
+  /** "Maybe later" (phase 33): profiles the viewer put aside leave the decks. */
+  excludeSaved?: boolean;
   /** Hide these ids (e.g. today's picks in the discover feed). */
   excludeIds?: string[];
   /** Only these people (phase 23: the speed-dating lobby). */
@@ -190,6 +192,7 @@ export function candidateSql(q: CandidateQuery): SQL {
       ${q.targetId ? sql`AND c.user_id = ${q.targetId}` : sql``}
       ${q.onlyIds ? sql`AND c.user_id = ANY(${sql.param(q.onlyIds)}::text[])` : sql``}
       ${q.excludeDecided ? sql`AND NOT EXISTS (SELECT 1 FROM interactions i WHERE i.actor_id = me.user_id AND i.target_id = c.user_id)` : sql``}
+      ${q.excludeSaved ? sql`AND NOT EXISTS (SELECT 1 FROM saved_profiles sp WHERE sp.user_id = me.user_id AND sp.target_id = c.user_id)` : sql``}
       -- One array parameter keeps the statement text stable, so it can be prepared once.
       AND NOT (c.user_id = ANY(${sql.param(q.excludeIds ?? [])}::text[]))
     LIMIT ${q.limit ?? 300}`;

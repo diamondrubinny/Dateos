@@ -6,6 +6,10 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Added
 
+- **Notifications your way**: turn new-match, new-message and community-event notifications on
+  or off. Calls and safety check-in alerts are always on.
+- **Maybe later**: put a profile aside in Discover without deciding; it waits, privately, under
+  Likes (up to 30). Liking or passing clears it.
 - **An email when a new kind of device signs in** (no link in it, at most 3 a day; can be turned
   off in Settings → Security).
 - **Search in a chat**: text messages, newest first; never unsent or hidden messages.

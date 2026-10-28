@@ -144,7 +144,7 @@ export default function Discover() {
         <MatchCelebration name={matchedWith} onClose={() => setMatchedWith(undefined)} />
       ) : null}
       {current ? (
-        <DecisionPanel key={current.id} profile={current} onDecided={onDecided} />
+        <DecisionPanel key={current.id} profile={current} onDecided={onDecided} allowLater />
       ) : (
         <View style={[styles.empty, { backgroundColor: colors.surface }]}>
           <AppText variant="heading" center>

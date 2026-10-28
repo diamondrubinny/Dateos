@@ -24,6 +24,7 @@ import {
   useSetAcceptVoice,
   useSetAllowTranscripts,
   useSetReadReceipts,
+  useSetSetting,
 } from '../lib/chat-queries';
 import { useLocale } from '../lib/locale';
 import { disablePush, enablePush, pushEnabledOnThisDevice } from '../lib/push';
@@ -56,6 +57,7 @@ function SettingsContent() {
   const setAcceptVoice = useSetAcceptVoice();
   const setAllowTranscripts = useSetAllowTranscripts();
   const setReadReceipts = useSetReadReceipts();
+  const setSetting = useSetSetting();
   const setAcceptCalls = useSetAcceptCalls();
   const setIncognito = useSetIncognito();
   const setMetBadge = useSetMetBadge();
@@ -163,6 +165,20 @@ function SettingsContent() {
         />
       )}
       {pushNote ? <Banner tone="info" message={pushNote} /> : null}
+      {/* Which notifications (phase 33). Calls and safety check-ins are always on. */}
+      {(['notifyMatches', 'notifyMessages', 'notifyEvents'] as const).map((key) => (
+        <Checkbox
+          key={key}
+          label={t(`notifyChoice.${key}`)}
+          checked={chatSettings.data?.[key] ?? true}
+          onChange={(v) =>
+            setSetting.mutate({ [key]: v }, { onError: () => setError(t('common.genericError')) })
+          }
+        />
+      ))}
+      <AppText variant="caption" tone="muted">
+        {t('notifyChoice.always')}
+      </AppText>
       <Checkbox
         label={t('voice.acceptLabel')}
         hint={t('voice.acceptHint')}

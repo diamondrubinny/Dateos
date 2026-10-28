@@ -57,7 +57,13 @@ export function FriendsDeck() {
     <View style={styles.wrap}>
       {matched ? <Banner tone="success" message={t('friends.matched', { name: matched })} /> : null}
       {current ? (
-        <DecisionPanel key={current.id} profile={current} mode="friend" onDecided={onDecided} />
+        <DecisionPanel
+          key={current.id}
+          profile={current}
+          mode="friend"
+          onDecided={onDecided}
+          allowLater
+        />
       ) : (
         <View style={[styles.card, { backgroundColor: colors.surface }]}>
           <AppText variant="heading" center>
