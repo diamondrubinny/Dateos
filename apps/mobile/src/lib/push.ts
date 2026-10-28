@@ -4,6 +4,7 @@
 import type { Locale } from '@nexaheart/shared';
 import Constants from 'expo-constants';
 import { getRandomBytes } from 'expo-crypto';
+import * as SecureStore from 'expo-secure-store';
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import { apiFetch, json } from './api';
@@ -14,14 +15,15 @@ const TOKEN_KEY = 'nexaheart.pushToken';
 const DEVICE_SECRET_KEY = 'nexaheart.deviceSecret';
 
 /**
- * A random secret made once per installation, kept in secure storage (phase 29). The server keeps
- * only its hash and moves this device's push token to another account only with the same secret.
+ * A random secret made once per installation, kept only in the device's secure storage (Keychain
+ * or Keystore; never localStorage), phase 29. The server keeps only its hash and moves this
+ * device's push token to another account only with the same secret. Push is native-only.
  */
 async function deviceSecret(): Promise<string> {
-  const saved = await prefs.get(DEVICE_SECRET_KEY);
+  const saved = await SecureStore.getItemAsync(DEVICE_SECRET_KEY);
   if (saved) return saved;
   const secret = base64url(getRandomBytes(32));
-  await prefs.set(DEVICE_SECRET_KEY, secret);
+  await SecureStore.setItemAsync(DEVICE_SECRET_KEY, secret);
   return secret;
 }
 

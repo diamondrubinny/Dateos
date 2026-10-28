@@ -42,7 +42,10 @@ describe.skipIf(!integrationEnabled)('your devices and push tokens (integration)
     expect(list.find((d) => d.current)?.device.browser).toBe('Firefox');
     const stored = await q('SELECT ip_address, user_agent, device_label FROM session');
     expect(stored.rows.every((r) => r.ip_address === null && r.user_agent === null)).toBe(true);
-    expect(stored.rows.map((r) => r.device_label).sort()).toEqual(['app:android', 'web:Firefox:Linux']);
+    expect(stored.rows.map((r) => r.device_label).sort()).toEqual([
+      'app:android',
+      'web:Firefox:Linux',
+    ]);
   });
 
   it('signs out one device; someone else’s session id is “not found”', async () => {
@@ -116,8 +119,13 @@ describe.skipIf(!integrationEnabled)('your devices and push tokens (integration)
       const dan = await signIn(ctx, 'dan@example.test');
       await call(noa, 'POST', '/v1/me/push-tokens', { token, platform: 'android' });
       expect(
-        (await call(noa, 'POST', '/v1/me/push-tokens', { token, platform: 'android', deviceSecret: secret }))
-          .statusCode,
+        (
+          await call(noa, 'POST', '/v1/me/push-tokens', {
+            token,
+            platform: 'android',
+            deviceSecret: secret,
+          })
+        ).statusCode,
       ).toBe(200);
       expect(
         (await call(dan, 'POST', '/v1/me/push-tokens', { token, platform: 'android' })).statusCode,
