@@ -195,6 +195,10 @@ export const chatSettingsSchema = z.object({
   readReceipts: z.boolean(),
   /** Phase 32: an email when a new kind of device signs in. */
   signinAlerts: z.boolean(),
+  /** Phase 33: push notifications by kind (calls and safety alerts are always on). */
+  notifyMatches: z.boolean(),
+  notifyMessages: z.boolean(),
+  notifyEvents: z.boolean(),
 });
 export const chatSettingsInputSchema = chatSettingsSchema
   .partial()

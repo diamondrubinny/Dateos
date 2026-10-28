@@ -69,10 +69,25 @@ export function pushContent(kind: PushJob['kind'], locale: string, instanceName:
 }
 
 export type PushResult =
-  'disabled' | 'inactive' | 'online' | 'muted' | 'throttled' | 'no-devices' | 'sent';
+  'disabled' | 'inactive' | 'online' | 'muted' | 'off' | 'throttled' | 'no-devices' | 'sent';
 
 export async function sendPush(ctx: PushContext, job: PushJob): Promise<PushResult> {
   if (ctx.provider === 'disabled') return 'disabled';
+  // Notifications the member turned off (phase 33). Calls and safety check-ins are always on.
+  const choice =
+    job.kind === 'match'
+      ? 'notify_matches'
+      : job.kind === 'message' || job.kind === 'partner_message'
+        ? 'notify_messages'
+        : job.kind === 'event'
+          ? 'notify_events'
+          : null;
+  if (choice) {
+    const off = await ctx.db.execute(
+      sql`SELECT 1 FROM preferences WHERE user_id = ${job.userId} AND NOT ${sql.raw(choice)}`,
+    );
+    if (off.rows.length > 0) return 'off';
+  }
   if (job.kind === 'checkin') return sendToDevices(ctx, job); // safety: no match or presence check
   if (job.kind === 'event') return sendToDevices(ctx, job); // not about a conversation
   if (job.kind === 'visible') return sendToDevices(ctx, job); // about the member's own profile

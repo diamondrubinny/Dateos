@@ -124,6 +124,9 @@ describe.skipIf(!integrationEnabled)('voice messages & push (integration)', () =
       allowTranscripts: true,
       readReceipts: true,
       signinAlerts: true,
+      notifyMatches: true,
+      notifyMessages: true,
+      notifyEvents: true,
       pushDevices: 0,
     });
   });

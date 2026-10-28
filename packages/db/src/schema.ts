@@ -255,6 +255,10 @@ export const preferences = pgTable(
     readReceipts: boolean('read_receipts').notNull().default(true),
     /** Phase 32: an email when a new kind of device signs in. */
     signinAlerts: boolean('signin_alerts').notNull().default(true),
+    /** Phase 33: which push notifications. Calls and safety alerts are always on. */
+    notifyMatches: boolean('notify_matches').notNull().default(true),
+    notifyMessages: boolean('notify_messages').notNull().default(true),
+    notifyEvents: boolean('notify_events').notNull().default(true),
     /** Receiver control: people can turn video and voice calls off (phase 15). */
     acceptCalls: boolean('accept_calls').notNull().default(true),
     /** Dealbreakers (phase 19): empty means any; a missing answer always passes. */
@@ -588,6 +592,19 @@ export const messageReactions = pgTable(
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [primaryKey({ columns: [t.messageId, t.userId] })],
+);
+
+/** "Maybe later" (phase 33): profiles put aside without deciding. Private to the member. */
+export const savedProfiles = pgTable(
+  'saved_profiles',
+  {
+    userId: ownerId(),
+    targetId: text('target_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.targetId] })],
 );
 
 /** Per-member chat preferences (phase 31): private, never shown to the other person. */

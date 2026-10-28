@@ -239,8 +239,9 @@ function useDiscoveryMutation<TInput, TResult>(request: (input: TInput) => Promi
     mutationFn: request,
     onSuccess: () =>
       Promise.all(
-        [discoveryKeys.picks, discoveryKeys.likes, discoveryKeys.matches].map((queryKey) =>
-          client.invalidateQueries({ queryKey }),
+        // A decision also clears "Maybe later" (phase 33).
+        [discoveryKeys.picks, discoveryKeys.likes, discoveryKeys.matches, ['saved']].map(
+          (queryKey) => client.invalidateQueries({ queryKey }),
         ),
       ),
   });
@@ -263,6 +264,34 @@ export const useInteract = () =>
       body: json(input),
     }),
   );
+const savedKey = ['saved'] as const;
+
+/** "Maybe later" (phase 33): profiles put aside without deciding. */
+export function useSaved() {
+  return useQuery({
+    queryKey: savedKey,
+    queryFn: async () => (await apiFetch<{ profiles: PublicProfile[] }>('/v1/saved')).profiles,
+  });
+}
+
+export function useSaveForLater() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (targetId: string) =>
+      apiFetch('/v1/saved', { method: 'POST', body: json({ targetId }) }),
+    onSuccess: () => client.invalidateQueries({ queryKey: savedKey }),
+  });
+}
+
+export function useRemoveSaved() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (targetId: string) =>
+      apiFetch(`/v1/saved/${encodeURIComponent(targetId)}`, { method: 'DELETE' }),
+    onSuccess: () => client.invalidateQueries({ queryKey: savedKey }),
+  });
+}
+
 /** Undo the last pass (phase 29b): the server returns the profile to show again. */
 export const useUndoPass = () =>
   useMutation({

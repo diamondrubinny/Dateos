@@ -985,6 +985,20 @@ export const en = {
     open: 'Go to my chats',
     likeBlocked: 'Reply to the people waiting for you before liking someone new.',
   },
+  later: {
+    button: 'Maybe later',
+    hint: 'Puts {{name}} aside without deciding. Only you know.',
+    title: 'Maybe later',
+    intro: 'People you put aside. Open a profile to like or pass. Only you see this list.',
+    remove: 'Remove',
+    full: 'Your “Maybe later” list is full (30). Decide on someone there first.',
+  },
+  notifyChoice: {
+    notifyMatches: 'New matches',
+    notifyMessages: 'New messages',
+    notifyEvents: 'Community events',
+    always: 'Calls and safety check-in alerts always come through.',
+  },
   signinAlerts: {
     label: 'Email me about new sign-ins',
     hint: 'When your account signs in on a new kind of device. The email never has a link.',

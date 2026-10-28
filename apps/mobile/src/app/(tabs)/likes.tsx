@@ -10,11 +10,16 @@ import { Loading } from '../../components/Loading';
 import { PersonRow } from '../../components/PersonRow';
 import { Screen } from '../../components/Screen';
 import { OnBreak } from '../../components/OnBreak';
-import { useLikes, useMe } from '../../lib/queries';
+import { useLikes, useMe, useRemoveSaved, useSaved } from '../../lib/queries';
+import { StyleSheet, View } from 'react-native';
+import { Button } from '../../components/Button';
+import { spacing } from '../../lib/theme';
 
 export default function Likes() {
   const { t } = useTranslation();
   const likes = useLikes();
+  const saved = useSaved();
+  const remove = useRemoveSaved();
   const onBreak = Boolean(useMe().data?.pause);
   if (onBreak) {
     return (
@@ -48,6 +53,32 @@ export default function Likes() {
           onPress={() => router.push(`/profile/${like.profile.id}`)}
         />
       ))}
+      {/* "Maybe later" (phase 33): put aside in Discover, decided from the profile. */}
+      {saved.data && saved.data.length > 0 ? (
+        <View style={styles.section} testID="maybe-later">
+          <AppText variant="heading">{t('later.title')}</AppText>
+          <AppText variant="caption" tone="muted">
+            {t('later.intro')}
+          </AppText>
+          {saved.data.map((profile) => (
+            <View key={profile.id} style={styles.saved}>
+              <PersonRow profile={profile} onPress={() => router.push(`/profile/${profile.id}`)} />
+              <Button
+                variant="ghost"
+                label={t('later.remove')}
+                hint={profile.displayName}
+                loading={remove.isPending && remove.variables === profile.id}
+                onPress={() => remove.mutate(profile.id)}
+              />
+            </View>
+          ))}
+        </View>
+      ) : null}
     </Screen>
   );
 }
+
+const styles = StyleSheet.create({
+  section: { gap: spacing.sm, marginTop: spacing.lg },
+  saved: { gap: 2 },
+});

@@ -43,6 +43,9 @@ export const notificationRoutes: FastifyPluginAsyncZod<{ auth: Auth; db: Databas
           allowTranscripts: preferences.allowTranscripts,
           readReceipts: preferences.readReceipts,
           signinAlerts: preferences.signinAlerts,
+          notifyMatches: preferences.notifyMatches,
+          notifyMessages: preferences.notifyMessages,
+          notifyEvents: preferences.notifyEvents,
         })
         .from(preferences)
         .where(eq(preferences.userId, userId));
@@ -56,6 +59,9 @@ export const notificationRoutes: FastifyPluginAsyncZod<{ auth: Auth; db: Databas
         allowTranscripts: prefs?.allowTranscripts ?? true,
         readReceipts: prefs?.readReceipts ?? true,
         signinAlerts: prefs?.signinAlerts ?? true,
+        notifyMatches: prefs?.notifyMatches ?? true,
+        notifyMessages: prefs?.notifyMessages ?? true,
+        notifyEvents: prefs?.notifyEvents ?? true,
         pushDevices: devices.length,
       };
     },
@@ -67,23 +73,12 @@ export const notificationRoutes: FastifyPluginAsyncZod<{ auth: Auth; db: Databas
     async (request) => {
       const updated = await db
         .update(preferences)
-        .set({
-          ...(request.body.acceptVoice !== undefined
-            ? { acceptVoice: request.body.acceptVoice }
-            : {}),
-          ...(request.body.acceptCalls !== undefined
-            ? { acceptCalls: request.body.acceptCalls }
-            : {}),
-          ...(request.body.allowTranscripts !== undefined
-            ? { allowTranscripts: request.body.allowTranscripts }
-            : {}),
-          ...(request.body.readReceipts !== undefined
-            ? { readReceipts: request.body.readReceipts }
-            : {}),
-          ...(request.body.signinAlerts !== undefined
-            ? { signinAlerts: request.body.signinAlerts }
-            : {}),
-        })
+        // Only the settings sent are changed.
+        .set(
+          Object.fromEntries(
+            Object.entries(request.body).filter(([, value]) => value !== undefined),
+          ),
+        )
         .where(eq(preferences.userId, currentUser(request).id))
         .returning({ userId: preferences.userId });
       if (updated.length === 0)

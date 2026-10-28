@@ -205,6 +205,9 @@ export function useChatSettings() {
         allowTranscripts: boolean;
         readReceipts: boolean;
         signinAlerts: boolean;
+        notifyMatches: boolean;
+        notifyMessages: boolean;
+        notifyEvents: boolean;
         pushDevices: number;
       }>('/v1/me/settings'),
   });
@@ -225,6 +228,16 @@ export function useSetAllowTranscripts() {
   return useMutation({
     mutationFn: (allowTranscripts: boolean) =>
       apiFetch('/v1/me/settings', { method: 'PUT', body: json({ allowTranscripts }) }),
+    onSuccess: () => client.invalidateQueries({ queryKey: settingsKey }),
+  });
+}
+
+/** One of my settings at a time (phase 33: which notifications). */
+export function useSetSetting() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (input: Record<string, boolean>) =>
+      apiFetch('/v1/me/settings', { method: 'PUT', body: json(input) }),
     onSuccess: () => client.invalidateQueries({ queryKey: settingsKey }),
   });
 }
