@@ -194,6 +194,8 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Fixed
 
+- "Your turn" (focus mode) counted 0 people waiting as soon as anyone, anywhere, had unmatched: a
+  query helper's alias shadowed the caller's. Each helper now uses its own aliases; regression test.
 - Link, number, date and time fields in the dashboard had no styling (the Branding page's donation
   link included).
 - Arabic and Russian were missing from the native apps' language list (iOS and Android).

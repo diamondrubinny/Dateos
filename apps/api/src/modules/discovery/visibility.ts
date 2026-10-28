@@ -75,14 +75,17 @@ export function notContactHidden(a: SQL, b: SQL): SQL {
 
 /** Both users are active and not separated by a block or an unmatch. */
 export function notSeparated(a: SQL, b: SQL): SQL {
+  // Aliases unique to this helper: callers pass columns like `m.user_a`, which an inner `m` would
+  // shadow (the check then matched any unmatched pair at all).
   return sql`NOT EXISTS (
-      SELECT 1 FROM blocks bl
-      WHERE (bl.blocker_id = ${a} AND bl.blocked_id = ${b}) OR (bl.blocker_id = ${b} AND bl.blocked_id = ${a})
+      SELECT 1 FROM blocks ns_bl
+      WHERE (ns_bl.blocker_id = ${a} AND ns_bl.blocked_id = ${b})
+        OR (ns_bl.blocker_id = ${b} AND ns_bl.blocked_id = ${a})
     )
     AND NOT EXISTS (
-      SELECT 1 FROM matches m
-      WHERE m.unmatched_at IS NOT NULL
-        AND ((m.user_a = ${a} AND m.user_b = ${b}) OR (m.user_a = ${b} AND m.user_b = ${a}))
+      SELECT 1 FROM matches ns_m
+      WHERE ns_m.unmatched_at IS NOT NULL
+        AND ((ns_m.user_a = ${a} AND ns_m.user_b = ${b}) OR (ns_m.user_a = ${b} AND ns_m.user_b = ${a}))
     )`;
 }
 

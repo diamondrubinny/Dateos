@@ -232,6 +232,11 @@ describe.skipIf(!integrationEnabled)('after the match (integration)', () => {
   // ------------------------------------------------------------------ focus mode
 
   it('asks for replies before new likes when six people are waiting', async () => {
+    // Someone else's unmatch elsewhere must not hide Noa's own chats (regression: an alias in
+    // notSeparated shadowed the caller's `m`, so any unmatch anywhere made the count 0).
+    const x = await createMember(ctx, { name: 'Xen', gender: 'man', interestedIn: ['woman'] });
+    const y = await createMember(ctx, { name: 'Yael', gender: 'woman', interestedIn: ['man'] });
+    await q(`UPDATE matches SET unmatched_at = now() WHERE id = $1`, [await match(x, y)]);
     for (let i = 0; i < 6; i += 1) {
       const m = await createMember(ctx, {
         name: `Man${i}`,
