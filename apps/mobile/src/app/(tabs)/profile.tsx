@@ -9,6 +9,7 @@ import { AppText } from '../../components/AppText';
 import { Button } from '../../components/Button';
 import { Loading } from '../../components/Loading';
 import { MoreOptions } from '../../components/MoreOptions';
+import { ProfileStrength } from '../../components/ProfileStrength';
 import { Screen } from '../../components/Screen';
 import { mediaUrl } from '../../lib/api';
 import { useMe } from '../../lib/queries';
@@ -34,6 +35,8 @@ function ProfileContent() {
         </AppText>
         <AppText variant="body">{t('home.readyBody')}</AppText>
       </View>
+
+      <ProfileStrength me={me.data} />
 
       <AppText variant="heading">{t('home.profileTitle')}</AppText>
       <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>

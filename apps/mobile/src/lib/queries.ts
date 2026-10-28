@@ -26,6 +26,7 @@ import type {
   TravelState,
   YourTurn,
   UndoPassResult,
+  BlockedPerson,
 } from '@nexaheart/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Platform } from 'react-native';
@@ -239,10 +240,14 @@ function useDiscoveryMutation<TInput, TResult>(request: (input: TInput) => Promi
     mutationFn: request,
     onSuccess: () =>
       Promise.all(
-        // A decision also clears "Maybe later" (phase 33).
-        [discoveryKeys.picks, discoveryKeys.likes, discoveryKeys.matches, ['saved']].map(
-          (queryKey) => client.invalidateQueries({ queryKey }),
-        ),
+        // A decision also clears "Maybe later" (phase 33); a block changes Blocked people (35).
+        [
+          discoveryKeys.picks,
+          discoveryKeys.likes,
+          discoveryKeys.matches,
+          ['saved'],
+          blockedKey,
+        ].map((queryKey) => client.invalidateQueries({ queryKey })),
       ),
   });
 }
@@ -300,6 +305,20 @@ export const useUndoPass = () =>
 export const useBlock = () =>
   useDiscoveryMutation((userId: string) =>
     apiFetch('/v1/blocks', { method: 'POST', body: json({ userId }) }),
+  );
+
+/** Blocked people (phase 35): name only, newest first. */
+export const blockedKey = ['blocked'] as const;
+export function useBlocked() {
+  return useQuery({
+    queryKey: blockedKey,
+    queryFn: async () => (await apiFetch<{ blocked: BlockedPerson[] }>('/v1/blocks')).blocked,
+  });
+}
+/** Unblock: they may appear in decks again; a match the block closed stays closed. */
+export const useUnblock = () =>
+  useDiscoveryMutation((userId: string) =>
+    apiFetch(`/v1/blocks/${encodeURIComponent(userId)}`, { method: 'DELETE' }),
   );
 export const useUnmatch = () =>
   useDiscoveryMutation((matchId: string) =>

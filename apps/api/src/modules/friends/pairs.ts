@@ -24,6 +24,8 @@ import { createLink, useLink } from './links.js';
 const { pairs, pairInteractions, doubleMatches, doubleMessages, profiles, photos } = schema;
 const notFound = () => new HttpError(404, ErrorCode.NotFound, 'Resource not found.');
 const PAGE = 50;
+/** Pairs looked at per double-date deck load: the newest undecided ones (two people each). */
+const PAIRS_SCANNED = 150;
 
 type Publish = (userId: string, event: RealtimeEvent) => Promise<void>;
 type PairRow = typeof pairs.$inferSelect;
@@ -164,23 +166,25 @@ export class PairService {
    */
   async discover(userId: string, limit = 20): Promise<PairCard[]> {
     const mine = await this.requirePair(userId);
-    const [seenByMe, seenByFriend] = await Promise.all([
-      this.discovery.candidateIds(userId),
-      this.discovery.candidateIds(mine.friendId),
-    ]);
-    const both = [...seenByMe].filter((id) => seenByFriend.has(id));
-    if (both.length < 2) return [];
+    // Newest undecided pairs first, then keep those all four can see; both checks are scoped to
+    // these people (an open candidate query stops at its row limit and could miss them).
     const { rows } = await this.db.execute<{ id: string; user_a: string; user_b: string }>(sql`
       SELECT p.id, p.user_a, p.user_b FROM pairs p
       WHERE p.ended_at IS NULL AND p.id <> ${mine.id}
-        AND p.user_a = ANY(${sql.param(both)}::text[]) AND p.user_b = ANY(${sql.param(both)}::text[])
         AND NOT EXISTS (SELECT 1 FROM pair_interactions pi WHERE pi.pair_id = ${mine.id} AND pi.target_pair_id = p.id)
       ORDER BY p.created_at DESC
-      LIMIT ${limit}`);
+      LIMIT ${PAIRS_SCANNED}`);
+    const ids = rows.flatMap((r) => [r.user_a, r.user_b]);
+    const [seenByMe, seenByFriend] = await Promise.all([
+      this.discovery.candidateIds(userId, ids),
+      this.discovery.candidateIds(mine.friendId, ids),
+    ]);
+    const visible = (id: string) => seenByMe.has(id) && seenByFriend.has(id);
+    const shown = rows.filter((r) => visible(r.user_a) && visible(r.user_b)).slice(0, limit);
     const people = new Map(
-      (await this.members(rows.flatMap((r) => [r.user_a, r.user_b]))).map((m) => [m.id, m]),
+      (await this.members(shown.flatMap((r) => [r.user_a, r.user_b]))).map((m) => [m.id, m]),
     );
-    return rows.flatMap((r) => {
+    return shown.flatMap((r) => {
       const a = people.get(r.user_a);
       const b = people.get(r.user_b);
       return a && b ? [{ id: r.id, members: [a, b] }] : [];
