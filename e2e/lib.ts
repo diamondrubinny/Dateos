@@ -49,6 +49,8 @@ export async function signInHttp(
   email: string,
   /** Another server (phase 28: a second community). */
   base: string = API,
+  /** The browser string the sign-in comes from (phase 29: "Your devices" labels). */
+  userAgent?: string,
 ): Promise<{ name: string; value: string; header: string }> {
   const request = () =>
     fetch(`${base}/v1/auth/sign-in/magic-link`, {
@@ -64,7 +66,10 @@ export async function signInHttp(
     res = await request();
   }
   if (!res.ok) throw new Error(`sign-in ${res.status}: ${await res.text()}`);
-  const verify = await fetch(await magicLink(email), { redirect: 'manual' });
+  const verify = await fetch(await magicLink(email), {
+    redirect: 'manual',
+    ...(userAgent ? { headers: { 'user-agent': userAgent } } : {}),
+  });
   const cookie = verify.headers.getSetCookie().find((c) => c.includes('session_token'));
   if (!cookie) throw new Error('no session cookie');
   const [pair] = cookie.split(';');

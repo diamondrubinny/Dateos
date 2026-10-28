@@ -1,6 +1,9 @@
 {
   "name": "@nexaheart/shared",
-  "author": "Diamond Rubinny",
+  "author": {
+    "name": "Diamond Rubinny",
+    "url": "https://github.com/diamondrubinny"
+  },
   "version": "0.2.0",
   "private": true,
   "license": "AGPL-3.0-or-later",

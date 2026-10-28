@@ -8,6 +8,7 @@ import {
   type Invite,
   type JoinWaitlistInput,
   type RedeemInviteInput,
+  type SignedInDevice,
 } from '@nexaheart/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as Crypto from 'expo-crypto';
@@ -146,4 +147,35 @@ export function useRemovePasskey() {
 export async function signInWithPasskey(): Promise<boolean> {
   const res = await passkeyClient().signIn.passkey();
   return !res.error;
+}
+
+// ---------------------------------------------------------------- your devices (phase 29)
+
+const devicesKey = ['signed-in-devices'] as const;
+
+export function useSignedInDevices() {
+  return useQuery({
+    queryKey: devicesKey,
+    queryFn: async () => (await apiFetch<{ devices: SignedInDevice[] }>('/v1/me/sessions')).devices,
+  });
+}
+
+export function useSignOutDevice() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) =>
+      apiFetch<{ ok: true }>(`/v1/me/sessions/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+    onSuccess: () => client.invalidateQueries({ queryKey: devicesKey }),
+  });
+}
+
+export function useSignOutOthers() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: () =>
+      apiFetch<{ ok: true; signedOut: number }>('/v1/me/sessions/sign-out-others', {
+        method: 'POST',
+      }),
+    onSuccess: () => client.invalidateQueries({ queryKey: devicesKey }),
+  });
 }

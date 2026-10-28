@@ -19,8 +19,12 @@ import {
 import { AppText } from './AppText';
 import { Banner } from './Banner';
 import { Button } from './Button';
+import { SignedInDevices } from './SignedInDevices';
 
-/** Settings → Security (phase 21): passkeys, hide me from my contacts, screenshots, invites. */
+/**
+ * Settings → Security (phase 21): passkeys, your devices (phase 29), hide me from my contacts,
+ * screenshots, invites.
+ */
 export function SecuritySettings() {
   const { t } = useTranslation();
   const colors = useColors();
@@ -87,6 +91,8 @@ export function SecuritySettings() {
           />
         </View>
       ) : null}
+
+      <SignedInDevices />
 
       <Button
         variant="secondary"

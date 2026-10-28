@@ -74,8 +74,11 @@ for (const file of files) {
 
 // 2. The credit itself, where people see it.
 const required = [
-  ['packages/shared/src/credit.ts', ["'Powered by NexaHeart'", "'https://nexaheart.com'"]],
-  ['apps/mobile/src/components/PoweredBy.tsx', ['creditText(', 'CREDIT_URL']],
+  [
+    'packages/shared/src/credit.ts',
+    ["'Powered by NexaHeart'", "'https://nexaheart.com'", "CREDIT_AUTHOR = 'Diamond Rubinny'"],
+  ],
+  ['apps/mobile/src/components/PoweredBy.tsx', ['creditText(', 'CREDIT_URL', 'text.createdBy']],
   ...[
     'app/welcome.tsx',
     'app/sign-in.tsx',
@@ -85,7 +88,10 @@ const required = [
     'app/cookies.tsx',
     'components/LegalPage.tsx',
   ].map((f) => [`apps/mobile/src/${f}`, ['<PoweredBy />']]),
-  ['apps/admin/src/App.tsx', ['<PoweredBy locale=', 'CREDIT_URL']],
+  ['apps/admin/src/App.tsx', ['<PoweredBy locale=', 'CREDIT_URL', 'text.createdBy']],
+  ['apps/api/src/lib/credit.ts', ['CREDIT_AUTHOR']],
+  ['AUTHORS.md', ['Diamond Rubinny']],
+  ['CITATION.cff', ['Rubinny']],
   ['apps/admin/index.html', ['name="generator" content="NexaHeart']],
   ['apps/mobile/package.json', ['scripts/web-credit.mjs']],
   ['site/build.mjs', ['name="generator" content="NexaHeart']],
@@ -115,6 +121,11 @@ for (const file of files.filter((f) => basename(f) === 'package.json')) {
   const pkg = JSON.parse(readFileSync(join(root, file), 'utf8'));
   if (pkg.license !== 'AGPL-3.0-or-later') {
     problems.push(`${file}: "license" must be "AGPL-3.0-or-later"`);
+  }
+  // …and its author (phase 29).
+  const author = typeof pkg.author === 'string' ? pkg.author : pkg.author?.name;
+  if (!author?.startsWith('Diamond Rubinny')) {
+    problems.push(`${file}: "author" must be "Diamond Rubinny"`);
   }
 }
 

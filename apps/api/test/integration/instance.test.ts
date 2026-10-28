@@ -82,6 +82,7 @@ describe.skipIf(!integrationEnabled)('instance setup & branding (integration)', 
       url: 'https://nexaheart.com',
       license: 'AGPL-3.0-or-later',
       sourceUrl: 'https://github.com/diamondrubinny/Dateos',
+      author: { name: 'Diamond Rubinny', url: 'https://github.com/diamondrubinny' },
     });
   });
 

@@ -985,6 +985,19 @@ export const en = {
     open: 'Go to my chats',
     likeBlocked: 'Reply to the people waiting for you before liking someone new.',
   },
+  devices: {
+    title: 'Your devices',
+    intro:
+      'Where you’re signed in. Only a rough device name is kept, never your IP address. Don’t recognise one? Sign it out.',
+    app: 'NexaHeart app on {{os}}',
+    web: '{{browser}} on {{os}}',
+    unknown: 'Unknown device',
+    thisDevice: 'this device',
+    dates: 'Signed in {{signedIn}} · last active {{lastActive}}',
+    signOut: 'Sign out',
+    signOutOthers: 'Sign out everywhere else',
+    signedOut: 'Done. Devices signed out: {{count}}.',
+  },
   security: {
     title: 'Security',
     screenshotsNative:

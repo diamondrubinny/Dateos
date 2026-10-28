@@ -1,0 +1,23 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
+# Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
+cff-version: 1.2.0
+message: 'If you use or build on NexaHeart, please cite it as below.'
+title: NexaHeart
+abstract: >-
+  The free, open-source dating platform anyone can run: native iOS and Android apps and the web
+  from one codebase, privacy by design and safety built in.
+type: software
+authors:
+  - given-names: Diamond
+    family-names: Rubinny
+    alias: diamondrubinny
+repository-code: 'https://github.com/diamondrubinny/Dateos'
+url: 'https://nexaheart.com'
+license: AGPL-3.0-or-later
+keywords:
+  - dating
+  - open source
+  - self-hosted
+  - privacy
+  - accessibility

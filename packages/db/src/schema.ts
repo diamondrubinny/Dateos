@@ -89,6 +89,8 @@ export const session = pgTable(
     expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
     ipAddress: text('ip_address'),
     userAgent: text('user_agent'),
+    /** Coarse device code (`app:android`, `web:Firefox:Linux`), for "Your devices" (phase 29). */
+    deviceLabel: varchar('device_label', { length: 40 }),
     userId: text('user_id')
       .notNull()
       .references(() => user.id, { onDelete: 'cascade' }),
@@ -797,7 +799,10 @@ export const instanceSettings = pgTable(
 
 export const pushPlatform = pgEnum('push_platform', ['ios', 'android']);
 
-/** Opt-in device tokens. A token belongs to whoever registered it last. */
+/**
+ * Opt-in device tokens. A token moves to another account only with the same device secret
+ * (phase 29): the same phone, someone else signing in.
+ */
 export const pushTokens = pgTable(
   'push_tokens',
   {
@@ -806,6 +811,8 @@ export const pushTokens = pgTable(
     platform: pushPlatform('platform').notNull(),
     /** Language of the (content-free) notification text. */
     locale: varchar('locale', { length: 5 }).notNull().default('en'),
+    /** SHA-256 of the app's random device secret; null for tokens registered before phase 29. */
+    deviceSecretHash: varchar('device_secret_hash', { length: 64 }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     lastUsedAt: timestamp('last_used_at', { withTimezone: true }),
   },

@@ -12,6 +12,7 @@ import { magicLink } from 'better-auth/plugins/magic-link';
 import type { Redis } from 'ioredis';
 import { appUrl, type Env } from '../config/env.js';
 import { createEmailHasher, isBanned } from '../lib/banned.js';
+import { deviceLabel } from '../lib/device-label.js';
 import { magicLinkEmail, type Mailer } from '../lib/mailer.js';
 import type { TrustService } from '../modules/trust/service.js';
 
@@ -121,13 +122,19 @@ export function createAuth({ env, secret, db, redis, mailer, onMailError, signup
         create: {
           // Data minimisation: the product never uses a session's IP address or browser string, so
           // they are not stored (rate limiting reads the request's IP and keeps it only briefly).
-          before: async (s) => ({ data: { ...s, ipAddress: null, userAgent: null } }),
+          // Only a coarse device label is kept, for "Your devices" (phase 29).
+          before: async (s) => ({
+            data: { ...s, deviceLabel: deviceLabel(s.userAgent), ipAddress: null, userAgent: null },
+          }),
           after: async (s) => touchLastSeen(s.userId),
         },
         update: { after: async (s) => (s.userId ? touchLastSeen(s.userId) : undefined) },
       },
     },
     session: {
+      additionalFields: {
+        deviceLabel: { type: 'string', required: false, input: false },
+      },
       expiresIn: 60 * 60 * 24 * 30,
       updateAge: 60 * 60 * 24,
     },

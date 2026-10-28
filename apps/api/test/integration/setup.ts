@@ -246,7 +246,11 @@ function cookieHeader(res: LightMyRequestResponse): string {
 }
 
 /** Full magic-link flow: request a link, "click" it, return the session cookie. */
-export async function signIn(ctx: TestContext, email: string): Promise<string> {
+export async function signIn(
+  ctx: TestContext,
+  email: string,
+  options: { userAgent?: string } = {},
+): Promise<string> {
   const before = ctx.mail.length;
   const res = await ctx.app.inject({
     method: 'POST',
@@ -259,7 +263,11 @@ export async function signIn(ctx: TestContext, email: string): Promise<string> {
   const message = ctx.mail.slice(before).find((m) => m.to === email);
   if (!message) throw new Error('no magic link email captured');
   const link = new URL(/https?:\/\/\S+/.exec(message.text)![0]);
-  const verify = await ctx.app.inject({ method: 'GET', url: `${link.pathname}${link.search}` });
+  const verify = await ctx.app.inject({
+    method: 'GET',
+    url: `${link.pathname}${link.search}`,
+    ...(options.userAgent ? { headers: { 'user-agent': options.userAgent } } : {}),
+  });
   if (verify.statusCode !== 302)
     throw new Error(`verify failed: ${verify.statusCode} ${verify.body}`);
   const cookie = cookieHeader(verify);

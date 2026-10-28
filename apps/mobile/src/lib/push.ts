@@ -3,12 +3,29 @@
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 import type { Locale } from '@nexaheart/shared';
 import Constants from 'expo-constants';
+import { getRandomBytes } from 'expo-crypto';
+import * as SecureStore from 'expo-secure-store';
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import { apiFetch, json } from './api';
+import { base64url } from './pkce';
 import { prefs } from './storage';
 
 const TOKEN_KEY = 'nexaheart.pushToken';
+const DEVICE_SECRET_KEY = 'nexaheart.deviceSecret';
+
+/**
+ * A random secret made once per installation, kept only in the device's secure storage (Keychain
+ * or Keystore; never localStorage), phase 29. The server keeps only its hash and moves this
+ * device's push token to another account only with the same secret. Push is native-only.
+ */
+async function deviceSecret(): Promise<string> {
+  const saved = await SecureStore.getItemAsync(DEVICE_SECRET_KEY);
+  if (saved) return saved;
+  const secret = base64url(getRandomBytes(32));
+  await SecureStore.setItemAsync(DEVICE_SECRET_KEY, secret);
+  return secret;
+}
 
 export type PushSetupResult = 'enabled' | 'denied' | 'unsupported' | 'not-configured';
 
@@ -31,7 +48,7 @@ export async function enablePush(locale: Locale): Promise<PushSetupResult> {
   const { data: token } = await Notifications.getExpoPushTokenAsync({ projectId });
   await apiFetch('/v1/me/push-tokens', {
     method: 'POST',
-    body: json({ token, platform: Platform.OS, locale }),
+    body: json({ token, platform: Platform.OS, locale, deviceSecret: await deviceSecret() }),
   });
   await prefs.set(TOKEN_KEY, token);
   return 'enabled';

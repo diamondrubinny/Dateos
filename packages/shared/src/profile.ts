@@ -253,6 +253,8 @@ export const instanceSchema = z.object({
     url: z.literal('https://nexaheart.com'),
     license: z.string(),
     sourceUrl: z.string(),
+    /** Who created NexaHeart (phase 29). */
+    author: z.object({ name: z.string(), url: z.string() }),
   }),
 });
 export type InstanceInfo = z.infer<typeof instanceSchema>;
