@@ -20,6 +20,8 @@ export const ErrorCode = {
   ServiceUnavailable: 'SERVICE_UNAVAILABLE',
   /** Focus mode (phase 20): reply to the people waiting before liking new ones. */
   YourTurn: 'YOUR_TURN',
+  /** Phase 34: liking faster than a person reads profiles. */
+  SlowDown: 'SLOW_DOWN',
   /** Phase 24: this form needs the CAPTCHA (bot protection) answered first. */
   CaptchaRequired: 'CAPTCHA_REQUIRED',
   /** Phase 28: another community couldn't be reached or answered wrongly. */

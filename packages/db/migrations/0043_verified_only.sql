@@ -1,0 +1,1 @@
+ALTER TABLE "preferences" ADD COLUMN "verified_only" boolean DEFAULT false NOT NULL;

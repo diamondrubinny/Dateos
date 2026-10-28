@@ -577,6 +577,7 @@ export const he: Translations = {
     pass: 'דילוג',
     likeLabel: 'לייק ל-{{name}}',
     passLabel: 'דילוג על {{name}}',
+    slowDown: 'הרבה לייקים בכמה דקות. כדאי להאט קצת ולתת לכל פרופיל רגע.',
     likeItem: 'לייק לזה',
     likeItemLabel: 'לייק ל״{{item}}״',
     likePhotoLabel: 'לייק לתמונה הזו',
@@ -640,6 +641,9 @@ export const he: Translations = {
     unavailable: 'הפרופיל הזה כבר לא זמין.',
   },
   preferences: {
+    verifiedOnly: 'רק פרופילים מאומתים',
+    verifiedOnlyHint:
+      'יוצגו רק אנשים שצוות המודרציה אימת את התמונות שלהם. פחות אנשים, יותר ביטחון.',
     title: 'העדפות גילוי',
     ageMin: 'גיל מינימלי',
     ageMax: 'גיל מקסימלי',

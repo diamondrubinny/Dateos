@@ -127,6 +127,8 @@ export function candidateSql(q: CandidateQuery): SQL {
       SELECT p.user_id, p.gender, p.interested_in, p.intention, p.languages,
              date_part('year', age(${today}, p.birth_date))::int AS age,
              pr.age_min, pr.age_max, pr.max_distance_km, pr.intentions AS wants,
+             -- Verified profiles only (phase 34).
+             pr.verified_only,
              -- Travel mode (phase 18c): a traveller looks from the city they're visiting.
              CASE WHEN l.travel_until > now() THEN l.travel_geo ELSE l.geo END AS geo,
              e.embedding, e.model,
@@ -192,6 +194,8 @@ export function candidateSql(q: CandidateQuery): SQL {
       ${q.targetId ? sql`AND c.user_id = ${q.targetId}` : sql``}
       ${q.onlyIds ? sql`AND c.user_id = ANY(${sql.param(q.onlyIds)}::text[])` : sql``}
       ${q.excludeDecided ? sql`AND NOT EXISTS (SELECT 1 FROM interactions i WHERE i.actor_id = me.user_id AND i.target_id = c.user_id)` : sql``}
+      -- Verified profiles only (phase 34): someone a moderator verified, in Discover and Picks.
+      ${q.excludeDecided ? sql`AND (NOT me.verified_only OR c.verified_at IS NOT NULL)` : sql``}
       ${q.excludeSaved ? sql`AND NOT EXISTS (SELECT 1 FROM saved_profiles sp WHERE sp.user_id = me.user_id AND sp.target_id = c.user_id)` : sql``}
       -- One array parameter keeps the statement text stable, so it can be prepared once.
       AND NOT (c.user_id = ANY(${sql.param(q.excludeIds ?? [])}::text[]))

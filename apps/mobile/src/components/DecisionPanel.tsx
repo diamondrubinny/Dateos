@@ -74,6 +74,9 @@ export function DecisionPanel({
       setComment('');
       onDecided({ kind, ...result });
     } catch (e) {
+      // Phase 34: liking faster than a person reads profiles.
+      if (e instanceof ApiRequestError && e.code === 'SLOW_DOWN')
+        return setError(t('discover.slowDown'));
       if (e instanceof ApiRequestError && e.status === 429) return setError(t('discover.limit'));
       if (e instanceof ApiRequestError && e.code === 'YOUR_TURN') {
         void client.invalidateQueries({ queryKey: yourTurnKey });

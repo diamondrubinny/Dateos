@@ -167,7 +167,7 @@ export const reportDetailSchema = reportSummarySchema.extend({
   reporter: z.object({ id: z.string().nullable(), displayName: z.string().nullable() }),
   /** 28d: sent by a member of this partner community (the reporter is unknown here). */
   partnerCommunity: z.string().nullable(),
-  /** Opened by an automatic check (a duplicate or banned photo), not by a member. */
+  /** Opened by an automatic check (photos, phase 21; behaviour and copied text, phase 34). */
   automatic: z.boolean(),
   evidence: z.array(evidenceMessageSchema),
   resolution: z

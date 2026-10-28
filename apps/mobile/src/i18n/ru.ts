@@ -599,6 +599,8 @@ export const ru: Translations = {
     pass: 'Пропустить',
     likeLabel: 'Лайкнуть: {{name}}',
     passLabel: 'Пропустить: {{name}}',
+    slowDown:
+      'Много лайков за несколько минут. Не спешите и уделите каждой анкете немного времени.',
     likeItem: 'Нравится',
     likeItemLabel: 'Лайкнуть «{{item}}»',
     likePhotoLabel: 'Лайкнуть это фото',
@@ -663,6 +665,9 @@ export const ru: Translations = {
     unavailable: 'Этот профиль больше недоступен.',
   },
   preferences: {
+    verifiedOnly: 'Только проверенные анкеты',
+    verifiedOnlyHint:
+      'Показывать только тех, чьи фото проверил модератор. Меньше людей, больше уверенности.',
     title: 'Параметры поиска',
     ageMin: 'Минимальный возраст',
     ageMax: 'Максимальный возраст',

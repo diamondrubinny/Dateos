@@ -37,6 +37,7 @@ import {
 import type { Realtime } from '../../lib/realtime.js';
 import { and, asc, desc, eq, gt, inArray, isNull, or, sql } from 'drizzle-orm';
 import { audit } from '../../lib/audit.js';
+import { openAutoReport } from '../safety/auto-report.js';
 import { HttpError } from '../../plugins/error-handler.js';
 import { photoUrl } from '../me/service.js';
 import type { CityIndex } from '../places/cities.js';
@@ -65,6 +66,11 @@ const {
   consents,
   user,
 } = schema;
+
+/** Phase 34: likes in a window that no person reaches by reading profiles. */
+export const LIKE_BURST_MAX = 40;
+export const LIKE_BURST_MINUTES = 10;
+export const LIKE_BURSTS_TO_REPORT = 3;
 
 const notFound = () => new HttpError(404, ErrorCode.NotFound, 'Resource not found.');
 
@@ -421,6 +427,8 @@ export class DiscoveryService {
     if (input.kind === 'like' && !(await this.canLikeIn(actorId, input.targetId, mode))) {
       throw notFound();
     }
+    // Liking faster than a person can read profiles (phase 34): a short, visible slowdown.
+    if (input.kind === 'like') await this.checkLikeBurst(actorId);
     // Focus mode (phase 20): with too many people waiting for your reply, answer them first.
     if (input.kind === 'like' && (await this.waitingForReply(actorId)) >= YOUR_TURN_LIMIT) {
       throw new HttpError(409, ErrorCode.YourTurn, 'Reply to the people waiting for you first.');
@@ -504,6 +512,42 @@ export class DiscoveryService {
       this.appEvents.emit({ type: 'match.created', matchId: result.matchId });
     }
     return result;
+  }
+
+  /**
+   * Phase 34: more than LIKE_BURST_MAX likes in LIKE_BURST_MINUTES is refused until the window
+   * passes. Each burst is audited; three in a day open an automatic report for a moderator.
+   */
+  private async checkLikeBurst(actorId: string): Promise<void> {
+    const [{ recent }] = (await this.db
+      .select({ recent: sql<number>`count(*)::int` })
+      .from(interactions)
+      .where(
+        and(
+          eq(interactions.actorId, actorId),
+          eq(interactions.kind, 'like'),
+          sql`${interactions.createdAt} > now() - make_interval(mins => ${LIKE_BURST_MINUTES})`,
+        ),
+      )) as [{ recent: number }];
+    if (recent < LIKE_BURST_MAX) return;
+    // One audit entry per burst window.
+    const { rows } = await this.db.execute<{ inWindow: number; today: number }>(sql`
+      SELECT count(*) FILTER (WHERE created_at > now() - make_interval(mins => ${LIKE_BURST_MINUTES}))::int AS "inWindow",
+             count(*)::int AS today
+      FROM audit_logs WHERE actor_id = ${actorId} AND action = 'interaction.burst'
+        AND created_at > now() - interval '24 hours'`);
+    if (rows[0]!.inWindow === 0) {
+      await audit(this.db, {
+        actorId,
+        action: 'interaction.burst',
+        targetType: 'user',
+        targetId: actorId,
+      });
+      if (rows[0]!.today + 1 >= LIKE_BURSTS_TO_REPORT) {
+        await openAutoReport(this.db, actorId, 'spam', 'normal', 'like_bursts');
+      }
+    }
+    throw new HttpError(429, ErrorCode.SlowDown, 'Slow down a little, and read the profiles.');
   }
 
   // ---------------------------------------------------------------- maybe later (phase 33)

@@ -28,6 +28,7 @@ import { randomUUID } from 'node:crypto';
 import { and, asc, desc, eq, isNull, lt, or, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import { audit } from '../../lib/audit.js';
+import { normalize, normalizedText, openAutoReport } from '../safety/auto-report.js';
 import type { Realtime } from '../../lib/realtime.js';
 import { HttpError } from '../../plugins/error-handler.js';
 import type { DiscoveryService } from '../discovery/service.js';
@@ -93,6 +94,12 @@ const asReaction = (emoji: string | undefined): ReactionEmoji | null =>
 /** A receiver sees media only after it passed scanning; senders see their own uploads. */
 const visibleTo = (viewerId: string) =>
   sql`(${messages.kind} IN ('text', 'date', 'call') OR ${messages.senderId} = ${viewerId} OR ${photos.status} = 'clean' OR ${audioClips.status} = 'clean')`;
+
+/** Phase 34: the same text (this long or more) to this many chats in 24 hours is reported. */
+export const SAME_MESSAGE_MIN_LENGTH = 15;
+export const SAME_MESSAGE_CHATS = 5;
+/** Phase 34: scam signals from an account under 24 hours old in this many chats. */
+export const NEW_ACCOUNT_SCAM_CHATS = 3;
 
 /** The quoted message of a reply (phase 30). */
 const replied = alias(messages, 'replied');
@@ -519,8 +526,48 @@ export class ChatService {
     );
     if (!row || row.matchId !== matchId)
       throw new HttpError(409, ErrorCode.Conflict, 'Message id already used.');
-    if (inserted.length > 0) await this.deliver(row, senderId, otherId);
+    if (inserted.length > 0) {
+      await this.deliver(row, senderId, otherId);
+      // Bot behaviour (phase 34): checked after delivery, never delaying or blocking the message.
+      void this.botChecks(senderId, text, row.flags).catch(() => undefined);
+    }
     return toView(row, senderId, this.now());
+  }
+
+  /**
+   * Phase 34: the same text to many chats, and scam signals from a brand-new account. Each opens
+   * an automatic report for a moderator (at most one open per account and category).
+   */
+  async botChecks(senderId: string, text: string, flags: string[]): Promise<void> {
+    const body = normalize(text);
+    if (body.length >= SAME_MESSAGE_MIN_LENGTH) {
+      const [{ chats }] = (await this.db
+        .select({ chats: sql<number>`count(DISTINCT ${messages.matchId})::int` })
+        .from(messages)
+        .where(
+          and(
+            eq(messages.senderId, senderId),
+            eq(messages.kind, 'text'),
+            sql`${messages.createdAt} > now() - interval '24 hours'`,
+            sql`${normalizedText(messages.body)} = ${body}`,
+          ),
+        )) as [{ chats: number }];
+      if (chats >= SAME_MESSAGE_CHATS) {
+        await openAutoReport(this.db, senderId, 'spam', 'normal', 'same_message');
+      }
+    }
+    if (flags.some((f) => f.startsWith('scam:'))) {
+      const [{ fresh, chats }] = (
+        await this.db.execute<{ fresh: boolean; chats: number }>(sql`
+        SELECT (SELECT created_at > now() - interval '24 hours' FROM "user" WHERE id = ${senderId}) AS fresh,
+               (SELECT count(DISTINCT match_id)::int FROM messages
+                WHERE sender_id = ${senderId} AND created_at > now() - interval '24 hours'
+                  AND EXISTS (SELECT 1 FROM unnest(flags) f WHERE f LIKE 'scam:%')) AS chats`)
+      ).rows as [{ fresh: boolean; chats: number }];
+      if (fresh && chats >= NEW_ACCOUNT_SCAM_CHATS) {
+        await openAutoReport(this.db, senderId, 'scam', 'high', 'new_account_scam');
+      }
+    }
   }
 
   /**
