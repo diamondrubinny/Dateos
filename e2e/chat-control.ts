@@ -134,6 +134,41 @@ try {
       `/v1/matches/${matchId}/messages`,
     );
     check(page.otherReadAt === null, 'Dan no longer sees when Maya read');
+
+    // 4. Mute and archive (phase 31): private, and a new message brings the chat back.
+    await A.page.goto(`${WEB}/chat/${matchId}`);
+    await A.page.getByTestId('mute-chat').click();
+    await A.page.getByText(`🔕 ${t.chatPrefs.unmute}`).waitFor();
+    await A.page.getByTestId('archive-chat').click();
+    await A.page.goto(`${WEB}/matches`);
+    const toggle = A.page.getByTestId('archived-toggle');
+    await toggle.waitFor();
+    check(
+      (await A.page.getByText(hisName, { exact: true }).count()) === 0,
+      'the archived chat left the list',
+    );
+    await toggle.click();
+    await A.page.getByText(`🔕 ${t.chatPrefs.muted}`).waitFor();
+    check(true, 'it is under Archived, marked muted');
+    await audit(A.page, `${locale}/archived`);
+    await shot(A.page, `${locale}/102-archived`);
+    const danSees = await dan.call<{ conversations: { muted: boolean; archived: boolean }[] }>(
+      'GET',
+      '/v1/conversations',
+    );
+    check(
+      danSees.conversations.every((c) => !c.muted && !c.archived),
+      'Dan sees nothing of it',
+    );
+    await dan.call('POST', `/v1/matches/${matchId}/messages`, {
+      text: locale === 'he' ? 'עדיין פה?' : 'Still there?',
+      clientId: `e2e-back-${Date.now()}`,
+    });
+    const back = await maya.call<{ conversations: { archived: boolean }[] }>(
+      'GET',
+      '/v1/conversations',
+    );
+    check(back.conversations[0]?.archived === false, 'a new message brought the chat back');
     await A.context.close();
     await B.context.close();
   }

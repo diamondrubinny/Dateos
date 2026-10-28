@@ -39,6 +39,7 @@ const {
   messageReactions,
   matches,
   matchReads,
+  matchPrefs,
   photos,
   profiles,
   prompts,
@@ -586,6 +587,17 @@ export class ChatService {
   }
 
   private async deliver(row: MessageRow, senderId: string, otherId: string, push = true) {
+    // A new message brings an archived chat back for its receiver (phase 31).
+    await this.db
+      .update(matchPrefs)
+      .set({ archived: false })
+      .where(
+        and(
+          eq(matchPrefs.matchId, row.matchId),
+          eq(matchPrefs.userId, otherId),
+          eq(matchPrefs.archived, true),
+        ),
+      );
     if (push) this.notifier?.messageReceived(otherId, row.matchId).catch(() => undefined);
     await Promise.all([
       this.realtime.publish(senderId, {
@@ -681,8 +693,39 @@ export class ChatService {
   }
 
   /** Matches with their latest message and unread count, newest activity first. */
+  /** Mute or archive a chat, privately (phase 31). */
+  async setPrefs(
+    matchId: string,
+    viewerId: string,
+    input: { muted?: boolean | undefined; archived?: boolean | undefined },
+  ): Promise<{ muted: boolean; archived: boolean }> {
+    await this.participant(matchId, viewerId);
+    const set = {
+      ...(input.muted !== undefined ? { muted: input.muted } : {}),
+      ...(input.archived !== undefined ? { archived: input.archived } : {}),
+    };
+    const [row] = await this.db
+      .insert(matchPrefs)
+      .values({ matchId, userId: viewerId, ...set })
+      .onConflictDoUpdate({ target: [matchPrefs.matchId, matchPrefs.userId], set })
+      .returning({ muted: matchPrefs.muted, archived: matchPrefs.archived });
+    return row!;
+  }
+
   async inbox(viewerId: string): Promise<Conversation[]> {
     const summaries = await this.discovery.matches(viewerId);
+    const prefs = new Map(
+      (
+        await this.db
+          .select({
+            matchId: matchPrefs.matchId,
+            muted: matchPrefs.muted,
+            archived: matchPrefs.archived,
+          })
+          .from(matchPrefs)
+          .where(eq(matchPrefs.userId, viewerId))
+      ).map((p) => [p.matchId, p]),
+    );
     const out: Conversation[] = [];
     for (const m of summaries) {
       const [last] = await this.rows(and(eq(messages.matchId, m.id), visibleTo(viewerId)))
@@ -709,6 +752,8 @@ export class ChatService {
         unread: n,
         createdAt: m.createdAt,
         mode: m.mode,
+        muted: prefs.get(m.id)?.muted ?? false,
+        archived: prefs.get(m.id)?.archived ?? false,
       });
     }
     const activity = (c: Conversation) => c.lastMessage?.createdAt ?? c.createdAt;

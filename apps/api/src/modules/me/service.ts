@@ -599,6 +599,12 @@ export class MeService {
       ]),
     );
     await this.db.transaction(async (tx) => {
+      // The account's sign-in history (phase 31) is only for its owner: it goes with the account.
+      await tx
+        .delete(schema.auditLogs)
+        .where(
+          and(eq(schema.auditLogs.actorId, userId), eq(schema.auditLogs.action, 'session.created')),
+        );
       await tx.delete(user).where(eq(user.id, userId));
       await audit(tx, {
         actorId: null,

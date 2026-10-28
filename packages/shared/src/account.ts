@@ -28,3 +28,25 @@ export const signedInDevicesSchema = z.object({ devices: z.array(signedInDeviceS
 export const deviceSecretSchema = z
   .string()
   .regex(/^[A-Za-z0-9_-]{32,128}$/, 'A device secret is 32-128 url-safe characters.');
+
+/** Account activity (phase 31): the member's own security events, newest first. */
+export const accountActivityKinds = [
+  'signed_in',
+  'device_signed_out',
+  'signed_out_others',
+  'data_downloaded',
+] as const;
+export const ACCOUNT_ACTIVITY_DAYS = 90;
+export const accountActivitySchema = z.object({
+  events: z.array(
+    z.object({
+      kind: z.enum(accountActivityKinds),
+      at: z.string(),
+      /** For a sign-in: the coarse device (as in "Your devices"). */
+      device: signedInDeviceSchema.shape.device.nullable(),
+      /** For "signed out everywhere else": how many devices. */
+      count: z.number().int().nullable(),
+    }),
+  ),
+});
+export type AccountActivity = z.infer<typeof accountActivitySchema>;

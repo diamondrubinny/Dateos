@@ -133,7 +133,14 @@ export const conversationSchema = z.object({
   createdAt: z.string(),
   /** Friends mode (phase 22): the inbox labels friend chats. */
   mode: matchModeSchema,
+  /** Phase 31: my private choices for this chat. */
+  muted: z.boolean(),
+  archived: z.boolean(),
 });
+
+export const matchPrefsInputSchema = z
+  .object({ muted: z.boolean().optional(), archived: z.boolean().optional() })
+  .refine((v) => v.muted !== undefined || v.archived !== undefined, 'Nothing to change');
 export type Conversation = z.infer<typeof conversationSchema>;
 
 export const icebreakersSchema = z.object({ suggestions: z.array(z.string()) });

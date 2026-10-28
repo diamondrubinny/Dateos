@@ -11,6 +11,20 @@ import { AppText } from './AppText';
 import { Banner } from './Banner';
 import { Button } from './Button';
 
+/** A device's name in the app's language (phase 29); also used by Account activity (phase 31). */
+export function useDeviceName() {
+  const { t } = useTranslation();
+  // Browser and system names are proper names; only the sentence around them is translated.
+  return (device: SignedInDevice['device']): string =>
+    device.kind === 'app'
+      ? t('devices.app', { os: device.os })
+      : device.kind === 'web' && device.browser && device.os
+        ? t('devices.web', { browser: device.browser, os: device.os })
+        : device.kind === 'web'
+          ? (device.browser ?? device.os ?? t('devices.unknown'))
+          : t('devices.unknown');
+}
+
 /**
  * Settings → Security → Your devices (phase 29): where I'm signed in, with a coarse label only,
  * and signing out of a device I don't recognise.
@@ -29,15 +43,8 @@ export function SignedInDevices() {
       year: 'numeric',
     });
   const list = devices.data ?? [];
-  // Browser and system names are proper names; only the sentence around them is translated.
-  const name = ({ device }: SignedInDevice) =>
-    device.kind === 'app'
-      ? t('devices.app', { os: device.os })
-      : device.kind === 'web' && device.browser && device.os
-        ? t('devices.web', { browser: device.browser, os: device.os })
-        : device.kind === 'web'
-          ? (device.browser ?? device.os ?? t('devices.unknown'))
-          : t('devices.unknown');
+  const deviceName = useDeviceName();
+  const name = ({ device }: SignedInDevice) => deviceName(device);
   const others = list.filter((d) => !d.current).length;
 
   return (

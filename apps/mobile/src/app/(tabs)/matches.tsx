@@ -8,7 +8,8 @@ import { Banner } from '../../components/Banner';
 import { Loading } from '../../components/Loading';
 import { PersonRow } from '../../components/PersonRow';
 import { Screen } from '../../components/Screen';
-import { waitingForMyReply } from '@nexaheart/shared';
+import { waitingForMyReply, type Conversation } from '@nexaheart/shared';
+import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Button } from '../../components/Button';
 import { CheckinEntry } from '../../components/CheckinEntry';
@@ -27,7 +28,51 @@ export default function Matches() {
   const closed = useClosedConversations();
   const dismiss = useDismissClosed();
   const partnerMatches = useFederatedMatches();
+  // Archived chats (phase 31) sit in their own section, closed by default.
+  const [showArchived, setShowArchived] = useState(false);
   if (conversations.isPending) return <Loading />;
+  const active = conversations.data?.filter((c) => !c.archived) ?? [];
+  const archived = conversations.data?.filter((c) => c.archived) ?? [];
+  const row = (c: Conversation) => {
+    const last = c.lastMessage;
+    const preview = !last
+      ? t('chat.newMatch')
+      : last.unsent
+        ? t('chatControl.unsent')
+        : last.hidden
+          ? t('chat.hidden')
+          : last.kind === 'image'
+            ? t('chat.photo')
+            : last.kind === 'date' && last.date
+              ? t('datePlan.preview', { place: last.date.venue.name })
+              : last.kind === 'call' && last.call
+                ? last.call.video
+                  ? t('call.previewVideo')
+                  : t('call.previewVoice')
+                : last.mine
+                  ? t('chat.you', { text: last.body ?? '' })
+                  : (last.body ?? '');
+    return (
+      <PersonRow
+        key={c.matchId}
+        profile={c.profile}
+        detail={
+          c.mode === 'friend' && c.unread === 0
+            ? t('friends.label')
+            : c.unread > 0
+              ? t('chat.unread', { count: c.unread })
+              : waitingForMyReply(last)
+                ? t('ghosting.waiting')
+                : c.muted
+                  ? `🔕 ${t('chatPrefs.muted')}`
+                  : undefined
+        }
+        quote={preview}
+        plainQuote
+        onPress={() => router.push({ pathname: '/chat/[id]', params: { id: c.matchId } })}
+      />
+    );
+  };
   return (
     <Screen title={t('matches.title')}>
       {conversations.error ? <Banner tone="error" message={t('common.genericError')} /> : null}
@@ -55,42 +100,18 @@ export default function Matches() {
           {t('matches.empty')}
         </AppText>
       ) : null}
-      {conversations.data?.map((c) => {
-        const last = c.lastMessage;
-        const preview = !last
-          ? t('chat.newMatch')
-          : last.hidden
-            ? t('chat.hidden')
-            : last.kind === 'image'
-              ? t('chat.photo')
-              : last.kind === 'date' && last.date
-                ? t('datePlan.preview', { place: last.date.venue.name })
-                : last.kind === 'call' && last.call
-                  ? last.call.video
-                    ? t('call.previewVideo')
-                    : t('call.previewVoice')
-                  : last.mine
-                    ? t('chat.you', { text: last.body ?? '' })
-                    : (last.body ?? '');
-        return (
-          <PersonRow
-            key={c.matchId}
-            profile={c.profile}
-            detail={
-              c.mode === 'friend' && c.unread === 0
-                ? t('friends.label')
-                : c.unread > 0
-                  ? t('chat.unread', { count: c.unread })
-                  : waitingForMyReply(last)
-                    ? t('ghosting.waiting')
-                    : undefined
-            }
-            quote={preview}
-            plainQuote
-            onPress={() => router.push({ pathname: '/chat/[id]', params: { id: c.matchId } })}
-          />
-        );
-      })}
+      {active.map(row)}
+      {archived.length > 0 ? (
+        <Button
+          variant="ghost"
+          label={t(showArchived ? 'chatPrefs.hideArchived' : 'chatPrefs.showArchived', {
+            count: archived.length,
+          })}
+          onPress={() => setShowArchived(!showArchived)}
+          testID="archived-toggle"
+        />
+      ) : null}
+      {showArchived ? archived.map(row) : null}
     </Screen>
   );
 }

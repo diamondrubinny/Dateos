@@ -37,6 +37,7 @@ import {
   useMessages,
   useReact,
   useUnsend,
+  useChatPrefs,
   useSendImage,
   useSendMessage,
   useSendVoice,
@@ -60,6 +61,7 @@ function ChatScreen() {
   const send = useSendMessage(matchId);
   const react = useReact(matchId);
   const unsend = useUnsend(matchId);
+  const prefs = useChatPrefs(matchId);
   // Phase 30: the message being replied to.
   const [replyingTo, setReplyingTo] = useState<MessageView>();
   const sendImage = useSendImage(matchId);
@@ -276,6 +278,46 @@ function ChatScreen() {
             >
               <AppText variant="caption" tone="primary">
                 {t('chat.viewProfile')}
+              </AppText>
+            </Pressable>
+          ) : null}
+          {conversation ? (
+            <Pressable
+              onPress={() =>
+                prefs.mutate(
+                  { muted: !conversation.muted },
+                  { onError: () => setError(t('common.genericError')) },
+                )
+              }
+              accessibilityRole="button"
+              accessibilityState={{ checked: conversation.muted }}
+              accessibilityHint={t('chatPrefs.muteHint')}
+              style={styles.iconBtn}
+              testID="mute-chat"
+            >
+              <AppText variant="caption" tone="muted">
+                {conversation.muted ? `🔕 ${t('chatPrefs.unmute')}` : t('chatPrefs.mute')}
+              </AppText>
+            </Pressable>
+          ) : null}
+          {conversation ? (
+            <Pressable
+              onPress={() =>
+                prefs.mutate(
+                  { archived: !conversation.archived },
+                  {
+                    onSuccess: (p) => (p.archived ? router.back() : undefined),
+                    onError: () => setError(t('common.genericError')),
+                  },
+                )
+              }
+              accessibilityRole="button"
+              accessibilityHint={t('chatPrefs.archiveHint')}
+              style={styles.iconBtn}
+              testID="archive-chat"
+            >
+              <AppText variant="caption" tone="muted">
+                {conversation.archived ? t('chatPrefs.unarchive') : t('chatPrefs.archive')}
               </AppText>
             </Pressable>
           ) : null}

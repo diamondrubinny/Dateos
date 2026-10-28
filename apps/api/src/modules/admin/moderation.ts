@@ -10,7 +10,7 @@ import {
   type ReportDetail,
   type ReportSummary,
 } from '@nexaheart/shared';
-import { and, asc, desc, eq, lt, sql, type SQL } from 'drizzle-orm';
+import { and, asc, desc, eq, lt, ne, sql, type SQL } from 'drizzle-orm';
 import { audit } from '../../lib/audit.js';
 import type { EmailHasher } from '../../lib/banned.js';
 import { HttpError } from '../../plugins/error-handler.js';
@@ -338,7 +338,13 @@ export class ModerationService {
     const rows = await this.db
       .select()
       .from(auditLogs)
-      .where(before ? lt(auditLogs.createdAt, new Date(before)) : undefined)
+      // Members' own sign-in history (phase 31) is for them, not for staff.
+      .where(
+        and(
+          ne(auditLogs.action, 'session.created'),
+          before ? lt(auditLogs.createdAt, new Date(before)) : undefined,
+        ),
+      )
       .orderBy(desc(auditLogs.createdAt))
       .limit(limit);
     return rows.map((r) => ({
