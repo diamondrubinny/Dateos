@@ -12,6 +12,7 @@ import {
   MESSAGES_BEFORE_IMAGES,
   type MessagesPage,
   type MessageView,
+  type ChatSearchResult,
   type TranscriptLang,
   type PromptKey,
   scamSignals,
@@ -693,6 +694,44 @@ export class ChatService {
   }
 
   /** Matches with their latest message and unread count, newest activity first. */
+  /**
+   * Search my chat (phase 32): text messages containing the words, newest first. Never unsent
+   * messages, and never ones hidden from me by the harm filter. The terms aren't logged.
+   */
+  async search(matchId: string, viewerId: string, q: string): Promise<ChatSearchResult> {
+    await this.participant(matchId, viewerId);
+    // LIKE wildcards in the terms are matched literally.
+    const pattern = `%${q.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
+    const rows = await this.db
+      .select({
+        id: messages.id,
+        senderId: messages.senderId,
+        body: messages.body,
+        createdAt: messages.createdAt,
+      })
+      .from(messages)
+      .where(
+        and(
+          eq(messages.matchId, matchId),
+          eq(messages.kind, 'text'),
+          isNull(messages.unsentAt),
+          sql`${messages.body} ILIKE ${pattern}`,
+          // Harmful messages from the other person stay hidden here too.
+          sql`(${messages.senderId} = ${viewerId} OR NOT EXISTS (SELECT 1 FROM unnest(${messages.flags}) f WHERE f LIKE 'harm:%'))`,
+        ),
+      )
+      .orderBy(desc(messages.createdAt))
+      .limit(20);
+    return {
+      results: rows.map((r) => ({
+        id: r.id,
+        mine: r.senderId === viewerId,
+        body: r.body ?? '',
+        createdAt: r.createdAt.toISOString(),
+      })),
+    };
+  }
+
   /** Mute or archive a chat, privately (phase 31). */
   async setPrefs(
     matchId: string,

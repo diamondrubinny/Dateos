@@ -123,6 +123,7 @@ describe.skipIf(!integrationEnabled)('voice messages & push (integration)', () =
       acceptCalls: true,
       allowTranscripts: true,
       readReceipts: true,
+      signinAlerts: true,
       pushDevices: 0,
     });
   });

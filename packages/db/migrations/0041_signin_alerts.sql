@@ -1,0 +1,1 @@
+ALTER TABLE "preferences" ADD COLUMN "signin_alerts" boolean DEFAULT true NOT NULL;

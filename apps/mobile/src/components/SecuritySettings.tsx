@@ -19,6 +19,8 @@ import {
 import { AppText } from './AppText';
 import { Banner } from './Banner';
 import { Button } from './Button';
+import { Checkbox } from './Choice';
+import { useChatSettings, useSetSigninAlerts } from '../lib/chat-queries';
 import { AccountActivity } from './AccountActivity';
 import { SignedInDevices } from './SignedInDevices';
 
@@ -38,6 +40,8 @@ export function SecuritySettings() {
   const createInvite = useCreateInvite();
   const [error, setError] = useState<string>();
   const [newCode, setNewCode] = useState<string>();
+  const chatSettings = useChatSettings();
+  const setSigninAlerts = useSetSigninAlerts();
 
   const deviceName = () => {
     if (Platform.OS !== 'web' || typeof navigator === 'undefined') return t('passkey.thisDevice');
@@ -95,6 +99,14 @@ export function SecuritySettings() {
 
       <SignedInDevices />
       <AccountActivity />
+      <Checkbox
+        label={t('signinAlerts.label')}
+        hint={t('signinAlerts.hint')}
+        checked={chatSettings.data?.signinAlerts ?? true}
+        onChange={(v) =>
+          setSigninAlerts.mutate(v, { onError: () => setError(t('common.genericError')) })
+        }
+      />
 
       <Button
         variant="secondary"

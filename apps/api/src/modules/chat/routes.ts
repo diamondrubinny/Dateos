@@ -15,6 +15,8 @@ import {
   messagesPageSchema,
   messagesQuerySchema,
   messageViewSchema,
+  chatSearchQuerySchema,
+  chatSearchResultSchema,
   matchPrefsInputSchema,
   reactInputSchema,
   sendMessageSchema,
@@ -103,6 +105,20 @@ export const chatRoutes: FastifyPluginAsyncZod<ChatRouteOptions> = async (
         request.body.clientId,
         request.body.replyToId,
       ),
+  );
+
+  // Search in a chat (phase 32). The terms are never logged.
+  app.get(
+    '/v1/matches/:id/messages/search',
+    {
+      schema: {
+        params: matchParams,
+        querystring: chatSearchQuerySchema,
+        response: { 200: chatSearchResultSchema },
+      },
+      config: perUserLimit(30, 60_000),
+    },
+    async (request) => chat.search(request.params.id, currentUser(request).id, request.query.q),
   );
 
   // Mute or archive a chat, privately (phase 31).

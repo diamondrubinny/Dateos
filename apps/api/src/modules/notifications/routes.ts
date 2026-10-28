@@ -42,6 +42,7 @@ export const notificationRoutes: FastifyPluginAsyncZod<{ auth: Auth; db: Databas
           acceptCalls: preferences.acceptCalls,
           allowTranscripts: preferences.allowTranscripts,
           readReceipts: preferences.readReceipts,
+          signinAlerts: preferences.signinAlerts,
         })
         .from(preferences)
         .where(eq(preferences.userId, userId));
@@ -54,6 +55,7 @@ export const notificationRoutes: FastifyPluginAsyncZod<{ auth: Auth; db: Databas
         acceptCalls: prefs?.acceptCalls ?? true,
         allowTranscripts: prefs?.allowTranscripts ?? true,
         readReceipts: prefs?.readReceipts ?? true,
+        signinAlerts: prefs?.signinAlerts ?? true,
         pushDevices: devices.length,
       };
     },
@@ -77,6 +79,9 @@ export const notificationRoutes: FastifyPluginAsyncZod<{ auth: Auth; db: Databas
             : {}),
           ...(request.body.readReceipts !== undefined
             ? { readReceipts: request.body.readReceipts }
+            : {}),
+          ...(request.body.signinAlerts !== undefined
+            ? { signinAlerts: request.body.signinAlerts }
             : {}),
         })
         .where(eq(preferences.userId, currentUser(request).id))

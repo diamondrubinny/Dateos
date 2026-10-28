@@ -985,6 +985,18 @@ export const en = {
     open: 'Go to my chats',
     likeBlocked: 'Reply to the people waiting for you before liking someone new.',
   },
+  signinAlerts: {
+    label: 'Email me about new sign-ins',
+    hint: 'When your account signs in on a new kind of device. The email never has a link.',
+  },
+  chatSearch: {
+    open: 'Search',
+    label: 'Search this chat',
+    placeholder: 'Search this chat…',
+    close: 'Close',
+    none: 'No messages found.',
+    found: 'Messages found: {{count}}',
+  },
   activity: {
     title: 'Account activity',
     intro: 'What happened to your account in the last {{days}} days. Only you see this.',

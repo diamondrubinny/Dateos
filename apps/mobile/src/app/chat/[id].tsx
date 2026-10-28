@@ -23,6 +23,7 @@ import { Loading } from '../../components/Loading';
 import { FreeTimes } from '../../components/FreeTimes';
 import { MessageBubble } from '../../components/MessageBubble';
 import { ReplyQuote } from '../../components/ReplyQuote';
+import { ChatSearch } from '../../components/ChatSearch';
 import { RemoteImage } from '../../components/RemoteImage';
 import { RequireSession } from '../../components/RequireSession';
 import { VoiceRecorder, type Recording } from '../../components/VoiceRecorder';
@@ -62,6 +63,8 @@ function ChatScreen() {
   const react = useReact(matchId);
   const unsend = useUnsend(matchId);
   const prefs = useChatPrefs(matchId);
+  // Phase 32: the search panel above the messages.
+  const [searching, setSearching] = useState(false);
   // Phase 30: the message being replied to.
   const [replyingTo, setReplyingTo] = useState<MessageView>();
   const sendImage = useSendImage(matchId);
@@ -283,6 +286,20 @@ function ChatScreen() {
           ) : null}
           {conversation ? (
             <Pressable
+              onPress={() => setSearching(!searching)}
+              accessibilityRole="button"
+              accessibilityLabel={t('chatSearch.open')}
+              accessibilityState={{ expanded: searching }}
+              style={styles.iconBtn}
+              testID="search-chat"
+            >
+              <AppText variant="caption" tone="muted">
+                🔍 {t('chatSearch.open')}
+              </AppText>
+            </Pressable>
+          ) : null}
+          {conversation ? (
+            <Pressable
               onPress={() =>
                 prefs.mutate(
                   { muted: !conversation.muted },
@@ -378,6 +395,10 @@ function ChatScreen() {
         ) : null}
 
         {conversation && !closed ? <FreeTimes matchId={matchId} name={name} /> : null}
+
+        {searching ? (
+          <ChatSearch matchId={matchId} otherName={name} onClose={() => setSearching(false)} />
+        ) : null}
 
         <FlatList
           // Keyboard users must be able to focus and scroll the conversation (WCAG 2.1.1).

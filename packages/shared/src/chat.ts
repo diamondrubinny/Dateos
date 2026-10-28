@@ -138,6 +138,15 @@ export const conversationSchema = z.object({
   archived: z.boolean(),
 });
 
+/** Search in a chat (phase 32). */
+export const chatSearchQuerySchema = z.object({ q: z.string().trim().min(2).max(100) });
+export const chatSearchResultSchema = z.object({
+  results: z.array(
+    z.object({ id: z.uuid(), mine: z.boolean(), body: z.string(), createdAt: z.string() }),
+  ),
+});
+export type ChatSearchResult = z.infer<typeof chatSearchResultSchema>;
+
 export const matchPrefsInputSchema = z
   .object({ muted: z.boolean().optional(), archived: z.boolean().optional() })
   .refine((v) => v.muted !== undefined || v.archived !== undefined, 'Nothing to change');
@@ -184,6 +193,8 @@ export const chatSettingsSchema = z.object({
   allowTranscripts: z.boolean(),
   /** Phase 30: "Seen" both ways; off hides mine and theirs. */
   readReceipts: z.boolean(),
+  /** Phase 32: an email when a new kind of device signs in. */
+  signinAlerts: z.boolean(),
 });
 export const chatSettingsInputSchema = chatSettingsSchema
   .partial()

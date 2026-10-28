@@ -135,6 +135,19 @@ try {
     );
     check(page.otherReadAt === null, 'Dan no longer sees when Maya read');
 
+    // Search in the chat (phase 32): finds the reply, never the unsent message.
+    await A.page.goto(`${WEB}/chat/${matchId}`);
+    await A.page.getByTestId('search-chat').click();
+    const search = A.page.getByTestId('chat-search');
+    const term = locale === 'he' ? 'בשבת' : 'Saturday';
+    await search.getByLabel(t.chatSearch.label).fill(term);
+    await search.getByText(t.chatSearch.found.replace('{{count}}', '1')).waitFor();
+    check((await search.getByText(answer).count()) === 1, 'search finds the reply');
+    await search.getByLabel(t.chatSearch.label).fill(oops.slice(0, 6));
+    await search.getByText(t.chatSearch.none).waitFor();
+    check(true, 'search never finds the unsent message');
+    await audit(A.page, `${locale}/chat-search`);
+
     // 4. Mute and archive (phase 31): private, and a new message brings the chat back.
     await A.page.goto(`${WEB}/chat/${matchId}`);
     await A.page.getByTestId('mute-chat').click();
