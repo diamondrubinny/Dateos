@@ -56,6 +56,7 @@ import {
   cleanupModeration,
   embedProfile,
   purgeClosedChats,
+  purgeUnsent,
 } from './profile-jobs.js';
 
 async function main(): Promise<void> {
@@ -166,6 +167,7 @@ async function main(): Promise<void> {
           return {
             ...(await cleanupDiscovery(db)),
             ...(await purgeClosedChats(db, storage)),
+            ...(await purgeUnsent(db, storage)),
             ...(await cleanupModeration(db, storage)),
             ...(await cleanupPrivacy(db)),
             ...(await handleInactiveAccounts({

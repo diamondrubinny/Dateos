@@ -150,6 +150,8 @@ export async function exportMemberData(
       kind: t.messages.kind,
       body: t.messages.body,
       at: t.messages.createdAt,
+      // Phase 30: kept (for safety) until purged, so it's in my own export until then.
+      unsentAt: t.messages.unsentAt,
     })
     .from(t.messages)
     .where(eq(t.messages.senderId, userId))
@@ -493,7 +495,7 @@ export async function exportMemberData(
       createdAt: iso(m.createdAt),
       unmatchedAt: iso(m.unmatchedAt),
     })),
-    messagesYouSent: sent.map((m) => ({ ...m, at: iso(m.at) })),
+    messagesYouSent: sent.map((m) => ({ ...m, at: iso(m.at), unsentAt: iso(m.unsentAt) })),
     blocks: blocks.map((b) => ({ ...b, at: iso(b.at) })),
     reportsYouFiled: reportsFiled.map((r) => ({ ...r, at: iso(r.at) })),
     moderationAffectingYou: moderation.map((m) => ({ ...m, at: iso(m.at) })),

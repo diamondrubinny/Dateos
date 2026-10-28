@@ -6,6 +6,11 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Added
 
+- **Unsend a message** (within 15 minutes): both people see "Message unsent". For safety, the
+  content is kept 30 days only for moderation: a report from the other person adds it as evidence
+  automatically. Then it's deleted.
+- **Replies**: quote a message of the same chat; hidden and unsent quotes stay hidden.
+- **Read receipts, your choice**: turn "Seen" off in Settings (then you don't see others' either).
 - **Undo a pass**: right after passing on someone in Discover, Undo brings them back (the last
   pass, for 10 minutes; likes can't be undone).
 - **Reactions to messages**: ❤️ 😂 😮 😢 👍 🔥, one each per message, seen live by the other person,

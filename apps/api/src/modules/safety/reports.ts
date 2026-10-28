@@ -3,10 +3,10 @@
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 import { schema, type Database } from '@nexaheart/db';
 import type { reportInputSchema } from '@nexaheart/shared';
-import { callSummary, ErrorCode, reportPriority } from '@nexaheart/shared';
+import { callSummary, ErrorCode, reportPriority, UNSENT_KEEP_DAYS } from '@nexaheart/shared';
 import { evidenceKey, type Storage } from '@nexaheart/storage';
 import { randomUUID } from 'node:crypto';
-import { and, eq, inArray, or, sql } from 'drizzle-orm';
+import { and, eq, inArray, isNull, or, sql } from 'drizzle-orm';
 import type { z } from 'zod';
 import { audit } from '../../lib/audit.js';
 import type { Mailer } from '../../lib/mailer.js';
@@ -45,36 +45,45 @@ export class ReportService {
       .where(and(eq(matches.userA, a), eq(matches.userB, b)));
 
     // Evidence is copied from the database, never taken from the client, and only from the
-    // reporter's own chat with the person they report.
-    const evidence =
-      match && input.messageIds.length > 0
-        ? await this.db
-            .select({
-              senderId: messages.senderId,
-              kind: messages.kind,
-              body: messages.body,
-              flags: messages.flags,
-              createdAt: messages.createdAt,
-              audioKey: audioClips.mediaKey,
-              opusKey: audioClips.opusKey,
-              durationMs: audioClips.durationMs,
-              call: calls,
-            })
-            .from(messages)
-            .leftJoin(
-              audioClips,
-              and(eq(audioClips.id, messages.audioId), eq(audioClips.status, 'clean')),
-            )
-            .leftJoin(calls, eq(calls.id, messages.callId))
-            .where(
-              and(
-                eq(messages.matchId, match.id),
-                inArray(messages.id, input.messageIds),
-                sql`((${messages.kind} IN ('text', 'date') AND ${messages.body} IS NOT NULL) OR (${messages.kind} = 'voice' AND ${audioClips.mediaKey} IS NOT NULL) OR (${messages.kind} = 'call' AND ${calls.id} IS NOT NULL))`,
+    // reporter's own chat with the person they report. Messages that person unsent (phase 30)
+    // are added automatically: the reporter can no longer see them to choose them.
+    const evidence = match
+      ? await this.db
+          .select({
+            senderId: messages.senderId,
+            kind: messages.kind,
+            body: messages.body,
+            flags: messages.flags,
+            createdAt: messages.createdAt,
+            audioKey: audioClips.mediaKey,
+            opusKey: audioClips.opusKey,
+            durationMs: audioClips.durationMs,
+            call: calls,
+            unsentAt: messages.unsentAt,
+          })
+          .from(messages)
+          .leftJoin(
+            audioClips,
+            and(eq(audioClips.id, messages.audioId), eq(audioClips.status, 'clean')),
+          )
+          .leftJoin(calls, eq(calls.id, messages.callId))
+          .where(
+            and(
+              eq(messages.matchId, match.id),
+              or(
+                input.messageIds.length > 0
+                  ? and(inArray(messages.id, input.messageIds), isNull(messages.unsentAt))
+                  : sql`false`,
+                and(
+                  eq(messages.senderId, targetId),
+                  sql`${messages.unsentAt} > now() - make_interval(days => ${UNSENT_KEEP_DAYS})`,
+                ),
               ),
-            )
-            .orderBy(messages.createdAt)
-        : [];
+              sql`((${messages.kind} IN ('text', 'date') AND ${messages.body} IS NOT NULL) OR (${messages.kind} = 'voice' AND ${audioClips.mediaKey} IS NOT NULL) OR (${messages.kind} = 'call' AND ${calls.id} IS NOT NULL))`,
+            ),
+          )
+          .orderBy(messages.createdAt)
+      : [];
 
     const priority = reportPriority(input.category);
     const reportId = await this.db.transaction(async (tx) => {
@@ -139,6 +148,7 @@ export class ReportService {
           mediaKey,
           durationMs: m.kind === 'voice' ? m.durationMs : null,
           flags: m.flags,
+          unsent: m.unsentAt !== null,
           sentAt: m.createdAt,
         });
       }

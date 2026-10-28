@@ -40,7 +40,8 @@
     "federated-chat": "tsx federated-chat.ts",
     "federated-safety": "tsx federated-safety.ts",
     "devices": "tsx devices.ts",
-    "reactions-undo": "tsx reactions-undo.ts"
+    "reactions-undo": "tsx reactions-undo.ts",
+    "chat-control": "tsx chat-control.ts"
   },
   "dependencies": {
     "@axe-core/playwright": "4.14.0",

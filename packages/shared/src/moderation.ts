@@ -149,6 +149,8 @@ export const evidenceMessageSchema = z.object({
   body: z.string().nullable(),
   durationMs: z.number().int().nullable(),
   flags: z.array(z.string()),
+  /** Phase 30: the sender unsent it; added automatically. */
+  unsent: z.boolean(),
   sentAt: z.string(),
 });
 

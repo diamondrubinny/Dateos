@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
-import type { MessageView, ReactionEmoji } from '@nexaheart/shared';
+import { UNSEND_MINUTES, type MessageView, type ReactionEmoji } from '@nexaheart/shared';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
@@ -10,9 +10,14 @@ import { AppText } from './AppText';
 import { CallLine } from './CallLine';
 import { DateCard } from './DateCard';
 import { Reactions, canReact } from './Reactions';
+import { ReplyQuote } from './ReplyQuote';
 import { RemoteImage } from './RemoteImage';
 import { VoicePlayer } from './VoicePlayer';
 import { VoiceTranscript } from './VoiceTranscript';
+
+/** The app's view of the unsend window; the server has the final say. */
+const withinUnsend = (message: MessageView) =>
+  Date.now() - new Date(message.createdAt).getTime() < UNSEND_MINUTES * 60_000;
 
 export function ScamBanner() {
   const { t } = useTranslation();
@@ -33,6 +38,8 @@ export function MessageBubble({
   other,
   onReact,
   reacting,
+  onReply,
+  onUnsend,
 }: {
   message: MessageView;
   seen: boolean;
@@ -41,12 +48,26 @@ export function MessageBubble({
   /** Reactions (phase 29b); without it (partner chats) none are shown. */
   onReact?: (emoji: ReactionEmoji | null) => void;
   reacting?: boolean;
+  /** Phase 30: reply to this message, and unsend it (mine, within UNSEND_MINUTES). */
+  onReply?: () => void;
+  onUnsend?: () => void;
 }) {
   const { t } = useTranslation();
   const colors = useColors();
   const [revealed, setRevealed] = useState(false);
   const [imageShown, setImageShown] = useState(false);
   const mine = message.mine;
+  if (message.unsent) {
+    return (
+      <View style={[styles.row, mine ? styles.rowMine : styles.rowTheirs]} testID="unsent">
+        <View style={[styles.bubble, styles.unsent, { borderColor: colors.border }]}>
+          <AppText variant="caption" tone="muted">
+            {mine ? t('chatControl.youUnsent') : t('chatControl.unsent')}
+          </AppText>
+        </View>
+      </View>
+    );
+  }
   if (message.kind === 'date') return <DateCard message={message} other={other} />;
   if (message.kind === 'call') return <CallLine message={message} />;
   const bubble = [
@@ -135,14 +156,24 @@ export function MessageBubble({
   }
 
   return (
-    <View style={[styles.row, mine ? styles.rowMine : styles.rowTheirs]}>
+    <View
+      style={[styles.row, mine ? styles.rowMine : styles.rowTheirs]}
+      testID={`message-${message.id}`}
+    >
       {message.scam.length > 0 ? <ScamBanner /> : null}
-      <View style={bubble}>{content}</View>
+      <View style={bubble}>
+        {message.replyTo ? (
+          <ReplyQuote quote={message.replyTo} otherName={other?.name ?? ''} onPrimary={mine} />
+        ) : null}
+        {content}
+      </View>
       {onReact && canReact(message) && (!message.hidden || revealed) ? (
         <Reactions
           message={message}
           otherName={other?.name ?? ''}
           onReact={onReact}
+          {...(onReply ? { onReply } : {})}
+          {...(onUnsend && mine && withinUnsend(message) ? { onUnsend } : {})}
           busy={reacting}
         />
       ) : null}
@@ -168,6 +199,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   mine: { borderBottomEndRadius: 4 },
+  unsent: { borderStyle: 'dashed', backgroundColor: 'transparent' },
   theirs: { borderBottomStartRadius: 4 },
   hidden: { gap: spacing.xs },
   image: { width: 200, height: 250, borderRadius: radius.md },

@@ -21,6 +21,13 @@ export const UNMATCHED_CHAT_RETENTION_DAYS = 30;
 export const harmCategories = ['insult', 'sexual', 'threat'] as const;
 export const scamSignals = ['money', 'crypto', 'gift_card', 'off_platform', 'link'] as const;
 
+/** Phase 30: my own message can be unsent this long after sending. */
+export const UNSEND_MINUTES = 15;
+/** Phase 30: an unsent message's content is kept this long, for moderation only. */
+export const UNSENT_KEEP_DAYS = 30;
+/** Phase 30: how much of a quoted message a reply shows. */
+export const REPLY_PREVIEW_LENGTH = 120;
+
 export const sendMessageSchema = z.object({
   text: z.string().trim().min(1).max(MAX_MESSAGE_LENGTH),
   clientId: z
@@ -28,6 +35,8 @@ export const sendMessageSchema = z.object({
     .min(8)
     .max(64)
     .regex(/^[\w-]+$/),
+  /** Phase 30: a message in the same chat. */
+  replyToId: z.uuid().optional(),
 });
 
 export const messageCheckSchema = z.object({ text: z.string().max(MAX_MESSAGE_LENGTH) });
@@ -81,6 +90,19 @@ export const messageViewSchema = z.object({
     mine: reactionEmojiSchema.nullable(),
     theirs: reactionEmojiSchema.nullable(),
   }),
+  /** Phase 30: unsent by its sender; nothing of it is shown. */
+  unsent: z.boolean(),
+  /** Phase 30: the quoted message, as much as this viewer may see of it. */
+  replyTo: z
+    .object({
+      id: z.uuid(),
+      mine: z.boolean(),
+      kind: z.enum(['text', 'image', 'voice', 'date', 'call']),
+      /** The first REPLY_PREVIEW_LENGTH characters of a text; null otherwise. */
+      preview: z.string().nullable(),
+      state: z.enum(['shown', 'hidden', 'unsent']),
+    })
+    .nullable(),
   createdAt: z.string(),
 });
 export type MessageView = z.infer<typeof messageViewSchema>;
@@ -153,6 +175,8 @@ export const chatSettingsSchema = z.object({
   acceptCalls: z.boolean(),
   /** Phase 26: people I send voice to may read it as text (made on this community's server). */
   allowTranscripts: z.boolean(),
+  /** Phase 30: "Seen" both ways; off hides mine and theirs. */
+  readReceipts: z.boolean(),
 });
 export const chatSettingsInputSchema = chatSettingsSchema
   .partial()

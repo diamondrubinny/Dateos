@@ -181,6 +181,8 @@ export function asMessageView(m: FederatedMessage, matchId: string): MessageView
     scam: m.scam,
     // Reactions stay within one community (phase 29b).
     reactions: { mine: null, theirs: null },
+    unsent: false,
+    replyTo: null,
     createdAt: m.createdAt,
   };
 }
