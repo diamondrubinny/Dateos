@@ -40,9 +40,10 @@ were checked by removing the fix and watching the test fail.
 
 ### Accepted risks
 
-- **Push tokens move to the last account that registers them.** Someone who knows another person's
-  Expo token could make them stop receiving notifications. Tokens are hard to obtain and pushes carry no
-  content; binding tokens to an installation secret is a possible later improvement.
+- ~~**Push tokens move to the last account that registers them.**~~ Fixed in phase 29: a token is
+  bound to a random secret made by the app once per installation (only its SHA-256 is stored), and
+  moves to another account only with that secret. Tokens registered by older apps take the first
+  secret they're sent with.
 - **Development builds** (Expo Go, `exp://`) can't use the PKCE hand-off; native sign-in is meant for
   your own builds with the `nexaheart` scheme (or `APP_SCHEME`).
 - Native sign-in, sharing and push need testing on real iOS and Android devices before release 📘.

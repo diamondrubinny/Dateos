@@ -34,6 +34,7 @@ import { adminRoutes } from './modules/admin/routes.js';
 import { federatedRoutes } from './modules/federation/member-routes.js';
 import { federationRoutes } from './modules/federation/routes.js';
 import { safetyRoutes } from './modules/safety/routes.js';
+import { deviceRoutes } from './modules/devices/routes.js';
 import { notificationRoutes } from './modules/notifications/routes.js';
 import { coachRoutes } from './modules/coach/routes.js';
 import { matchmakerRoutes } from './modules/matchmaker/routes.js';
@@ -183,6 +184,7 @@ export async function buildApp(env: Env, deps: AppDependencies): Promise<Fastify
     await typed.register(callRoutes, { auth: services.auth, calls: services.calls });
     await typed.register(callWebhookRoutes, { calls: services.calls });
     await typed.register(notificationRoutes, { auth: services.auth, db: services.dbHandle.db });
+    await typed.register(deviceRoutes, { auth: services.auth, db: services.dbHandle.db });
     await typed.register(setupRoutes, { auth: services.auth, instance: services.instance });
     await app.register(websocket, { options: { maxPayload: 4096 } });
     await typed.register(chatRoutes, {

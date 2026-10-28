@@ -966,6 +966,19 @@ export const he: Translations = {
     open: 'לשיחות שלי',
     likeBlocked: 'קודם לענות למי שמחכים לך, ואז אפשר לעשות לייק חדש.',
   },
+  devices: {
+    title: 'המכשירים שלך',
+    intro:
+      'איפה החשבון מחובר. נשמר רק שם כללי של המכשיר, אף פעם לא כתובת IP. לא מזהים מכשיר? אפשר לנתק אותו.',
+    app: 'האפליקציה · {{os}}',
+    web: '{{browser}} · {{os}}',
+    unknown: 'מכשיר לא מזוהה',
+    thisDevice: 'המכשיר הזה',
+    dates: 'התחברות: {{signedIn}} · פעילות אחרונה: {{lastActive}}',
+    signOut: 'ניתוק',
+    signOutOthers: 'ניתוק מכל שאר המכשירים',
+    signedOut: 'בוצע. מכשירים שנותקו: {{count}}.',
+  },
   security: {
     title: 'אבטחה',
     screenshotsNative:

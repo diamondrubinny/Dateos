@@ -6,6 +6,18 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Added
 
+- **Your devices** (Settings → Security): see where you're signed in (a coarse name such as
+  "Chrome · Windows" or "NexaHeart app on Android", never an IP address), and sign out of one
+  device or everywhere else. Open live connections of a signed-out device close within a minute.
+- **Created by Diamond Rubinny**: the credit under "Powered by NexaHeart · Open source" in the app
+  and the dashboard, `poweredBy.author` in `GET /v1/instance`, `CITATION.cff`, and author details in
+  every `package.json`; `check-credit` keeps them in place.
+
+### Security
+
+- **Push tokens are bound to the device**: knowing someone's push token is no longer enough to move
+  it to another account and silence their notifications (closes an accepted risk from phase 7).
+
 - **Partner communities: replacing the signing key** from the dashboard, without ending
   partnerships: partners are told with the old key and a proof from the new one; one that's down
   is told within a week.

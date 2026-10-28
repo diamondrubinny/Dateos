@@ -973,6 +973,19 @@ export const ar: Translations = {
     open: 'إلى محادثاتي',
     likeBlocked: 'ردّ على من ينتظرونك قبل الإعجاب بشخص جديد.',
   },
+  devices: {
+    title: 'أجهزتك',
+    intro:
+      'الأماكن التي سجّلت الدخول فيها. نحتفظ فقط باسم تقريبي للجهاز، وليس بعنوان IP أبدًا. لا تعرف جهازًا؟ سجّل خروجه.',
+    app: 'التطبيق على {{os}}',
+    web: '{{browser}} على {{os}}',
+    unknown: 'جهاز غير معروف',
+    thisDevice: 'هذا الجهاز',
+    dates: 'تسجيل الدخول: {{signedIn}} · آخر نشاط: {{lastActive}}',
+    signOut: 'تسجيل الخروج',
+    signOutOthers: 'تسجيل الخروج من كل الأجهزة الأخرى',
+    signedOut: 'تم. عدد الأجهزة التي سُجّل خروجها: {{count}}.',
+  },
   security: {
     title: 'الأمان',
     screenshotsNative:

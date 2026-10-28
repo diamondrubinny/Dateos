@@ -8,7 +8,13 @@
  * Keeping it is an additional term of the license (see NOTICE).
  * Usage: pnpm --dir e2e credit
  */
-import { CREDIT_TEXT, CREDIT_URL, UPSTREAM_SOURCE_URL } from '@nexaheart/shared';
+import {
+  CREDIT_AUTHOR_URL,
+  CREDIT_TEXT,
+  CREDIT_URL,
+  UPSTREAM_SOURCE_URL,
+  type CreditText,
+} from '@nexaheart/shared';
 import { chromium, type Page } from 'playwright';
 import { en } from '../apps/mobile/src/i18n/en.ts';
 import { ar } from '../apps/mobile/src/i18n/ar.ts';
@@ -39,15 +45,16 @@ const same = (a: string | undefined, b: string) =>
   a !== undefined && new URL(a).href === new URL(b).href;
 
 /** Both parts are visible, readable, and link where they should. */
-async function checkCredit(
-  page: Page,
-  where: string,
-  text: { poweredBy: string; openSource: string },
-) {
+async function checkCredit(page: Page, where: string, text: CreditText) {
   const poweredBy = page.getByRole('link', { name: text.poweredBy, exact: true });
   const openSource = page.getByRole('link', { name: text.openSource, exact: true });
-  const visible = (await poweredBy.isVisible()) && (await openSource.isVisible());
-  check(visible, `${where}: "${text.poweredBy} · ${text.openSource}" is visible`);
+  // Who created NexaHeart (phase 29).
+  const createdBy = page.getByRole('link', { name: text.createdBy, exact: true });
+  const visible =
+    (await poweredBy.isVisible()) &&
+    (await openSource.isVisible()) &&
+    (await createdBy.isVisible());
+  check(visible, `${where}: "${text.poweredBy} · ${text.openSource}", "${text.createdBy}" visible`);
   if (!visible) return;
   const size = await poweredBy.evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
   const opacity = await poweredBy.evaluate((el) => Number(getComputedStyle(el).opacity));
@@ -58,13 +65,17 @@ async function checkCredit(
     check(href === CREDIT_URL, `${where}: "${text.poweredBy}" → ${href}`);
     const source = await openSource.getAttribute('href');
     check(source === UPSTREAM_SOURCE_URL, `${where}: "${text.openSource}" → ${source}`);
+    const author = await createdBy.getAttribute('href');
+    check(author === CREDIT_AUTHOR_URL, `${where}: "${text.createdBy}" → ${author}`);
     return;
   }
   await poweredBy.click();
   await openSource.click();
+  await createdBy.click();
   const urls = await opened(page);
   check(same(urls[0], CREDIT_URL), `${where}: "${text.poweredBy}" opens ${urls[0]}`);
   check(same(urls[1], UPSTREAM_SOURCE_URL), `${where}: "${text.openSource}" opens ${urls[1]}`);
+  check(same(urls[2], CREDIT_AUTHOR_URL), `${where}: "${text.createdBy}" opens ${urls[2]}`);
 }
 
 // Every locale asks for a sign-in link from one IP (the real per-IP limit is 5 per 10 minutes).

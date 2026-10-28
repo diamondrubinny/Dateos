@@ -260,6 +260,13 @@
       "when": 1792951417630,
       "tag": "0036_federation_key_rotation",
       "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1793192455058,
+      "tag": "0037_account_security",
+      "breakpoints": true
     }
   ]
 }

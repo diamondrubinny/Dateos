@@ -1,6 +1,9 @@
 {
   "name": "nexaheart",
-  "author": "Diamond Rubinny",
+  "author": {
+    "name": "Diamond Rubinny",
+    "url": "https://github.com/diamondrubinny"
+  },
   "private": true,
   "description": "Open-source, privacy-first dating platform anyone can self-host.",
   "license": "AGPL-3.0-or-later",

@@ -4,6 +4,7 @@
 import { matchModeSchema } from './friends.js';
 import { z } from 'zod';
 import { publicProfileSchema } from './discovery.js';
+import { deviceSecretSchema } from './account.js';
 import { localeSchema } from './common.js';
 import { callSchema, type CallStatus } from './calls.js';
 import { datePlanSchema } from './dates.js';
@@ -144,4 +145,9 @@ export const pushTokenInputSchema = z.object({
     .regex(/^Expo(nent)?PushToken\[[A-Za-z0-9_-]{10,}\]$/),
   platform: z.enum(['ios', 'android']),
   locale: localeSchema.default('en'),
+  /**
+   * Binds the token to this installation (phase 29): an already registered token moves to another
+   * account only with the same secret. Optional for apps from before phase 29.
+   */
+  deviceSecret: deviceSecretSchema.optional(),
 });

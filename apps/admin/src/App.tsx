@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { CREDIT_URL, creditText, UPSTREAM_SOURCE_URL } from '@nexaheart/shared';
+import { CREDIT_AUTHOR_URL, CREDIT_URL, creditText, UPSTREAM_SOURCE_URL } from '@nexaheart/shared';
 import { api, ApiError, MFA_REQUIRED_EVENT } from './api';
 import { useAsync, useRoute } from './hooks';
 import { LocaleContext, messages, useLocale, type Locale } from './i18n';
@@ -26,6 +26,7 @@ const LOCALE_KEY = 'nexaheart-admin-locale';
 /**
  * "Powered by NexaHeart · Open source". Keeping it visible is an additional term of the license
  * (AGPL-3.0 section 7(b), see NOTICE); "Open source" links to this instance's source (section 13).
+ * Then who created NexaHeart (phase 29).
  */
 function PoweredBy({ locale }: { locale: Locale }) {
   const instance = useAsync(() => api.instance(), []);
@@ -39,6 +40,10 @@ function PoweredBy({ locale }: { locale: Locale }) {
       <span aria-hidden="true"> · </span>
       <a href={sourceUrl} target="_blank" rel="noopener noreferrer">
         {text.openSource}
+      </a>
+      <span aria-hidden="true"> · </span>
+      <a href={CREDIT_AUTHOR_URL} target="_blank" rel="noopener noreferrer">
+        {text.createdBy}
       </a>
     </footer>
   );

@@ -338,6 +338,16 @@ export async function exportMemberData(
     })
     .from(t.pushTokens)
     .where(eq(t.pushTokens.userId, userId));
+  // "Your devices" (phase 29): only the coarse label and dates are stored.
+  const sessions = await db
+    .select({
+      device: t.session.deviceLabel,
+      createdAt: t.session.createdAt,
+      updatedAt: t.session.updatedAt,
+    })
+    .from(t.session)
+    .where(eq(t.session.userId, userId))
+    .orderBy(asc(t.session.createdAt));
 
   const files: Zippable = {};
   const photoEntries = [];
@@ -543,6 +553,11 @@ export async function exportMemberData(
       ...d,
       createdAt: iso(d.createdAt),
       lastUsedAt: iso(d.lastUsedAt),
+    })),
+    signedInDevices: sessions.map((d) => ({
+      device: d.device,
+      signedInAt: iso(d.createdAt),
+      lastActiveAt: iso(d.updatedAt),
     })),
   };
   files['data.json'] = strToU8(JSON.stringify(data, null, 2));

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
+import { createHash, timingSafeEqual } from 'node:crypto';
 import { schema, type Database } from '@nexaheart/db';
 import {
   chatSettingsInputSchema,
@@ -18,6 +19,10 @@ import { perUserLimit } from '../../plugins/security.js';
 
 const { audioClips, preferences, pushTokens } = schema;
 const ok = z.object({ ok: z.literal(true) });
+
+const sha256 = (value: string) => createHash('sha256').update(value).digest('hex');
+const safeEqual = (a: string, b: string) =>
+  a.length === b.length && timingSafeEqual(Buffer.from(a), Buffer.from(b));
 
 /** Per-person chat settings and opt-in push notification devices. */
 export const notificationRoutes: FastifyPluginAsyncZod<{ auth: Auth; db: Database }> = async (
@@ -91,15 +96,38 @@ export const notificationRoutes: FastifyPluginAsyncZod<{ auth: Auth; db: Databas
       config: perUserLimit(20, 60 * 60 * 1000),
     },
     async (request) => {
-      const { token, platform, locale } = request.body;
+      const { token, platform, locale, deviceSecret } = request.body;
       const userId = currentUser(request).id;
-      // A device belongs to whoever signed in on it last: re-registering moves the token.
+      const secretHash = deviceSecret ? sha256(deviceSecret) : null;
+      const [existing] = await db
+        .select({ userId: pushTokens.userId, secretHash: pushTokens.deviceSecretHash })
+        .from(pushTokens)
+        .where(eq(pushTokens.token, token));
+      // A device belongs to whoever signed in on it last (phase 29): moving a token to another
+      // account needs the same installation's secret, so knowing someone's token isn't enough to
+      // silence their notifications. A token from before phase 29 takes the first secret it gets.
+      if (
+        existing &&
+        existing.userId !== userId &&
+        existing.secretHash !== null &&
+        !(secretHash !== null && safeEqual(existing.secretHash, secretHash))
+      ) {
+        throw new HttpError(409, ErrorCode.Conflict, 'This device is registered to someone else.');
+      }
+      // The same account keeps its secret; only a new (or first) secret is written.
+      const keepSecret = existing && existing.userId === userId && existing.secretHash !== null;
       await db
         .insert(pushTokens)
-        .values({ token, userId, platform, locale })
+        .values({ token, userId, platform, locale, deviceSecretHash: secretHash })
         .onConflictDoUpdate({
           target: pushTokens.token,
-          set: { userId, platform, locale, createdAt: new Date() },
+          set: {
+            userId,
+            platform,
+            locale,
+            createdAt: new Date(),
+            ...(keepSecret ? {} : { deviceSecretHash: secretHash }),
+          },
         });
       return { ok: true as const };
     },
