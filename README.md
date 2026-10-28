@@ -298,7 +298,6 @@ licensed.
 
 Created and maintained by **Diamond Rubinny** ([@diamondrubinny](https://github.com/diamondrubinny)).
 
-
 ---
 
 ## 💼 Commercial license & rights acquisition
