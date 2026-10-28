@@ -765,6 +765,12 @@ export const he: Translations = {
     warningBody:
       'דיווח עליכם נבדק ונמצא שהוא מפר את הכללים שלנו: {{category}}. הפרות חוזרות יובילו להשעיה.',
     warningAck: 'הבנתי',
+    reviewedTitle: 'הדיווח שלך נבדק',
+    reviewedAbout: 'הדיווח ששלחת ב־{{date}} ({{category}}) נבדק על ידי צוות המודרציה.',
+    reviewedActioned: 'פעלנו בעקבותיו. מטעמי פרטיות איננו משתפים איזו פעולה ננקטה.',
+    reviewedNone: 'הפעם לא נמצאה הפרה של הכללים. אם מישהו גורם לך אי־נוחות, תמיד אפשר לחסום.',
+    reviewedThanks: 'תודה שעזרת לשמור על קהילה בטוחה.',
+    reviewedOk: 'הבנתי',
   },
   voice: {
     record: 'הקלטת הודעה קולית',

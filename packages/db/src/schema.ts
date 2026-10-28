@@ -677,6 +677,8 @@ export const reports = pgTable(
     resolvedAction: moderationActionEnum('resolved_action'),
     resolvedReason: varchar('resolved_reason', { length: 500 }),
     resolvedAt: timestamp('resolved_at', { withTimezone: true }),
+    /** The reporter dismissed "Your report was reviewed" (phase 37). */
+    reporterSeenAt: timestamp('reporter_seen_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [

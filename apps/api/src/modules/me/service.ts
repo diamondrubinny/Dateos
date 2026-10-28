@@ -30,6 +30,8 @@ import {
   type Gender,
   defaultFriendMode,
   type FriendMode,
+  REPORT_OUTCOME_DAYS,
+  type ReportCategory,
 } from '@nexaheart/shared';
 import { checkHarm } from '@nexaheart/ai';
 import { and, asc, desc, eq, isNull, ne, sql } from 'drizzle-orm';
@@ -155,6 +157,17 @@ export class MeService {
         ),
       )
       .orderBy(asc(moderationLog.createdAt));
+    // "Your report was reviewed" (phase 37): reports I sent, decided recently, not yet dismissed.
+    const { rows: reviewed } = await this.db.execute<{
+      id: string;
+      category: ReportCategory;
+      status: 'actioned' | 'dismissed';
+      created_at: string | Date;
+    }>(sql`
+      SELECT id, category, status, created_at FROM reports
+      WHERE reporter_id = ${userId} AND status <> 'open' AND reporter_seen_at IS NULL
+        AND resolved_at > now() - make_interval(days => ${REPORT_OUTCOME_DAYS})
+      ORDER BY resolved_at DESC LIMIT 5`);
 
     return {
       user: { id: account.id, email: account.email, status: account.status },
@@ -231,12 +244,22 @@ export class MeService {
       onboarding: { complete: missing.length === 0, missing },
       verified: Boolean(profile?.verifiedAt),
       // Members see the category of a warning, never the moderator's internal note.
-      notices: warnings.map((w) => ({
-        id: w.id,
-        kind: 'warning' as const,
-        category: w.category ?? 'other',
-        createdAt: w.createdAt.toISOString(),
-      })),
+      notices: [
+        ...warnings.map((w) => ({
+          id: w.id,
+          kind: 'warning' as const,
+          category: w.category ?? 'other',
+          createdAt: w.createdAt.toISOString(),
+        })),
+        ...reviewed.map((r) => ({
+          id: r.id,
+          kind: 'report_reviewed' as const,
+          category: r.category,
+          outcome: r.status,
+          // When the report was sent: the reporter knows it by that.
+          createdAt: new Date(r.created_at).toISOString(),
+        })),
+      ],
     };
   }
 
@@ -606,7 +629,20 @@ export class MeService {
       .set({ acknowledgedAt: new Date() })
       .where(and(eq(moderationLog.id, noticeId), eq(moderationLog.targetId, userId)))
       .returning({ id: moderationLog.id });
-    if (updated.length === 0) throw new HttpError(404, ErrorCode.NotFound, 'Resource not found.');
+    if (updated.length > 0) return;
+    // Or "Your report was reviewed" (phase 37): only for reports this member sent.
+    const seen = await this.db
+      .update(schema.reports)
+      .set({ reporterSeenAt: new Date() })
+      .where(
+        and(
+          eq(schema.reports.id, noticeId),
+          eq(schema.reports.reporterId, userId),
+          sql`${schema.reports.status} <> 'open'`,
+        ),
+      )
+      .returning({ id: schema.reports.id });
+    if (seen.length === 0) throw new HttpError(404, ErrorCode.NotFound, 'Resource not found.');
   }
 
   async deleteAccount(userId: string): Promise<void> {

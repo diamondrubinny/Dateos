@@ -45,7 +45,8 @@
     "later-notify": "tsx later-notify.ts",
     "anti-bot": "tsx anti-bot.ts",
     "blocks": "tsx blocks.ts",
-    "overview": "tsx overview.ts"
+    "overview": "tsx overview.ts",
+    "report-outcome": "tsx report-outcome.ts"
   },
   "dependencies": {
     "@axe-core/playwright": "4.14.0",

@@ -1,0 +1,1 @@
+ALTER TABLE "reports" ADD COLUMN "reporter_seen_at" timestamp with time zone;

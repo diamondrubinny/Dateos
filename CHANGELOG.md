@@ -6,6 +6,9 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Added
 
+- **"Your report was reviewed"**: after a moderator decides, the member who reported sees whether
+  action was taken (never which action) or that no rule was found broken, with a reminder that
+  blocking is always available. Shown for 30 days, until dismissed.
 - **Dashboard → Overview** (moderators and admins): the open queue by priority and category, the
   oldest open report, the last 7 days (reports from members and automatic ones by reason, resolved,
   median time to resolve, new accounts, suspensions) and verifications waiting. Counts only.
@@ -203,6 +206,7 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Fixed
 
+- Hebrew icebreakers used slash forms (מוותר/ת, את/ה); rephrased so no gender is assumed.
 - Double dates could miss pairs once more than 300 people were nearby; pair discovery now checks
   the newest undecided pairs directly.
 - "Your turn" (focus mode) counted 0 people waiting as soon as anyone, anywhere, had unmatched: a
