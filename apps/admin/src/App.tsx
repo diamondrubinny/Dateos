@@ -12,6 +12,7 @@ import { Branding } from './pages/Branding';
 import { ClaimInstance } from './pages/Setup';
 import { MfaSetup, MfaVerify } from './pages/Mfa';
 import { ReportDetail } from './pages/ReportDetail';
+import { Overview } from './pages/Overview';
 import { Reports } from './pages/Reports';
 import { SignIn } from './pages/SignIn';
 import { Events } from './pages/Events';
@@ -76,6 +77,7 @@ function Shell({
   const link = (
     key:
       | 'reports'
+      | 'overview'
       | 'verifications'
       | 'venues'
       | 'events'
@@ -114,6 +116,7 @@ function Shell({
           <nav aria-label={t.appName}>
             <ul>
               {link('reports')}
+              {link('overview')}
               {link('verifications')}
               {link('venues')}
               {link('events')}
@@ -152,6 +155,7 @@ function Shell({
 function Routes({ staff }: { staff: NonNullable<Awaited<ReturnType<typeof api.me>>> }) {
   const route = useRoute();
   if (route[0] === 'reports' && route[1]) return <ReportDetail id={route[1]} staff={staff} />;
+  if (route[0] === 'overview') return <Overview />;
   if (route[0] === 'verifications') return <Verifications />;
   if (route[0] === 'venues') return <Venues isAdmin={staff.role === 'admin'} />;
   if (route[0] === 'events') return <Events isAdmin={staff.role === 'admin'} />;

@@ -27,6 +27,7 @@ import type {
   WaitlistStatus,
   EventBoard,
   PartnersResponse,
+  SafetyOverview,
 } from '@nexaheart/shared';
 
 export const API_URL: string = import.meta.env.VITE_API_URL ?? 'http://localhost:4000';
@@ -214,6 +215,7 @@ export const api = {
     request<{ verifications: VerificationReview[] }>('GET', '/v1/admin/verifications'),
   decide: (id: string, approve: boolean) =>
     request<{ ok: true }>('POST', `/v1/admin/verifications/${encodeURIComponent(id)}`, { approve }),
+  overview: () => request<SafetyOverview>('GET', '/v1/admin/overview'),
   audit: (before?: string) =>
     request<{ entries: AuditEntry[] }>(
       'GET',

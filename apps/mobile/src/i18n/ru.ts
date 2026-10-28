@@ -679,6 +679,8 @@ export const ru: Translations = {
     invalidAge: 'Возраст должен быть от 18 до 100, а минимум не может быть больше максимума.',
   },
   chat: {
+    newAccountLimit:
+      'Новые аккаунты могут начать {{count}} разговоров в день. Ответы в ваших чатах не ограничены.',
     answerQuestion: '{{name}} спрашивает:',
     answerQuestionHint: 'Начинает ваше сообщение с этого вопроса',
     title: 'Чат: {{name}}',

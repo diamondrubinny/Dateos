@@ -23,6 +23,7 @@ import {
   UNSEND_MINUTES,
   type ReactionEmoji,
   type DateFeedbackView,
+  NEW_ACCOUNT_CHAT_STARTS,
 } from '@nexaheart/shared';
 import { randomUUID } from 'node:crypto';
 import { and, asc, desc, eq, isNull, lt, or, sql } from 'drizzle-orm';
@@ -489,6 +490,34 @@ export class ChatService {
   }
 
   /** Idempotent: re-sending the same clientId returns the original message. */
+  /**
+   * A gentle start (phase 36): an account less than a day old may start only a few conversations a
+   * day. Only the first message of a chat counts; replies and later messages are never limited.
+   */
+  async checkConversationStart(matchId: string, senderId: string): Promise<void> {
+    const { rows } = await this.db.execute<{ first: boolean; fresh: boolean }>(sql`
+      SELECT NOT EXISTS (SELECT 1 FROM messages WHERE match_id = ${matchId}) AS first,
+        u.created_at > now() - interval '24 hours' AS fresh
+      FROM "user" u WHERE u.id = ${senderId}`);
+    if (!rows[0]?.first || !rows[0].fresh) return;
+    const { rows: started } = await this.db.execute<{ n: number }>(sql`
+      SELECT count(*)::int AS n FROM matches m
+      JOIN LATERAL (
+        SELECT x.sender_id, x.created_at FROM messages x WHERE x.match_id = m.id
+        ORDER BY x.created_at, x.id LIMIT 1
+      ) opener ON true
+      WHERE (m.user_a = ${senderId} OR m.user_b = ${senderId})
+        AND opener.sender_id = ${senderId}
+        AND opener.created_at > now() - interval '24 hours'`);
+    if ((started[0]?.n ?? 0) >= NEW_ACCOUNT_CHAT_STARTS) {
+      throw new HttpError(
+        429,
+        ErrorCode.SlowDown,
+        'New accounts can start a few conversations a day; replies are not limited.',
+      );
+    }
+  }
+
   async send(
     matchId: string,
     senderId: string,
@@ -507,6 +536,7 @@ export class ChatService {
         throw new HttpError(400, ErrorCode.ValidationError, 'You can only reply to this chat.');
       }
     }
+    await this.checkConversationStart(matchId, senderId);
     const total = [...(await this.counts(matchId)).values()].reduce((a, b) => a + b, 0);
     const inserted = await this.db
       .insert(messages)

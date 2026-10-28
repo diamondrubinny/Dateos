@@ -90,6 +90,8 @@ export class DateService {
       throw new HttpError(429, ErrorCode.RateLimited, 'Too many date ideas today.');
     }
 
+    await this.chat.checkConversationStart(matchId, userId);
+
     let messageId: string;
     try {
       messageId = await this.db.transaction(async (tx) => {
