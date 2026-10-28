@@ -18,6 +18,7 @@ import {
   chatSearchQuerySchema,
   chatSearchResultSchema,
   matchPrefsInputSchema,
+  matchPrefsSchema,
   reactInputSchema,
   sendMessageSchema,
   transcriptSchema,
@@ -128,7 +129,7 @@ export const chatRoutes: FastifyPluginAsyncZod<ChatRouteOptions> = async (
       schema: {
         params: matchParams,
         body: matchPrefsInputSchema,
-        response: { 200: z.object({ muted: z.boolean(), archived: z.boolean() }) },
+        response: { 200: matchPrefsSchema },
       },
       config: perUserLimit(60, 60_000),
     },

@@ -1,0 +1,1 @@
+ALTER TABLE "match_prefs" ADD COLUMN "pinned_at" timestamp with time zone;

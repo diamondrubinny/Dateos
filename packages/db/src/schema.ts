@@ -621,6 +621,8 @@ export const matchPrefs = pgTable(
     muted: boolean('muted').notNull().default(false),
     /** In the "Archived" section; a new message from the other person brings it back. */
     archived: boolean('archived').notNull().default(false),
+    /** Pinned to the top of Matches (phase 38); null when not pinned. */
+    pinnedAt: timestamp('pinned_at', { withTimezone: true }),
   },
   (t) => [primaryKey({ columns: [t.matchId, t.userId] })],
 );

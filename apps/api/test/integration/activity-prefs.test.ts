@@ -101,6 +101,7 @@ describe.skipIf(!integrationEnabled)('account activity, mute and archive (integr
       expect((await prefs(noa, { muted: true, archived: true })).json()).toEqual({
         muted: true,
         archived: true,
+        pinned: false,
       });
       expect(await inbox(noa)).toEqual([
         expect.objectContaining({ matchId, muted: true, archived: true }),
@@ -128,6 +129,53 @@ describe.skipIf(!integrationEnabled)('account activity, mute and archive (integr
       };
       expect(await sendPush(context, { userId: noa.id, kind: 'message', matchId })).toBe('muted');
       expect(await sendPush(context, { userId: noa.id, kind: 'call', matchId })).toBe('no-devices');
+    });
+
+    it('pinned chats come first, up to 3; pinning unarchives and archiving unpins', async () => {
+      // Noa has four more matches, each with a newer message than the first chat.
+      const others: string[] = [];
+      for (let i = 0; i < 4; i += 1) {
+        const m = await createMember(ctx, {
+          name: `Man${i}`,
+          gender: 'man',
+          interestedIn: ['woman'],
+        });
+        await api(ctx, m, 'POST', '/v1/interactions', { targetId: noa.id, kind: 'like' });
+        const id = (
+          await api(ctx, noa, 'POST', '/v1/interactions', { targetId: m.id, kind: 'like' })
+        ).json().matchId as string;
+        await api(ctx, m, 'POST', `/v1/matches/${id}/messages`, {
+          text: `Hi Noa ${i}`,
+          clientId: `pin-${Date.now()}-${i}`,
+        });
+        others.push(id);
+      }
+      expect((await inbox(noa))[0]!.matchId).not.toBe(matchId);
+
+      await prefs(noa, { archived: true });
+      expect((await prefs(noa, { pinned: true })).json()).toEqual({
+        muted: false,
+        archived: false,
+        pinned: true,
+      });
+      ctx.clock.value += 1000;
+      await prefs(noa, { pinned: true }, others[0]);
+      ctx.clock.value += 1000;
+      await prefs(noa, { pinned: true }, others[1]);
+      // Most recently pinned first, then the rest by activity.
+      const order = (await inbox(noa)).map((c) => c.matchId);
+      expect(order.slice(0, 3)).toEqual([others[1], others[0], matchId]);
+      // Pinning the same chat again is fine; a 4th is refused.
+      expect((await prefs(noa, { pinned: true }, others[1])).statusCode).toBe(200);
+      expect((await prefs(noa, { pinned: true }, others[2])).statusCode).toBe(409);
+      // Archiving unpins, which frees a place.
+      expect((await prefs(noa, { archived: true }, others[0])).json()).toMatchObject({
+        archived: true,
+        pinned: false,
+      });
+      expect((await prefs(noa, { pinned: true }, others[2])).statusCode).toBe(200);
+      // Dan never sees Noa's pins.
+      expect(await inbox(dan)).toEqual([expect.objectContaining({ matchId, pinned: false })]);
     });
 
     it('only for a member of the chat, and something must change', async () => {

@@ -3,6 +3,7 @@
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 import type {
   Conversation,
+  MatchPrefs,
   MessagesPage,
   MessageView,
   ReactionEmoji,
@@ -64,19 +65,21 @@ export function useSendMessage(matchId: string) {
   });
 }
 
-/** Mute or archive a chat, privately (phase 31). */
+/** Mute, archive or pin a chat, privately (phases 31, 38). */
 export function useChatPrefs(matchId: string) {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (input: { muted?: boolean; archived?: boolean }) =>
-      apiFetch<{ muted: boolean; archived: boolean }>(
-        `/v1/matches/${encodeURIComponent(matchId)}/prefs`,
-        { method: 'PUT', body: json(input) },
-      ),
+    mutationFn: (input: { muted?: boolean; archived?: boolean; pinned?: boolean }) =>
+      apiFetch<MatchPrefs>(`/v1/matches/${encodeURIComponent(matchId)}/prefs`, {
+        method: 'PUT',
+        body: json(input),
+      }),
     onSuccess: (prefs) => {
       client.setQueryData<Conversation[]>(chatKeys.conversations, (list) =>
         list?.map((c) => (c.matchId === matchId ? { ...c, ...prefs } : c)),
       );
+      // Pinning changes the order, which the server decides.
+      void client.invalidateQueries({ queryKey: chatKeys.conversations });
     },
   });
 }

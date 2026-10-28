@@ -10,6 +10,7 @@ import { PersonRow } from '../../components/PersonRow';
 import { Screen } from '../../components/Screen';
 import { waitingForMyReply, type Conversation } from '@nexaheart/shared';
 import { useState } from 'react';
+import { useDrafts } from '../../lib/drafts';
 import { StyleSheet, View } from 'react-native';
 import { Button } from '../../components/Button';
 import { CheckinEntry } from '../../components/CheckinEntry';
@@ -30,8 +31,11 @@ export default function Matches() {
   const partnerMatches = useFederatedMatches();
   // Archived chats (phase 31) sit in their own section, closed by default.
   const [showArchived, setShowArchived] = useState(false);
+  // Drafts (phase 38) live on this device only.
+  const drafts = useDrafts();
   if (conversations.isPending) return <Loading />;
   const active = conversations.data?.filter((c) => !c.archived) ?? [];
+  const draftText = drafts.data ?? {};
   const archived = conversations.data?.filter((c) => c.archived) ?? [];
   const row = (c: Conversation) => {
     const last = c.lastMessage;
@@ -52,22 +56,25 @@ export default function Matches() {
                 : last.mine
                   ? t('chat.you', { text: last.body ?? '' })
                   : (last.body ?? '');
+    const draft = draftText[c.matchId];
     return (
       <PersonRow
         key={c.matchId}
         profile={c.profile}
         detail={
-          c.mode === 'friend' && c.unread === 0
-            ? t('friends.label')
-            : c.unread > 0
-              ? t('chat.unread', { count: c.unread })
-              : waitingForMyReply(last)
-                ? t('ghosting.waiting')
-                : c.muted
-                  ? `🔕 ${t('chatPrefs.muted')}`
-                  : undefined
+          c.pinned && c.unread === 0
+            ? `📌 ${t('chatPrefs.pinned')}`
+            : c.mode === 'friend' && c.unread === 0
+              ? t('friends.label')
+              : c.unread > 0
+                ? t('chat.unread', { count: c.unread })
+                : waitingForMyReply(last)
+                  ? t('ghosting.waiting')
+                  : c.muted
+                    ? `🔕 ${t('chatPrefs.muted')}`
+                    : undefined
         }
-        quote={preview}
+        quote={draft ? t('chat.draft', { text: draft }) : preview}
         plainQuote
         onPress={() => router.push({ pathname: '/chat/[id]', params: { id: c.matchId } })}
       />

@@ -377,6 +377,8 @@ export const en = {
       secureStore: 'Device keychain (encrypted)',
     },
     purpose: {
+      drafts:
+        'Messages you started and didn’t send, on this device only (never sent to the server).',
       display: 'Remembers the text size, easy mode, contrast and motion you chose.',
       session: 'Keeps you signed in.',
       sessionCache: 'A copy of your session, so the app opens quickly.',
@@ -385,6 +387,7 @@ export const en = {
       callNotice: 'Remembers that you read the notice before your first call.',
     },
     duration: {
+      days30Draft: '30 days, or until sent, emptied or you sign out',
       days30: '30 days, renewed while you use the app',
       untilChanged: 'Until you change it',
       untilSignOut: 'Until you sign out',
@@ -669,6 +672,7 @@ export const en = {
     invalidAge: 'Ages must be 18–100, and the minimum can’t be above the maximum.',
   },
   chat: {
+    draft: 'Draft: {{text}}',
     newAccountLimit:
       'New accounts can start {{count}} conversations a day. Replies in your chats aren’t limited.',
     answerQuestion: '{{name}} asks:',
@@ -1038,6 +1042,11 @@ export const en = {
       'Something you don’t recognise? Sign out everywhere else above, and check your email account.',
   },
   chatPrefs: {
+    pin: 'Pin to top',
+    unpin: 'Unpin',
+    pinned: 'Pinned',
+    pinHint: 'Keeps this chat at the top of Matches. Up to 3. Only you know.',
+    pinLimit: 'You can pin up to {{count}} chats. Unpin one first.',
     mute: 'Mute',
     unmute: 'Unmute',
     muted: 'Muted',

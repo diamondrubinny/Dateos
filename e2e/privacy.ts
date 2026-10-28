@@ -153,9 +153,12 @@ async function run(locale: keyof typeof T, browser: Browser) {
       local: Object.keys(localStorage),
       session: Object.keys(sessionStorage),
     }));
-    const knownLocal = new Set(web.filter((i) => i.kind === 'localStorage').map((i) => i.name));
+    const knownLocal = web.filter((i) => i.kind === 'localStorage').map((i) => i.name);
+    // A name ending in "*" covers every key with that prefix (drafts, one per chat, phase 38).
+    const listed = (k: string) =>
+      knownLocal.some((n) => (n.endsWith('*') ? k.startsWith(n.slice(0, -1)) : k === n));
     check(
-      stores.local.every((k) => knownLocal.has(k)),
+      stores.local.every(listed),
       `localStorage keys are all in the inventory (${stores.local.join(', ')})`,
     );
     check(stores.session.length === 0, 'nothing in sessionStorage');
