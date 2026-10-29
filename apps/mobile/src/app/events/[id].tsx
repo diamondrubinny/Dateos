@@ -15,6 +15,7 @@ import { Loading } from '../../components/Loading';
 import { RequireSession } from '../../components/RequireSession';
 import { Screen } from '../../components/Screen';
 import { ApiRequestError } from '../../lib/api';
+import { addToCalendar } from '../../lib/calendar';
 import { useCheckIn, useEvent, useRsvp } from '../../lib/event-queries';
 import { useLocale } from '../../lib/locale';
 import { radius, spacing, useColors } from '../../lib/theme';
@@ -150,6 +151,29 @@ function EventScreen() {
           label={t('events.waitlistLeave')}
           loading={rsvp.isPending}
           onPress={() => answer('leave')}
+        />
+      ) : null}
+      {!cancelled && e.mine && now < end ? (
+        <Button
+          variant="secondary"
+          label={t('calendar.add')}
+          hint={t('calendar.eventHint')}
+          onPress={() =>
+            void addToCalendar(
+              {
+                uid: `event-${e.id}@local`,
+                start: new Date(e.startsAt),
+                end: new Date(e.endsAt),
+                title: e.title,
+                ...(e.venue
+                  ? {
+                      location: [e.venue.name, e.venue.address].filter(Boolean).join(', '),
+                    }
+                  : {}),
+              },
+              'event',
+            ).then((ok) => (ok ? undefined : setError(t('calendar.failed'))))
+          }
         />
       ) : null}
       {!cancelled && e.mine ? (

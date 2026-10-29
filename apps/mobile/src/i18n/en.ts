@@ -1011,6 +1011,14 @@ export const en = {
     remove: 'Remove',
     full: 'Your “Maybe later” list is full (30). Decide on someone there first.',
   },
+  calendar: {
+    add: 'Add to calendar',
+    dateHint:
+      'Saves the time and place to your calendar. It doesn’t name the person or the app, as calendars can be seen on shared screens.',
+    eventHint: 'Saves the event’s time and place to your calendar.',
+    dateTitle: 'Meeting at {{place}}',
+    failed: 'Couldn’t create the calendar file. Please try again.',
+  },
   changeEmail: {
     title: 'Email address',
     open: 'Change email',

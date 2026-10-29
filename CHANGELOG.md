@@ -6,6 +6,8 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Added
 
+- **Add to calendar** for an accepted date and an event you're going to: a calendar file made on
+  the device. A date's entry is discreet ("Meeting at {place}", no name, no app name).
 - **Change your email address** (Settings → Security): a one-time link to the new address (30
   minutes, opened while signed in), a heads-up without a link to the current one, other devices
   signed out on confirmation. Same answer for any address, so the form can't reveal who has an

@@ -1,12 +1,18 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
-import { againAnswers, type AgainAnswer, type MessageView } from '@nexaheart/shared';
+import {
+  againAnswers,
+  DATE_CALENDAR_HOURS,
+  type AgainAnswer,
+  type MessageView,
+} from '@nexaheart/shared';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 import { ApiRequestError } from '../lib/api';
+import { addToCalendar } from '../lib/calendar';
 import { useDateAction, useDateFeedback } from '../lib/date-queries';
 import { useLocale } from '../lib/locale';
 import { radius, spacing, useColors } from '../lib/theme';
@@ -155,6 +161,24 @@ export function DateCard({
                     startsAt: plan.startsAt,
                   },
                 })
+              }
+            />
+            {/* Phase 42: discreet on purpose, calendars sync and show on lock screens. */}
+            <Button
+              variant="secondary"
+              label={t('calendar.add')}
+              hint={t('calendar.dateHint')}
+              onPress={() =>
+                void addToCalendar(
+                  {
+                    uid: `date-${plan.id}@local`,
+                    start: new Date(plan.startsAt),
+                    end: new Date(Date.parse(plan.startsAt) + DATE_CALENDAR_HOURS * 3_600_000),
+                    title: t('calendar.dateTitle', { place: plan.venue.name }),
+                    location: [plan.venue.name, plan.venue.address].filter(Boolean).join(', '),
+                  },
+                  'date',
+                ).then((ok) => (ok ? undefined : setError(t('calendar.failed'))))
               }
             />
             <Button
