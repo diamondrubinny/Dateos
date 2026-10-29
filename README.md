@@ -10,7 +10,7 @@ Native iOS & Android plus web from one codebase, privacy by design, and safety b
 
 **[English](docs/marketing/en.md) · [עברית](docs/marketing/he.md) · [العربية](docs/marketing/ar.md) · [Русский](docs/marketing/ru.md)**
 
-[![CI](https://github.com/diamondrubinny/Dateos/actions/workflows/ci.yml/badge.svg)](https://github.com/diamondrubinny/Dateos/actions/workflows/ci.yml)
+[![CI](https://github.com/diamondrubinny/NexaHeart/actions/workflows/ci.yml/badge.svg)](https://github.com/diamondrubinny/NexaHeart/actions/workflows/ci.yml)
 [![License: AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-7C3AED.svg)](LICENSE)
 [![WCAG 2.1 AA target](https://img.shields.io/badge/accessibility-WCAG%202.1%20AA%20target-067647.svg)](#accessibility)
 [![Sponsor](https://img.shields.io/badge/sponsor-%F0%9F%92%9C-ea4aaa.svg?logo=githubsponsors)](https://github.com/sponsors/diamondrubinny)
