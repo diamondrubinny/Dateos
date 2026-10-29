@@ -6,6 +6,8 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Added
 
+- **Admins are emailed when backups stop**: daily, once a day at most, in Hebrew and English, with
+  what to check on the server; also to the team's alert channel when it's set up.
 - **System page in the dashboard** (admins): whether every part of the server works, and when the
   last backup finished, with an alert when none is recorded or it's over 36 hours old.
 - **One-command install over SSH** (`scripts/bootstrap.sh`): installs Docker if needed, downloads,
