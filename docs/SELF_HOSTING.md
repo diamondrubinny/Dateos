@@ -129,12 +129,16 @@ delete again the accounts that were deleted since. Document your backup retentio
 
 ## Updates
 
+Admins approve updates in the dashboard (**System → Updates**); the server installs them with a
+backup first and goes back if the new version doesn't start. See [INSTALL.md, Updates from the
+dashboard](INSTALL.md#updates-from-the-dashboard). By hand:
+
 ```bash
 git pull
-docker compose -f infra/docker-compose.yml --env-file .env --profile app --profile full up -d --build
+GIT_COMMIT=$(git rev-parse HEAD) docker compose -f infra/docker-compose.yml --env-file .env --profile app --profile full up -d --build
 ```
 
-Database migrations run automatically when the API starts (`MIGRATE_ON_START=true`). If you run
+`GIT_COMMIT` records the version, so the dashboard can tell what's new. Database migrations run automatically when the API starts (`MIGRATE_ON_START=true`). If you run
 several API replicas, set it to `false` and run `pnpm --filter @nexaheart/db db:migrate` once instead.
 
 **Updating from before phase 24?** Add `INTEGRATIONS_KEY` to `.env` (`openssl rand -hex 32`) so

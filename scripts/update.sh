@@ -13,8 +13,9 @@
 # one doesn't come up. Every step is recorded for the dashboard.
 #
 #   UPDATE_READY_MINUTES  how long to wait for /ready (default 15)
+#   MIN_FREE_GB           free disk space needed to build (default 10)
 #   UPDATE_DRY_RUN=1      say what would happen, change nothing (no backup, no git, no restart)
-set -euo pipefail
+set -Eeuo pipefail
 
 cd "$(dirname "$0")/.."
 DIR="$(pwd)"
@@ -47,6 +48,12 @@ UPDATE update_requests SET status = :'st', finished_at = now(), message = :'msg'
 SQL
 }
 
+# A run that was cut off (a reboot, a killed process) would block every later update: after two hours
+# it's recorded as interrupted. The site keeps whatever version is running.
+sql -c "UPDATE update_requests SET status = 'failed', finished_at = now(),
+  message = 'The update was interrupted (the server restarted or the updater stopped). Approve it again to retry.'
+  WHERE status = 'running' AND started_at < now() - interval '2 hours'" >/dev/null 2>&1 || true
+
 # The oldest waiting approval, if any. A database from before phase 53 has no table: nothing to do.
 row="$(sql -c "SELECT id || ' ' || target_commit FROM update_requests WHERE status = 'pending' ORDER BY requested_at LIMIT 1" 2>/dev/null || true)"
 [[ -n "$row" ]] || exit 0
@@ -62,6 +69,14 @@ if [[ "${UPDATE_DRY_RUN:-0}" == 1 ]]; then
   exit 0
 fi
 
+# Building the new version needs room; stop before anything changes (as scripts/bootstrap.sh does).
+docker_root="$(docker info --format '{{.DockerRootDir}}' 2>/dev/null || echo /var/lib/docker)"
+free_gb="$(df -BG --output=avail "$docker_root" 2>/dev/null | tail -n 1 | tr -dc '0-9')"
+if [[ -n "$free_gb" ]] && ((free_gb < ${MIN_FREE_GB:-10})); then
+  finish "$id" failed "Only ${free_gb} GB free for Docker; an update needs about ${MIN_FREE_GB:-10} GB. Nothing was changed. Free some space (for example: docker builder prune -af), then approve again."
+  exit 1
+fi
+
 claimed="$(sql -v id="$id" <<'SQL'
 UPDATE update_requests SET status = 'running', started_at = now()
 WHERE id = :'id' AND status = 'pending' RETURNING id;
@@ -69,6 +84,8 @@ SQL
 )"
 [[ -n "$claimed" ]] || exit 0 # withdrawn in the meantime
 log "Installing $target (request $id)."
+# Whatever stops this run from here on, the dashboard hears about it instead of waiting forever.
+trap 'finish "$id" failed "The update stopped unexpectedly (line $LINENO). The server log has the details: /var/log/nexaheart-update.log." || true' ERR
 
 # 1. The commit must be on the update branch: nothing else from the database reaches git.
 if ! git fetch --quiet origin "$BRANCH" 2>/dev/null; then
@@ -117,19 +134,24 @@ ready() {
 }
 
 # 4. Build and start; 5. wait for /ready; otherwise back to the previous version.
-if start "$target" && ready; then
+if ! start "$target"; then
+  why="The new version didn't build"
+elif ! ready; then
+  why="The new version didn't start"
+else
+  trap - ERR
   docker image prune -f >/dev/null 2>&1 || true
   finish "$id" "done" "Installed ${target:0:7} (was ${previous:0:7})."
   log "Done."
   exit 0
 fi
 
-log "The new version didn't become ready; going back to ${previous:0:7}."
+trap - ERR
+log "$why; going back to ${previous:0:7}."
 # --keep moves the branch back without touching anything the update didn't change.
-git reset --quiet --keep "$previous"
-if start "$previous" && ready; then
-  finish "$id" failed "The new version didn't start, so the server went back to ${previous:0:7}. The backup taken before the update is in $DIR/backups."
+if git reset --quiet --keep "$previous" && start "$previous" && ready; then
+  finish "$id" failed "$why, so the server went back to ${previous:0:7}. The backup taken before the update is in $DIR/backups."
 else
-  finish "$id" failed "The new version didn't start, and the previous one didn't come back either. Check the server: docker compose -f $DIR/infra/docker-compose.yml logs api. A backup from before the update is in $DIR/backups."
+  finish "$id" failed "$why, and going back to ${previous:0:7} didn't work either. Check the server: cd $DIR && git status && docker compose -f infra/docker-compose.yml logs api. A backup from before the update is in $DIR/backups."
 fi
 exit 1

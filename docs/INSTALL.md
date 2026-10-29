@@ -258,6 +258,26 @@ your own IP range in place of `203.0.113.0/24`, then run `dc up -d --build web`.
 Database updates run automatically when the new version starts. Read [CHANGELOG.md](../CHANGELOG.md)
 before updating.
 
+### Updates from the dashboard
+
+When this project publishes changes, your dashboard shows them: **System → Updates** lists what was
+added or fixed (the titles of the merged changes), and admins see a short notice on every page. To
+install, an admin with two-factor authentication who signed in within the last 15 minutes clicks
+**Install this update…** and confirms.
+
+The dashboard only records the approval. On the server, `scripts/update.sh` (run every minute by
+`/etc/cron.d/nexaheart-update`, which the install command sets up) then:
+
+1. checks that the version is on the project's `main` branch,
+2. takes a backup (if that fails, nothing changes),
+3. updates the code, rebuilds and restarts (the site can be unavailable for a few minutes),
+4. waits until the server reports ready, and **goes back to the previous version** if it doesn't,
+5. shows the result in the dashboard. Its log is `/var/log/nexaheart-update.log`.
+
+The check sends one request to GitHub every 6 hours. Turn it off with `UPDATE_CHECK=off` in `.env`
+(then update with the table above). Servers installed by hand don't know their version until you run
+the install command once; the dashboard says so.
+
 ### Backups
 
 `scripts/backup.sh` saves the database and all stored photos and voice messages, encrypted with a
