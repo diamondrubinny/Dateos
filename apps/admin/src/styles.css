@@ -737,3 +737,17 @@ label.checkbox {
   gap: 0.5rem;
   align-items: flex-start;
 }
+
+/* Updates (phase 53): on every page for admins, until the update is installed. */
+.update-banner {
+  margin: 0 0 1rem;
+  padding: 0.6rem 0.9rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--control);
+  background: var(--normal-bg);
+  color: var(--normal-text);
+}
+.update-banner a {
+  color: inherit;
+  font-weight: 600;
+}

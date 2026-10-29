@@ -27,6 +27,7 @@
 #   NEXAHEART_REPO (default https://github.com/diamondrubinny/NexaHeart.git)
 #   NEXAHEART_REF  branch or tag to run (default main).
 #   BACKUP=0       don't set up the daily backup.
+#   UPDATES=0      don't set up the updater that installs updates approved in the dashboard.
 #   MIN_FREE_GB    free disk space needed to build (default 10).
 #   START=0        prepare only (code, secrets, settings): don't build or start, e.g. to edit .env
 #                  first. Run again without it to start.
@@ -167,7 +168,9 @@ profiles=(--profile app --profile full)
 [[ "${VIDEO:-0}" == 1 || -n "$(grep -E '^RTC_DOMAIN=.+' .env || true)" ]] && profiles+=(--profile video)
 [[ "${AI:-0}" == 1 ]] && profiles+=(--profile ai)
 say "Building and starting (the first time takes 10 to 20 minutes)"
-docker compose -f infra/docker-compose.yml --env-file .env "${profiles[@]}" up -d --build --remove-orphans
+# The commit goes into the images, so the dashboard can tell what's new (phase 53).
+GIT_COMMIT="$(git rev-parse HEAD)" \
+  docker compose -f infra/docker-compose.yml --env-file .env "${profiles[@]}" up -d --build --remove-orphans
 
 say "Waiting for the API to be ready"
 ready=false
@@ -198,6 +201,17 @@ if [[ "${BACKUP:-1}" != 0 ]]; then
 17 3 * * * root cd $DIR && BACKUP_PASSPHRASE_FILE=$key ./scripts/backup.sh >>/var/log/nexaheart-backup.log 2>&1
 CRON
   chmod 644 /etc/cron.d/nexaheart-backup
+fi
+
+# ---------------------------------------------------------------- 7. updates from the dashboard
+# Installs updates an admin approves in the dashboard (phase 53). Does nothing until one is approved.
+if [[ "${UPDATES:-1}" != 0 ]]; then
+  cat >/etc/cron.d/nexaheart-update <<CRON
+# NexaHeart: installs updates approved in the dashboard (scripts/update.sh). Idle otherwise.
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+* * * * * root cd $DIR && ./scripts/update.sh >>/var/log/nexaheart-update.log 2>&1
+CRON
+  chmod 644 /etc/cron.d/nexaheart-update
 fi
 
 # ---------------------------------------------------------------- done

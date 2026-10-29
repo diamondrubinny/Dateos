@@ -3,6 +3,7 @@
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 import type {
   SystemStatus,
+  UpdateStatusView,
   AdminCheckIn,
   IntegrationId,
   IntegrationUpdate,
@@ -218,6 +219,12 @@ export const api = {
     request<{ ok: true }>('POST', `/v1/admin/verifications/${encodeURIComponent(id)}`, { approve }),
   overview: () => request<SafetyOverview>('GET', '/v1/admin/overview'),
   system: () => request<SystemStatus>('GET', '/v1/admin/system'),
+  updates: () => request<UpdateStatusView>('GET', '/v1/admin/updates'),
+  checkUpdates: () => request<UpdateStatusView>('POST', '/v1/admin/updates/check'),
+  installUpdate: (commit: string) =>
+    request<UpdateStatusView>('POST', '/v1/admin/updates/install', { commit }),
+  cancelUpdate: (id: string) =>
+    request<UpdateStatusView>('POST', `/v1/admin/updates/${encodeURIComponent(id)}/cancel`),
   audit: (before?: string) =>
     request<{ entries: AuditEntry[] }>(
       'GET',

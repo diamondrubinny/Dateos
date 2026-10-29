@@ -4,6 +4,8 @@
 import multipart from '@fastify/multipart';
 import {
   systemStatusSchema,
+  installUpdateSchema,
+  updateStatusViewSchema,
   auditEntrySchema,
   instanceSettingsInputSchema,
   MAX_PHOTO_BYTES,
@@ -46,10 +48,11 @@ import {
 import type { Storage, StoredObject } from '@nexaheart/storage';
 import type { FastifyReply } from 'fastify';
 import type { Dependency } from '../../lib/dependencies.js';
+import type { UpdateService } from '../updates/service.js';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import type { Auth } from '../../auth/auth.js';
-import { currentUser, requireUser } from '../../auth/session.js';
+import { currentUser, requireRecentSignIn, requireUser } from '../../auth/session.js';
 import { HttpError } from '../../plugins/error-handler.js';
 import { perUserLimit } from '../../plugins/security.js';
 import { adminSettingsSchema } from '../instance/routes.js';
@@ -88,6 +91,7 @@ export const adminRoutes: FastifyPluginAsyncZod<{
   trust: TrustService;
   integrations: IntegrationService;
   federation: FederationService;
+  updates: UpdateService;
   /** Checked by the System page (phase 51), as by /ready. */
   dependencies: Dependency[];
 }> = async (
@@ -105,6 +109,7 @@ export const adminRoutes: FastifyPluginAsyncZod<{
     trust,
     integrations,
     federation,
+    updates,
     dependencies,
   },
 ) => {
@@ -166,6 +171,50 @@ export const adminRoutes: FastifyPluginAsyncZod<{
         checks: Object.fromEntries(results),
         backup: await moderation.lastBackup(),
       };
+    },
+  );
+
+  // Updates from GitHub (phase 53): admins only. Approving needs a recent sign-in, like deleting an
+  // account; the install itself runs outside the API (scripts/update.sh).
+  app.get(
+    '/v1/admin/updates',
+    { schema: { response: { 200: updateStatusViewSchema } } },
+    async (request) => {
+      adminOnly(currentUser(request).role);
+      return updates.status();
+    },
+  );
+  app.post(
+    '/v1/admin/updates/check',
+    {
+      config: perUserLimit(6, 60 * 60 * 1000),
+      schema: { response: { 200: updateStatusViewSchema } },
+    },
+    async (request) => {
+      adminOnly(currentUser(request).role);
+      return updates.check();
+    },
+  );
+  app.post(
+    '/v1/admin/updates/install',
+    {
+      config: perUserLimit(10, 60 * 60 * 1000),
+      schema: { body: installUpdateSchema, response: { 200: updateStatusViewSchema } },
+    },
+    async (request) => {
+      const admin = currentUser(request);
+      adminOnly(admin.role);
+      requireRecentSignIn(request);
+      return updates.approve(admin.id, request.body.commit);
+    },
+  );
+  app.post(
+    '/v1/admin/updates/:id/cancel',
+    { schema: { params: idParams, response: { 200: updateStatusViewSchema } } },
+    async (request) => {
+      const admin = currentUser(request);
+      adminOnly(admin.role);
+      return updates.cancel(admin.id, request.params.id);
     },
   );
 

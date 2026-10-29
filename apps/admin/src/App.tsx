@@ -14,6 +14,7 @@ import { MfaSetup, MfaVerify } from './pages/Mfa';
 import { ReportDetail } from './pages/ReportDetail';
 import { Overview } from './pages/Overview';
 import { System } from './pages/System';
+import { UpdateBanner } from './pages/Updates';
 import { Reports } from './pages/Reports';
 import { SignIn } from './pages/SignIn';
 import { Events } from './pages/Events';
@@ -150,6 +151,7 @@ function Shell({
         </div>
       </header>
       <main id="main" tabIndex={-1}>
+        {signedIn && isAdmin ? <UpdateBanner /> : null}
         {children}
       </main>
       <PoweredBy locale={locale} />

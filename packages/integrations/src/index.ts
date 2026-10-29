@@ -5,3 +5,4 @@ export * from './crypto.js';
 export * from './safe-fetch.js';
 export * from './senders.js';
 export * from './store.js';
+export * from './updates.js';

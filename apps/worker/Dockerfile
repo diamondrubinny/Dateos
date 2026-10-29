@@ -37,6 +37,10 @@ COPY --from=build --chown=node:node /out ./
 COPY --from=build /repo/LICENSE /repo/NOTICE ./
 LABEL org.opencontainers.image.licenses="AGPL-3.0-or-later" \
   org.opencontainers.image.url="https://nexaheart.com"
+# The commit this image was built from (phase 53), so the dashboard can tell what's new. Last, so a
+# new commit doesn't invalidate the cached layers above.
+ARG GIT_COMMIT=
+ENV APP_COMMIT=$GIT_COMMIT
 USER node
 
 CMD ["node", "dist/index.js"]

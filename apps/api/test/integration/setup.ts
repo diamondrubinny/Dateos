@@ -80,6 +80,8 @@ export const TEST_LIVEKIT = {
 };
 
 export interface SetupOptions {
+  /** Updates (phase 53): the commit this test server "runs" (default: unknown). */
+  appCommit?: string;
   /** Text AI model for this suite (default: none). */
   /** Pass undefined to use the dashboard's model (phase 24). */
   textModel?: TextModel | null | undefined;
@@ -132,6 +134,8 @@ export async function setupIntegration(options: SetupOptions = {}): Promise<Test
     S3_BUCKET_QUARANTINE: `${buckets}-quarantine`,
     S3_BUCKET_MEDIA: `${buckets}-media`,
     ...(options.callMedia ? TEST_LIVEKIT : {}),
+    APP_COMMIT: options.appCommit ?? '',
+    UPDATE_CHECK: 'on',
   });
   await runMigrations(env.DATABASE_URL);
 

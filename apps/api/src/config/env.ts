@@ -105,6 +105,21 @@ export const envSchema = z.object({
   OPENAI_EXTERNAL: booleanString.default(true),
 
   INSTANCE_NAME: z.string().max(40).default('NexaHeart'),
+  // Updates from GitHub (phase 53). The commit is baked into the image at build time.
+  APP_COMMIT: z
+    .string()
+    .regex(/^[0-9a-f]{40}$/)
+    .optional()
+    .or(z.literal('').transform(() => undefined)),
+  UPDATE_CHECK: z.enum(['on', 'off']).default('on'),
+  UPDATE_REPO: z
+    .string()
+    .regex(/^[A-Za-z0-9-]+\/[A-Za-z0-9._-]+$/)
+    .default('diamondrubinny/NexaHeart'),
+  UPDATE_BRANCH: z
+    .string()
+    .regex(/^[A-Za-z0-9._/-]{1,100}$/)
+    .default('main'),
   /** Where the app's "Open source" link points. A modified version must point to its own source. */
   SOURCE_CODE_URL: z.url().default(UPSTREAM_SOURCE_URL),
   INSTANCE_TAGLINE: z.string().max(120).default(DEFAULT_TAGLINE),

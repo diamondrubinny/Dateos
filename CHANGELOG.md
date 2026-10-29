@@ -6,6 +6,9 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Added
 
+- **Updates from GitHub, approved in the dashboard**: admins see what was added or fixed since their
+  version (System → Updates, and a notice on every page) and approve installing it; the server
+  backs up, updates, checks it started, and goes back to the previous version if it didn't.
 - **Admins are emailed when backups stop**: daily, once a day at most, in Hebrew and English, with
   what to check on the server; also to the team's alert channel when it's set up.
 - **System page in the dashboard** (admins): whether every part of the server works, and when the
