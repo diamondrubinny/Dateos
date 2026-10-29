@@ -4,6 +4,7 @@
 import { SENSITIVE_CONSENT_VERSION } from '@nexaheart/shared';
 import { Link, router } from 'expo-router';
 import { clearDrafts } from '../lib/drafts';
+import { QuietHours } from '../components/QuietHours';
 import * as WebBrowser from 'expo-web-browser';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -179,6 +180,7 @@ function SettingsContent() {
           }
         />
       ))}
+      <QuietHours onError={() => setError(t('common.genericError'))} />
       <AppText variant="caption" tone="muted">
         {t('notifyChoice.always')}
       </AppText>

@@ -69,7 +69,34 @@ export function pushContent(kind: PushJob['kind'], locale: string, instanceName:
 }
 
 export type PushResult =
-  'disabled' | 'inactive' | 'online' | 'muted' | 'off' | 'throttled' | 'no-devices' | 'sent';
+  | 'disabled'
+  | 'inactive'
+  | 'online'
+  | 'muted'
+  | 'off'
+  | 'quiet'
+  | 'throttled'
+  | 'no-devices'
+  | 'sent';
+
+/** Whether it's now within the member's quiet hours (which may cross midnight). */
+async function inQuietHours(ctx: PushContext, userId: string): Promise<boolean> {
+  // A zone the device knows but Postgres doesn't would throw: then no quiet hours, never a lost push.
+  const result = await ctx.db
+    .execute(
+      sql`
+    SELECT 1 FROM preferences p,
+      LATERAL (SELECT EXTRACT(HOUR FROM now() AT TIME ZONE p.quiet_time_zone) * 60
+                    + EXTRACT(MINUTE FROM now() AT TIME ZONE p.quiet_time_zone) AS m) local
+    WHERE p.user_id = ${userId} AND p.quiet_start IS NOT NULL AND p.quiet_end IS NOT NULL
+      AND p.quiet_time_zone IS NOT NULL
+      AND CASE WHEN p.quiet_start < p.quiet_end
+               THEN local.m >= p.quiet_start AND local.m < p.quiet_end
+               ELSE local.m >= p.quiet_start OR local.m < p.quiet_end END`,
+    )
+    .catch(() => ({ rows: [] }));
+  return result.rows.length > 0;
+}
 
 export async function sendPush(ctx: PushContext, job: PushJob): Promise<PushResult> {
   if (ctx.provider === 'disabled') return 'disabled';
@@ -87,6 +114,10 @@ export async function sendPush(ctx: PushContext, job: PushJob): Promise<PushResu
       sql`SELECT 1 FROM preferences WHERE user_id = ${job.userId} AND NOT ${sql.raw(choice)}`,
     );
     if (off.rows.length > 0) return 'off';
+  }
+  // Quiet hours (phase 39), in the member's own time zone; calls and safety check-ins still come.
+  if (job.kind !== 'call' && job.kind !== 'checkin' && (await inQuietHours(ctx, job.userId))) {
+    return 'quiet';
   }
   if (job.kind === 'checkin') return sendToDevices(ctx, job); // safety: no match or presence check
   if (job.kind === 'event') return sendToDevices(ctx, job); // not about a conversation

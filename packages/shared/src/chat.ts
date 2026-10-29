@@ -208,6 +208,29 @@ export function realtimeChannel(userId: string): string {
 }
 export const REALTIME_PATTERN = 'nexaheart:rt:user:*';
 
+/** A valid IANA time zone, as the device reports it (e.g. "Asia/Jerusalem"). */
+const timeZone = z
+  .string()
+  .min(1)
+  .max(64)
+  .refine((tz) => {
+    try {
+      new Intl.DateTimeFormat('en', { timeZone: tz });
+      return true;
+    } catch {
+      return false;
+    }
+  }, 'Unknown time zone');
+const minuteOfDay = z.number().int().min(0).max(1439);
+/**
+ * Quiet hours (phase 39): no notifications from `start` to `end` (minutes after midnight, in the
+ * member's time zone; may cross midnight). Calls and safety alerts still come.
+ */
+export const quietHoursSchema = z
+  .object({ start: minuteOfDay, end: minuteOfDay, timeZone })
+  .refine((q) => q.start !== q.end, 'Start and end must differ');
+export type QuietHours = z.infer<typeof quietHoursSchema>;
+
 export const chatSettingsSchema = z.object({
   acceptVoice: z.boolean(),
   acceptCalls: z.boolean(),
@@ -221,6 +244,8 @@ export const chatSettingsSchema = z.object({
   notifyMatches: z.boolean(),
   notifyMessages: z.boolean(),
   notifyEvents: z.boolean(),
+  /** Phase 39: null when off. */
+  quietHours: quietHoursSchema.nullable(),
 });
 export const chatSettingsInputSchema = chatSettingsSchema
   .partial()

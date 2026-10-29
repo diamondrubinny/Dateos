@@ -46,6 +46,9 @@ export const notificationRoutes: FastifyPluginAsyncZod<{ auth: Auth; db: Databas
           notifyMatches: preferences.notifyMatches,
           notifyMessages: preferences.notifyMessages,
           notifyEvents: preferences.notifyEvents,
+          quietStart: preferences.quietStart,
+          quietEnd: preferences.quietEnd,
+          quietTimeZone: preferences.quietTimeZone,
         })
         .from(preferences)
         .where(eq(preferences.userId, userId));
@@ -62,6 +65,10 @@ export const notificationRoutes: FastifyPluginAsyncZod<{ auth: Auth; db: Databas
         notifyMatches: prefs?.notifyMatches ?? true,
         notifyMessages: prefs?.notifyMessages ?? true,
         notifyEvents: prefs?.notifyEvents ?? true,
+        quietHours:
+          prefs && prefs.quietStart !== null && prefs.quietEnd !== null && prefs.quietTimeZone
+            ? { start: prefs.quietStart, end: prefs.quietEnd, timeZone: prefs.quietTimeZone }
+            : null,
         pushDevices: devices.length,
       };
     },
@@ -71,14 +78,21 @@ export const notificationRoutes: FastifyPluginAsyncZod<{ auth: Auth; db: Databas
     '/v1/me/settings',
     { schema: { body: chatSettingsInputSchema, response: { 200: ok } } },
     async (request) => {
+      const { quietHours, ...flags } = request.body;
       const updated = await db
         .update(preferences)
         // Only the settings sent are changed.
-        .set(
-          Object.fromEntries(
-            Object.entries(request.body).filter(([, value]) => value !== undefined),
-          ),
-        )
+        .set({
+          ...Object.fromEntries(Object.entries(flags).filter(([, value]) => value !== undefined)),
+          // Quiet hours (phase 39): null turns them off.
+          ...(quietHours !== undefined
+            ? {
+                quietStart: quietHours?.start ?? null,
+                quietEnd: quietHours?.end ?? null,
+                quietTimeZone: quietHours?.timeZone ?? null,
+              }
+            : {}),
+        })
         .where(eq(preferences.userId, currentUser(request).id))
         .returning({ userId: preferences.userId });
       if (updated.length === 0)

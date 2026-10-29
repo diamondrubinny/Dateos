@@ -259,6 +259,10 @@ export const preferences = pgTable(
     notifyMatches: boolean('notify_matches').notNull().default(true),
     notifyMessages: boolean('notify_messages').notNull().default(true),
     notifyEvents: boolean('notify_events').notNull().default(true),
+    /** Phase 39: quiet hours, minutes after midnight in `quiet_time_zone`; null when off. */
+    quietStart: smallint('quiet_start'),
+    quietEnd: smallint('quiet_end'),
+    quietTimeZone: varchar('quiet_time_zone', { length: 64 }),
     /** Phase 34: Discover and Picks show only people whose photos a moderator verified. */
     verifiedOnly: boolean('verified_only').notNull().default(false),
     /** Receiver control: people can turn video and voice calls off (phase 15). */

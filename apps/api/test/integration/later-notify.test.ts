@@ -122,6 +122,52 @@ describe.skipIf(!integrationEnabled)('maybe later and notification choices (inte
       );
     });
 
+    it('quiet hours skip notifications in the member’s time zone; calls and check-ins still come', async () => {
+      await api(ctx, dan, 'POST', '/v1/interactions', { targetId: noa.id, kind: 'like' });
+      const matchId = (
+        await api(ctx, noa, 'POST', '/v1/interactions', { targetId: dan.id, kind: 'like' })
+      ).json().matchId as string;
+      // A window around "now" in UTC, by the database clock (which the worker uses).
+      const { rows } = await q(
+        `SELECT (EXTRACT(HOUR FROM now() AT TIME ZONE 'UTC') * 60 + EXTRACT(MINUTE FROM now() AT TIME ZONE 'UTC'))::int AS m`,
+      );
+      const m = rows[0].m as number;
+      const around = { start: (m + 1380) % 1440, end: (m + 60) % 1440, timeZone: 'UTC' };
+      expect(
+        (await api(ctx, noa, 'PUT', '/v1/me/settings', { quietHours: around })).statusCode,
+      ).toBe(200);
+      expect((await api(ctx, noa, 'GET', '/v1/me/settings')).json().quietHours).toEqual(around);
+      for (const kind of ['match', 'message', 'event', 'visible'] as const) {
+        expect(await sendPush(context(), { userId: noa.id, kind, matchId })).toBe('quiet');
+      }
+      for (const kind of ['call', 'checkin'] as const) {
+        expect(await sendPush(context(), { userId: noa.id, kind, matchId })).toBe('no-devices');
+      }
+      // A window that excludes now (it may cross midnight either way).
+      const later = { start: (m + 120) % 1440, end: (m + 180) % 1440, timeZone: 'UTC' };
+      await api(ctx, noa, 'PUT', '/v1/me/settings', { quietHours: later });
+      expect(await sendPush(context(), { userId: noa.id, kind: 'match', matchId })).not.toBe(
+        'quiet',
+      );
+      // Off again.
+      await api(ctx, noa, 'PUT', '/v1/me/settings', { quietHours: around });
+      await api(ctx, noa, 'PUT', '/v1/me/settings', { quietHours: null });
+      expect((await api(ctx, noa, 'GET', '/v1/me/settings')).json().quietHours).toBeNull();
+      expect(await sendPush(context(), { userId: noa.id, kind: 'match', matchId })).not.toBe(
+        'quiet',
+      );
+    });
+
+    it('quiet hours must be a real window in a real time zone', async () => {
+      const put = (quietHours: unknown) => api(ctx, noa, 'PUT', '/v1/me/settings', { quietHours });
+      expect((await put({ start: 600, end: 600, timeZone: 'UTC' })).statusCode).toBe(400);
+      expect((await put({ start: 1440, end: 60, timeZone: 'UTC' })).statusCode).toBe(400);
+      expect((await put({ start: 1380, end: 420, timeZone: 'Mars/Olympus' })).statusCode).toBe(400);
+      expect((await put({ start: 1380, end: 420, timeZone: 'Asia/Jerusalem' })).statusCode).toBe(
+        200,
+      );
+    });
+
     it('ignores settings it doesn’t know', async () => {
       const res = await api(ctx, noa, 'PUT', '/v1/me/settings', {
         notifyMatches: true,
