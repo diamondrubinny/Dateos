@@ -48,7 +48,8 @@
     "overview": "tsx overview.ts",
     "report-outcome": "tsx report-outcome.ts",
     "pins-drafts": "tsx pins-drafts.ts",
-    "quiet-hours": "tsx quiet-hours.ts"
+    "quiet-hours": "tsx quiet-hours.ts",
+    "photo-descriptions": "tsx photo-descriptions.ts"
   },
   "dependencies": {
     "@axe-core/playwright": "4.14.0",

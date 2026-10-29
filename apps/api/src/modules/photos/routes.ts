@@ -2,7 +2,13 @@
 // Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 import multipart from '@fastify/multipart';
-import { ErrorCode, MAX_PHOTO_BYTES, photoOrderSchema, photoSchema } from '@nexaheart/shared';
+import {
+  ErrorCode,
+  MAX_PHOTO_BYTES,
+  photoDescriptionInputSchema,
+  photoOrderSchema,
+  photoSchema,
+} from '@nexaheart/shared';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { perUserLimit } from '../../plugins/security.js';
 import { z } from 'zod';
@@ -50,6 +56,23 @@ export const photoRoutes: FastifyPluginAsyncZod<{ auth: Auth; photos: PhotoServi
     { schema: { params: idParams, response: { 200: z.object({ ok: z.literal(true) }) } } },
     async (request) => {
       await photos.remove(currentUser(request).id, request.params.id);
+      return { ok: true as const };
+    },
+  );
+
+  // Photo descriptions for screen readers (phase 40).
+  app.put(
+    '/v1/me/photos/:id/description',
+    {
+      schema: {
+        params: idParams,
+        body: photoDescriptionInputSchema,
+        response: { 200: z.object({ ok: z.literal(true) }) },
+      },
+      config: perUserLimit(60, 60_000),
+    },
+    async (request) => {
+      await photos.describe(currentUser(request).id, request.params.id, request.body.description);
       return { ok: true as const };
     },
   );

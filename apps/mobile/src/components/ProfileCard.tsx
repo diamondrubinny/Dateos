@@ -77,7 +77,13 @@ export function ProfileCard({ profile, onLikeItem }: ProfileCardProps) {
         <View style={styles.photoWrap}>
           <RemoteImage
             path={photo.url}
-            label={`${profile.displayName}, ${t('discover.photoOf', { n: index + 1, total })}`}
+            // The member's own description (phase 40), when there is one.
+            label={[
+              `${profile.displayName}, ${t('discover.photoOf', { n: index + 1, total })}`,
+              photo.description,
+            ]
+              .filter(Boolean)
+              .join('. ')}
             style={styles.photo}
           />
           {total > 1 ? (

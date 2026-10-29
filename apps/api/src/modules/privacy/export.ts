@@ -387,6 +387,8 @@ export async function exportMemberData(
       id: p.id,
       purpose: p.purpose,
       status: p.status,
+      // Phase 40: what the member wrote about the photo.
+      description: p.description,
       uploadedAt: iso(p.createdAt),
       file,
     });

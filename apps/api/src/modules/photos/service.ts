@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
+import { checkHarm } from '@nexaheart/ai';
 import { schema, type Database } from '@nexaheart/db';
 import { allowedPhotoMimeTypes, ErrorCode, MAX_PHOTOS, type Photo } from '@nexaheart/shared';
 import { mediaKey, quarantineKey, type Storage, type StoredObject } from '@nexaheart/storage';
@@ -190,6 +191,30 @@ export class PhotoService {
   }
 
   /** `photoIds` must list exactly the user's current (non-rejected) photos, in the new order. */
+  /**
+   * Describe a photo for screen readers (phase 40). Only my own profile photos; empty clears it.
+   * Checked like other profile text: harmful wording is refused.
+   */
+  async describe(userId: string, photoId: string, description: string): Promise<void> {
+    const text = description.trim();
+    if (text && checkHarm(text).flagged) {
+      throw new HttpError(400, ErrorCode.ValidationError, 'Please rephrase the description.');
+    }
+    const updated = await this.db
+      .update(photos)
+      .set({ description: text || null })
+      .where(
+        and(
+          eq(photos.id, photoId),
+          eq(photos.userId, userId),
+          eq(photos.purpose, 'profile'),
+          ne(photos.status, 'rejected'),
+        ),
+      )
+      .returning({ id: photos.id });
+    if (updated.length === 0) throw new HttpError(404, ErrorCode.NotFound, 'Resource not found.');
+  }
+
   async reorder(userId: string, photoIds: string[]): Promise<void> {
     await this.db.transaction(async (tx) => {
       const owned = await tx
