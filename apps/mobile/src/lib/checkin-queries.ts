@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
-import type { Checkin, CheckinInput, ClosedConversation } from '@nexaheart/shared';
+import type { Checkin, CheckinExtend, CheckinInput, ClosedConversation } from '@nexaheart/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiFetch, json } from './api';
 import { chatKeys } from './realtime';
@@ -22,7 +22,7 @@ export function useActiveCheckin(enabled = true) {
   });
 }
 
-function useCheckinMutation<T>(fn: (arg: T) => Promise<unknown>) {
+function useCheckinMutation<T, R = unknown>(fn: (arg: T) => Promise<R>) {
   const client = useQueryClient();
   return useMutation({
     mutationFn: fn,
@@ -38,6 +38,14 @@ export const useCheckinOk = () =>
   useCheckinMutation((id: string) => apiFetch(`/v1/me/checkins/${id}/ok`, { method: 'POST' }));
 export const useCheckinSos = () =>
   useCheckinMutation((id: string) => apiFetch(`/v1/me/checkins/${id}/sos`, { method: 'POST' }));
+/** "Running late" (phase 45): move the check-in time later. */
+export const useExtendCheckin = () =>
+  useCheckinMutation(({ id, minutes }: { id: string } & CheckinExtend) =>
+    apiFetch<Checkin>(`/v1/me/checkins/${id}/extend`, {
+      method: 'POST',
+      body: json({ minutes }),
+    }),
+  );
 export const useCancelCheckin = () =>
   useCheckinMutation((id: string) => apiFetch(`/v1/me/checkins/${id}`, { method: 'DELETE' }));
 

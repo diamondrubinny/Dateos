@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
-import { checkinInputSchema, checkinSchema } from '@nexaheart/shared';
+import { checkinExtendSchema, checkinInputSchema, checkinSchema } from '@nexaheart/shared';
 import type { FastifyPluginAsyncZod, ZodTypeProvider } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import type { Auth } from '../../auth/auth.js';
@@ -58,6 +58,15 @@ export const checkinRoutes: FastifyPluginAsyncZod<{
         schema: { params, response: { 200: checkinSchema } },
       },
       async (request) => checkins.sos(currentUser(request).id, request.params.id),
+    );
+    r.post(
+      '/v1/me/checkins/:id/extend',
+      {
+        config: perUserLimit(20, 60 * 60_000),
+        schema: { params, body: checkinExtendSchema, response: { 200: checkinSchema } },
+      },
+      async (request) =>
+        checkins.extend(currentUser(request).id, request.params.id, request.body.minutes),
     );
     r.delete(
       '/v1/me/checkins/:id',

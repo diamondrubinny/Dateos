@@ -19,6 +19,15 @@ export const CHECKIN_MIN_MINUTES = 15;
 export const CHECKIN_MAX_HOURS = 12;
 export const CHECKINS_PER_DAY = 5;
 export const SOS_PER_CHECKIN = 3;
+/** "Running late" (phase 45): move the check-in time later, a few times, within CHECKIN_MAX_HOURS. */
+export const CHECKIN_EXTENSIONS = 3;
+export const checkinExtensionMinutes = [30, 60, 120] as const;
+export const checkinExtendSchema = z
+  .object({
+    minutes: z.union(checkinExtensionMinutes.map((m) => z.literal(m))),
+  })
+  .strict();
+export type CheckinExtend = z.infer<typeof checkinExtendSchema>;
 /** Ended check-ins (and the contact's address) are deleted after this. ⚖️ */
 export const CHECKIN_RETENTION_DAYS = 7;
 
@@ -63,6 +72,8 @@ export const checkinSchema = z.object({
   contactEmailMasked: z.string(),
   note: z.string().nullable(),
   sosCount: z.number().int(),
+  /** Times left to move the check-in later (phase 45). */
+  extensionsLeft: z.number().int(),
 });
 export type Checkin = z.infer<typeof checkinSchema>;
 

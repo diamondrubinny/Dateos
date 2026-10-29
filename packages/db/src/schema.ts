@@ -935,6 +935,8 @@ export const checkins = pgTable(
     checkAt: timestamp('check_at', { withTimezone: true }).notNull(),
     status: checkinStatus('status').notNull().default('active'),
     sosCount: smallint('sos_count').notNull().default(0),
+    /** "Running late" (phase 45): times the check-in time was moved later. */
+    extensions: smallint('extensions').notNull().default(0),
     remindedAt: timestamp('reminded_at', { withTimezone: true }),
     alertedAt: timestamp('alerted_at', { withTimezone: true }),
     endedAt: timestamp('ended_at', { withTimezone: true }),
