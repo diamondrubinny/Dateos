@@ -997,6 +997,8 @@ export const datePlans = pgTable(
     note: varchar('note', { length: 200 }),
     status: dateStatus('status').notNull().default('proposed'),
     respondedAt: timestamp('responded_at', { withTimezone: true }),
+    /** Declined with "Suggest another time" (phase 46). */
+    countered: boolean('countered').notNull().default(false),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     /** "Did you meet?" (phase 20): each side's private answer, deleted with the chat. */
     proposerMet: boolean('proposer_met'),

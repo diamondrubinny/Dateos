@@ -267,6 +267,7 @@ export async function exportMemberData(
       startsAt: t.datePlans.startsAt,
       note: t.datePlans.note,
       respondedAt: t.datePlans.respondedAt,
+      countered: t.datePlans.countered,
       createdAt: t.datePlans.createdAt,
       proposerMet: t.datePlans.proposerMet,
       receiverMet: t.datePlans.receiverMet,

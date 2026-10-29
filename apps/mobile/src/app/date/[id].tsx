@@ -23,7 +23,7 @@ import { Screen } from '../../components/Screen';
 import { TextField } from '../../components/TextField';
 import { ApiRequestError } from '../../lib/api';
 import { newClientId, useConversations } from '../../lib/chat-queries';
-import { useProposeDate, useVenues } from '../../lib/date-queries';
+import { useCounterDate, useProposeDate, useVenues } from '../../lib/date-queries';
 import { useLocale } from '../../lib/locale';
 import { useMe } from '../../lib/queries';
 import { radius, spacing, useColors } from '../../lib/theme';
@@ -49,7 +49,19 @@ function PlanDateScreen() {
     name = '',
     day: wantedDay,
     hour: wantedHour,
-  } = useLocalSearchParams<{ id: string; name?: string; day?: string; hour?: string }>();
+    counter: counterOf,
+    place: counterPlace = '',
+    startsAt: counterFrom,
+  } = useLocalSearchParams<{
+    id: string;
+    name?: string;
+    day?: string;
+    hour?: string;
+    /** "Suggest another time" (phase 46): the idea being answered, its place and time. */
+    counter?: string;
+    place?: string;
+    startsAt?: string;
+  }>();
   const venues = useVenues();
   // Phase 25: my own needs, or the ones the other person chose to show, put step-free places first.
   const myNeeds = useMe().data?.accessNeeds.needs ?? [];
@@ -58,6 +70,8 @@ function PlanDateScreen() {
   const needsStepFree = [...myNeeds, ...theirNeeds].some((n) => STEP_FREE_NEEDS.includes(n));
   const [stepFreeOnly, setStepFreeOnly] = useState<boolean>();
   const propose = useProposeDate(matchId);
+  const counter = useCounterDate(matchId);
+  const sending = counterOf ? counter : propose;
   const [category, setCategory] = useState<'all' | VenueCategory>('all');
   const [venueId, setVenueId] = useState<string>();
   // Opened from a shared free time (phase 20): that day and part of the day are filled in.
@@ -90,37 +104,38 @@ function PlanDateScreen() {
   const startsAt = new Date(day(Number(dayOffset)));
   startsAt.setHours(Number(hour), Number(minute), 0, 0);
 
-  if (venues.isPending) return <Loading />;
+  if (venues.isPending && !counterOf) return <Loading />;
+
+  const onError = (e: Error) =>
+    setError(
+      e instanceof ApiRequestError && e.code === 'SLOW_DOWN'
+        ? t('chat.newAccountLimit', { count: NEW_ACCOUNT_CHAT_STARTS })
+        : e instanceof ApiRequestError && e.status === 409
+          ? t(counterOf ? 'datePlan.changed' : 'datePlan.alreadyOpen')
+          : e instanceof ApiRequestError && e.status === 422 && note.trim()
+            ? t('datePlan.kinder')
+            : e instanceof ApiRequestError && e.status === 404
+              ? t('datePlan.placeGone')
+              : t('common.genericError'),
+    );
 
   const submit = () => {
     setError(undefined);
-    if (!venue) return setError(t('datePlan.pickPlace'));
+    if (!counterOf && !venue) return setError(t('datePlan.pickPlace'));
     if (startsAt.getTime() < Date.now() + DATE_MIN_LEAD_MINUTES * 60_000) {
       return setError(t('datePlan.tooSoon', { n: DATE_MIN_LEAD_MINUTES }));
     }
-    propose.mutate(
-      {
-        venueId: venue.id,
-        startsAt: startsAt.toISOString(),
-        clientId,
-        ...(note.trim() ? { note: note.trim() } : {}),
-      },
-      {
-        onSuccess: () => router.back(),
-        onError: (e) =>
-          setError(
-            e instanceof ApiRequestError && e.code === 'SLOW_DOWN'
-              ? t('chat.newAccountLimit', { count: NEW_ACCOUNT_CHAT_STARTS })
-              : e instanceof ApiRequestError && e.status === 409
-                ? t('datePlan.alreadyOpen')
-                : e instanceof ApiRequestError && e.status === 422 && note.trim()
-                  ? t('datePlan.kinder')
-                  : e instanceof ApiRequestError && e.status === 404
-                    ? t('datePlan.placeGone')
-                    : t('common.genericError'),
-          ),
-      },
-    );
+    if (counterFrom && startsAt.getTime() === Date.parse(counterFrom)) {
+      return setError(t('datePlan.sameTime'));
+    }
+    const common = {
+      startsAt: startsAt.toISOString(),
+      clientId,
+      ...(note.trim() ? { note: note.trim() } : {}),
+    };
+    const done = { onSuccess: () => router.back(), onError };
+    if (counterOf) counter.mutate({ id: counterOf, ...common }, done);
+    else if (venue) propose.mutate({ venueId: venue.id, ...common }, done);
   };
 
   const dayLabel = (offset: number) =>
@@ -136,14 +151,29 @@ function PlanDateScreen() {
   const two = (n: number) => String(n).padStart(2, '0');
 
   return (
-    <Screen back title={t('datePlan.title')}>
-      <AppText variant="body">{t('datePlan.intro', { name })}</AppText>
-      {list.length === 0 ? (
+    <Screen back title={t(counterOf ? 'datePlan.counterTitle' : 'datePlan.title')}>
+      <AppText variant="body">
+        {counterOf ? t('datePlan.counterIntro', { name }) : t('datePlan.intro', { name })}
+      </AppText>
+      {list.length === 0 && !counterOf ? (
         <Banner tone="info" message={t('datePlan.noPlaces')} />
       ) : (
         <>
           {error ? <Banner tone="error" message={error} /> : null}
-          {categories.length > 1 ? (
+          {counterOf ? (
+            <View style={[styles.card, { backgroundColor: colors.surface }]}>
+              <AppText variant="label">{t('datePlan.samePlace')}</AppText>
+              <AppText variant="body" userContent>
+                {counterPlace}
+              </AppText>
+              {counterFrom ? (
+                <AppText variant="caption" tone="muted">
+                  {t('datePlan.theirTime', { when: formatDateTime(counterFrom, locale) })}
+                </AppText>
+              ) : null}
+            </View>
+          ) : null}
+          {!counterOf && categories.length > 1 ? (
             <ChoiceGroup
               label={t('datePlan.type')}
               options={[
@@ -154,7 +184,7 @@ function PlanDateScreen() {
               onChange={([v]) => v && setCategory(v)}
             />
           ) : null}
-          {list.some((v) => v.stepFree) ? (
+          {!counterOf && list.some((v) => v.stepFree) ? (
             <Checkbox
               label={t('access.stepFreeOnly')}
               {...(needsStepFree ? { hint: t('access.stepFreeOnlyHint') } : {})}
@@ -162,23 +192,25 @@ function PlanDateScreen() {
               onChange={setStepFreeOnly}
             />
           ) : null}
-          <ChoiceGroup
-            stacked
-            label={t('datePlan.place')}
-            options={shown.map((v) => ({
-              value: v.id,
-              label: [
-                v.name,
-                v.area,
-                t(`datePlan.categories.${v.category}`),
-                v.stepFree ? `♿ ${t('datePlan.stepFree')}` : null,
-              ]
-                .filter(Boolean)
-                .join(' · '),
-            }))}
-            selected={venueId ? [venueId] : []}
-            onChange={([v]) => setVenueId(v)}
-          />
+          {counterOf ? null : (
+            <ChoiceGroup
+              stacked
+              label={t('datePlan.place')}
+              options={shown.map((v) => ({
+                value: v.id,
+                label: [
+                  v.name,
+                  v.area,
+                  t(`datePlan.categories.${v.category}`),
+                  v.stepFree ? `♿ ${t('datePlan.stepFree')}` : null,
+                ]
+                  .filter(Boolean)
+                  .join(' · '),
+              }))}
+              selected={venueId ? [venueId] : []}
+              onChange={([v]) => setVenueId(v)}
+            />
+          )}
           {venue ? (
             <View style={[styles.card, { backgroundColor: colors.surface }]}>
               <AppText variant="label" userContent>
@@ -224,7 +256,11 @@ function PlanDateScreen() {
             maxLength={MAX_DATE_NOTE_LENGTH}
           />
           <Banner tone="info" message={t('datePlan.safety')} />
-          <Button label={t('datePlan.send')} loading={propose.isPending} onPress={submit} />
+          <Button
+            label={t(counterOf ? 'datePlan.counterSend' : 'datePlan.send')}
+            loading={sending.isPending}
+            onPress={submit}
+          />
         </>
       )}
     </Screen>

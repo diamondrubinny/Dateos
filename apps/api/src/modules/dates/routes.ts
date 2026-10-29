@@ -7,6 +7,7 @@ import {
   dateFeedbackInputSchema,
   messageViewSchema,
   proposeDateSchema,
+  counterDateSchema,
   venueSchema,
 } from '@nexaheart/shared';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
@@ -55,6 +56,17 @@ export const dateRoutes: FastifyPluginAsyncZod<{
     '/v1/dates/:id/decline',
     { config: limit, schema: { params, response: { 200: messageViewSchema } } },
     async (request) => dates.respond(request.params.id, currentUser(request).id, 'decline'),
+  );
+  app.post(
+    '/v1/dates/:id/counter',
+    {
+      config: limit,
+      schema: { params, body: counterDateSchema, response: { 201: messageViewSchema } },
+    },
+    async (request, reply) =>
+      reply
+        .status(201)
+        .send(await dates.counter(request.params.id, currentUser(request).id, request.body)),
   );
   app.post(
     '/v1/dates/:id/cancel',

@@ -66,7 +66,9 @@ export function DateCard({
     plan.status === 'accepted'
       ? t('datePlan.accepted')
       : plan.status === 'declined'
-        ? t('datePlan.declined')
+        ? plan.countered
+          ? t('datePlan.countered')
+          : t('datePlan.declined')
         : plan.status === 'cancelled'
           ? t('datePlan.cancelled')
           : plan.mine
@@ -86,7 +88,8 @@ export function DateCard({
           {
             backgroundColor: plan.status === 'accepted' ? colors.successSoft : colors.surface,
             borderColor: plan.status === 'accepted' ? colors.success : colors.border,
-            opacity: closed ? 0.75 : 1,
+            // Closed ideas look settled without fading: faded text would fail contrast (WCAG 1.4.3).
+            borderStyle: closed ? 'dashed' : 'solid',
           },
         ]}
       >
@@ -123,6 +126,25 @@ export function DateCard({
               label={t('datePlan.accept')}
               loading={action.isPending && action.variables?.action === 'accept'}
               onPress={() => run('accept')}
+            />
+            <Button
+              variant="secondary"
+              label={t('datePlan.otherTime')}
+              onPress={() =>
+                router.push({
+                  pathname: '/date/[id]',
+                  params: {
+                    id: message.matchId,
+                    counter: plan.id,
+                    place: t('datePlan.placeWithArea', {
+                      name: plan.venue.name,
+                      area: plan.venue.area,
+                    }),
+                    startsAt: plan.startsAt,
+                    ...(other ? { name: other.name } : {}),
+                  },
+                })
+              }
             />
             <Button
               variant="secondary"

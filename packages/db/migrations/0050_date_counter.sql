@@ -1,0 +1,1 @@
+ALTER TABLE "date_plans" ADD COLUMN "countered" boolean DEFAULT false NOT NULL;

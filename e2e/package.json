@@ -54,7 +54,8 @@
     "calendar": "tsx calendar.ts",
     "reauth": "tsx reauth.ts",
     "preview": "tsx preview.ts",
-    "checkin-late": "tsx checkin-late.ts"
+    "checkin-late": "tsx checkin-late.ts",
+    "date-counter": "tsx date-counter.ts"
   },
   "dependencies": {
     "@axe-core/playwright": "4.14.0",

@@ -242,6 +242,7 @@ export function toView(row: MessageRow, viewerId: string, now = Date.now()): Mes
             startsAt: row.plan.startsAt.toISOString(),
             note: row.plan.note,
             respondedAt: row.plan.respondedAt?.toISOString() ?? null,
+            countered: row.plan.countered,
             feedback: feedbackView(row.plan, viewerId, now),
           }
         : null,

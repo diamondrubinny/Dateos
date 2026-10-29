@@ -95,6 +95,10 @@ export const proposeDateSchema = z
   .strict();
 export type ProposeDateInput = z.infer<typeof proposeDateSchema>;
 
+/** "Suggest another time" (phase 46): the same place, a new time (and an optional note). */
+export const counterDateSchema = proposeDateSchema.omit({ venueId: true });
+export type CounterDateInput = z.infer<typeof counterDateSchema>;
+
 /** The date card as one participant sees it. The place is a copy taken when it was proposed. */
 export const datePlanSchema = z.object({
   id: z.uuid(),
@@ -105,6 +109,8 @@ export const datePlanSchema = z.object({
   startsAt: z.string(),
   note: z.string().nullable(),
   respondedAt: z.string().nullable(),
+  /** Declined by suggesting another time (phase 46): the next card in the chat is the answer. */
+  countered: z.boolean(),
   /** "Did you meet?" (phase 20); null unless the date was accepted. */
   feedback: dateFeedbackViewSchema.nullable(),
 });
