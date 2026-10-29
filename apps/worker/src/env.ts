@@ -54,6 +54,21 @@ export const workerEnvSchema = z.object({
   /** Months without sign-in before an account is warned and then deleted. 0 = never (default). ⚖️ */
   INACTIVE_ACCOUNT_DELETE_MONTHS: z.coerce.number().int().min(0).max(120).default(0),
   INSTANCE_NAME: z.string().max(40).default('NexaHeart'),
+  // Updates from GitHub (phase 53). The commit is baked into the image at build time.
+  APP_COMMIT: z
+    .string()
+    .regex(/^[0-9a-f]{40}$/)
+    .optional()
+    .or(z.literal('').transform(() => undefined)),
+  UPDATE_CHECK: z.enum(['on', 'off']).default('on'),
+  UPDATE_REPO: z
+    .string()
+    .regex(/^[A-Za-z0-9-]+\/[A-Za-z0-9._-]+$/)
+    .default('diamondrubinny/NexaHeart'),
+  UPDATE_BRANCH: z
+    .string()
+    .regex(/^[A-Za-z0-9._/-]{1,100}$/)
+    .default('main'),
   SMTP_HOST: z.string().default('localhost'),
   SMTP_PORT: z.coerce.number().int().default(1025),
   SMTP_SECURE: z

@@ -6,6 +6,7 @@ import { api } from '../api';
 import { useAsync } from '../hooks';
 import { useLocale } from '../i18n';
 import { ErrorBox, Loading } from '../components/ui';
+import { Updates } from './Updates';
 
 /**
  * System (phase 51), admins only: is every part of the server up, and when did the last backup
@@ -105,6 +106,7 @@ export function System() {
           <button type="button" className="button" onClick={reload}>
             {s.refresh}
           </button>
+          <Updates />
         </>
       ) : null}
     </section>

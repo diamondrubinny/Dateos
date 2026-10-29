@@ -1638,3 +1638,57 @@ export const maintenanceRuns = pgTable(
   },
   (t) => [index('maintenance_runs_kind_idx').on(t.kind, t.finishedAt)],
 );
+
+// ---------------------------------------------------------------------------
+// Updates from GitHub (phase 53)
+// ---------------------------------------------------------------------------
+
+/** The latest update check: one row (id 1), written by the worker or "Check now". */
+export const updateStatus = pgTable(
+  'update_status',
+  {
+    id: smallint('id').primaryKey().default(1),
+    checkedAt: timestamp('checked_at', { withTimezone: true }).notNull(),
+    /** The commit the server runs, as baked into the image. */
+    currentCommit: varchar('current_commit', { length: 40 }),
+    latestCommit: varchar('latest_commit', { length: 40 }),
+    latestAt: timestamp('latest_at', { withTimezone: true }),
+    behind: integer('behind').notNull().default(0),
+    /** What's new, as plain text from the merged pull requests: [{ title, number, at }]. */
+    changes: jsonb('changes').notNull().default([]),
+    /** Why the last check didn't work, in a few words (no response bodies). */
+    error: varchar('error', { length: 200 }),
+  },
+  (t) => [check('update_status_single_row', sql`${t.id} = 1`)],
+);
+
+/**
+ * An admin's approval to install a commit, and what happened. scripts/update.sh on the server
+ * picks up `pending`, sets `running`, then `done` or `failed`.
+ */
+export const updateRequests = pgTable(
+  'update_requests',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    targetCommit: varchar('target_commit', { length: 40 }).notNull(),
+    fromCommit: varchar('from_commit', { length: 40 }),
+    status: varchar('status', { length: 12 }).notNull().default('pending'),
+    requestedBy: text('requested_by').references(() => user.id, { onDelete: 'set null' }),
+    requestedAt: timestamp('requested_at', { withTimezone: true }).notNull().defaultNow(),
+    startedAt: timestamp('started_at', { withTimezone: true }),
+    finishedAt: timestamp('finished_at', { withTimezone: true }),
+    message: varchar('message', { length: 500 }),
+  },
+  (t) => [
+    check(
+      'update_requests_status',
+      sql`${t.status} IN ('pending', 'running', 'done', 'failed', 'cancelled')`,
+    ),
+    check('update_requests_commit', sql`${t.targetCommit} ~ '^[0-9a-f]{40}$'`),
+    // One update at a time.
+    uniqueIndex('update_requests_open_uq')
+      .on(sql`(true)`)
+      .where(sql`${t.status} IN ('pending', 'running')`),
+    index('update_requests_time_idx').on(t.requestedAt),
+  ],
+);

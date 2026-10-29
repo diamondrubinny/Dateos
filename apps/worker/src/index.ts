@@ -45,6 +45,7 @@ import {
   alertTargetFrom,
   IntegrationStore,
   parseIntegrationsKey,
+  refreshUpdateStatus,
   sendAlert,
 } from '@nexaheart/integrations';
 import {
@@ -233,6 +234,13 @@ async function main(): Promise<void> {
           return processFriendRetention(db);
         case 'daily-summary':
           return dailySummary(outbound);
+        case 'update-check':
+          return refreshUpdateStatus(db, {
+            enabled: env.UPDATE_CHECK === 'on',
+            repo: env.UPDATE_REPO,
+            branch: env.UPDATE_BRANCH,
+            current: env.APP_COMMIT,
+          });
         case 'backup-watch':
           return processBackupWatch({
             db,
@@ -358,6 +366,12 @@ async function main(): Promise<void> {
     'daily-summary',
     { pattern: '0 8 * * *' },
     { name: 'daily-summary' },
+  );
+  // Updates from GitHub (phase 53): what's new since this version, for the dashboard (6-hourly).
+  await scheduler.upsertJobScheduler(
+    'update-check',
+    { every: 6 * 3_600_000 },
+    { name: 'update-check' },
   );
   // Backups stopped (phase 52): tell the admins by email and the alert channel (daily).
   await scheduler.upsertJobScheduler(

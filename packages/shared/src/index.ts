@@ -14,6 +14,7 @@ export * from './branding.js';
 export * from './checkin.js';
 export * from './checkin-email.js';
 export * from './system-email.js';
+export * from './updates.js';
 export * from './dates.js';
 export * from './events.js';
 export * from './calls.js';

@@ -55,6 +55,7 @@ import { CallService } from './modules/calls/service.js';
 import { PairService } from './modules/friends/pairs.js';
 import { TakeService } from './modules/friends/takes.js';
 import { TrustService } from './modules/trust/service.js';
+import { UpdateService } from './modules/updates/service.js';
 import type { CallMedia } from './lib/livekit.js';
 
 export interface Services {
@@ -80,6 +81,7 @@ export interface Services {
   verification: VerificationService;
   staffMfa: StaffMfaService;
   moderation: ModerationService;
+  updates: UpdateService;
   trust: TrustService;
   takes: TakeService;
   pairs: PairService;
@@ -308,6 +310,12 @@ export function createServices(
     storage,
   );
   const moderation = new ModerationService(dbHandle.db, discovery, hashEmail, today);
+  const updates = new UpdateService(dbHandle.db, {
+    enabled: env.UPDATE_CHECK === 'on',
+    repo: env.UPDATE_REPO,
+    branch: env.UPDATE_BRANCH,
+    current: env.APP_COMMIT,
+  });
   const federatedSafety = new FederatedSafety(dbHandle.db, federation, federated, () =>
     reports.alertStaff(),
   );
@@ -362,6 +370,7 @@ export function createServices(
       overrides.now,
     ),
     moderation,
+    updates,
     instance,
     trust,
     takes,
