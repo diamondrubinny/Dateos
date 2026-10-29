@@ -50,7 +50,8 @@
     "pins-drafts": "tsx pins-drafts.ts",
     "quiet-hours": "tsx quiet-hours.ts",
     "photo-descriptions": "tsx photo-descriptions.ts",
-    "change-email": "tsx change-email.ts"
+    "change-email": "tsx change-email.ts",
+    "calendar": "tsx calendar.ts"
   },
   "dependencies": {
     "@axe-core/playwright": "4.14.0",

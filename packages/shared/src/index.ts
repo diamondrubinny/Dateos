@@ -7,6 +7,7 @@ export * from './health.js';
 export * from './profile.js';
 export * from './jobs.js';
 export * from './discovery.js';
+export * from './calendar.js';
 export * from './chat.js';
 export * from './moderation.js';
 export * from './branding.js';
