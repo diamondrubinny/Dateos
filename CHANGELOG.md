@@ -6,6 +6,9 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Added
 
+- **See my profile as others do** (profile tab): the exact card others get, what keeps it out of
+  new people's decks right now (break, incognito, no approved photo, no area) with a fix for each,
+  and how many photos are still being checked.
 - **Sign in again before the irreversible**: deleting the account or changing its email needs a
   sign-in from the last 15 minutes; the app offers a fresh sign-in link to the account's address.
 - **Photo descriptions reach partner communities** (optional field; older partners ignore it).

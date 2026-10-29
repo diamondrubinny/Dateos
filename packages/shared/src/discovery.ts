@@ -109,6 +109,22 @@ export const publicProfileSchema = z.object({
 });
 export type PublicProfile = z.infer<typeof publicProfileSchema>;
 
+/**
+ * Why others can't find me right now (phase 44). Each one alone keeps a profile out of new
+ * people's decks; existing matches still see it.
+ */
+export const hiddenReasons = ['onBreak', 'incognito', 'noPhoto', 'noLocation'] as const;
+export type HiddenReason = (typeof hiddenReasons)[number];
+
+/** "See my profile as others do" (phase 44): exactly the card others get, plus what's missing. */
+export const profilePreviewSchema = z.object({
+  profile: publicProfileSchema,
+  hidden: z.array(z.enum(hiddenReasons)),
+  /** Photos still being checked: not shown to anyone yet. */
+  pendingPhotos: z.number().int(),
+});
+export type ProfilePreview = z.infer<typeof profilePreviewSchema>;
+
 export const discoverQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(20).default(10),
 });

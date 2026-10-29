@@ -93,6 +93,11 @@ function ProfileContent() {
           label={t('home.settings')}
           onPress={() => router.push('/settings')}
         />
+        <Button
+          variant="secondary"
+          label={t('preview.open')}
+          onPress={() => router.push('/preview')}
+        />
       </View>
       <MoreOptions>
         <Button label={`✨ ${t('coach.open')}`} onPress={() => router.push('/coach')} />

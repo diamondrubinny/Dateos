@@ -17,6 +17,7 @@ import {
   YOUR_TURN_LIMIT,
   yourTurnSchema,
   blockedPersonSchema,
+  profilePreviewSchema,
 } from '@nexaheart/shared';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { perUserLimit } from '../../plugins/security.js';
@@ -103,6 +104,16 @@ export const discoveryRoutes: FastifyPluginAsyncZod<{
       },
     },
     async (request) => discovery.profile(currentUser(request).id, request.params.id),
+  );
+
+  // "See my profile as others do" (phase 44).
+  app.get(
+    '/v1/me/preview',
+    {
+      schema: { response: { 200: profilePreviewSchema } },
+      config: perUserLimit(30, 60_000),
+    },
+    async (request) => discovery.preview(currentUser(request).id),
   );
 
   app.post(
