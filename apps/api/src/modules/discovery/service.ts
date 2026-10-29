@@ -935,7 +935,13 @@ export class DiscoveryService {
       .where(inArray(prompts.userId, ids))
       .orderBy(asc(prompts.position));
     const photoRows = await this.db
-      .select({ id: photos.id, userId: photos.userId, width: photos.width, height: photos.height })
+      .select({
+        id: photos.id,
+        userId: photos.userId,
+        width: photos.width,
+        height: photos.height,
+        description: photos.description,
+      })
       .from(photos)
       .where(
         and(inArray(photos.userId, ids), eq(photos.status, 'clean'), eq(photos.purpose, 'profile')),
@@ -1021,7 +1027,13 @@ export class DiscoveryService {
             .map(({ id, promptKey, answer }) => ({ id, promptKey, answer })),
           photos: photoRows
             .filter((r) => r.userId === p.userId)
-            .map(({ id, width, height }) => ({ id, url: photoUrl(id), width, height })),
+            .map(({ id, width, height, description }) => ({
+              id,
+              url: photoUrl(id),
+              width,
+              height,
+              description,
+            })),
           distance:
             Number.isFinite(item.km) && !visiting.has(p.userId) ? distanceBucket(item.km) : null,
           visiting: visiting.get(p.userId) ?? null,

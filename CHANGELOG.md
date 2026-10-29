@@ -6,6 +6,8 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Added
 
+- **Photo descriptions** (accessibility): describe each photo in your own words (up to 150
+  characters); people using a screen reader hear it on your profile card. In "Download my data".
 - **Quiet hours** (Settings → Notifications): no notifications between two times you choose, in
   your device's time zone (23:00–08:00 to start, moved in half hours). Calls and safety check-in
   alerts always come through.

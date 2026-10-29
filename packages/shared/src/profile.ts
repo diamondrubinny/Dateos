@@ -165,9 +165,17 @@ export type ConsentInput = z.infer<typeof consentInputSchema>;
 
 export const photoOrderSchema = z.object({ photoIds: z.array(z.uuid()).min(1).max(MAX_PHOTOS) });
 
+/** Photo descriptions (phase 40): read by screen readers; empty clears it. */
+export const MAX_PHOTO_DESCRIPTION = 150;
+export const photoDescriptionInputSchema = z.object({
+  description: z.string().trim().max(MAX_PHOTO_DESCRIPTION),
+});
+
 export const photoSchema = z.object({
   id: z.uuid(),
   status: z.enum(photoStatuses),
+  /** Phase 40: the member's own description, for screen readers. */
+  description: z.string().nullable().optional(),
   position: z.number().int(),
   url: z.string().nullable(),
   width: z.number().int().nullable(),

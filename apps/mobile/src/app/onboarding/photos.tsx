@@ -10,6 +10,7 @@ import { StyleSheet, View } from 'react-native';
 import { Banner } from '../../components/Banner';
 import { Button } from '../../components/Button';
 import { Loading } from '../../components/Loading';
+import { PhotoDescriptions } from '../../components/PhotoDescriptions';
 import { PhotoTile } from '../../components/PhotoTile';
 import { Screen } from '../../components/Screen';
 import { ApiRequestError } from '../../lib/api';
@@ -104,6 +105,7 @@ export default function PhotosStep() {
         loading={upload.isPending}
         onPress={() => void pick()}
       />
+      <PhotoDescriptions photos={photos} />
     </Screen>
   );
 }

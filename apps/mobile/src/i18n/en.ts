@@ -1011,6 +1011,16 @@ export const en = {
     remove: 'Remove',
     full: 'Your “Maybe later” list is full (30). Decide on someone there first.',
   },
+  photoText: {
+    title: 'Describe your photos',
+    intro:
+      'A sentence about each photo is read aloud to people who use a screen reader. Optional, and only what you want to say.',
+    label: 'What photo {{n}} shows',
+    hint: 'For example: “Me hiking at sunrise, with my dog”. Up to 150 characters.',
+    save: 'Save the description of photo {{n}}',
+    saved: 'Saved.',
+    rephrase: 'Please rephrase the description.',
+  },
   quiet: {
     label: 'Quiet hours',
     hint: 'No notifications between two times you choose. Calls and safety check-in alerts still come.',

@@ -75,6 +75,8 @@ export const publicPhotoSchema = z.object({
   url: z.string(),
   width: z.number().int().nullable(),
   height: z.number().int().nullable(),
+  /** Phase 40: what the photo shows, for screen readers (optional: older partner servers). */
+  description: z.string().max(150).nullable().optional(),
 });
 
 export const publicProfileSchema = z.object({

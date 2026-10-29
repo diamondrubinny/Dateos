@@ -68,6 +68,15 @@ function useMeMutation<TInput>(request: (input: TInput) => Promise<unknown>) {
   });
 }
 
+/** Describe a photo for screen readers (phase 40); empty clears it. */
+export const useDescribePhoto = () =>
+  useMeMutation(({ photoId, description }: { photoId: string; description: string }) =>
+    apiFetch(`/v1/me/photos/${encodeURIComponent(photoId)}/description`, {
+      method: 'PUT',
+      body: json({ description }),
+    }),
+  );
+
 export const useCreateProfile = () =>
   useMeMutation((input: ProfileInput) =>
     apiFetch('/v1/me/profile', { method: 'POST', body: json(input) }),

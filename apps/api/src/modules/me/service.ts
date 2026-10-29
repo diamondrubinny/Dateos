@@ -237,6 +237,7 @@ export class MeService {
         url: p.status === 'clean' ? photoUrl(p.id) : null,
         width: p.width,
         height: p.height,
+        description: p.description,
       })),
       consents: Object.fromEntries(
         Object.entries(consentState).map(([kind, c]) => [kind, c.granted]),

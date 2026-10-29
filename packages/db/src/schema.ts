@@ -329,6 +329,8 @@ export const photos = pgTable(
     height: integer('height'),
     position: smallint('position').notNull(),
     rejectReason: varchar('reject_reason', { length: 32 }),
+    /** What the photo shows, in the member's words, for screen readers (phase 40). */
+    description: varchar('description', { length: 150 }),
     /** Perceptual hash of a profile photo (phase 21), for duplicates and banned photos. */
     phash: bigint('phash', { mode: 'bigint' }),
     ...timestamps,

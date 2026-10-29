@@ -65,7 +65,9 @@ export function PhotoTile({ index, photo, cookie, onAdd, onRemove }: PhotoTilePr
           style={StyleSheet.absoluteFill}
           contentFit="cover"
           accessibilityIgnoresInvertColors
-          accessibilityLabel={t('onboarding.photos.photoLabel', { n })}
+          accessibilityLabel={[t('onboarding.photos.photoLabel', { n }), photo.description]
+            .filter(Boolean)
+            .join('. ')}
         />
       ) : (
         <View style={styles.status}>
