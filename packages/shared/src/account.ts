@@ -62,3 +62,9 @@ export const emailChangeConfirmSchema = z.object({
     .max(100)
     .regex(/^[\w-]+$/),
 });
+
+/**
+ * Sensitive actions (phase 43): deleting the account or changing its email need a sign-in from the
+ * last this many minutes, so an unlocked phone or a stolen session can't do them.
+ */
+export const RECENT_SIGN_IN_MINUTES = 15;

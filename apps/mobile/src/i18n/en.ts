@@ -1011,6 +1011,12 @@ export const en = {
     remove: 'Remove',
     full: 'Your “Maybe later” list is full (30). Decide on someone there first.',
   },
+  reauth: {
+    title: 'Please sign in again first',
+    body: 'For your safety, this needs a sign-in from the last {{minutes}} minutes. We’ll email you a sign-in link; open it here, then try again.',
+    send: 'Email me a sign-in link',
+    sent: 'A sign-in link is on its way to {{email}}. Open it on this device, then try again.',
+  },
   calendar: {
     add: 'Add to calendar',
     dateHint:

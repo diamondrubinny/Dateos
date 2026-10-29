@@ -70,7 +70,14 @@ describe.skipIf(!integrationEnabled)('trust and safety (integration)', () => {
     const { rows } = await q(`UPDATE "user" SET role = 'admin' WHERE email = $1 RETURNING id`, [
       email,
     ]);
-    return { id: rows[0].id, email, role: 'admin', status: 'active', sessionId: 'test' };
+    return {
+      id: rows[0].id,
+      email,
+      role: 'admin',
+      status: 'active',
+      sessionId: 'test',
+      signedInAt: Date.now(),
+    };
   }
 
   async function setSignup(mode: 'open' | 'invite' | 'waitlist', memberInvites = false) {

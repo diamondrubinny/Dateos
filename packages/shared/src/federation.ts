@@ -174,6 +174,8 @@ export const federatedCardSchema = z.object({
         id: z.uuid(),
         width: z.number().int().positive().max(10_000).nullable(),
         height: z.number().int().positive().max(10_000).nullable(),
+        /** Phase 43: the member's own words, for screen readers (older partners leave it out). */
+        description: z.string().max(150).nullable().optional(),
       }),
     )
     .min(1)

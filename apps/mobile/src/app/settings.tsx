@@ -3,8 +3,10 @@
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 import { SENSITIVE_CONSENT_VERSION } from '@nexaheart/shared';
 import { Link, router } from 'expo-router';
+import { ApiRequestError } from '../lib/api';
 import { clearDrafts } from '../lib/drafts';
 import { QuietHours } from '../components/QuietHours';
+import { ReauthNotice } from '../components/ReauthNotice';
 import * as WebBrowser from 'expo-web-browser';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -83,6 +85,7 @@ function SettingsContent() {
   };
   const [confirming, setConfirming] = useState(false);
   const [error, setError] = useState<string>();
+  const [reauth, setReauth] = useState(false);
 
   const toggle = (kind: 'ai_cloud' | 'analytics' | 'sensitive', granted: boolean) =>
     consents.mutate(
@@ -105,8 +108,10 @@ function SettingsContent() {
       await clearDrafts(); // a shared device keeps no drafts (phase 38)
       await authClient.signOut().catch(() => undefined);
       router.replace('/welcome');
-    } catch {
-      setError(t('common.genericError'));
+    } catch (e) {
+      // Phase 43: an old session first signs in again.
+      if (e instanceof ApiRequestError && e.code === 'REAUTH_REQUIRED') setReauth(true);
+      else setError(t('common.genericError'));
     }
   };
 
@@ -331,6 +336,7 @@ function SettingsContent() {
             loading={deleteAccount.isPending}
             onPress={() => void remove()}
           />
+          {reauth ? <ReauthNotice email={me.data?.user.email ?? ''} /> : null}
           <Button variant="ghost" label={t('common.cancel')} onPress={() => setConfirming(false)} />
         </View>
       ) : (

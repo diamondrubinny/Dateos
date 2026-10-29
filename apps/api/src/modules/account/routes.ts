@@ -5,7 +5,7 @@ import { emailChangeConfirmSchema, emailChangeInputSchema } from '@nexaheart/sha
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import type { Auth } from '../../auth/auth.js';
-import { currentUser, requireUser } from '../../auth/session.js';
+import { currentUser, requireRecentSignIn, requireUser } from '../../auth/session.js';
 import { perUserLimit } from '../../plugins/security.js';
 import type { EmailChangeService } from './email-change.js';
 
@@ -26,6 +26,8 @@ export const accountRoutes: FastifyPluginAsyncZod<{
       config: perUserLimit(3, 60 * 60 * 1000),
     },
     async (request, reply) => {
+      // Phase 43: moving the account to another mailbox needs a recent sign-in.
+      requireRecentSignIn(request);
       await emailChange.request(currentUser(request).id, request.body.email);
       // The same answer whatever happened.
       return reply.code(202).send({ ok: true as const });
