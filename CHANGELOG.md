@@ -6,6 +6,9 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Added
 
+- **Sign in again before the irreversible**: deleting the account or changing its email needs a
+  sign-in from the last 15 minutes; the app offers a fresh sign-in link to the account's address.
+- **Photo descriptions reach partner communities** (optional field; older partners ignore it).
 - **Add to calendar** for an accepted date and an event you're going to: a calendar file made on
   the device. A date's entry is discreet ("Meeting at {place}", no name, no app name).
 - **Change your email address** (Settings → Security): a one-time link to the new address (30

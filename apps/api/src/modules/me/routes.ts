@@ -21,7 +21,7 @@ import { z } from 'zod';
 import { HttpError } from '../../plugins/error-handler.js';
 import { perUserLimit } from '../../plugins/security.js';
 import type { Auth } from '../../auth/auth.js';
-import { currentUser, requireUser } from '../../auth/session.js';
+import { currentUser, requireRecentSignIn, requireUser } from '../../auth/session.js';
 import type { MeService } from './service.js';
 
 const ok = z.object({ ok: z.literal(true) });
@@ -225,6 +225,8 @@ export const meRoutes: FastifyPluginAsyncZod<{
   }
 
   app.delete('/v1/me', { schema: { response: { 200: ok } } }, async (request) => {
+    // Phase 43: not from an old session (an unlocked phone, a stolen cookie).
+    requireRecentSignIn(request);
     await me.deleteAccount(currentUser(request).id);
     return { ok: true as const };
   });

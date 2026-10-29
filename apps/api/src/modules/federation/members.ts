@@ -317,6 +317,7 @@ export class FederatedMembers {
         url: this.photoUrl(partner.id, ph.id),
         width: ph.width,
         height: ph.height,
+        description: ph.description ?? null,
       })),
       verified: card.verified,
     };
@@ -598,7 +599,13 @@ export class FederatedMembers {
       .where(inArray(prompts.userId, ids))
       .orderBy(asc(prompts.position));
     const photoRows = await this.db
-      .select({ id: photos.id, userId: photos.userId, width: photos.width, height: photos.height })
+      .select({
+        id: photos.id,
+        userId: photos.userId,
+        width: photos.width,
+        height: photos.height,
+        description: photos.description,
+      })
       .from(photos)
       .where(
         and(inArray(photos.userId, ids), eq(photos.status, 'clean'), eq(photos.purpose, 'profile')),
@@ -620,7 +627,12 @@ export class FederatedMembers {
           prompts: promptRows
             .filter((pr) => pr.userId === r.id)
             .map((pr) => ({ promptKey: pr.promptKey as PromptKey, answer: pr.answer })),
-          photos: own.map((ph) => ({ id: ph.id, width: ph.width, height: ph.height })),
+          photos: own.map((ph) => ({
+            id: ph.id,
+            width: ph.width,
+            height: ph.height,
+            description: ph.description,
+          })),
           verified: r.verified,
         },
       ];

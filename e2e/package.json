@@ -51,7 +51,8 @@
     "quiet-hours": "tsx quiet-hours.ts",
     "photo-descriptions": "tsx photo-descriptions.ts",
     "change-email": "tsx change-email.ts",
-    "calendar": "tsx calendar.ts"
+    "calendar": "tsx calendar.ts",
+    "reauth": "tsx reauth.ts"
   },
   "dependencies": {
     "@axe-core/playwright": "4.14.0",

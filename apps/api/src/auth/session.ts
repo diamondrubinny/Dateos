@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
-import { ErrorCode } from '@nexaheart/shared';
+import { ErrorCode, RECENT_SIGN_IN_MINUTES } from '@nexaheart/shared';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { HttpError } from '../plugins/error-handler.js';
 import type { Auth } from './auth.js';
@@ -12,6 +12,8 @@ export interface AuthUser {
   status: string;
   role: string;
   sessionId: string;
+  /** When this session was created by a sign-in (phase 43). */
+  signedInAt: number;
 }
 
 declare module 'fastify' {
@@ -46,11 +48,29 @@ export function requireUser(auth: Auth, options: RequireUserOptions = {}) {
     if (status === 'suspended' && !options.allowSuspended) {
       throw new HttpError(403, ErrorCode.Forbidden, 'This account cannot perform this action.');
     }
-    request.authUser = { id, email, status, role: role ?? 'user', sessionId: result.session.id };
+    request.authUser = {
+      id,
+      email,
+      status,
+      role: role ?? 'user',
+      sessionId: result.session.id,
+      signedInAt: new Date(result.session.createdAt).getTime(),
+    };
   };
 }
 
 export function currentUser(request: FastifyRequest): AuthUser {
   if (!request.authUser) throw new HttpError(401, ErrorCode.Unauthorized, 'Sign in required.');
   return request.authUser;
+}
+
+/**
+ * Sensitive actions (phase 43): refuse unless this session signed in within the last
+ * RECENT_SIGN_IN_MINUTES. The app then offers a fresh sign-in link to the account's own address.
+ */
+export function requireRecentSignIn(request: FastifyRequest, now = Date.now()): void {
+  const user = currentUser(request);
+  if (now - user.signedInAt > RECENT_SIGN_IN_MINUTES * 60_000) {
+    throw new HttpError(403, ErrorCode.ReauthRequired, 'Please sign in again to do this.');
+  }
 }

@@ -120,6 +120,10 @@ describe.skipIf(!integrationEnabled)(
       expect(status).toMatchObject({ available: true, joined: false, consentVersion: '1' });
       expect(status.partners).toHaveLength(1);
       await join(b, dan);
+      // Phase 43: his photo description crosses too, for screen readers.
+      await api(b, dan, 'PUT', `/v1/me/photos/${dan.photoId}/description`, {
+        description: 'Dan on a bike by the sea',
+      });
 
       const cards = await deck(a, noa);
       expect(cards.map((c) => c.displayName)).toEqual(['Dan']);
@@ -146,6 +150,7 @@ describe.skipIf(!integrationEnabled)(
       expect(JSON.stringify(card)).not.toContain('@example.test');
       expect(card.prompts[0]?.answer).toBe('Dan likes kindness');
       expect(card.photos[0]?.url).toBe(`/v1/federated/photos/${card.partnerId}/${dan.photoId}`);
+      expect(card.photos[0]?.description).toBe('Dan on a bike by the sea');
 
       // The photo comes through Noa's own server.
       const photo = await api(a, noa, 'GET', card.photos[0]!.url);

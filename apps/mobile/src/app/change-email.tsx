@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { AppText } from '../components/AppText';
 import { Banner } from '../components/Banner';
 import { Button } from '../components/Button';
+import { ReauthNotice } from '../components/ReauthNotice';
 import { RequireSession } from '../components/RequireSession';
 import { Screen } from '../components/Screen';
 import { TextField } from '../components/TextField';
@@ -25,6 +26,8 @@ function ChangeEmail() {
   const [email, setEmail] = useState('');
   const [sent, setSent] = useState<string>();
   const [error, setError] = useState<string>();
+  // Phase 43: an old session first signs in again.
+  const [reauth, setReauth] = useState(false);
   const valid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
 
   return (
@@ -37,6 +40,7 @@ function ChangeEmail() {
       </AppText>
       {sent ? <Banner tone="info" message={t('changeEmail.sent', { email: ltr(sent) })} /> : null}
       {error ? <Banner tone="error" message={error} /> : null}
+      {reauth ? <ReauthNotice email={me.data?.user.email ?? ''} /> : null}
       <TextField
         label={t('changeEmail.label')}
         value={email}
@@ -57,11 +61,13 @@ function ChangeEmail() {
           change.mutate(email.trim(), {
             onSuccess: () => setSent(email.trim()),
             onError: (e) =>
-              setError(
-                e instanceof ApiRequestError && e.status === 429
-                  ? t('changeEmail.tooMany')
-                  : t('common.genericError'),
-              ),
+              e instanceof ApiRequestError && e.code === 'REAUTH_REQUIRED'
+                ? setReauth(true)
+                : setError(
+                    e instanceof ApiRequestError && e.status === 429
+                      ? t('changeEmail.tooMany')
+                      : t('common.genericError'),
+                  ),
           })
         }
       />
