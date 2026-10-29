@@ -38,9 +38,15 @@ import { processAvailability } from './availability-jobs.js';
 import { processSignupRetention } from './signup-jobs.js';
 import { processFriendRetention } from './friend-jobs.js';
 import { processCalls } from './call-jobs.js';
+import { processBackupWatch } from './backup-watch.js';
 import { markTranscriptFailed, processTranscript } from './transcript-jobs.js';
 import { createWhisper } from './transcribe.js';
-import { IntegrationStore, parseIntegrationsKey } from '@nexaheart/integrations';
+import {
+  alertTargetFrom,
+  IntegrationStore,
+  parseIntegrationsKey,
+  sendAlert,
+} from '@nexaheart/integrations';
 import {
   dailySummary,
   type OutboundContext,
@@ -227,6 +233,26 @@ async function main(): Promise<void> {
           return processFriendRetention(db);
         case 'daily-summary':
           return dailySummary(outbound);
+        case 'backup-watch':
+          return processBackupWatch({
+            db,
+            adminUrl: env.PUBLIC_ADMIN_URL,
+            instanceName: async () => {
+              const { rows } = await db.execute<{ name: string | null }>(
+                sql`SELECT name FROM instance_settings WHERE id = 1`,
+              );
+              return rows[0]?.name ?? env.INSTANCE_NAME;
+            },
+            sendMail: async (m) => {
+              await mailer.sendMail({ from: env.SMTP_FROM, ...m });
+            },
+            alert: async (text) => {
+              const cfg = await store.get('alerts');
+              if (!cfg.enabled) return;
+              const result = await sendAlert(alertTargetFrom(cfg), text, outbound.options);
+              if (!result.ok) throw new Error(result.message);
+            },
+          });
         case 'events':
           return processEvents({
             db,
@@ -332,6 +358,12 @@ async function main(): Promise<void> {
     'daily-summary',
     { pattern: '0 8 * * *' },
     { name: 'daily-summary' },
+  );
+  // Backups stopped (phase 52): tell the admins by email and the alert channel (daily).
+  await scheduler.upsertJobScheduler(
+    'backup-watch',
+    { pattern: '41 9 * * *' },
+    { name: 'backup-watch' },
   );
   // Take a break: end breaks whose time is up and tell the member (every 5 minutes).
   await scheduler.upsertJobScheduler(
