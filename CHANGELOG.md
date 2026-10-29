@@ -234,6 +234,8 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Fixed
 
+- **Dashboard form fields** had faint edges (1.45:1, WCAG 1.4.11): a `--control` colour brings them
+  to 4.26:1 in light and dark mode. Every dashboard page is now swept by axe in both modes.
 - **Daily backups failed on installed servers**: `backup.sh`/`restore.sh` ran `.env` as shell code and
   stopped at the unquoted tagline (exit 127) before writing anything. They now read only the two
   values they need; `.env.example` quotes the tagline.

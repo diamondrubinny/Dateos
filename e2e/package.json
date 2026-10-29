@@ -56,7 +56,8 @@
     "preview": "tsx preview.ts",
     "checkin-late": "tsx checkin-late.ts",
     "date-counter": "tsx date-counter.ts",
-    "a11y-dark": "tsx a11y-dark.ts"
+    "a11y-dark": "tsx a11y-dark.ts",
+    "admin-a11y": "tsx admin-a11y.ts"
   },
   "dependencies": {
     "@axe-core/playwright": "4.14.0",

@@ -9,6 +9,9 @@
   --text: #1c1830;
   --muted: #5b566e;
   --border: #d8d4e6;
+  /* The edge of form fields: at least 3:1 against the page and cards (WCAG 1.4.11). --border is
+     for decorative lines only. */
+  --control: #7e7698;
   --primary: #6d28d9;
   --primary-text: #ffffff;
   --danger: #b42318;
@@ -34,6 +37,7 @@
     --text: #f1eff8;
     --muted: #b6b0c9;
     --border: #3a3550;
+    --control: #837aa0;
     --primary: #a78bfa;
     --primary-text: #120a26;
     --danger: #f87171;
@@ -199,7 +203,7 @@ input:not([type]),
 textarea {
   width: 100%;
   padding: 0.6rem 0.75rem;
-  border: 1px solid var(--border);
+  border: 1px solid var(--control);
   border-radius: 0.5rem;
   background: var(--bg);
   color: var(--text);
@@ -504,7 +508,7 @@ legend {
 select {
   width: 100%;
   padding: 0.6rem 0.75rem;
-  border: 1px solid var(--border);
+  border: 1px solid var(--control);
   border-radius: 0.5rem;
   background: var(--bg);
   color: var(--text);
@@ -514,7 +518,7 @@ input[type='url'],
 input[type='password'] {
   width: 100%;
   padding: 0.6rem 0.75rem;
-  border: 1px solid var(--border);
+  border: 1px solid var(--control);
   border-radius: 0.5rem;
   background: var(--bg);
   color: var(--text);
@@ -540,7 +544,7 @@ input[type='password'] {
   width: 3rem;
   height: 2.75rem;
   padding: 0.2rem;
-  border: 1px solid var(--border);
+  border: 1px solid var(--control);
   border-radius: 0.5rem;
   background: var(--bg);
 }
