@@ -131,7 +131,8 @@ export function Updates() {
           <ul data-testid="update-changes">
             {s.changes.map((c) => (
               <li key={`${c.number ?? ''}${c.title}`}>
-                {c.title}
+                {/* Titles are usually English inside a Hebrew page: isolated, so dates stay whole. */}
+                <bdi>{c.title}</bdi>
                 {c.number !== null ? (
                   <>
                     {' '}
@@ -140,7 +141,12 @@ export function Updates() {
                     </a>
                   </>
                 ) : null}
-                {c.at ? <span className="muted"> · {when(c.at)}</span> : null}
+                {c.at ? (
+                  <span className="muted">
+                    {' · '}
+                    <bdi>{when(c.at)}</bdi>
+                  </span>
+                ) : null}
               </li>
             ))}
           </ul>

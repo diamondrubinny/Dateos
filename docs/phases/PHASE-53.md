@@ -1,6 +1,6 @@
 # Phase 53: Updates from GitHub, approved in the dashboard (v1.26)
 
-> Status: 🚧 in progress (2026-10-29). 📘 = verify against official docs, ⚖️ = needs legal review.
+> Status: ✅ done (2026-10-29). 📘 = verify against official docs, ⚖️ = needs legal review.
 
 ## Goal
 
@@ -55,6 +55,32 @@ first.
   deleting an account), and is recorded in the audit log.
 - The source is fixed in the server's `.env` (`UPDATE_REPO`, `UPDATE_BRANCH`), never taken from a
   request.
+
+## Tested for real
+
+On a test copy installed by the install command, from a local test branch (never pushed), with
+version A running:
+
+| Test                                       | Result                                                                                                                                                     |
+| ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Approve a version that isn't on the branch | Refused: "That version isn't on the update-test branch. Nothing was changed." No backup, no change.                                                        |
+| Approve B (a normal change)                | Backup taken; code fast-forwarded; rebuilt; **the API reports B as its version**; `/ready` up; "Installed b0771a1 (was cb33e14)".                          |
+| Approve C (an API that exits at once)      | Built, never ready; **went back to B by itself**; the site stayed up; "The new version didn't start, so the server went back to b0771a1"; the backup kept. |
+| A run cut off mid-way                      | After 2 hours it's marked interrupted, so it doesn't block the next update.                                                                                |
+| Local changes conflicting with an update   | The install command and the updater both refuse to fast-forward; nothing changes.                                                                          |
+
+The first run of test C found two real problems, both fixed before merging: with a full disk the
+build failed and the rollback couldn't write git's index, the script stopped half-way and left the
+request "running" forever. Now there's a free-space check before anything changes, an error trap
+that always records a failure, and clearer messages ("didn't build" vs "didn't start").
+
+The dashboard part: integration tests (8) for status, check, approve, withdraw, permissions, the
+recent sign-in and an unknown version; unit tests (6) for reading GitHub's answer; e2e
+`pnpm --dir e2e admin-updates` (en, he): the banner, the list of changes, approving, withdrawing, a
+failed update; axe 0. In Hebrew, English change titles are isolated (`<bdi>`) so dates stay whole.
+
+GitHub's API isn't reachable from the test sandbox, so the request format is GitHub's documented one
+📘; the merge commit format the list relies on was checked on this repository's real history.
 
 ## Order of work
 
