@@ -11,6 +11,7 @@ import type {
   LocationInput,
   MatchSummary,
   PublicProfile,
+  ProfilePreview,
   MeResponse,
   Photo,
   Preferences,
@@ -258,6 +259,16 @@ export function useProfile(id: string) {
   return useQuery({
     queryKey: discoveryKeys.profile(id),
     queryFn: () => apiFetch<PublicProfile>(`/v1/profiles/${id}`),
+  });
+}
+
+/** "See my profile as others do" (phase 44): always fresh, as it's opened after editing. */
+export function useProfilePreview() {
+  return useQuery({
+    queryKey: ['profilePreview'],
+    queryFn: () => apiFetch<ProfilePreview>('/v1/me/preview'),
+    staleTime: 0,
+    gcTime: 0,
   });
 }
 

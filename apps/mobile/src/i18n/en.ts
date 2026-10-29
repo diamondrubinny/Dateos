@@ -1011,6 +1011,28 @@ export const en = {
     remove: 'Remove',
     full: 'Your “Maybe later” list is full (30). Decide on someone there first.',
   },
+  preview: {
+    open: 'See my profile as others do',
+    title: 'Your profile, as others see it',
+    intro:
+      'This is the card other people get. Distance and “why we matched” depend on who’s looking, so they aren’t shown here.',
+    visible: 'New people who fit your preferences can find you.',
+    hiddenTitle: 'Right now, new people can’t find you',
+    hidden: {
+      onBreak: 'You’re taking a break. Your matches still see you.',
+      incognito: 'Incognito is on: only people you liked can see you.',
+      noPhoto: 'There’s no approved photo yet. A profile needs at least one.',
+      noLocation: 'Your area isn’t set.',
+    },
+    fix: {
+      onBreak: 'Open settings',
+      incognito: 'Open settings',
+      noPhoto: 'Add a photo',
+      noLocation: 'Set your area',
+    },
+    pendingPhotos:
+      'Photos still being checked: {{count}}. They’ll show here once the check is done.',
+  },
   reauth: {
     title: 'Please sign in again first',
     body: 'For your safety, this needs a sign-in from the last {{minutes}} minutes. We’ll email you a sign-in link; open it here, then try again.',

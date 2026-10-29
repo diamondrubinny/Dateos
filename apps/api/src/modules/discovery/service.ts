@@ -21,6 +21,8 @@ import {
   type MatchSummary,
   type PromptKey,
   type PublicProfile,
+  type ProfilePreview,
+  type HiddenReason,
   type ReasonCode,
   type RealtimeEvent,
   CLOSED_CARD_DAYS,
@@ -419,6 +421,44 @@ export class DiscoveryService {
     const [profile] = await this.toProfiles(viewerId, [ranked]);
     if (!profile) throw notFound();
     return profile;
+  }
+
+  /**
+   * My own card as others see it (phase 44): the same fields, built by the same code, with no
+   * distance or reasons (those depend on who's looking). Says what currently keeps it out of decks.
+   */
+  async preview(userId: string): Promise<ProfilePreview> {
+    const [profile] = await this.toProfiles(
+      userId,
+      [{ userId, km: Number.NaN, result: undefined }],
+      {
+        includeViewer: true,
+      },
+    );
+    if (!profile) throw notFound();
+    const { rows } = await this.db.execute<{
+      on_break: boolean;
+      incognito: boolean;
+      clean: number;
+      pending: number;
+      located: boolean;
+    }>(sql`
+      -- An open-ended break has no end date, so the check is NULL there: that's still a break.
+      SELECT NOT COALESCE(${notOnBreak('u')}, false) AS on_break, u.incognito,
+        (SELECT count(*) FROM photos ph WHERE ph.user_id = u.id AND ph.purpose = 'profile'
+           AND ph.status = 'clean')::int AS clean,
+        (SELECT count(*) FROM photos ph WHERE ph.user_id = u.id AND ph.purpose = 'profile'
+           AND ph.status IN ('quarantine', 'processing'))::int AS pending,
+        EXISTS (SELECT 1 FROM locations l WHERE l.user_id = u.id) AS located
+      FROM "user" u WHERE u.id = ${userId}`);
+    const row = rows[0];
+    if (!row) throw notFound();
+    const hidden: HiddenReason[] = [];
+    if (row.on_break) hidden.push('onBreak');
+    if (row.incognito) hidden.push('incognito');
+    if (row.clean === 0) hidden.push('noPhoto');
+    if (!row.located) hidden.push('noLocation');
+    return { profile, hidden, pendingPhotos: row.pending };
   }
 
   // ---------------------------------------------------------------- interactions
@@ -919,7 +959,11 @@ export class DiscoveryService {
 
   // ---------------------------------------------------------------- presentation
 
-  private async toProfiles(viewerId: string, items: Ranked[]): Promise<PublicProfile[]> {
+  private async toProfiles(
+    viewerId: string,
+    items: Ranked[],
+    { includeViewer = false } = {},
+  ): Promise<PublicProfile[]> {
     if (items.length === 0) return [];
     const ids = items.map((i) => i.userId);
     const today = this.today();
@@ -1012,7 +1056,7 @@ export class DiscoveryService {
 
     return items.flatMap((item) => {
       const p = byId.get(item.userId);
-      if (!p || item.userId === viewerId) return [];
+      if (!p || (item.userId === viewerId && !includeViewer)) return [];
       return [
         {
           id: p.userId,
