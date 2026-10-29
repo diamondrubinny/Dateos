@@ -5,7 +5,7 @@ import type { PublicProfile } from '@nexaheart/shared';
 import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useKeyboardMode } from '../lib/focus-visible';
-import { radius, spacing, useColors } from '../lib/theme';
+import { radius, spacing, focusRing, useColors } from '../lib/theme';
 import { AppText } from './AppText';
 import { RemoteImage } from './RemoteImage';
 
@@ -36,12 +36,7 @@ export function PersonRow({
       style={(state) => [
         styles.row,
         { backgroundColor: colors.surface, borderColor: colors.border },
-        keyboard &&
-          (state as { focused?: boolean }).focused && {
-            outlineColor: colors.focus,
-            outlineWidth: 3,
-            outlineStyle: 'solid' as const,
-          },
+        keyboard && (state as { focused?: boolean }).focused && focusRing(colors),
       ]}
     >
       {cover ? (

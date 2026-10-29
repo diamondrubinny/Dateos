@@ -231,6 +231,11 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Fixed
 
+- **Brand colour contrast in dark mode**: text on secondary buttons was below WCAG AA (4.02:1 with the
+  default colour). The brand palette now reaches 4.5:1 on every background in both modes.
+- **Keyboard focus ring** is darker in light mode (5:1) and drawn 2 px away from the control; the
+  edges of text fields and choice chips reach 3:1.
+- **Profile preview** can be scrolled from the keyboard (an "Edit my profile" button at the end).
 - **Answered date ideas were hard to read**: closed date cards were faded to 75 % opacity, below
   the WCAG AA contrast ratio. They now keep full colour, with a dashed border.
 - Hebrew icebreakers used slash forms (מוותר/ת, את/ה); rephrased so no gender is assumed.

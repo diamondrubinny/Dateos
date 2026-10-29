@@ -4,7 +4,7 @@
 import { ActivityIndicator, Pressable, StyleSheet, View, type PressableProps } from 'react-native';
 import { useKeyboardMode } from '../lib/focus-visible';
 import { useDisplay } from '../lib/display';
-import { EASY_TOUCH, MIN_TOUCH, radius, spacing, useColors } from '../lib/theme';
+import { EASY_TOUCH, MIN_TOUCH, radius, spacing, focusRing, useColors } from '../lib/theme';
 import { AppText } from './AppText';
 
 export interface ButtonProps extends Omit<PressableProps, 'children' | 'style'> {
@@ -51,11 +51,7 @@ export function Button({
           { backgroundColor: palette.bg, borderColor: palette.border },
           state.pressed && styles.pressed,
           isDisabled && styles.disabled,
-          focused && {
-            outlineColor: colors.focus,
-            outlineWidth: 3,
-            outlineStyle: 'solid' as const,
-          },
+          focused && focusRing(colors),
         ];
       }}
       {...rest}

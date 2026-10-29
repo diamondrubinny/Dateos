@@ -68,6 +68,11 @@ function PreviewScreen() {
         <Banner tone="info" message={t('preview.pendingPhotos', { count: pendingPhotos })} />
       ) : null}
       <ProfileCard profile={profile} />
+      <Button
+        variant="secondary"
+        label={t('preview.edit')}
+        onPress={() => router.push('/profile')}
+      />
     </Screen>
   );
 }

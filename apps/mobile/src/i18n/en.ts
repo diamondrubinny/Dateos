@@ -1035,6 +1035,7 @@ export const en = {
       'This is the card other people get. Distance and “why we matched” depend on who’s looking, so they aren’t shown here.',
     visible: 'New people who fit your preferences can find you.',
     hiddenTitle: 'Right now, new people can’t find you',
+    edit: 'Edit my profile',
     hidden: {
       onBreak: 'You’re taking a break. Your matches still see you.',
       incognito: 'Incognito is on: only people you liked can see you.',

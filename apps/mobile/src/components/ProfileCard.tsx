@@ -7,7 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useKeyboardMode } from '../lib/focus-visible';
 import { useLocale } from '../lib/locale';
-import { MIN_TOUCH, radius, spacing, useColors } from '../lib/theme';
+import { MIN_TOUCH, radius, spacing, focusRing, useColors } from '../lib/theme';
 import { AppText } from './AppText';
 import { RemoteImage } from './RemoteImage';
 import { AboutSection } from './AboutSection';
@@ -44,12 +44,7 @@ function IconButton({
       style={(state) => [
         styles.iconButton,
         { backgroundColor: colors.background, borderColor: colors.border },
-        keyboard &&
-          (state as { focused?: boolean }).focused && {
-            outlineColor: colors.focus,
-            outlineWidth: 3,
-            outlineStyle: 'solid' as const,
-          },
+        keyboard && (state as { focused?: boolean }).focused && focusRing(colors),
         style,
       ]}
     >

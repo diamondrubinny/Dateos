@@ -49,7 +49,7 @@ export function TextField({
           {
             color: colors.text,
             backgroundColor: colors.background,
-            borderColor: error ? colors.danger : colors.border,
+            borderColor: error ? colors.danger : colors.control,
             textAlign: startAlign,
           },
           multiline && styles.multiline,

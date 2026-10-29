@@ -3,7 +3,7 @@
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useKeyboardMode } from '../lib/focus-visible';
-import { MIN_TOUCH, radius, spacing, useColors } from '../lib/theme';
+import { MIN_TOUCH, radius, spacing, focusRing, useColors } from '../lib/theme';
 import { AppText } from './AppText';
 
 interface Option<T extends string> {
@@ -64,14 +64,9 @@ export function ChoiceGroup<T extends string>({
                 stacked && styles.stackedChip,
                 {
                   backgroundColor: isOn ? colors.primary : colors.background,
-                  borderColor: isOn ? colors.primary : colors.border,
+                  borderColor: isOn ? colors.primary : colors.control,
                 },
-                keyboard &&
-                  (state as { focused?: boolean }).focused && {
-                    outlineColor: colors.focus,
-                    outlineWidth: 3,
-                    outlineStyle: 'solid' as const,
-                  },
+                keyboard && (state as { focused?: boolean }).focused && focusRing(colors),
               ]}
             >
               <AppText
@@ -115,12 +110,7 @@ export function Checkbox({ label, hint, checked, onChange, badge }: CheckboxProp
       style={(state) => [
         styles.checkRow,
         { borderColor: colors.border, backgroundColor: colors.surface },
-        keyboard &&
-          (state as { focused?: boolean }).focused && {
-            outlineColor: colors.focus,
-            outlineWidth: 3,
-            outlineStyle: 'solid' as const,
-          },
+        keyboard && (state as { focused?: boolean }).focused && focusRing(colors),
       ]}
     >
       <View
