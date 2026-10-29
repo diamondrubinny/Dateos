@@ -7,7 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Platform, Pressable, StyleSheet, View } from 'react-native';
 import { mediaUrl } from '../lib/api';
 import { useKeyboardMode } from '../lib/focus-visible';
-import { radius, spacing, useColors } from '../lib/theme';
+import { radius, spacing, focusRing, useColors } from '../lib/theme';
 import { AppText } from './AppText';
 
 interface PhotoTileProps {
@@ -34,12 +34,7 @@ export function PhotoTile({ index, photo, cookie, onAdd, onRemove }: PhotoTilePr
           styles.tile,
           styles.empty,
           { borderColor: colors.border, backgroundColor: colors.surface },
-          keyboard &&
-            (state as { focused?: boolean }).focused && {
-              outlineColor: colors.focus,
-              outlineWidth: 3,
-              outlineStyle: 'solid' as const,
-            },
+          keyboard && (state as { focused?: boolean }).focused && focusRing(colors),
         ]}
       >
         <AppText variant="title" tone="primary" center>

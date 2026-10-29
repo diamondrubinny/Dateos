@@ -38,6 +38,12 @@ export const DEFAULT_TAGLINE = 'Free, open-source dating. Built for real connect
 export const LIGHT_BACKGROUND = '#FFFFFF';
 export const DARK_BACKGROUND = '#120F1C';
 export const MIN_CONTRAST = 4.5;
+/**
+ * Every background the apps put brand-coloured text on: page, surface (cards), and the soft red and
+ * green panels. Kept in sync with the app's theme tokens (apps/mobile/test/contrast.test.ts).
+ */
+export const LIGHT_BACKGROUNDS = ['#FFFFFF', '#F6F3FF', '#FDECEA', '#E7F6EC'] as const;
+export const DARK_BACKGROUNDS = ['#120F1C', '#1E1930', '#3D1A17', '#123222'] as const;
 
 /** The brand color must carry white text (buttons) and work as text on white (links): AA. */
 export function isAccessiblePrimary(hex: string): boolean {
@@ -50,18 +56,30 @@ export interface BrandPalette {
 }
 
 /**
- * Light and dark variants of the brand color. In dark mode the color is lightened until it has
- * AA contrast against the dark background (and therefore with dark text on it).
+ * Light and dark variants of the brand color, with AA contrast (4.5:1) for brand-coloured text on
+ * every background the apps use, including the soft brand colour itself (secondary buttons).
+ * Light mode darkens the colour and dark mode lightens it, each in small steps and only as far as
+ * needed; both end at black or white, which always pass, so the loops always finish.
  */
 export function deriveBrand(primary: string): { light: BrandPalette; dark: BrandPalette } {
   const base = primary.toUpperCase();
-  let dark = base;
-  for (let w = 0; w <= 1 && contrastRatio(dark, DARK_BACKGROUND) < MIN_CONTRAST; w += 0.05) {
-    dark = mix(base, '#FFFFFF', w);
-  }
+  const lightSoft = mix(base, '#FFFFFF', 0.88);
+  const darkSoft = mix(base, DARK_BACKGROUND, 0.7);
+  const readsOn = (color: string, backgrounds: readonly string[]) =>
+    backgrounds.every((bg) => contrastRatio(color, bg) >= MIN_CONTRAST);
+  const adjust = (towards: string, backgrounds: readonly string[]) => {
+    for (let w = 0; w < 1; w += 0.02) {
+      const color = w === 0 ? base : mix(base, towards, w);
+      if (readsOn(color, backgrounds)) return color;
+    }
+    return towards;
+  };
   return {
-    light: { primary: base, primarySoft: mix(base, '#FFFFFF', 0.88) },
-    dark: { primary: dark, primarySoft: mix(base, DARK_BACKGROUND, 0.7) },
+    light: {
+      primary: adjust('#000000', [...LIGHT_BACKGROUNDS, lightSoft]),
+      primarySoft: lightSoft,
+    },
+    dark: { primary: adjust('#FFFFFF', [...DARK_BACKGROUNDS, darkSoft]), primarySoft: darkSoft },
   };
 }
 

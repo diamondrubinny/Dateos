@@ -17,7 +17,8 @@ Israeli standard **IS 5568** (based on WCAG 2.0 AA) 📘.
 - **Accessibility needs**, if you choose to share them: step-free places first when planning a date, captions starting by themselves in calls, and an optional line on your profile ("prefers texting first").
 - Voice messages can be turned off by the receiver, and every voice message and voice prompt has **Show text**: an automatic transcript made on the community's own server (it appears by itself for members who shared "deaf or hard of hearing").
 - Forms have labels and clear error messages; contrast is checked, including for the community's own
-  brand colour.
+  brand colour, in light and dark mode: text at least 4.5:1 on every background, and the edges of
+  fields and the keyboard focus ring at least 3:1.
 - Every screen covered by the project's end-to-end tests is checked automatically (axe-core, WCAG 2.1
   A/AA) in English and Hebrew. Automated checks find only part of the problems: [describe your manual
   review with assistive technology].

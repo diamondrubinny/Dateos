@@ -5,7 +5,9 @@ import { describe, expect, it } from 'vitest';
 import {
   contrastRatio,
   DARK_BACKGROUND,
+  DARK_BACKGROUNDS,
   deriveBrand,
+  LIGHT_BACKGROUNDS,
   instanceSettingsInputSchema,
   isAccessiblePrimary,
   mix,
@@ -32,6 +34,33 @@ describe('branding colors', () => {
       expect(contrastRatio(light.primary, '#FFFFFF'), c).toBeGreaterThanOrEqual(4.5);
       expect(light.primarySoft).toMatch(/^#[0-9A-F]{6}$/);
     }
+  });
+
+  it('every accepted brand color reads at AA on every background, in both modes (phase 47)', () => {
+    // A grid over the colour space: everything the server would accept as a brand colour.
+    const steps = ['00', '33', '66', '76', '99', 'CC', 'FF'];
+    const accepted = steps
+      .flatMap((r) => steps.flatMap((g) => steps.map((b) => `#${r}${g}${b}`)))
+      .filter(isAccessiblePrimary);
+    expect(accepted.length).toBeGreaterThan(50);
+    for (const c of accepted) {
+      const { light, dark } = deriveBrand(c);
+      // Text in the brand colour, and secondary buttons (brand text on the soft brand colour).
+      for (const bg of [...LIGHT_BACKGROUNDS, light.primarySoft]) {
+        expect(contrastRatio(light.primary, bg), `${c} light on ${bg}`).toBeGreaterThanOrEqual(4.5);
+      }
+      for (const bg of [...DARK_BACKGROUNDS, dark.primarySoft]) {
+        expect(contrastRatio(dark.primary, bg), `${c} dark on ${bg}`).toBeGreaterThanOrEqual(4.5);
+      }
+      // Primary buttons: white text in light mode, the dark background colour in dark mode.
+      expect(contrastRatio(light.primary, '#FFFFFF')).toBeGreaterThanOrEqual(4.5);
+      expect(contrastRatio(dark.primary, DARK_BACKGROUND)).toBeGreaterThanOrEqual(4.5);
+    }
+  });
+
+  it('changes a colour that already works as little as possible', () => {
+    // The default colour in light mode is used as is.
+    expect(deriveBrand('#6D28D9').light.primary).toBe('#6D28D9');
   });
 
   it('mixes colors', () => {
