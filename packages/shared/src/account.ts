@@ -35,6 +35,7 @@ export const accountActivityKinds = [
   'device_signed_out',
   'signed_out_others',
   'data_downloaded',
+  'email_changed',
 ] as const;
 export const ACCOUNT_ACTIVITY_DAYS = 90;
 export const accountActivitySchema = z.object({
@@ -50,3 +51,14 @@ export const accountActivitySchema = z.object({
   ),
 });
 export type AccountActivity = z.infer<typeof accountActivitySchema>;
+
+/** Changing the account's email (phase 41). */
+export const EMAIL_CHANGE_MINUTES = 30;
+export const emailChangeInputSchema = z.object({ email: z.email().max(254) });
+export const emailChangeConfirmSchema = z.object({
+  token: z
+    .string()
+    .min(20)
+    .max(100)
+    .regex(/^[\w-]+$/),
+});

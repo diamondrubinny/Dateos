@@ -68,6 +68,24 @@ function useMeMutation<TInput>(request: (input: TInput) => Promise<unknown>) {
   });
 }
 
+/** Change the account's email (phase 41): a link goes to the new address. */
+export const useRequestEmailChange = () =>
+  useMutation({
+    mutationFn: (email: string) =>
+      apiFetch('/v1/me/email', { method: 'POST', body: json({ email }) }),
+  });
+export function useConfirmEmailChange() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (token: string) =>
+      apiFetch<{ email: string }>('/v1/me/email/confirm', {
+        method: 'POST',
+        body: json({ token }),
+      }),
+    onSuccess: () => client.invalidateQueries({ queryKey: keys.me, refetchType: 'all' }),
+  });
+}
+
 /** Describe a photo for screen readers (phase 40); empty clears it. */
 export const useDescribePhoto = () =>
   useMeMutation(({ photoId, description }: { photoId: string; description: string }) =>

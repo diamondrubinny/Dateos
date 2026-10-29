@@ -5,7 +5,7 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Platform, StyleSheet, View } from 'react-native';
-import { useInstance } from '../lib/queries';
+import { useInstance, useMe } from '../lib/queries';
 import { screenCaptureBlocked } from '../lib/screen-capture';
 import { radius, spacing, useColors } from '../lib/theme';
 import {
@@ -31,6 +31,7 @@ import { SignedInDevices } from './SignedInDevices';
 export function SecuritySettings() {
   const { t } = useTranslation();
   const colors = useColors();
+  const me = useMe();
   const instance = useInstance();
   const canPasskey = Boolean(instance.data?.auth.passkey) && passkeysSupported();
   const passkeys = usePasskeys(canPasskey);
@@ -97,6 +98,16 @@ export function SecuritySettings() {
         </View>
       ) : null}
 
+      {/* Email address (phase 41): the account's sign-in address, and changing it. */}
+      <View style={[styles.card, { backgroundColor: colors.surface }]} testID="email-address">
+        <AppText variant="label">{t('changeEmail.title')}</AppText>
+        <AppText variant="body">{me.data?.user.email ?? ''}</AppText>
+        <Button
+          variant="secondary"
+          label={t('changeEmail.open')}
+          onPress={() => router.push('/change-email')}
+        />
+      </View>
       <SignedInDevices />
       <AccountActivity />
       <Checkbox

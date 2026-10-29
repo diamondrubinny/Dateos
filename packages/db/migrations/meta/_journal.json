@@ -337,6 +337,13 @@
       "when": 1793287296515,
       "tag": "0047_photo_descriptions",
       "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "7",
+      "when": 1793288189708,
+      "tag": "0048_email_changes",
+      "breakpoints": true
     }
   ]
 }

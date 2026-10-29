@@ -1011,6 +1011,26 @@ export const en = {
     remove: 'Remove',
     full: 'Your “Maybe later” list is full (30). Decide on someone there first.',
   },
+  changeEmail: {
+    title: 'Email address',
+    open: 'Change email',
+    current: 'You sign in with {{email}}.',
+    intro:
+      'We’ll send a link to the new address; open it within {{minutes}} minutes, while signed in here. Your current address gets a short notice.',
+    label: 'New email address',
+    send: 'Send the confirmation link',
+    sent: 'If {{email}} can be used, a link is on its way. Check that inbox.',
+    tooMany: 'Too many tries. Please wait an hour and try again.',
+    confirmTitle: 'Confirm your new email',
+    signInFirst:
+      'Sign in to the account that asked for this change, then open the link from the email again.',
+    signIn: 'Sign in',
+    done: 'Done. You now sign in with {{email}}.',
+    othersSignedOut: 'For your safety, your other devices were signed out.',
+    expired: 'This link has expired or was already used.',
+    unusable: 'This address can’t be used. Try another one.',
+    tryAgain: 'Try again',
+  },
   photoText: {
     title: 'Describe your photos',
     intro:

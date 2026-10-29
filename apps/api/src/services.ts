@@ -39,6 +39,7 @@ import { MeService, todayUtc } from './modules/me/service.js';
 import { SpeedService } from './modules/speed/service.js';
 import { PhotoService } from './modules/photos/service.js';
 import { createEmailHasher } from './lib/banned.js';
+import { EmailChangeService } from './modules/account/email-change.js';
 import { StaffMfaService } from './modules/admin/mfa.js';
 import { ModerationService } from './modules/admin/moderation.js';
 import { ReportService } from './modules/safety/reports.js';
@@ -94,6 +95,7 @@ export interface Services {
   ai: AiGate;
   integrations: IntegrationService;
   outboundQueue: OutboundQueue;
+  emailChange: EmailChangeService;
   /** Health checks and shutdown hooks for the resources above. */
   dependencies: Dependency[];
 }
@@ -337,6 +339,12 @@ export function createServices(
     speed,
     integrations,
     outboundQueue,
+    emailChange: new EmailChangeService(dbHandle.db, mailer, hashEmail, {
+      instanceName: env.INSTANCE_NAME,
+      appUrl: appUrl(env),
+      onMailError,
+      ...(overrides.now ? { now: overrides.now } : {}),
+    }),
     cities,
     travel: new TravelService(dbHandle.db, cities),
     events: new EventService(
