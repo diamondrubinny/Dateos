@@ -27,6 +27,7 @@
 #   NEXAHEART_REPO (default https://github.com/diamondrubinny/NexaHeart.git)
 #   NEXAHEART_REF  branch or tag to run (default main).
 #   BACKUP=0       don't set up the daily backup.
+#   MIN_FREE_GB    free disk space needed to build (default 10).
 #   START=0        prepare only (code, secrets, settings): don't build or start, e.g. to edit .env
 #                  first. Run again without it to start.
 set -euo pipefail
@@ -87,6 +88,13 @@ if ! command -v docker >/dev/null || ! docker compose version >/dev/null 2>&1; t
 fi
 systemctl enable --now docker >/dev/null 2>&1 || true
 docker compose version >/dev/null 2>&1 || fail "Docker Compose v2 is missing after installing Docker."
+
+# Building the images needs room: stop now with a clear message rather than halfway through a build.
+docker_root="$(docker info --format '{{.DockerRootDir}}' 2>/dev/null || echo /var/lib/docker)"
+free_gb="$(df -BG --output=avail "$docker_root" 2>/dev/null | tail -n 1 | tr -dc '0-9')"
+if [[ -n "$free_gb" ]] && ((free_gb < ${MIN_FREE_GB:-10})); then
+  fail "only ${free_gb} GB free for Docker (${docker_root}); building needs about ${MIN_FREE_GB:-10} GB. Free some space (for example: docker builder prune -af), then run this again."
+fi
 
 # Building the images needs memory: add a swap file on small servers that have none.
 mem_mb="$(awk '/MemTotal/ {print int($2/1024)}' /proc/meminfo)"
@@ -174,6 +182,9 @@ if [[ "$ready" != true ]]; then
   docker compose -f infra/docker-compose.yml --env-file .env ps
   fail "the API isn't ready after 20 minutes. See: docker compose -f $DIR/infra/docker-compose.yml logs api"
 fi
+
+# Images left over from the previous version (after an update) only take space.
+docker image prune -f >/dev/null 2>&1 || true
 
 # ---------------------------------------------------------------- 6. backups
 if [[ "${BACKUP:-1}" != 0 ]]; then
