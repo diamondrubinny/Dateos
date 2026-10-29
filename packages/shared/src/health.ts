@@ -16,3 +16,20 @@ export const readinessResponseSchema = z.object({
 
 export type HealthResponse = z.infer<typeof healthResponseSchema>;
 export type ReadinessResponse = z.infer<typeof readinessResponseSchema>;
+
+/** A backup older than this is flagged in the dashboard (phase 51): the cron runs daily. */
+export const BACKUP_STALE_HOURS = 36;
+
+/** The dashboard's System page (phase 51): admins only. No personal data. */
+export const systemStatusSchema = z.object({
+  status: z.enum(['ready', 'not_ready']),
+  checks: z.record(z.string(), dependencyStatusSchema),
+  backup: z.object({
+    /** The last backup scripts/backup.sh finished, or null if none was ever recorded. */
+    lastAt: z.string().nullable(),
+    bytes: z.number().int().nullable(),
+    /** No backup, or the last one is older than BACKUP_STALE_HOURS. */
+    stale: z.boolean(),
+  }),
+});
+export type SystemStatus = z.infer<typeof systemStatusSchema>;

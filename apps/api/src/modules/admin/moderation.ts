@@ -4,7 +4,9 @@
 import { schema, type Database } from '@nexaheart/db';
 import {
   ageOn,
+  BACKUP_STALE_HOURS,
   ErrorCode,
+  type SystemStatus,
   type AuditEntry,
   type ModerationAction,
   type ReportDetail,
@@ -49,6 +51,26 @@ export class ModerationService {
   ) {}
 
   /** Dashboard → Overview (phase 36): counts only. */
+  /** The last backup scripts/backup.sh recorded (phase 51). */
+  async lastBackup(now = new Date()): Promise<SystemStatus['backup']> {
+    const [row] = await this.db
+      .select({
+        finishedAt: schema.maintenanceRuns.finishedAt,
+        bytes: schema.maintenanceRuns.bytes,
+      })
+      .from(schema.maintenanceRuns)
+      .where(eq(schema.maintenanceRuns.kind, 'backup'))
+      .orderBy(desc(schema.maintenanceRuns.finishedAt))
+      .limit(1);
+    if (!row) return { lastAt: null, bytes: null, stale: true };
+    const ageHours = (now.getTime() - row.finishedAt.getTime()) / 3_600_000;
+    return {
+      lastAt: row.finishedAt.toISOString(),
+      bytes: row.bytes,
+      stale: ageHours > BACKUP_STALE_HOURS,
+    };
+  }
+
   overview(): Promise<SafetyOverview> {
     return safetyOverview(this.db);
   }

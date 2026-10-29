@@ -1618,3 +1618,23 @@ export const federationOutbox = pgTable(
   },
   (t) => [index('federation_outbox_due_idx').on(t.nextAttemptAt)],
 );
+
+// ---------------------------------------------------------------------------
+// Server maintenance (phase 51)
+// ---------------------------------------------------------------------------
+
+/**
+ * Maintenance that runs outside the app, recorded by the scripts themselves (scripts/backup.sh),
+ * so the dashboard can show when it last succeeded. No personal data.
+ */
+export const maintenanceRuns = pgTable(
+  'maintenance_runs',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    kind: varchar('kind', { length: 32 }).notNull(),
+    finishedAt: timestamp('finished_at', { withTimezone: true }).notNull().defaultNow(),
+    /** Total size of what was written (bytes), when the script reports it. */
+    bytes: bigint('bytes', { mode: 'number' }),
+  },
+  (t) => [index('maintenance_runs_kind_idx').on(t.kind, t.finishedAt)],
+);

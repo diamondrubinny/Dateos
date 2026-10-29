@@ -60,4 +60,11 @@ if [ -z "$suffix" ]; then
 fi
 
 find "$dir" -name 'nexaheart-*' -type f -mtime "+$keep" -print -delete
+
+# Record it, so the dashboard's System page can show when the last backup finished (phase 51).
+# A database from before phase 51 has no table yet: the backup itself still succeeded.
+bytes=$(($(wc -c <"$db_file") + $(wc -c <"$files_file")))
+"${compose[@]}" exec -T postgres psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -qAt -v ON_ERROR_STOP=1 \
+  -c "INSERT INTO maintenance_runs (kind, bytes) VALUES ('backup', ${bytes})" >/dev/null 2>&1 ||
+  echo "Note: the backup is done, but it couldn't be recorded for the dashboard." >&2
 echo "Done."

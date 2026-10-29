@@ -6,6 +6,8 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Added
 
+- **System page in the dashboard** (admins): whether every part of the server works, and when the
+  last backup finished, with an alert when none is recorded or it's over 36 hours old.
 - **One-command install over SSH** (`scripts/bootstrap.sh`): installs Docker if needed, downloads,
   configures (including SMTP), starts, waits until ready, sets up encrypted daily backups and prints
   the setup token. Running it again updates the instance.

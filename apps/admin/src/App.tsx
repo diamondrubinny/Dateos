@@ -13,6 +13,7 @@ import { ClaimInstance } from './pages/Setup';
 import { MfaSetup, MfaVerify } from './pages/Mfa';
 import { ReportDetail } from './pages/ReportDetail';
 import { Overview } from './pages/Overview';
+import { System } from './pages/System';
 import { Reports } from './pages/Reports';
 import { SignIn } from './pages/SignIn';
 import { Events } from './pages/Events';
@@ -85,23 +86,26 @@ function Shell({
       | 'audit'
       | 'branding'
       | 'integrations'
-      | 'partners',
+      | 'partners'
+      | 'system',
   ) => (
     <li>
       <a href={`#/${key}`} aria-current={current === key ? 'page' : undefined}>
-        {key === 'partners'
-          ? t.partners.nav
-          : key === 'integrations'
-            ? t.integrations.nav
-            : key === 'branding'
-              ? t.branding.nav
-              : key === 'venues'
-                ? t.venues.nav
-                : key === 'events'
-                  ? t.events.nav
-                  : key === 'signup'
-                    ? t.signup.nav
-                    : t.nav[key]}
+        {key === 'system'
+          ? t.system.nav
+          : key === 'partners'
+            ? t.partners.nav
+            : key === 'integrations'
+              ? t.integrations.nav
+              : key === 'branding'
+                ? t.branding.nav
+                : key === 'venues'
+                  ? t.venues.nav
+                  : key === 'events'
+                    ? t.events.nav
+                    : key === 'signup'
+                      ? t.signup.nav
+                      : t.nav[key]}
       </a>
     </li>
   );
@@ -125,6 +129,7 @@ function Shell({
               {link('audit')}
               {isAdmin ? link('branding') : null}
               {isAdmin ? link('integrations') : null}
+              {isAdmin ? link('system') : null}
             </ul>
           </nav>
         ) : null}
@@ -164,6 +169,7 @@ function Routes({ staff }: { staff: NonNullable<Awaited<ReturnType<typeof api.me
   if (route[0] === 'audit') return <Audit />;
   if (route[0] === 'branding' && staff.role === 'admin') return <Branding wizard={false} />;
   if (route[0] === 'integrations' && staff.role === 'admin') return <Integrations />;
+  if (route[0] === 'system' && staff.role === 'admin') return <System />;
   return <Reports />;
 }
 

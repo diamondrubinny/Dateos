@@ -3,6 +3,7 @@
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 import multipart from '@fastify/multipart';
 import {
+  systemStatusSchema,
   auditEntrySchema,
   instanceSettingsInputSchema,
   MAX_PHOTO_BYTES,
@@ -44,6 +45,7 @@ import {
 } from '@nexaheart/shared';
 import type { Storage, StoredObject } from '@nexaheart/storage';
 import type { FastifyReply } from 'fastify';
+import type { Dependency } from '../../lib/dependencies.js';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import type { Auth } from '../../auth/auth.js';
@@ -86,6 +88,8 @@ export const adminRoutes: FastifyPluginAsyncZod<{
   trust: TrustService;
   integrations: IntegrationService;
   federation: FederationService;
+  /** Checked by the System page (phase 51), as by /ready. */
+  dependencies: Dependency[];
 }> = async (
   app,
   {
@@ -101,6 +105,7 @@ export const adminRoutes: FastifyPluginAsyncZod<{
     trust,
     integrations,
     federation,
+    dependencies,
   },
 ) => {
   await app.register(multipart, {
@@ -142,6 +147,25 @@ export const adminRoutes: FastifyPluginAsyncZod<{
     async (request) => {
       await mfa.verify(currentUser(request), request.body.code);
       return { ok: true as const };
+    },
+  );
+
+  // System (phase 51): the same checks as /ready, and when the last backup finished. Admins only.
+  app.get(
+    '/v1/admin/system',
+    { schema: { response: { 200: systemStatusSchema } } },
+    async (request) => {
+      adminOnly(currentUser(request).role);
+      const results = await Promise.all(
+        dependencies.map(
+          async (dep) => [dep.name, (await dep.isHealthy()) ? 'up' : 'down'] as const,
+        ),
+      );
+      return {
+        status: results.every(([, s]) => s === 'up') ? ('ready' as const) : ('not_ready' as const),
+        checks: Object.fromEntries(results),
+        backup: await moderation.lastBackup(),
+      };
     },
   );
 
