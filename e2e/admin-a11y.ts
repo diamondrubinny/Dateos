@@ -35,6 +35,7 @@ const PAGES = [
   'audit',
   'branding',
   'integrations',
+  'system',
 ] as const;
 
 const problems: string[] = [];
@@ -146,6 +147,19 @@ try {
           );
         check(Boolean(ratio && ratio >= 3), `${scheme}: field edges ${ratio?.toFixed(2)}:1 (≥ 3)`);
         if (scheme === 'dark') await shot(S.page, `${locale}/125-admin-dark`);
+
+        // System (phase 51): no recent backup is a visible warning; a recent one isn't.
+        await pool.query(`DELETE FROM maintenance_runs WHERE kind = 'backup'`);
+        await S.page.goto(`${ADMIN}/#/system`);
+        const backup = S.page.getByTestId('system-backup');
+        await backup.getByText(a.system.backupNever).waitFor();
+        check((await backup.getAttribute('role')) === 'alert', `${scheme}: no backup is an alert`);
+        if (scheme === 'dark') await shot(S.page, `${locale}/126-admin-system-no-backup`);
+        await pool.query(`INSERT INTO maintenance_runs (kind, bytes) VALUES ('backup', 734003200)`);
+        await S.page.getByRole('button', { name: a.system.refresh }).click();
+        await backup.getByText(a.system.backupOk).waitFor();
+        check(true, `${scheme}: a recent backup shows as fine`);
+        await audit(S.page, `${locale}/admin-${scheme}/system-ok`);
       }
     } finally {
       await S.context.close();

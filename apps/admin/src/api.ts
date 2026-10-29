@@ -2,6 +2,7 @@
 // Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 import type {
+  SystemStatus,
   AdminCheckIn,
   IntegrationId,
   IntegrationUpdate,
@@ -216,6 +217,7 @@ export const api = {
   decide: (id: string, approve: boolean) =>
     request<{ ok: true }>('POST', `/v1/admin/verifications/${encodeURIComponent(id)}`, { approve }),
   overview: () => request<SafetyOverview>('GET', '/v1/admin/overview'),
+  system: () => request<SystemStatus>('GET', '/v1/admin/system'),
   audit: (before?: string) =>
     request<{ entries: AuditEntry[] }>(
       'GET',

@@ -113,6 +113,9 @@ head -c 32 /dev/urandom | base64 > /root/.nexaheart-backup-key && chmod 600 /roo
 0 3 * * * cd /opt/nexaheart && BACKUP_PASSPHRASE_FILE=/root/.nexaheart-backup-key ./scripts/backup.sh
 ```
 
+Each successful run is recorded in the database, and the dashboard's **System** page (admins) shows
+when the last backup finished, warning when none was recorded or the last is over 36 hours old.
+
 Copy the encrypted files off the server and keep the passphrase (and `.env`) somewhere else. Test a
 restore regularly, into a separate database first:
 
