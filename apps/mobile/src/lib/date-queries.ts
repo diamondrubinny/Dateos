@@ -6,6 +6,7 @@ import type {
   DateFeedbackInput,
   MessageView,
   ProposeDateInput,
+  CounterDateInput,
   Venue,
 } from '@nexaheart/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -36,6 +37,12 @@ function useDateMutation<T>(matchId: string, fn: (arg: T) => Promise<MessageView
 export const useProposeDate = (matchId: string) =>
   useDateMutation(matchId, (input: ProposeDateInput) =>
     apiFetch<MessageView>(`/v1/matches/${matchId}/dates`, { method: 'POST', body: json(input) }),
+  );
+
+/** "Suggest another time" (phase 46): answers an open idea with the same place at a new time. */
+export const useCounterDate = (matchId: string) =>
+  useDateMutation(matchId, ({ id, ...input }: CounterDateInput & { id: string }) =>
+    apiFetch<MessageView>(`/v1/dates/${id}/counter`, { method: 'POST', body: json(input) }),
   );
 
 export const useDateAction = (matchId: string) =>

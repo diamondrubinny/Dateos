@@ -16,6 +16,8 @@ import {
   type DateFeedbackInput,
   type MessageView,
   type ProposeDateInput,
+  type CounterDateInput,
+  type Venue,
 } from '@nexaheart/shared';
 import { and, eq, gt, inArray, or, sql } from 'drizzle-orm';
 import { HttpError } from '../../plugins/error-handler.js';
@@ -25,6 +27,8 @@ import type { VenueService } from './venues.js';
 const { datePlans, messages, matches, matchAvailability } = schema;
 
 const notFound = () => new HttpError(404, ErrorCode.NotFound, 'Resource not found.');
+const stale = () =>
+  new HttpError(409, ErrorCode.Conflict, 'This date idea can no longer be changed.');
 const isUniqueViolation = (error: unknown) =>
   typeof error === 'object' &&
   error !== null &&
@@ -46,19 +50,82 @@ export class DateService {
 
   async propose(matchId: string, userId: string, input: ProposeDateInput): Promise<MessageView> {
     const { otherId } = await this.chat.participant(matchId, userId);
+    const sent = await this.alreadySent(matchId, userId, input.clientId);
+    if (sent) return sent;
+    const { startsAt, note } = this.checkTimeAndNote(input);
+    const venue = await this.venues.active(input.venueId);
+    if (!venue) throw notFound();
+    await this.checkDailyLimit(userId);
+    await this.chat.checkConversationStart(matchId, userId);
+    const messageId = await this.insertPlan(matchId, userId, input.clientId, venue, startsAt, note);
+    await this.chat.deliverMessage(messageId, userId, otherId);
+    return this.chat.messageView(messageId, userId);
+  }
 
-    // Retrying with the same clientId returns the card that was already sent.
+  /**
+   * "Suggest another time" (phase 46): the person who received an open idea answers it with the
+   * same place at another time. One transaction declines the idea (marked as countered) and sends
+   * the new one, so the chat never has two open ideas, and a concurrent accept or withdraw wins once.
+   */
+  async counter(planId: string, userId: string, input: CounterDateInput): Promise<MessageView> {
+    const loaded = await this.load(planId, userId);
+    const { plan, otherId } = loaded;
+    if (plan.proposerId === userId) {
+      throw new HttpError(403, ErrorCode.Forbidden, 'You proposed this date.');
+    }
+    const sent = await this.alreadySent(plan.matchId, userId, input.clientId);
+    if (sent) return sent;
+    if (plan.status !== 'proposed') throw stale();
+    const { startsAt, note } = this.checkTimeAndNote(input);
+    if (startsAt.getTime() === plan.startsAt.getTime()) {
+      throw new HttpError(422, ErrorCode.ValidationError, 'Pick a different time.');
+    }
+    // The place must still be on the community's list.
+    const venue = plan.venueId ? await this.venues.active(plan.venueId) : null;
+    if (!venue) throw notFound();
+    await this.checkDailyLimit(userId);
+    const messageId = await this.insertPlan(
+      plan.matchId,
+      userId,
+      input.clientId,
+      venue,
+      startsAt,
+      note,
+      async (tx) => {
+        const [declined] = await tx
+          .update(datePlans)
+          .set({ status: 'declined', countered: true, respondedAt: new Date(this.now()) })
+          .where(and(eq(datePlans.id, plan.id), eq(datePlans.status, 'proposed')))
+          .returning({ id: datePlans.id });
+        if (!declined) throw stale();
+      },
+    );
+    await this.chat.announceUpdated(plan.matchId, loaded.messageId, [userId, otherId]);
+    await this.chat.deliverMessage(messageId, userId, otherId);
+    return this.chat.messageView(messageId, userId);
+  }
+
+  /** Retrying with the same clientId returns the card that was already sent. */
+  private async alreadySent(
+    matchId: string,
+    userId: string,
+    clientId: string,
+  ): Promise<MessageView | null> {
     const [existing] = await this.db
       .select({ id: messages.id, matchId: messages.matchId })
       .from(messages)
-      .where(and(eq(messages.senderId, userId), eq(messages.clientId, input.clientId)));
-    if (existing) {
-      if (existing.matchId !== matchId) {
-        throw new HttpError(409, ErrorCode.Conflict, 'Message id already used.');
-      }
-      return this.chat.messageView(existing.id, userId);
+      .where(and(eq(messages.senderId, userId), eq(messages.clientId, clientId)));
+    if (!existing) return null;
+    if (existing.matchId !== matchId) {
+      throw new HttpError(409, ErrorCode.Conflict, 'Message id already used.');
     }
+    return this.chat.messageView(existing.id, userId);
+  }
 
+  private checkTimeAndNote(input: { startsAt: string; note?: string | undefined }): {
+    startsAt: Date;
+    note: string | null;
+  } {
     const startsAt = new Date(input.startsAt);
     const now = this.now();
     if (
@@ -79,22 +146,35 @@ export class DateService {
         'This note may hurt. Please choose kinder words.',
       );
     }
-    const venue = await this.venues.active(input.venueId);
-    if (!venue) throw notFound();
+    return { startsAt, note };
+  }
 
+  private async checkDailyLimit(userId: string): Promise<void> {
     const recent = await this.db.$count(
       datePlans,
-      and(eq(datePlans.proposerId, userId), gt(datePlans.createdAt, new Date(now - 86_400_000))),
+      and(
+        eq(datePlans.proposerId, userId),
+        gt(datePlans.createdAt, new Date(this.now() - 86_400_000)),
+      ),
     );
     if (recent >= DATE_PROPOSALS_PER_DAY) {
       throw new HttpError(429, ErrorCode.RateLimited, 'Too many date ideas today.');
     }
+  }
 
-    await this.chat.checkConversationStart(matchId, userId);
-
-    let messageId: string;
+  /** Inserts the plan (a copy of the place) and its card; `before` runs first in the same transaction. */
+  private async insertPlan(
+    matchId: string,
+    userId: string,
+    clientId: string,
+    venue: Venue,
+    startsAt: Date,
+    note: string | null,
+    before?: (tx: Parameters<Parameters<Database['transaction']>[0]>[0]) => Promise<void>,
+  ): Promise<string> {
     try {
-      messageId = await this.db.transaction(async (tx) => {
+      return await this.db.transaction(async (tx) => {
+        await before?.(tx);
         const [plan] = await tx
           .insert(datePlans)
           .values({
@@ -116,7 +196,7 @@ export class DateService {
           .values({
             matchId,
             senderId: userId,
-            clientId: input.clientId,
+            clientId,
             kind: 'date',
             body: datePlanSummary({
               venueName: venue.name,
@@ -141,8 +221,6 @@ export class DateService {
       }
       throw error;
     }
-    await this.chat.deliverMessage(messageId, userId, otherId);
-    return this.chat.messageView(messageId, userId);
   }
 
   /** The plan, its card and the other participant, for someone who is part of the chat. */

@@ -6,6 +6,8 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Added
 
+- **Suggest another time** on a date idea you received: the same place at a time that suits you,
+  in one step; the original idea shows "Another time suggested".
 - **Running late?** An active safety check-in can be moved 30 minutes, 1 hour or 2 hours later, up
   to 3 times and within 12 hours of the start, before the trusted contact is emailed.
 - **See my profile as others do** (profile tab): the exact card others get, what keeps it out of
@@ -229,6 +231,8 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Fixed
 
+- **Answered date ideas were hard to read**: closed date cards were faded to 75 % opacity, below
+  the WCAG AA contrast ratio. They now keep full colour, with a dashed border.
 - Hebrew icebreakers used slash forms (מוותר/ת, את/ה); rephrased so no gender is assumed.
 - Double dates could miss pairs once more than 300 people were nearby; pair discovery now checks
   the newest undecided pairs directly.

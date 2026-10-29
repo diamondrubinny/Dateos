@@ -490,6 +490,15 @@ export const en = {
     checkin: 'Set up a safety check-in',
     cancelDate: 'Cancel date',
     changed: 'This date idea has already changed. The chat is up to date now.',
+    countered: 'Another time suggested',
+    otherTime: 'Suggest another time',
+    counterTitle: 'Suggest another time',
+    counterIntro:
+      'Same place, a time that suits you better. {{name}} can accept it or answer with another one.',
+    samePlace: 'Same place',
+    theirTime: 'Their idea: {{when}}',
+    sameTime: 'Pick a different time from the one suggested.',
+    counterSend: 'Send this time',
     categories: {
       cafe: 'Café',
       restaurant: 'Restaurant',
