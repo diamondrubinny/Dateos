@@ -4,6 +4,9 @@
 import { schema, type Database } from '@nexaheart/db';
 import {
   checkinAlertEmail,
+  CHECKIN_EXTENSIONS,
+  CHECKIN_GRACE_MINUTES,
+  CHECKIN_MAX_HOURS,
   CHECKINS_PER_DAY,
   ErrorCode,
   maskEmail,
@@ -35,6 +38,7 @@ function view(row: Row): Checkin {
     contactEmailMasked: maskEmail(row.contactEmail),
     note: row.note,
     sosCount: row.sosCount,
+    extensionsLeft: Math.max(0, CHECKIN_EXTENSIONS - row.extensions),
   };
 }
 
@@ -132,6 +136,49 @@ export class CheckinService {
       .update(checkins)
       .set({ status: 'ok', endedAt: new Date() })
       .where(and(eq(checkins.id, id), inArray(checkins.status, OPEN)));
+  }
+
+  /**
+   * "Running late" (phase 45): moves the check-in time later, from now or from the current time,
+   * whichever is later. Only before the contact is emailed, a few times, and never past
+   * CHECKIN_MAX_HOURS from the start. One UPDATE decides it: if the worker is alerting the contact
+   * right now, it waits for that transaction and then finds the check-in no longer active.
+   */
+  async extend(userId: string, id: string, minutes: number): Promise<Checkin> {
+    const row = await this.own(userId, id);
+    const [updated] = await this.db
+      .update(checkins)
+      .set({
+        checkAt: sql`GREATEST(${checkins.checkAt}, now()) + make_interval(mins => ${minutes})`,
+        extensions: sql`${checkins.extensions} + 1`,
+        // The reminder comes again at the new time.
+        remindedAt: null,
+      })
+      .where(
+        and(
+          eq(checkins.id, row.id),
+          eq(checkins.status, 'active'),
+          sql`${checkins.checkAt} > now() - make_interval(mins => ${CHECKIN_GRACE_MINUTES})`,
+          sql`${checkins.extensions} < ${CHECKIN_EXTENSIONS}`,
+          sql`GREATEST(${checkins.checkAt}, now()) + make_interval(mins => ${minutes})
+                <= ${checkins.startsAt} + make_interval(hours => ${CHECKIN_MAX_HOURS})`,
+        ),
+      )
+      .returning();
+    if (updated) return view(updated);
+    // Say why: already alerted, no extensions left, or too late in the day.
+    const [now] = await this.db.select().from(checkins).where(eq(checkins.id, row.id));
+    if (!now || now.status !== 'active') {
+      throw new HttpError(409, ErrorCode.Conflict, 'Your contact has already been emailed.');
+    }
+    if (now.extensions >= CHECKIN_EXTENSIONS) {
+      throw new HttpError(429, ErrorCode.RateLimited, 'No more extensions for this check-in.');
+    }
+    throw new HttpError(
+      422,
+      ErrorCode.ValidationError,
+      `A check-in can last at most ${CHECKIN_MAX_HOURS} hours.`,
+    );
   }
 
   /** Cancelling a check-in deletes it at once (the contact's address with it). */

@@ -440,6 +440,14 @@ export const en = {
     limit: 'You’ve reached the number of check-ins for today.',
     banner: 'Safety check-in until {{time}}',
     manage: 'Manage',
+    lateTitle: 'Running late?',
+    late30: '30 more minutes',
+    late60: '1 more hour',
+    late120: '2 more hours',
+    lateDone: 'New check-in time: {{time}}. Nothing was sent to your contact.',
+    lateTooLong: 'A check-in can last up to 12 hours from the start.',
+    lateNone:
+      'This check-in can’t be moved again. When you’re done, tap “I’m OK” and start a new one if you need to.',
     invalid: 'Please fill in the place, a name and a valid email address.',
   },
   datePlan: {

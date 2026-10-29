@@ -53,7 +53,8 @@
     "change-email": "tsx change-email.ts",
     "calendar": "tsx calendar.ts",
     "reauth": "tsx reauth.ts",
-    "preview": "tsx preview.ts"
+    "preview": "tsx preview.ts",
+    "checkin-late": "tsx checkin-late.ts"
   },
   "dependencies": {
     "@axe-core/playwright": "4.14.0",

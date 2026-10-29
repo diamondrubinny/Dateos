@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
-import type { Checkin } from '@nexaheart/shared';
+import { checkinExtensionMinutes, type Checkin } from '@nexaheart/shared';
 import { useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -22,7 +22,9 @@ import {
   useCheckinOk,
   useCheckinSos,
   useCreateCheckin,
+  useExtendCheckin,
 } from '../lib/checkin-queries';
+import { ltr } from '../lib/bidi';
 import { useLocale } from '../lib/locale';
 import { radius, spacing, useColors } from '../lib/theme';
 
@@ -47,6 +49,7 @@ function Active({ checkin, onNotice }: { checkin: Checkin; onNotice: (m: string)
   const ok = useCheckinOk();
   const sos = useCheckinSos();
   const cancel = useCancelCheckin();
+  const extend = useExtendCheckin();
   const [confirming, setConfirming] = useState(false);
   const [error, setError] = useState<string>();
   const fail = () => setError(t('common.genericError'));
@@ -62,7 +65,7 @@ function Active({ checkin, onNotice }: { checkin: Checkin; onNotice: (m: string)
             : t('checkin.activeBody', {
                 time: time(checkin.checkAt, locale),
                 name: checkin.contactName,
-                email: checkin.contactEmailMasked,
+                email: ltr(checkin.contactEmailMasked),
               })}
         </AppText>
         <AppText variant="body" tone="muted" userContent>
@@ -77,6 +80,46 @@ function Active({ checkin, onNotice }: { checkin: Checkin; onNotice: (m: string)
           ok.mutate(checkin.id, { onSuccess: () => onNotice(t('checkin.okDone')), onError: fail })
         }
       />
+      {checkin.status === 'active' ? (
+        <View style={styles.late} testID="checkin-late">
+          <AppText variant="label" accessibilityRole="header">
+            {t('checkin.lateTitle')}
+          </AppText>
+          {checkin.extensionsLeft > 0 ? (
+            <View style={styles.lateRow}>
+              {checkinExtensionMinutes.map((minutes) => (
+                <Button
+                  key={minutes}
+                  variant="secondary"
+                  label={t(`checkin.late${minutes}`)}
+                  disabled={extend.isPending}
+                  onPress={() =>
+                    extend.mutate(
+                      { id: checkin.id, minutes },
+                      {
+                        onSuccess: (updated) => {
+                          setError(undefined);
+                          onNotice(t('checkin.lateDone', { time: time(updated.checkAt, locale) }));
+                        },
+                        onError: (e) =>
+                          setError(
+                            e instanceof ApiRequestError && e.status === 422
+                              ? t('checkin.lateTooLong')
+                              : t('common.genericError'),
+                          ),
+                      },
+                    )
+                  }
+                />
+              ))}
+            </View>
+          ) : (
+            <AppText variant="body" tone="muted">
+              {t('checkin.lateNone')}
+            </AppText>
+          )}
+        </View>
+      ) : null}
       {confirming ? (
         <View
           style={[styles.card, { backgroundColor: colors.dangerSoft }]}
@@ -277,4 +320,6 @@ export default function CheckinRoute() {
 
 const styles = StyleSheet.create({
   card: { padding: spacing.lg, borderRadius: radius.lg, gap: spacing.sm },
+  late: { gap: spacing.sm },
+  lateRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
 });

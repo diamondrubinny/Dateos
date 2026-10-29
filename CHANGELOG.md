@@ -6,6 +6,8 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Added
 
+- **Running late?** An active safety check-in can be moved 30 minutes, 1 hour or 2 hours later, up
+  to 3 times and within 12 hours of the start, before the trusted contact is emailed.
 - **See my profile as others do** (profile tab): the exact card others get, what keeps it out of
   new people's decks right now (break, incognito, no approved photo, no area) with a fix for each,
   and how many photos are still being checked.

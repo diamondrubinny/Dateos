@@ -201,6 +201,7 @@ export async function exportMemberData(
       startsAt: t.checkins.startsAt,
       checkAt: t.checkins.checkAt,
       sosCount: t.checkins.sosCount,
+      extensions: t.checkins.extensions,
       alertedAt: t.checkins.alertedAt,
     })
     .from(t.checkins)

@@ -1,0 +1,1 @@
+ALTER TABLE "checkins" ADD COLUMN "extensions" smallint DEFAULT 0 NOT NULL;
