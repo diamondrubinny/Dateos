@@ -6,6 +6,9 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Added
 
+- **One-command install over SSH** (`scripts/bootstrap.sh`): installs Docker if needed, downloads,
+  configures (including SMTP), starts, waits until ready, sets up encrypted daily backups and prints
+  the setup token. Running it again updates the instance.
 - **Suggest another time** on a date idea you received: the same place at a time that suits you,
   in one step; the original idea shows "Another time suggested".
 - **Running late?** An active safety check-in can be moved 30 minutes, 1 hour or 2 hours later, up
@@ -231,6 +234,9 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Fixed
 
+- **Daily backups failed on installed servers**: `backup.sh`/`restore.sh` ran `.env` as shell code and
+  stopped at the unquoted tagline (exit 127) before writing anything. They now read only the two
+  values they need; `.env.example` quotes the tagline.
 - **Brand colour contrast in dark mode**: text on secondary buttons was below WCAG AA (4.02:1 with the
   default colour). The brand palette now reaches 4.5:1 on every background in both modes.
 - **Keyboard focus ring** is darker in light mode (5:1) and drawn 2 px away from the control; the

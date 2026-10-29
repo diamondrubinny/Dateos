@@ -10,6 +10,30 @@
 > קראו את שלב 8 לפני שמזמינים מישהו, ובקשו מעורך/ת דין לבדוק את המסמכים המשפטיים לפי הדין במדינה
 > שלכם. שום דבר במאגר הזה אינו הצהרה על עמידה בדרישות החוק.
 
+## הדרך הקצרה: פקודה אחת
+
+אם ה-DNS כבר מפנה את `example.org`, ‏`admin.example.org` ו-`api.example.org` לשרת Linux חדש
+(Ubuntu או Debian, עם 4GB זיכרון לפחות), הפקודה הזו מחליפה את שלבים 1, 3, 4 ו-5:
+
+```bash
+ssh root@YOUR_SERVER_IP 'curl -fsSL https://raw.githubusercontent.com/diamondrubinny/NexaHeart/main/scripts/bootstrap.sh | DOMAIN=example.org SMTP_HOST=smtp.your-provider.example SMTP_USER=you@example.org SMTP_PASSWORD=your-smtp-password bash'
+```
+
+הפקודה מתקינה Docker ו-git אם חסרים, מורידה את הקוד לתיקייה `/opt/nexaheart`, יוצרת את כל הסיסמאות,
+שומרת את הגדרות המייל, פותחת את הפורטים 80 ו-443 (אם `ufw` פעיל), בונה ומפעילה הכול (10 עד 20 דקות
+בפעם הראשונה), מחכה עד שהכול מוכן, מגדירה גיבוי יומי מוצפן ומדפיסה את **קוד ההקמה**. משם ממשיכים
+לשלב 6 (תפיסת השרת) בדפדפן. הרצה חוזרת של אותה פקודה בהמשך **מעדכנת** את השרת, והסיסמאות והמידע נשמרים.
+
+אפשרויות: `VIDEO=1` לדייטים בווידאו, `AI=1` ל-AI המקומי, `START=0` להכנה בלי הפעלה. כולן מתוארות
+בראש הקובץ [`scripts/bootstrap.sh`](../scripts/bootstrap.sh). כדאי לקרוא אותו לפני ההרצה, כמו כל
+סקריפט שמריצים כ-root.
+
+> סיסמת ה-SMTP נשמרת בקובץ `.env` בשרת (רק root יכול לקרוא אותו). כשמקלידים אותה בשורת הפקודה היא
+> נשמרת גם בהיסטוריה של המחשב שלכם: התחילו את השורה ברווח (ב-bash עם `HISTCONTROL=ignorespace`), או
+> נקו את ההיסטוריה אחר כך.
+
+שאר המדריך מסביר כל שלב, למי שמעדיף לעשות אותו ידנית או אם משהו לא עובד.
+
 כבר מכירים Docker? [SELF_HOSTING.md](SELF_HOSTING.md) הוא גרסת העזר הקצרה (באנגלית).
 
 ## מה יהיה לכם בסוף
@@ -68,7 +92,7 @@ docker compose version
 
 ```bash
 sudo mkdir -p /opt/nexaheart && sudo chown "$USER" /opt/nexaheart
-git clone https://github.com/diamondrubinny/Dateos.git /opt/nexaheart
+git clone https://github.com/diamondrubinny/NexaHeart.git /opt/nexaheart
 cd /opt/nexaheart
 ./install.sh --domain example.org
 ```

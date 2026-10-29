@@ -20,10 +20,24 @@ open source; you own the server and the data.
 | Email    | Any SMTP provider                            | Sign-in links are sent by email                                                                                              |
 | Software | Docker with Compose v2, `git`, `openssl`     | Node is **not** needed on the server                                                                                         |
 
+## Quick install (one command)
+
+On a fresh server whose three DNS names already point at it, as root over SSH:
+
+```bash
+ssh root@YOUR_SERVER_IP 'curl -fsSL https://raw.githubusercontent.com/diamondrubinny/NexaHeart/main/scripts/bootstrap.sh | DOMAIN=example.org SMTP_HOST=smtp.your-provider.example SMTP_USER=you@example.org SMTP_PASSWORD=your-smtp-password bash'
+```
+
+It runs [`scripts/bootstrap.sh`](../scripts/bootstrap.sh): installs Docker and git if needed, clones
+into `/opt/nexaheart`, runs `install.sh`, writes the SMTP settings, opens 80/443 in `ufw`, builds and
+starts the `app` and `full` profiles, waits for `/ready`, sets up an encrypted daily backup
+(`/etc/cron.d/nexaheart-backup`) and prints the setup token. Run it again to update. Then claim the
+instance (step 4). Steps 1 to 3 below are the same thing by hand.
+
 ## 1. Install
 
 ```bash
-git clone https://github.com/diamondrubinny/Dateos.git nexaheart && cd nexaheart
+git clone https://github.com/diamondrubinny/NexaHeart.git nexaheart && cd nexaheart
 ./install.sh --domain example.org
 ```
 

@@ -11,6 +11,31 @@ SSH and paste commands, you can do this.
 > members' data. Read step 8 before you invite anyone, and have the legal texts reviewed by a lawyer
 > for your country. Nothing in this repository is a statement of legal compliance.
 
+## The short way: one command
+
+If DNS already points `example.org`, `admin.example.org` and `api.example.org` at a fresh Linux
+server (Ubuntu or Debian, 4 GB of memory or more), this one command replaces steps 1, 3, 4 and 5:
+
+```bash
+ssh root@YOUR_SERVER_IP 'curl -fsSL https://raw.githubusercontent.com/diamondrubinny/NexaHeart/main/scripts/bootstrap.sh | DOMAIN=example.org SMTP_HOST=smtp.your-provider.example SMTP_USER=you@example.org SMTP_PASSWORD=your-smtp-password bash'
+```
+
+It installs Docker and git if needed, downloads the code into `/opt/nexaheart`, creates every
+password, saves your email settings, opens ports 80 and 443 (if `ufw` is on), builds and starts
+everything (10 to 20 minutes the first time), waits until it's ready, sets up an encrypted daily
+backup, and prints the **setup token**. Then continue with step 6 (claim your instance) in the
+browser. Running the same command again later **updates** the instance; passwords and data are kept.
+
+Options: `VIDEO=1` for video dates, `AI=1` for the local AI, `START=0` to prepare without starting.
+All of them are described at the top of [`scripts/bootstrap.sh`](../scripts/bootstrap.sh); read it
+before running it, as you would any script you run as root.
+
+> Your SMTP password ends up in the server's `.env` (readable only by root). Typed on the command
+> line it is also kept in your computer's shell history: start the line with a space (bash with
+> `HISTCONTROL=ignorespace`), or clear it afterwards.
+
+The rest of this guide explains each step, if you prefer to do them by hand or something goes wrong.
+
 Already comfortable with Docker? [SELF_HOSTING.md](SELF_HOSTING.md) is the short reference version.
 
 ## What you'll have at the end
@@ -70,7 +95,7 @@ DNS changes can take from a few minutes to a few hours to spread.
 
 ```bash
 sudo mkdir -p /opt/nexaheart && sudo chown "$USER" /opt/nexaheart
-git clone https://github.com/diamondrubinny/Dateos.git /opt/nexaheart
+git clone https://github.com/diamondrubinny/NexaHeart.git /opt/nexaheart
 cd /opt/nexaheart
 ./install.sh --domain example.org
 ```

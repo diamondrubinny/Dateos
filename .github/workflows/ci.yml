@@ -78,6 +78,18 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - run: bash -n install.sh
+      - name: Shell scripts (shellcheck is on the runner image)
+        run: shellcheck install.sh scripts/*.sh
+      - name: One-command bootstrap, prepare only (scripts/bootstrap.sh)
+        run: |
+          git branch ci-bootstrap HEAD
+          sudo env DOMAIN=example.org SMTP_HOST=smtp.example.net SMTP_USER=mailer \
+            SMTP_PASSWORD='p@ss w0rd&|$x' NEXAHEART_DIR=/tmp/nh NEXAHEART_REPO="$PWD" \
+            NEXAHEART_REF=ci-bootstrap START=0 bash scripts/bootstrap.sh
+          sudo grep -qx "SMTP_PASSWORD='p@ss w0rd&|\$x'" /tmp/nh/.env
+          sudo docker compose -f /tmp/nh/infra/docker-compose.yml --env-file /tmp/nh/.env --profile app config --quiet
+          # .env is read as text by the backup scripts, never run as shell code.
+          sudo grep -q '^INSTANCE_TAGLINE="' /tmp/nh/.env
       - run: ./install.sh
       - name: No placeholders left in generated .env
         run: '! grep -E "^[A-Z0-9_]+=.*CHANGE_ME" .env'

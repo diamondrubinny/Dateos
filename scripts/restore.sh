@@ -12,10 +12,15 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 compose=(docker compose -f infra/docker-compose.yml --env-file .env)
-set -a
-# shellcheck disable=SC1091
-. ./.env
-set +a
+# Read only the two values needed, as text: .env is not shell code (an unquoted value with spaces,
+# like the tagline, would stop the script).
+env_value() { sed -n "s/^$1=//p" .env | tail -n 1 | sed -e "s/^[\"']//" -e "s/[\"']\$//"; }
+POSTGRES_USER="$(env_value POSTGRES_USER)"
+POSTGRES_DB="$(env_value POSTGRES_DB)"
+if [ -z "$POSTGRES_USER" ] || [ -z "$POSTGRES_DB" ]; then
+  echo 'POSTGRES_USER or POSTGRES_DB is missing in .env' >&2
+  exit 1
+fi
 
 db_file="${1:?usage: restore.sh <db dump> [files tar]}"
 files_file="${2:-}"
