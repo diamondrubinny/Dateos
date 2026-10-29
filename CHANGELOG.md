@@ -234,6 +234,8 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Fixed
 
+- **One-command install, tested end to end**: it now checks free disk space before building (a full
+  disk failed halfway with an unclear error) and removes old images after an update.
 - **Dashboard form fields** had faint edges (1.45:1, WCAG 1.4.11): a `--control` colour brings them
   to 4.26:1 in light and dark mode. Every dashboard page is now swept by axe in both modes.
 - **Daily backups failed on installed servers**: `backup.sh`/`restore.sh` ran `.env` as shell code and
