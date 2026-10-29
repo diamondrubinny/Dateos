@@ -4,6 +4,7 @@
 import type {
   Conversation,
   MatchPrefs,
+  QuietHours,
   MessagesPage,
   MessageView,
   ReactionEmoji,
@@ -211,6 +212,7 @@ export function useChatSettings() {
         notifyMatches: boolean;
         notifyMessages: boolean;
         notifyEvents: boolean;
+        quietHours: QuietHours | null;
         pushDevices: number;
       }>('/v1/me/settings'),
   });
@@ -241,6 +243,16 @@ export function useSetSetting() {
   return useMutation({
     mutationFn: (input: Record<string, boolean>) =>
       apiFetch('/v1/me/settings', { method: 'PUT', body: json(input) }),
+    onSuccess: () => client.invalidateQueries({ queryKey: settingsKey }),
+  });
+}
+
+/** Quiet hours (phase 39); null turns them off. */
+export function useSetQuietHours() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (quietHours: QuietHours | null) =>
+      apiFetch('/v1/me/settings', { method: 'PUT', body: json({ quietHours }) }),
     onSuccess: () => client.invalidateQueries({ queryKey: settingsKey }),
   });
 }

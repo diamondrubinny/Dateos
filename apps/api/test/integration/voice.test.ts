@@ -127,6 +127,7 @@ describe.skipIf(!integrationEnabled)('voice messages & push (integration)', () =
       notifyMatches: true,
       notifyMessages: true,
       notifyEvents: true,
+      quietHours: null,
       pushDevices: 0,
     });
   });

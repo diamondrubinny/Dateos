@@ -6,6 +6,9 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Added
 
+- **Quiet hours** (Settings → Notifications): no notifications between two times you choose, in
+  your device's time zone (23:00–08:00 to start, moved in half hours). Calls and safety check-in
+  alerts always come through.
 - **Pinned chats**: pin up to 3 chats to the top of Matches (private; pinning unarchives, archiving
   unpins).
 - **Message drafts**: what you typed and didn't send stays in the chat and shows as "Draft: …" in
