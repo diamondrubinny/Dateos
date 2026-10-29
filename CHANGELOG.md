@@ -6,6 +6,10 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Added
 
+- **Change your email address** (Settings → Security): a one-time link to the new address (30
+  minutes, opened while signed in), a heads-up without a link to the current one, other devices
+  signed out on confirmation. Same answer for any address, so the form can't reveal who has an
+  account.
 - **Photo descriptions** (accessibility): describe each photo in your own words (up to 150
   characters); people using a screen reader hear it on your profile card. In "Download my data".
 - **Quiet hours** (Settings → Notifications): no notifications between two times you choose, in

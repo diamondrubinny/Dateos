@@ -744,6 +744,20 @@ export const moderationLog = pgTable(
   (t) => [index('moderation_actions_target_idx').on(t.targetId, t.createdAt)],
 );
 
+/**
+ * Changing the account's email (phase 41): one pending request per member. Only the token's
+ * SHA-256 is kept; the row is deleted on use, on expiry and with the account.
+ */
+export const emailChanges = pgTable('email_changes', {
+  userId: text('user_id')
+    .primaryKey()
+    .references(() => user.id, { onDelete: 'cascade' }),
+  newEmail: text('new_email').notNull(),
+  tokenHash: varchar('token_hash', { length: 64 }).notNull().unique(),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
 /** Salted SHA-256 of normalised emails that may not create a new account. */
 export const bannedEmails = pgTable('banned_emails', {
   emailHash: varchar('email_hash', { length: 64 }).primaryKey(),

@@ -220,3 +220,53 @@ export function signinAlertEmail(
     },
   );
 }
+
+/** Phase 41: sent to the NEW address; the only way to confirm a change of email. */
+export function emailChangeConfirmEmail(
+  instanceName: string,
+  url: string,
+  minutes: number,
+): Omit<MailMessage, 'to'> {
+  return bilingualNotice(
+    `${instanceName}: אישור כתובת מייל / Confirm your email`,
+    {
+      title: 'אישור כתובת המייל החדשה',
+      body: [
+        `ביקשת לשנות את כתובת המייל של החשבון ב-${instanceName} לכתובת הזו.`,
+        `הקישור תקף ל-${minutes} דקות. יש לפתוח אותו כשנכנסים לחשבון. אם לא ביקשת, אפשר להתעלם.`,
+      ],
+    },
+    {
+      title: 'Confirm your new email address',
+      body: [
+        `You asked to change your ${instanceName} account's email to this address.`,
+        `The link works for ${minutes} minutes, while you're signed in. If you didn't ask, ignore this email.`,
+      ],
+    },
+    { url, he: 'אישור הכתובת', en: 'Confirm this address' },
+  );
+}
+
+/**
+ * Phase 41: a heads-up to the OLD address, deliberately without a link (as the sign-in alert):
+ * a real notice never asks you to click.
+ */
+export function emailChangeNoticeEmail(instanceName: string): Omit<MailMessage, 'to'> {
+  return bilingualNotice(
+    `${instanceName}: שינוי כתובת מייל / Email change requested`,
+    {
+      title: 'התבקש שינוי של כתובת המייל',
+      body: [
+        `מישהו שנכנס לחשבון שלך ב-${instanceName} ביקש להעביר אותו לכתובת מייל אחרת.`,
+        'אם זה לא היית, יש להיכנס לאפליקציה, להתנתק מכל המכשירים האחרים (הגדרות ← אבטחה) ולבדוק את חשבון המייל.',
+      ],
+    },
+    {
+      title: 'An email change was requested',
+      body: [
+        `Someone signed in to your ${instanceName} account asked to move it to another email address.`,
+        "If this wasn't you, open the app, sign out everywhere else (Settings → Security) and check your email account.",
+      ],
+    },
+  );
+}

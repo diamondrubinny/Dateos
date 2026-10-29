@@ -27,6 +27,7 @@ const ACTIVITY: Record<string, AccountActivity['events'][number]['kind']> = {
   'session.revoked': 'device_signed_out',
   'session.revoked_others': 'signed_out_others',
   'account.exported': 'data_downloaded',
+  'email.changed': 'email_changed',
 };
 const ok = z.object({ ok: z.literal(true) });
 const limit = perUserLimit(30, 60 * 1000);
