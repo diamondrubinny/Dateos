@@ -342,6 +342,16 @@ export async function exportMemberData(
     })
     .from(t.pushTokens)
     .where(eq(t.pushTokens.userId, userId));
+  // Phase 60: browsers with notifications on (the push service's host, not the full address,
+  // which is a capability to send to that browser).
+  const browsers = await db
+    .select({
+      endpoint: t.webPushSubscriptions.endpoint,
+      createdAt: t.webPushSubscriptions.createdAt,
+      lastUsedAt: t.webPushSubscriptions.lastUsedAt,
+    })
+    .from(t.webPushSubscriptions)
+    .where(eq(t.webPushSubscriptions.userId, userId));
   // My "Maybe later" list (phase 33): who, and when.
   const savedForLater = await db
     .select({ profileId: t.savedProfiles.targetId, savedAt: t.savedProfiles.createdAt })
@@ -583,6 +593,11 @@ export async function exportMemberData(
       ...d,
       createdAt: iso(d.createdAt),
       lastUsedAt: iso(d.lastUsedAt),
+    })),
+    browserNotifications: browsers.map((b) => ({
+      pushService: new URL(b.endpoint).hostname,
+      createdAt: iso(b.createdAt),
+      lastUsedAt: iso(b.lastUsedAt),
     })),
     signedInDevices: sessions.map((d) => ({
       device: d.device,

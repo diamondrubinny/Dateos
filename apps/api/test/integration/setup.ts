@@ -23,6 +23,9 @@ import type { MediaQueue, ProfileQueue } from '../../src/lib/queue.js';
 import type { CallMedia } from '../../src/lib/livekit.js';
 import { createServices, type Services } from '../../src/services.js';
 
+/** A well-formed (made-up) VAPID public key: the API only hands it to browsers. */
+export const TEST_WEB_PUSH_KEY = `B${'A'.repeat(86)}`;
+
 export const integrationEnabled = process.env.INTEGRATION === '1';
 
 export interface TestContext {
@@ -82,6 +85,8 @@ export const TEST_LIVEKIT = {
 export interface SetupOptions {
   /** Updates (phase 53): the commit this test server "runs" (default: unknown). */
   appCommit?: string;
+  /** Phase 60: the server's Web Push public key; '' turns web notifications off. */
+  webPushKey?: string;
   /** Text AI model for this suite (default: none). */
   /** Pass undefined to use the dashboard's model (phase 24). */
   textModel?: TextModel | null | undefined;
@@ -137,6 +142,7 @@ export async function setupIntegration(options: SetupOptions = {}): Promise<Test
     APP_COMMIT: options.appCommit ?? '',
     UPDATE_CHECK: 'on',
     UPDATE_EMAILS: 'on',
+    WEB_PUSH_PUBLIC_KEY: options.webPushKey ?? TEST_WEB_PUSH_KEY,
   });
   await runMigrations(env.DATABASE_URL);
 

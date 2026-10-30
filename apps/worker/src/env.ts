@@ -53,6 +53,25 @@ export const workerEnvSchema = z.object({
     .string()
     .optional()
     .transform((v) => v ?? ''),
+  /**
+   * Phase 60: notifications in the web app (VAPID, base64url, made by the install command). Both
+   * keys, or none (then off). The private key never leaves the worker.
+   */
+  WEB_PUSH_PUBLIC_KEY: z
+    .string()
+    .regex(/^[A-Za-z0-9_-]{86,88}$/)
+    .optional()
+    .or(z.literal('').transform(() => undefined)),
+  WEB_PUSH_PRIVATE_KEY: z
+    .string()
+    .regex(/^[A-Za-z0-9_-]{42,44}$/)
+    .optional()
+    .or(z.literal('').transform(() => undefined)),
+  /** Who sends, for the push services: an https: or mailto: address. Default: the app's address. */
+  WEB_PUSH_SUBJECT: z
+    .string()
+    .optional()
+    .transform((v) => v ?? ''),
   INTEGRATIONS_ALLOW_PRIVATE: z
     .enum(['true', 'false'])
     .default('false')
@@ -130,6 +149,20 @@ export function dashboardUrl(
   const app = env.PUBLIC_APP_URL || (env.CORS_ORIGINS.split(',')[0] ?? '').trim();
   const admin = env.PUBLIC_ADMIN_URL || app.replace(/^(https?:\/\/)/, '$1admin.');
   return admin.replace(/\/+$/, '');
+}
+
+/**
+ * Phase 60: the Web Push sender, as push services ask (an https: or mailto: address): the setting,
+ * else the app's https address, else the mail sender's address.
+ */
+export function webPushSubject(
+  env: Pick<WorkerEnv, 'WEB_PUSH_SUBJECT' | 'PUBLIC_APP_URL' | 'CORS_ORIGINS' | 'SMTP_FROM'>,
+): string {
+  if (/^(https:\/\/|mailto:)/.test(env.WEB_PUSH_SUBJECT)) return env.WEB_PUSH_SUBJECT;
+  const app = (env.PUBLIC_APP_URL || (env.CORS_ORIGINS.split(',')[0] ?? '')).trim();
+  if (app.startsWith('https://')) return app.replace(/\/+$/, '');
+  const email = /<([^>]+@[^>]+)>|([^\s<>]+@[^\s<>]+)/.exec(env.SMTP_FROM);
+  return `mailto:${email?.[1] ?? email?.[2] ?? 'no-reply@example.org'}`;
 }
 
 export function loadWorkerEnv(source: NodeJS.ProcessEnv = process.env): WorkerEnv {

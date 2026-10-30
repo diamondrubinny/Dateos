@@ -140,6 +140,12 @@ git pull
 GIT_COMMIT=$(git rev-parse HEAD) docker compose -f infra/docker-compose.yml --env-file .env --profile app --profile full up -d --build
 ```
 
+Notifications in the web app (phase 60) use Web Push: `WEB_PUSH_PUBLIC_KEY` / `WEB_PUSH_PRIVATE_KEY`
+in `.env`, made by the install command (or `./scripts/web-push-keys.sh`; the install command adds
+them to an existing server once). The worker posts only to known browser push services (an
+allow-list in `packages/shared/src/web-push.ts`). Changing the keys signs everyone's browsers out of
+notifications until they turn them on again.
+
 The web app is installable (phase 57): Caddy serves `/manifest.webmanifest` on the app's domain from
 the API (`/v1/instance/manifest.webmanifest`, the community's branding) and `/sw.js` with
 `Cache-Control: no-cache`. Behind your own proxy, route the manifest the same way and don't cache

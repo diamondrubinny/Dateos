@@ -105,6 +105,15 @@ export const envSchema = z.object({
   OPENAI_EXTERNAL: booleanString.default(true),
 
   INSTANCE_NAME: z.string().max(40).default('NexaHeart'),
+  /**
+   * Phase 60: the server's Web Push public key (VAPID, base64url, made by the install command).
+   * Empty: no notifications in the web app. The private key is the worker's only.
+   */
+  WEB_PUSH_PUBLIC_KEY: z
+    .string()
+    .regex(/^[A-Za-z0-9_-]{86,88}$/)
+    .optional()
+    .or(z.literal('').transform(() => undefined)),
   // Updates from GitHub (phase 53). The commit is baked into the image at build time.
   APP_COMMIT: z
     .string()

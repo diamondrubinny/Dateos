@@ -2,21 +2,34 @@
 // Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 import { schema, type Database } from '@nexaheart/db';
-import type { PushJob } from '@nexaheart/shared';
+import { isWebPushEndpoint, type PushJob, type WebPushPayload } from '@nexaheart/shared';
 import { eq, inArray, sql } from 'drizzle-orm';
 import type { Redis } from 'ioredis';
 import type { Logger } from 'pino';
+import webpush from 'web-push';
 
-const { pushTokens } = schema;
+const { pushTokens, webPushSubscriptions } = schema;
 
 /** At most one push per person, conversation and kind in this window. */
 export const PUSH_THROTTLE_SECONDS = 120;
+
+/** Phase 60: what the worker needs to send to browsers (VAPID keys from the install command). */
+export interface WebPushSettings {
+  publicKey: string;
+  privateKey: string;
+  /** Who sends: the community's address (https://DOMAIN), as push services ask. */
+  subject: string;
+  /** For tests: what posts the encrypted notification (default: the web-push library). */
+  send?: typeof webpush.sendNotification;
+}
 
 export interface PushContext {
   db: Database;
   redis: Redis;
   log: Pick<Logger, 'info' | 'warn'>;
   provider: 'disabled' | 'expo';
+  /** Phase 60: notifications in the web app; absent when the server has no keys. */
+  webPush?: WebPushSettings | undefined;
   /** 📘 https://docs.expo.dev/push-notifications/sending-notifications/ */
   expoUrl: string;
   expoAccessToken?: string | undefined;
@@ -99,7 +112,7 @@ async function inQuietHours(ctx: PushContext, userId: string): Promise<boolean> 
 }
 
 export async function sendPush(ctx: PushContext, job: PushJob): Promise<PushResult> {
-  if (ctx.provider === 'disabled') return 'disabled';
+  if (ctx.provider === 'disabled' && !ctx.webPush) return 'disabled';
   // Notifications the member turned off (phase 33). Calls and safety check-ins are always on.
   const choice =
     job.kind === 'match'
@@ -155,8 +168,17 @@ export async function sendPush(ctx: PushContext, job: PushJob): Promise<PushResu
 }
 
 async function sendToDevices(ctx: PushContext, job: PushJob): Promise<PushResult> {
-  const tokens = await ctx.db.select().from(pushTokens).where(eq(pushTokens.userId, job.userId));
-  if (tokens.length === 0) return 'no-devices';
+  const tokens =
+    ctx.provider === 'expo'
+      ? await ctx.db.select().from(pushTokens).where(eq(pushTokens.userId, job.userId))
+      : [];
+  const browsers = ctx.webPush
+    ? await ctx.db
+        .select()
+        .from(webPushSubscriptions)
+        .where(eq(webPushSubscriptions.userId, job.userId))
+    : [];
+  if (tokens.length === 0 && browsers.length === 0) return 'no-devices';
   const throttle = await ctx.redis.set(
     `nexaheart:push:throttle:${job.userId}:${job.matchId}:${job.kind}`,
     '1',
@@ -170,6 +192,83 @@ async function sendToDevices(ctx: PushContext, job: PushJob): Promise<PushResult
     .execute<{ name: string | null }>(sql`SELECT name FROM instance_settings WHERE id = 1`)
     .then((r) => r.rows);
   const instanceName = settings?.name ?? process.env.INSTANCE_NAME ?? 'NexaHeart';
+  // Browsers first: a failure there never makes the queue retry (and repeat) the phones.
+  if (browsers.length > 0 && ctx.webPush)
+    await sendToBrowsers(ctx, ctx.webPush, browsers, job, instanceName);
+  if (tokens.length > 0) await sendToPhones(ctx, tokens, job, instanceName);
+  return 'sent';
+}
+
+/**
+ * Phase 60: to each browser, encrypted to it (RFC 8291) and signed with this server's key (VAPID):
+ * the push service can't read it. The same content as on the phone. A subscription the service says
+ * is gone (404/410) is deleted; other failures are logged without the address.
+ */
+async function sendToBrowsers(
+  ctx: PushContext,
+  settings: WebPushSettings,
+  browsers: (typeof webPushSubscriptions.$inferSelect)[],
+  job: PushJob,
+  instanceName: string,
+): Promise<void> {
+  const send = settings.send ?? webpush.sendNotification.bind(webpush);
+  const gone: string[] = [];
+  const delivered: string[] = [];
+  for (const b of browsers) {
+    // Checked when it was saved; checked again before the server posts anywhere.
+    if (!isWebPushEndpoint(b.endpoint)) {
+      gone.push(b.endpoint);
+      continue;
+    }
+    const payload: WebPushPayload = {
+      ...pushContent(job.kind, b.locale, instanceName),
+      kind: job.kind,
+      id: job.matchId,
+    };
+    try {
+      await send(
+        { endpoint: b.endpoint, keys: { p256dh: b.p256dh, auth: b.auth } },
+        JSON.stringify(payload),
+        {
+          vapidDetails: {
+            subject: settings.subject,
+            publicKey: settings.publicKey,
+            privateKey: settings.privateKey,
+          },
+          TTL: job.kind === 'call' ? 60 : 24 * 3600,
+          urgency: job.kind === 'call' || job.kind === 'checkin' ? 'high' : 'normal',
+          timeout: 10_000,
+        },
+      );
+      delivered.push(b.endpoint);
+    } catch (error) {
+      const status = (error as { statusCode?: number }).statusCode;
+      if (status === 404 || status === 410) gone.push(b.endpoint);
+      else
+        ctx.log.warn(
+          { status: status ?? null, service: new URL(b.endpoint).hostname },
+          'web push failed',
+        );
+    }
+  }
+  if (gone.length > 0) {
+    await ctx.db.delete(webPushSubscriptions).where(inArray(webPushSubscriptions.endpoint, gone));
+    ctx.log.info({ removed: gone.length }, 'removed expired browser subscriptions');
+  }
+  if (delivered.length > 0) {
+    await ctx.db
+      .update(webPushSubscriptions)
+      .set({ lastUsedAt: new Date() })
+      .where(inArray(webPushSubscriptions.endpoint, delivered));
+  }
+}
+
+async function sendToPhones(
+  ctx: PushContext,
+  tokens: (typeof pushTokens.$inferSelect)[],
+  job: PushJob,
+  instanceName: string,
+): Promise<void> {
   const messages = tokens.map((t) => ({
     to: t.token,
     ...pushContent(job.kind, t.locale, instanceName),
@@ -208,5 +307,4 @@ async function sendToDevices(ctx: PushContext, job: PushJob): Promise<PushResult
         tokens.map((t) => t.token).filter((t) => !gone.includes(t)),
       ),
     );
-  return 'sent';
 }

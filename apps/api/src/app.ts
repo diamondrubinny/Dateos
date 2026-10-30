@@ -186,7 +186,11 @@ export async function buildApp(env: Env, deps: AppDependencies): Promise<Fastify
     });
     await typed.register(callRoutes, { auth: services.auth, calls: services.calls });
     await typed.register(callWebhookRoutes, { calls: services.calls });
-    await typed.register(notificationRoutes, { auth: services.auth, db: services.dbHandle.db });
+    await typed.register(notificationRoutes, {
+      auth: services.auth,
+      db: services.dbHandle.db,
+      webPush: Boolean(env.WEB_PUSH_PUBLIC_KEY),
+    });
     await typed.register(deviceRoutes, { auth: services.auth, db: services.dbHandle.db });
     await typed.register(accountRoutes, { auth: services.auth, emailChange: services.emailChange });
     await typed.register(setupRoutes, { auth: services.auth, instance: services.instance });

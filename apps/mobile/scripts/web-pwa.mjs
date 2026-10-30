@@ -120,6 +120,69 @@ self.addEventListener('fetch', (event) => {
     );
   }
 });
+
+// Phase 60: notifications in the web app. The content was encrypted to this browser: the
+// community's name, a generic sentence and an opaque id (never a name or message text).
+const UUID = /^[0-9a-f-]{36}$/;
+function screenFor(data) {
+  const id = typeof data.id === 'string' && UUID.test(data.id) ? data.id : null;
+  switch (data.kind) {
+    case 'message':
+    case 'match':
+    case 'call':
+      return id ? '/chat/' + id : '/matches';
+    case 'partner_message':
+      return id ? '/partner-chat/' + id : '/matches';
+    case 'checkin':
+      return '/checkin';
+    case 'event':
+      return id ? '/events/' + id : '/';
+    case 'visible':
+      return '/profile';
+    default:
+      return '/';
+  }
+}
+
+self.addEventListener('push', (event) => {
+  let data = {};
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch {
+    data = {};
+  }
+  const title = typeof data.title === 'string' ? data.title.slice(0, 80) : 'NexaHeart';
+  const body = typeof data.body === 'string' ? data.body.slice(0, 200) : '';
+  event.waitUntil(
+    self.registration.showNotification(title, {
+      body,
+      icon: '/brand-icons/icon-192.png',
+      badge: '/icons/icon-192.png',
+      // One notification per conversation and kind: a new one replaces the last.
+      tag: String(data.kind || 'note') + ':' + String(data.id || ''),
+      data: { url: screenFor(data) },
+    }),
+  );
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const url = new URL(
+    (event.notification.data && event.notification.data.url) || '/',
+    self.location.origin,
+  ).href;
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windows) => {
+      const open = windows.find((w) => new URL(w.url).origin === self.location.origin);
+      if (!open) return self.clients.openWindow(url);
+      // navigate() works only on a window this worker controls: otherwise a new one.
+      return open
+        .navigate(url)
+        .then((w) => (w || open).focus())
+        .catch(() => self.clients.openWindow(url));
+    }),
+  );
+});
 `;
 await writeFile(join(dist, 'sw.js'), sw);
 process.stdout.write(

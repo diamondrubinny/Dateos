@@ -8,8 +8,10 @@ import {
   chatSettingsSchema,
   ErrorCode,
   pushTokenInputSchema,
+  WEB_PUSH_MAX_PER_ACCOUNT,
+  webPushSubscriptionSchema,
 } from '@nexaheart/shared';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import type { Auth } from '../../auth/auth.js';
@@ -17,7 +19,7 @@ import { currentUser, requireUser } from '../../auth/session.js';
 import { HttpError } from '../../plugins/error-handler.js';
 import { perUserLimit } from '../../plugins/security.js';
 
-const { audioClips, preferences, pushTokens } = schema;
+const { audioClips, preferences, pushTokens, webPushSubscriptions } = schema;
 const ok = z.object({ ok: z.literal(true) });
 
 const sha256 = (value: string) => createHash('sha256').update(value).digest('hex');
@@ -25,10 +27,12 @@ const safeEqual = (a: string, b: string) =>
   a.length === b.length && timingSafeEqual(Buffer.from(a), Buffer.from(b));
 
 /** Per-person chat settings and opt-in push notification devices. */
-export const notificationRoutes: FastifyPluginAsyncZod<{ auth: Auth; db: Database }> = async (
-  app,
-  { auth, db },
-) => {
+export const notificationRoutes: FastifyPluginAsyncZod<{
+  auth: Auth;
+  db: Database;
+  /** Phase 60: WEB_PUSH_PUBLIC_KEY is set (the worker has the private one). */
+  webPush?: boolean;
+}> = async (app, { auth, db, webPush = false }) => {
   app.addHook('preHandler', requireUser(auth));
 
   app.get(
@@ -56,6 +60,10 @@ export const notificationRoutes: FastifyPluginAsyncZod<{ auth: Auth; db: Databas
         .select({ token: pushTokens.token })
         .from(pushTokens)
         .where(eq(pushTokens.userId, userId));
+      const browsers = await db
+        .select({ endpoint: webPushSubscriptions.endpoint })
+        .from(webPushSubscriptions)
+        .where(eq(webPushSubscriptions.userId, userId));
       return {
         acceptVoice: prefs?.acceptVoice ?? true,
         acceptCalls: prefs?.acceptCalls ?? true,
@@ -69,7 +77,7 @@ export const notificationRoutes: FastifyPluginAsyncZod<{ auth: Auth; db: Databas
           prefs && prefs.quietStart !== null && prefs.quietEnd !== null && prefs.quietTimeZone
             ? { start: prefs.quietStart, end: prefs.quietEnd, timeZone: prefs.quietTimeZone }
             : null,
-        pushDevices: devices.length,
+        pushDevices: devices.length + browsers.length,
       };
     },
   );
@@ -162,6 +170,56 @@ export const notificationRoutes: FastifyPluginAsyncZod<{ auth: Auth; db: Databas
           and(
             eq(pushTokens.token, request.body.token),
             eq(pushTokens.userId, currentUser(request).id),
+          ),
+        );
+      return { ok: true as const };
+    },
+  );
+  // Phase 60: a browser's Web Push subscription. Its address is a browser push service's (an
+  // allow-list, checked by the schema): the worker posts nowhere else. The address is unguessable
+  // and belongs to one browser, so whoever signed in there last owns it.
+  app.post(
+    '/v1/me/web-push',
+    {
+      schema: { body: webPushSubscriptionSchema, response: { 200: ok } },
+      config: perUserLimit(20, 60 * 60 * 1000),
+    },
+    async (request) => {
+      if (!webPush) {
+        throw new HttpError(
+          503,
+          ErrorCode.ServiceUnavailable,
+          'Notifications in the web app are not set up on this server.',
+        );
+      }
+      const userId = currentUser(request).id;
+      const { endpoint, keys, locale } = request.body;
+      await db
+        .insert(webPushSubscriptions)
+        .values({ endpoint, userId, p256dh: keys.p256dh, auth: keys.auth, locale })
+        .onConflictDoUpdate({
+          target: webPushSubscriptions.endpoint,
+          set: { userId, p256dh: keys.p256dh, auth: keys.auth, locale, createdAt: new Date() },
+        });
+      // At most WEB_PUSH_MAX_PER_ACCOUNT browsers: the oldest beyond it are dropped.
+      await db.execute(sql`
+        DELETE FROM web_push_subscriptions WHERE user_id = ${userId} AND endpoint NOT IN (
+          SELECT endpoint FROM web_push_subscriptions WHERE user_id = ${userId}
+          ORDER BY created_at DESC LIMIT ${WEB_PUSH_MAX_PER_ACCOUNT})`);
+      return { ok: true as const };
+    },
+  );
+
+  app.delete(
+    '/v1/me/web-push',
+    { schema: { body: z.object({ endpoint: z.string().max(1000) }), response: { 200: ok } } },
+    async (request) => {
+      await db
+        .delete(webPushSubscriptions)
+        .where(
+          and(
+            eq(webPushSubscriptions.endpoint, request.body.endpoint),
+            eq(webPushSubscriptions.userId, currentUser(request).id),
           ),
         );
       return { ok: true as const };
