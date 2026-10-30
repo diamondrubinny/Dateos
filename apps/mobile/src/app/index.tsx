@@ -11,6 +11,7 @@ import { ApiRequestError } from '../lib/api';
 import { authClient } from '../lib/auth-client';
 import { useMe } from '../lib/queries';
 import { routeFor } from '../lib/routes';
+import { NoSession } from '../components/ServerUnreachable';
 
 export default function Index() {
   const { t } = useTranslation();
@@ -18,7 +19,7 @@ export default function Index() {
   const me = useMe(Boolean(session.data));
 
   if (session.isPending || (session.data && me.isPending)) return <Loading />;
-  if (!session.data) return <Redirect href="/welcome" />;
+  if (!session.data) return <NoSession error={session.error} onRetry={session.refetch} />;
   if (me.error) {
     const suspended = me.error instanceof ApiRequestError && me.error.status === 403;
     return (

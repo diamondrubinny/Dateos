@@ -140,6 +140,12 @@ git pull
 GIT_COMMIT=$(git rev-parse HEAD) docker compose -f infra/docker-compose.yml --env-file .env --profile app --profile full up -d --build
 ```
 
+While the API restarts, Caddy answers for it: `503` with `Retry-After: 30` and the code
+`SERVER_RESTARTING` (`infra/web/Caddyfile`, `handle_errors`), which the app and the dashboard show as
+"can't be reached right now" and recover from by themselves. Behind your own proxy instead of the
+bundled Caddy, answer the same way to keep that (otherwise they still treat a bare 502/503/504 as
+the server being away).
+
 `GIT_COMMIT` records the version, so the dashboard can tell what's new. Database migrations run automatically when the API starts (`MIGRATE_ON_START=true`). If you run
 several API replicas, set it to `false` and run `pnpm --filter @nexaheart/db db:migrate` once instead.
 

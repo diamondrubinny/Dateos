@@ -6,6 +6,12 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Added
 
+- **Short outages without losing anyone**: while the server restarts or installs an update, a
+  member opening the app sees "Can't reach the community right now" (not signed out) instead of
+  the welcome page, and the app carries on by itself when it's back; inside the app, one line at
+  the top instead of errors, and the open screens reload when it's back. The dashboard the same.
+  Caddy now answers `503 SERVER_RESTARTING` with `Retry-After` while the API is down.
+
 - **Update emails to the admins**: an email when a new version is available (what was added or
   fixed, at most once a day) and when an approved update finishes (installed, or why not), in
   Hebrew and English. `UPDATE_EMAILS=off` turns them off.

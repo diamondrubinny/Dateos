@@ -5,6 +5,7 @@ import { apiErrorSchema, type ApiError, type ErrorCode } from '@nexaheart/shared
 import { Platform } from 'react-native';
 import { authHeaders } from './auth-client';
 import { API_URL } from './config';
+import { isUnavailableAnswer, markAvailable, markUnavailable } from './server-status';
 
 export class ApiRequestError extends Error {
   constructor(
@@ -32,13 +33,23 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
       },
     });
   } catch {
+    markUnavailable();
     throw new ApiRequestError(0, 'NETWORK_ERROR', 'Network request failed');
   }
   const text = await res.text();
-  const body: unknown = text ? JSON.parse(text) : undefined;
+  let body: unknown;
+  try {
+    body = text ? JSON.parse(text) : undefined;
+  } catch (error) {
+    // A proxy's error page isn't JSON: an error without a body. A success must be JSON.
+    if (res.ok) throw error;
+  }
+  const parsed = res.ok ? undefined : apiErrorSchema.safeParse(body);
+  const error: ApiError['error'] | undefined = parsed?.success ? parsed.data.error : undefined;
+  // Any answer from the API itself means the server is back (phase 55).
+  if (isUnavailableAnswer(res.status, error?.code)) markUnavailable();
+  else markAvailable();
   if (!res.ok) {
-    const parsed = apiErrorSchema.safeParse(body);
-    const error: ApiError['error'] | undefined = parsed.success ? parsed.data.error : undefined;
     throw new ApiRequestError(
       res.status,
       error?.code ?? 'INTERNAL_ERROR',

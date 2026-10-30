@@ -46,13 +46,30 @@ export class ApiError extends Error {
   }
 }
 
+/**
+ * Phase 55: the server didn't answer (an update, a restart): no answer at all, a proxy's
+ * 502/503/504 without an API error in it, or the proxy's own SERVER_RESTARTING. An error the API
+ * itself sent (a feature that's off, a partner community down) is not this.
+ */
+export function isUnreachable(error: unknown): boolean {
+  if (error instanceof TypeError) return true;
+  if (!(error instanceof ApiError)) return false;
+  if (error.status === 0 || error.code === 'SERVER_RESTARTING') return true;
+  return [502, 503, 504].includes(error.status) && error.code === 'UNKNOWN';
+}
+
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
-  const res = await fetch(`${API_URL}${path}`, {
-    method,
-    credentials: 'include',
-    headers: body === undefined ? {} : { 'content-type': 'application/json' },
-    ...(body === undefined ? {} : { body: JSON.stringify(body) }),
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}${path}`, {
+      method,
+      credentials: 'include',
+      headers: body === undefined ? {} : { 'content-type': 'application/json' },
+      ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+    });
+  } catch {
+    throw new ApiError(0, 'NETWORK_ERROR', 'The server could not be reached.');
+  }
   if (!res.ok) {
     const payload = (await res.json().catch(() => null)) as {
       error?: { code?: string; message?: string };
