@@ -259,6 +259,12 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
   accepts or says "not this time", live. An accepted date opens a safety check-in already filled in.
   Admins manage places in the dashboard ("Places"); every change is audited.
 
+### Changed
+
+- **The README, the marketing pages (4 languages) and the marketing site tell the current story**:
+  the features since phase 25, new screenshots of them (built from the e2e runs), the one-command
+  install over SSH, and the repository's current address.
+
 ### Fixed
 
 - **One-command install, tested end to end**: it now checks free disk space before building (a full
