@@ -63,7 +63,11 @@ describe.skipIf(!integrationEnabled)('"your report was reviewed" (integration)',
       method: 'POST',
       url: `/v1/admin/reports/${reportId}/resolve`,
       headers: { cookie: await moderator() },
-      payload: { action, reason: 'internal note: never shown to members' },
+      payload: {
+        action,
+        reason: 'internal note: never shown to members',
+        explanation: 'Messages you sent broke the community guidelines.',
+      },
     });
   const notices = async (m: Member) =>
     (await api(ctx, m, 'GET', '/v1/me')).json().notices as Record<string, unknown>[];

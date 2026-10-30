@@ -95,15 +95,46 @@ Staff who have finished 2FA setup receive an email for urgent reports. The email
 
 ### Decisions
 
-| Action  | Effect on the member                                                                                                                  |
-| ------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| Dismiss | None. The report is closed                                                                                                            |
-| Warn    | The app shows a warning naming the category. Your internal note is never shown                                                        |
-| Suspend | Signed out, all chats closed, hidden everywhere. Their other open reports are settled. They can still sign in to delete their account |
-| Ban     | Like suspend, plus a keyed hash of the email (case, `+tags` and Gmail dots normalised) blocks new sign-ups. Admins only               |
+| Action  | Effect on the member                                                                                                                 |
+| ------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| Dismiss | None. The report is closed                                                                                                           |
+| Warn    | The app shows a warning with your explanation. Your internal note is never shown                                                     |
+| Suspend | Signed out, all chats closed, hidden everywhere. Their other open reports are settled. They can still sign in to read why and appeal |
+| Ban     | Like suspend, plus a keyed hash of the email (case, `+tags` and Gmail dots normalised) blocks new sign-ups. Admins only              |
 
 Admins can lift a suspension or ban from the report page (with a reason). Suspensions for age are
 never lifted from the dashboard.
+
+**The reasons the member reads (phase 61).** A warning, suspension or ban needs two things beside
+your internal note:
+
+- **Ground**: the community's rules, or against the law. If it's the law, name it in the
+  explanation. ⚖️ Ask a lawyer when unsure.
+- **Explanation for the member** (10–1000 characters): the facts in plain words, what was found
+  and which rule it breaks. Never who reported. The member reads it in the app (Settings → Security
+  → "Decisions about my account", or the suspended screen), with the category, the date, and
+  whether an automatic check found it. Your note and your name are never shown.
+
+This is the "statement of reasons" the EU Digital Services Act asks of every hosting service
+(Art. 17) 📘⚖️.
+
+### Appeals (phase 61)
+
+Members can appeal a warning, suspension or ban once, within 6 months, from the app (also while
+suspended). Staff who finished two-factor setup get an email that an appeal is waiting (no
+content). **Appeals** in the dashboard shows the decision, what the member was told, your internal
+note and the appeal; choose **Keep the decision** or **Reverse the decision** and write a reply the
+member reads.
+
+- Not by the person who took the decision, unless they are the community's only admin.
+- Suspensions and bans: admins only. Reversing lifts it (as "Lift suspension"), unless a later
+  suspension or ban is in force. Reversing a warning withdraws it.
+- The member is emailed that the appeal was reviewed (no outcome, no reply in the email) and reads
+  the answer in the app. Every decision on an appeal is in the audit log.
+
+The EU DSA asks online platforms for an internal complaint system for six months after a decision
+(Art. 20); micro and small enterprises are exempt (Art. 19), but members of a small community
+deserve the same ⚖️.
 
 Safeguards: staff cannot act on reports that involve themselves, and cannot suspend other staff
 (use the CLI). Every report view, photo view, selfie view and decision is audited.
@@ -124,6 +155,7 @@ as sensitive data in some jurisdictions: ask for explicit consent and review it 
 | -------------------------- | -------------------------------------------- |
 | Handled reports + evidence | 12 months after the decision                 |
 | Moderation history         | 24 months                                    |
+| Appeals                    | With the decision they are about (24 months) |
 | Verification records       | 24 months (the selfie itself: until decided) |
 | Unfinished verifications   | 7 days                                       |
 | Banned-email hashes        | Until the ban is lifted                      |
@@ -188,4 +220,5 @@ cards set by the server's `.env` are locked.
 - No automated nudity detection yet: chat images are blurred until tapped, and reports cover the rest.
 - Reports against an account are deleted when that account is deleted. A ban still blocks the email from signing up again ⚖️.
 - The verified badge stays after profile photos change; re-verification is planned.
-- No appeal workflow inside the app yet: publish a contact address for appeals.
+- Age-related suspensions have no appeal in the app (they come from the date of birth the member
+  entered): publish a contact address for them.

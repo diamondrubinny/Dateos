@@ -91,6 +91,7 @@ NexaHeart is in active development. Here is what works today and what comes next
 | Short outages without losing anyone: while the server restarts, members see "can't reach the community right now" (not signed out) and carry on by themselves                                                                     | ✅ Available |
 | An installable web app (PWA): add to the home screen with the community's name, colour and logo as the icon; opens without the server or a connection                                                                             | ✅ Available |
 | Notifications in the web app (Web Push): matches, messages, calls and check-ins, the same rules as the phone app, encrypted to the browser, no names or text                                                                      | ✅ Available |
+| The reasons for a decision, and an appeal: what was decided and why (the rule or the law), shown in the app; appeal within 6 months, decided by another person in the dashboard                                                   | ✅ Available |
 
 ## Screenshots
 

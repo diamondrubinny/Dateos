@@ -154,9 +154,22 @@ export class MeService {
           eq(moderationLog.targetId, userId),
           eq(moderationLog.action, 'warn'),
           isNull(moderationLog.acknowledgedAt),
+          isNull(moderationLog.reversedAt),
         ),
       )
       .orderBy(asc(moderationLog.createdAt));
+    // "Your appeal was decided" (phase 61), until the member dismisses it.
+    const { rows: appealed } = await this.db.execute<{
+      id: string;
+      decision_id: string;
+      category: ReportCategory | null;
+      status: 'upheld' | 'reversed';
+      decided_at: string | Date;
+    }>(sql`
+      SELECT a.id, a.decision_id, m.category, a.status, a.decided_at
+      FROM moderation_appeals a JOIN moderation_actions m ON m.id = a.decision_id
+      WHERE a.user_id = ${userId} AND a.status <> 'open' AND a.member_seen_at IS NULL
+      ORDER BY a.decided_at DESC LIMIT 5`);
     // "Your report was reviewed" (phase 37): reports I sent, decided recently, not yet dismissed.
     const { rows: reviewed } = await this.db.execute<{
       id: string;
@@ -250,7 +263,16 @@ export class MeService {
           id: w.id,
           kind: 'warning' as const,
           category: w.category ?? 'other',
+          decisionId: w.id,
           createdAt: w.createdAt.toISOString(),
+        })),
+        ...appealed.map((a) => ({
+          id: a.id,
+          kind: 'appeal_decided' as const,
+          category: a.category ?? 'other',
+          outcome: a.status,
+          decisionId: a.decision_id,
+          createdAt: new Date(a.decided_at).toISOString(),
         })),
         ...reviewed.map((r) => ({
           id: r.id,
@@ -631,6 +653,19 @@ export class MeService {
       .where(and(eq(moderationLog.id, noticeId), eq(moderationLog.targetId, userId)))
       .returning({ id: moderationLog.id });
     if (updated.length > 0) return;
+    // Or "Your appeal was decided" (phase 61).
+    const appeal = await this.db
+      .update(schema.moderationAppeals)
+      .set({ memberSeenAt: new Date() })
+      .where(
+        and(
+          eq(schema.moderationAppeals.id, noticeId),
+          eq(schema.moderationAppeals.userId, userId),
+          sql`${schema.moderationAppeals.status} <> 'open'`,
+        ),
+      )
+      .returning({ id: schema.moderationAppeals.id });
+    if (appeal.length > 0) return;
     // Or "Your report was reviewed" (phase 37): only for reports this member sent.
     const seen = await this.db
       .update(schema.reports)

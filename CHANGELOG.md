@@ -6,6 +6,13 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Added
 
+- **The reasons for a decision, and a way to appeal it**: a warning, suspension or ban now comes
+  with an explanation written for the member and its ground (the community's rules or the law),
+  shown in the app with the date and whether an automatic check found it, never who reported or
+  the moderator's note. The member can appeal once within 6 months, also while suspended; staff
+  decide in the dashboard's new **Appeals** page (not whoever took the decision, unless the only
+  admin); reversing lifts a suspension or withdraws a warning. Emails without content both ways.
+
 - **Notifications in the web app** (Web Push): new matches, messages, calls, safety check-ins and
   event updates, with the same rules as the phone app (your choices, quiet hours, muted chats) and
   no names or message text; encrypted to your browser, so its push service can't read them. A tap

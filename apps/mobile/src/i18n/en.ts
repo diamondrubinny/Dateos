@@ -804,10 +804,48 @@ export const en = {
     met: 'Met in person',
     metLabel: 'Met someone here in person, confirmed by both',
   },
+  decisions: {
+    title: 'Decisions about my account',
+    open: 'Decisions about my account',
+    intro:
+      'Our moderators’ decisions about your account, why they were taken, and how to appeal. Who reported is never shown.',
+    empty: 'There are no decisions about your account.',
+    action: {
+      warn: 'A warning',
+      suspend: 'The account was suspended',
+      ban: 'The account was banned',
+    },
+    why: 'Why',
+    groundTerms: 'It breaks the community guidelines: {{category}}.',
+    groundIllegal: 'It is against the law: {{category}}.',
+    noExplanation: 'No further explanation was recorded for this decision.',
+    automated: 'An automatic check found it; a person on our team decided.',
+    byPerson: 'A person on our team decided.',
+    reversed: 'This decision was withdrawn after your appeal.',
+    appealTitle: 'Appeal',
+    appealIntro:
+      'If you think this decision is wrong, tell us why. A person who didn’t take the decision will review it. You can appeal until {{date}}.',
+    appealLabel: 'Why the decision should change',
+    appealHint:
+      '{{count}} of {{max}} characters. Please don’t include other people’s private details.',
+    appealSend: 'Send the appeal',
+    appealTooShort: 'Please write at least {{min}} characters.',
+    appealConflict: 'This decision was already appealed, or the time to appeal has passed.',
+    appealOpen:
+      'We received your appeal on {{date}}. A person on our team will review it and you’ll get an email when there’s an answer.',
+    appealUpheld: 'Your appeal was reviewed: the decision stands.',
+    appealReversed: 'Your appeal was accepted: the decision was withdrawn.',
+    reply: 'Our reply',
+    appealClosed: 'The time to appeal this decision has passed.',
+    noticeTitle: 'Your appeal was reviewed',
+    noticeOpen: 'Read the answer',
+    warningDetails: 'Why, and how to appeal',
+  },
   account: {
     suspendedTitle: 'Your account is suspended',
     suspendedBody:
-      'Your account was suspended for breaking the community guidelines, or because of the age requirement. While suspended, your profile is hidden and you cannot chat.',
+      'While the account is suspended, your profile is hidden and you can’t chat. Below is why, and how to appeal.',
+    suspendedAge: 'The account was suspended because of the age requirement.',
     suspendedAppeal: 'You can still delete your account and your data at any time.',
     warningTitle: 'Warning from our moderators',
     warningBody:

@@ -270,3 +270,27 @@ export function emailChangeNoticeEmail(instanceName: string): Omit<MailMessage, 
     },
   );
 }
+
+/**
+ * Phase 61: the member's appeal was decided. No outcome and no link in the email (as the sign-in
+ * alert): the statement is read in the app, after signing in.
+ */
+export function appealDecidedEmail(instanceName: string): Omit<MailMessage, 'to'> {
+  return bilingualNotice(
+    `${instanceName}: הערעור שלך נבדק / Your appeal was reviewed`,
+    {
+      title: 'הערעור שלך נבדק',
+      body: [
+        `צוות ${instanceName} בדק את הערעור ששלחת על החלטה בנוגע לחשבון שלך.`,
+        'התשובה מחכה באפליקציה, אחרי הכניסה לחשבון.',
+      ],
+    },
+    {
+      title: 'Your appeal was reviewed',
+      body: [
+        `The ${instanceName} team reviewed the appeal you sent about a decision on your account.`,
+        'The answer is waiting in the app, after you sign in.',
+      ],
+    },
+  );
+}

@@ -419,6 +419,14 @@ code {
 .facts dd {
   margin: 0;
 }
+/* Phase 61: a member's appeal, quoted. */
+.card blockquote {
+  margin: 0 0 0.75rem;
+  padding-block: 0.25rem;
+  padding-inline: 0.75rem 0;
+  border-inline-start: 4px solid var(--border);
+}
+
 .prompts,
 .history {
   padding-inline-start: 1.25rem;
