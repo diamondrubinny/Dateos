@@ -242,6 +242,20 @@ Dashboard → Branding → **Community profile**:
 
 Relationship history (never married, divorced, separated, widowed) is always available in "About me".
 
+## 7e. Presets and who may join (phase 62c, admins)
+
+Dashboard → Branding:
+
+- **Start from a preset**: General, LGBTQ+, Faith and marriage, 50+, Friendship only. One click
+  fills and saves the identity, community-profile and age settings; every field stays editable.
+  The gender list and the declaration are never changed by a preset.
+- **Who may join**: a minimum age (18–99, never below 18), an optional maximum, optional genders
+  (none ticked: everyone) and an optional declaration (up to 300 characters) every new member
+  confirms; when they confirmed is stored. Checked when a profile is created; someone outside the
+  rules is told plainly and not suspended (another community may fit). Members already in keep
+  their place. ⚖️ Restricting membership by age, gender or belief may not be lawful for every
+  community or country: check before you do.
+
 ## 8. Integrations (phase 24, admins only)
 
 The **Integrations** page connects outside services: see [INTEGRATIONS.md](INTEGRATIONS.md).

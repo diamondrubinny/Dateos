@@ -70,7 +70,7 @@ describe.skipIf(!integrationEnabled)(
 
     it('marriage: chosen like any intention, offered unless the community narrows the list', async () => {
       const info = (await ctx.app.inject({ method: 'GET', url: '/v1/instance' })).json();
-      expect(info.community).toEqual({
+      expect(info.community).toMatchObject({
         intentions: ['long_term', 'marriage', 'short_term', 'open', 'friends', 'unsure'],
         faith: false,
       });

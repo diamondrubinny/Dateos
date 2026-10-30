@@ -4,7 +4,7 @@
 import { z } from 'zod';
 import { signupModes } from './trust.js';
 import { identityVocabularies } from './identity.js';
-import { intentions, intentionSchema } from './profile.js';
+import { genders, genderSchema, intentions, intentionSchema, MAX_AGE, MIN_AGE } from './profile.js';
 import { MAX_CALL_MAX_MINUTES, MIN_CALL_MAX_MINUTES } from './calls.js';
 import { localeSchema } from './common.js';
 
@@ -97,6 +97,9 @@ const plainText = (max: number) =>
     // eslint-disable-next-line no-control-regex -- matching control characters is the point
     .refine((v) => !/[\u0000-\u001F\u007F<>]/.test(v), 'Plain text only');
 
+/** Phase 62c: the longest community declaration. */
+export const MAX_JOIN_DECLARATION = 300;
+
 export const instanceSettingsInputSchema = z
   .object({
     name: plainText(40),
@@ -127,6 +130,17 @@ export const instanceSettingsInputSchema = z
       .max(intentions.length)
       .refine((l) => new Set(l).size === l.length),
     faithModule: z.boolean(),
+    /**
+     * Phase 62c, who may join: ages (never below 18), genders (empty: everyone) and a declaration
+     * every new member confirms. ⚖️ Restricting membership may not be lawful everywhere.
+     */
+    joinMinAge: z.number().int().min(MIN_AGE).max(99),
+    joinMaxAge: z.number().int().min(MIN_AGE).max(MAX_AGE).nullable(),
+    joinGenders: z
+      .array(genderSchema)
+      .max(genders.length)
+      .refine((l) => new Set(l).size === l.length),
+    joinDeclaration: plainText(MAX_JOIN_DECLARATION).nullable(),
   })
   .partial();
 export type InstanceSettingsInput = z.infer<typeof instanceSettingsInputSchema>;

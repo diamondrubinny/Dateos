@@ -6,6 +6,11 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Added
 
+- **Presets and who may join**: one click sets a community up as general, LGBTQ+, faith and
+  marriage, 50+ or friendship only; admins can set an age range, limit joining to some genders and
+  ask new members to confirm a declaration. Onboarding shows the rules and explains a refusal
+  plainly (no suspension); members already in keep their place.
+
 - **Marriage, relationship history and a faith module**: "marriage" as an intention (matched
   closest to long-term); relationship history in "About me"; and, where the community turns it on,
   faith, stream (e.g. national-religious, Haredi, traditional, Sunni, Catholic) and observance

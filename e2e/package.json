@@ -65,7 +65,8 @@
     "web-push": "tsx web-push.ts",
     "appeals": "tsx appeals.ts",
     "identity": "tsx identity.ts",
-    "faith": "tsx faith.ts"
+    "faith": "tsx faith.ts",
+    "join-rules": "tsx join-rules.ts"
   },
   "dependencies": {
     "@axe-core/playwright": "4.14.0",

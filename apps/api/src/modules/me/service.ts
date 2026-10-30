@@ -553,9 +553,22 @@ export class MeService {
         `You must be at least ${MIN_AGE} to use this service.`,
       );
     }
+    // Phase 62c: this community's rules for joining. Not a suspension: another community may fit.
+    const { join } = await readCommunitySettings(this.db);
+    const notEligible = (message: string) => new HttpError(400, ErrorCode.NotEligible, message);
+    if (age < join.minAge || (join.maxAge !== null && age > join.maxAge)) {
+      throw notEligible('This community is for another age range.');
+    }
+    if (join.genders.length > 0 && !join.genders.includes(input.gender)) {
+      throw notEligible('This community is for other members.');
+    }
+    if (join.declaration && input.declarationAccepted !== true) {
+      throw notEligible('Please confirm the community’s declaration.');
+    }
 
     await this.db.transaction(async (tx) => {
       await tx.insert(profiles).values({
+        declarationAcceptedAt: join.declaration ? new Date() : null,
         userId,
         displayName: input.displayName,
         birthDate: input.birthDate,

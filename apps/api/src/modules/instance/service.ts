@@ -15,6 +15,8 @@ import {
   type IdentityVocabulary,
   type Intention,
   intentions,
+  MIN_AGE,
+  type Gender,
 } from '@nexaheart/shared';
 import type { StoredObject } from '@nexaheart/storage';
 import { and, eq, sql } from 'drizzle-orm';
@@ -55,6 +57,10 @@ export interface AdminInstanceSettings {
   identityPronouns: boolean;
   intentionsOffered: Intention[];
   faithModule: boolean;
+  joinMinAge: number;
+  joinMaxAge: number | null;
+  joinGenders: Gender[];
+  joinDeclaration: string | null;
 }
 
 export class InstanceService {
@@ -124,6 +130,12 @@ export class InstanceService {
       community: {
         intentions: offeredIntentions(row?.intentionsOffered),
         faith: row?.faithModule ?? false,
+        join: {
+          minAge: Math.max(MIN_AGE, row?.joinMinAge ?? MIN_AGE),
+          maxAge: row?.joinMaxAge ?? null,
+          genders: (row?.joinGenders ?? []) as Gender[],
+          declaration: row?.joinDeclaration ?? null,
+        },
       },
       poweredBy: poweredBy(env),
     };
@@ -188,6 +200,10 @@ export class InstanceService {
       identityPronouns: info.identity.pronouns,
       intentionsOffered: info.community.intentions,
       faithModule: info.community.faith,
+      joinMinAge: info.community.join.minAge,
+      joinMaxAge: info.community.join.maxAge,
+      joinGenders: info.community.join.genders,
+      joinDeclaration: info.community.join.declaration,
     };
   }
 
@@ -215,6 +231,19 @@ export class InstanceService {
 
   async update(staff: AuthUser, input: InstanceSettingsInput): Promise<AdminInstanceSettings> {
     this.requireAdmin(staff);
+    // Phase 62c: the maximum age, if any, can't be below the minimum (as they'd be after saving).
+    if (input.joinMinAge !== undefined || input.joinMaxAge !== undefined) {
+      const row = await this.row();
+      const min = input.joinMinAge ?? row?.joinMinAge ?? MIN_AGE;
+      const max = input.joinMaxAge === undefined ? (row?.joinMaxAge ?? null) : input.joinMaxAge;
+      if (max !== null && max < min) {
+        throw new HttpError(
+          400,
+          ErrorCode.ValidationError,
+          'The maximum age is below the minimum.',
+        );
+      }
+    }
     const values = { ...input, updatedBy: staff.id, updatedAt: new Date() };
     await this.db.transaction(async (tx) => {
       await tx

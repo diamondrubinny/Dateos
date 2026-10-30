@@ -94,6 +94,7 @@ NexaHeart is in active development. Here is what works today and what comes next
 | The reasons for a decision, and an appeal: what was decided and why (the rule or the law), shown in the app; appeal within 6 months, decided by another person in the dashboard                                                   | ✅ Available |
 | Gender identity and pronouns: a longer list or own words, and how to address you (feminine, masculine or neutral in Hebrew, Arabic and Russian); matches only by default; each community chooses what it offers                   | ✅ Available |
 | Marriage, relationship history and a faith module (faith, stream, Shabbat/kashrut/halal…, with filters), each community choosing what it offers                                                                                   | ✅ Available |
+| Presets (general, LGBTQ+, faith and marriage, 50+, friendship) and who may join: an age range, genders, a declaration new members confirm                                                                                         | ✅ Available |
 
 ## Screenshots
 

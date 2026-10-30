@@ -812,6 +812,17 @@ export const en = {
     met: 'Met in person',
     metLabel: 'Met someone here in person, confirmed by both',
   },
+  join: {
+    rulesTitle: 'Who this community is for',
+    ageRange: 'Members aged {{min}} to {{max}}.',
+    ageFrom: 'Members aged {{min}} and over.',
+    genders: 'Members who are: {{list}}.',
+    declarationTitle: 'The community’s declaration',
+    declarationConfirm: 'I confirm this',
+    declarationRequired: 'Please confirm the declaration to join.',
+    notEligible:
+      'This community is for other members (see its rules above). Another community may be a better fit.',
+  },
   faith: {
     title: 'Faith and observance',
     notOffered: 'This community doesn’t offer these questions.',

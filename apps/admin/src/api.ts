@@ -21,6 +21,7 @@ import type {
   ModerationGround,
   IdentityVocabulary,
   Intention,
+  Gender,
   AppealSummary,
   ReportDetail,
   ReportSummary,
@@ -113,6 +114,10 @@ export interface AdminInstanceSettings {
   identityPronouns: boolean;
   intentionsOffered: Intention[];
   faithModule: boolean;
+  joinMinAge: number;
+  joinMaxAge: number | null;
+  joinGenders: Gender[];
+  joinDeclaration: string | null;
 }
 
 async function upload(path: string, file: File): Promise<void> {

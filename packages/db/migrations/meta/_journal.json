@@ -414,6 +414,13 @@
       "when": 1793392116287,
       "tag": "0058_faith_marriage",
       "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "7",
+      "when": 1793394756183,
+      "tag": "0059_join_rules",
+      "breakpoints": true
     }
   ]
 }

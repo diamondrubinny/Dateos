@@ -9,11 +9,11 @@ import { Platform, StyleSheet, View, type TextInputProps } from 'react-native';
 import { AppText } from '../../components/AppText';
 import { Banner } from '../../components/Banner';
 import { Button } from '../../components/Button';
-import { ChoiceGroup } from '../../components/Choice';
+import { Checkbox, ChoiceGroup } from '../../components/Choice';
 import { Screen } from '../../components/Screen';
 import { TextField } from '../../components/TextField';
 import { ApiRequestError } from '../../lib/api';
-import { useCreateProfile, useOfferedIntentions } from '../../lib/queries';
+import { useCreateProfile, useInstance, useOfferedIntentions } from '../../lib/queries';
 import { ONBOARDING_TOTAL } from '../../lib/routes';
 import { spacing } from '../../lib/theme';
 
@@ -34,7 +34,7 @@ const bday = (part: 'day' | 'month' | 'year') =>
   (Platform.OS === 'web' ? `bday-${part}` : `birthdate-${part}`) as TextInputProps['autoComplete'];
 
 type Errors = Partial<
-  Record<'name' | 'birthDate' | 'gender' | 'interestedIn' | 'intention', string>
+  Record<'name' | 'birthDate' | 'gender' | 'interestedIn' | 'intention' | 'declaration', string>
 >;
 
 export default function ProfileStep() {
@@ -48,6 +48,21 @@ export default function ProfileStep() {
   const [interestedIn, setInterestedIn] = useState<Gender[]>([]);
   const [intention, setIntention] = useState<Intention[]>([]);
   const offeredIntentions = useOfferedIntentions();
+  // Phase 62c: this community's rules for joining, said before asking.
+  const join = useInstance().data?.community?.join;
+  const [declared, setDeclared] = useState(false);
+  const rules = join
+    ? [
+        join.minAge > MIN_AGE || join.maxAge !== null
+          ? join.maxAge !== null
+            ? t('join.ageRange', { min: join.minAge, max: join.maxAge })
+            : t('join.ageFrom', { min: join.minAge })
+          : null,
+        join.genders.length > 0
+          ? t('join.genders', { list: join.genders.map((g) => t(`gender.${g}`)).join(', ') })
+          : null,
+      ].filter((r): r is string => r !== null)
+    : [];
   const [bio, setBio] = useState('');
   const [errors, setErrors] = useState<Errors>({});
   const [formError, setFormError] = useState<string>();
@@ -63,6 +78,7 @@ export default function ProfileStep() {
     if (gender.length === 0) next.gender = t('onboarding.profile.chooseOne');
     if (interestedIn.length === 0) next.interestedIn = t('onboarding.profile.chooseOne');
     if (intention.length === 0) next.intention = t('onboarding.profile.chooseOne');
+    if (join?.declaration && !declared) next.declaration = t('join.declarationRequired');
     setErrors(next);
     if (Object.keys(next).length > 0 || !birthDate) return;
 
@@ -76,11 +92,15 @@ export default function ProfileStep() {
         intention: intention[0]!,
         ...(bio.trim() ? { bio: bio.trim() } : {}),
         languages: [],
+        ...(join?.declaration ? { declarationAccepted: declared } : {}),
       });
       router.replace('/onboarding/photos');
     } catch (error) {
       if (error instanceof ApiRequestError && error.code === 'UNDERAGE') return router.replace('/');
       if (error instanceof ApiRequestError && error.status === 409) return router.replace('/');
+      if (error instanceof ApiRequestError && error.code === 'NOT_ELIGIBLE') {
+        return setFormError(t('join.notEligible'));
+      }
       setFormError(t('common.genericError'));
     }
   };
@@ -100,6 +120,16 @@ export default function ProfileStep() {
       }
     >
       {formError ? <Banner tone="error" message={formError} /> : null}
+      {rules.length > 0 ? (
+        <View style={styles.group} testID="join-rules">
+          <AppText variant="label">{t('join.rulesTitle')}</AppText>
+          {rules.map((rule) => (
+            <AppText key={rule} variant="body">
+              {rule}
+            </AppText>
+          ))}
+        </View>
+      ) : null}
       <TextField
         label={t('onboarding.profile.name')}
         hint={t('onboarding.profile.nameHint')}
@@ -183,6 +213,24 @@ export default function ProfileStep() {
         multiline
         maxLength={500}
       />
+      {join?.declaration ? (
+        <View style={styles.group}>
+          <AppText variant="label">{t('join.declarationTitle')}</AppText>
+          <AppText variant="body" testID="join-declaration">
+            {join.declaration}
+          </AppText>
+          <Checkbox
+            label={t('join.declarationConfirm')}
+            checked={declared}
+            onChange={setDeclared}
+          />
+          {errors.declaration ? (
+            <AppText variant="caption" tone="danger" accessibilityRole="alert">
+              {errors.declaration}
+            </AppText>
+          ) : null}
+        </View>
+      ) : null}
     </Screen>
   );
 }

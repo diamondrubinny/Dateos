@@ -122,6 +122,42 @@ const en = {
       'Optional for members, with their consent: faith, stream (e.g. national-religious, Haredi, traditional, Sunni, Catholic) and observance questions (Shabbat, kashrut, halal, prayer…), with matching filters. Special-category data ⚖️: never ranked on, never sent to partners or an AI model.',
     communitySave: 'Save community profile',
     communitySaved: 'Community profile saved.',
+    presetsTitle: 'Start from a preset',
+    presetsHint:
+      'Fills the identity, community-profile and age settings for a common kind of community, and saves them. Every field stays editable below. The gender list and the declaration are not changed.',
+    presetsLegend: 'Kind of community',
+    presets: {
+      general: {
+        name: 'General',
+        sets: 'The longer gender list and pronouns; every intention; no faith module; 18+.',
+      },
+      lgbtq: {
+        name: 'LGBTQ+',
+        sets: 'The longer gender list, own words and pronouns; every intention; 18+.',
+      },
+      faithMarriage: {
+        name: 'Faith and marriage',
+        sets: 'The faith module; marriage and long-term only; the short gender list, no pronouns; 18+.',
+      },
+      fiftyPlus: { name: '50+', sets: 'Members 50 and over; every intention except casual.' },
+      friends: { name: 'Friendship only', sets: 'Friends as the only intention; 18+.' },
+    },
+    presetApply: 'Apply and save the preset',
+    presetApplied: 'Preset saved. The cards below show the new values.',
+    joinTitle: 'Who may join',
+    joinHint:
+      'Checked when a new profile is created; members already in keep their place. ⚖️ Restricting membership by age, gender or belief may not be lawful for every community: check before you do.',
+    joinMinAge: 'Minimum age (18–99)',
+    joinMaxAge: 'Maximum age (optional)',
+    joinMaxAgeHelp: 'Leave empty for no maximum.',
+    joinGenders: 'Only members of these genders (optional)',
+    joinGendersHelp: 'None ticked: everyone.',
+    genders: { woman: 'Women', man: 'Men', nonbinary: 'Nonbinary people', other: 'Other' },
+    joinDeclaration: 'Declaration new members confirm (optional)',
+    joinDeclarationHelp:
+      'Up to 300 characters, e.g. “I am single and looking for a serious relationship.” When each member confirmed is stored.',
+    joinSave: 'Save joining rules',
+    joinSaved: 'Joining rules saved.',
     callsNotConfigured:
       'Video dates need LiveKit on this server. See “Video dates” in docs/SELF_HOSTING.md.',
   },
@@ -946,6 +982,38 @@ const he: Messages = {
       'לא חובה לחברי הקהילה, ובהסכמתם: דת, זרם (למשל דתי־לאומי, חרדי, מסורתי, סוני, קתולי) ושאלות שמירה (שבת, כשרות, חלאל, תפילה…), עם מסנני התאמה. מידע רגיש במיוחד ⚖️: לא משמש לדירוג ולא נשלח לשותפויות או למודל AI.',
     communitySave: 'שמירת פרופיל הקהילה',
     communitySaved: 'פרופיל הקהילה נשמר.',
+    presetsTitle: 'התחלה מתבנית',
+    presetsHint:
+      'ממלא את הגדרות הזהות, פרופיל הקהילה והגיל לסוג קהילה נפוץ, ושומר אותן. כל שדה נשאר ניתן לעריכה למטה. רשימת המגדרים וההצהרה לא משתנות.',
+    presetsLegend: 'סוג הקהילה',
+    presets: {
+      general: {
+        name: 'כללית',
+        sets: 'רשימת מגדרים מורחבת ולשון פנייה; כל הכוונות; בלי מודול אמונה; מגיל 18.',
+      },
+      lgbtq: { name: 'להט״ב', sets: 'רשימה מורחבת, מילים משלי ולשון פנייה; כל הכוונות; מגיל 18.' },
+      faithMarriage: {
+        name: 'אמונה ונישואין',
+        sets: 'מודול אמונה; רק נישואין וקשר לטווח ארוך; רשימת מגדרים קצרה, בלי לשון פנייה; מגיל 18.',
+      },
+      fiftyPlus: { name: '50+', sets: 'חברי קהילה מגיל 50; כל הכוונות חוץ מקליל.' },
+      friends: { name: 'חברות בלבד', sets: 'רק כוונת חברות; מגיל 18.' },
+    },
+    presetApply: 'החלה ושמירה של התבנית',
+    presetApplied: 'התבנית נשמרה. הכרטיסים למטה מציגים את הערכים החדשים.',
+    joinTitle: 'הצטרפות לקהילה',
+    joinHint:
+      'נבדק כשנוצר פרופיל חדש; מי שכבר בקהילה נשאר. ⚖️ הגבלת הצטרפות לפי גיל, מגדר או אמונה לא בהכרח מותרת לכל קהילה: כדאי לבדוק לפני.',
+    joinMinAge: 'גיל מינימלי (18–99)',
+    joinMaxAge: 'גיל מרבי (לא חובה)',
+    joinMaxAgeHelp: 'ריק: בלי גיל מרבי.',
+    joinGenders: 'רק חברי קהילה מהמגדרים האלה (לא חובה)',
+    joinGendersHelp: 'אם לא מסמנים כלום: כולם.',
+    genders: { woman: 'נשים', man: 'גברים', nonbinary: 'אנשים א־בינאריים', other: 'אחר' },
+    joinDeclaration: 'הצהרה שחברי קהילה חדשים מאשרים (לא חובה)',
+    joinDeclarationHelp: 'עד 300 תווים, למשל „אני פנוי/ה ומחפש/ת קשר רציני”. מועד האישור נשמר.',
+    joinSave: 'שמירת כללי ההצטרפות',
+    joinSaved: 'כללי ההצטרפות נשמרו.',
     callsNotConfigured:
       'דייטים בווידאו דורשים LiveKit בשרת הזה. פרטים בפרק “Video dates” בקובץ docs/SELF_HOSTING.md.',
   },
