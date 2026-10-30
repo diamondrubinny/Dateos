@@ -3,6 +3,7 @@
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 import {
   childrenOptions,
+  relationshipHistories,
   drinkingOptions,
   HEIGHT_MAX_CM,
   HEIGHT_MIN_CM,
@@ -82,12 +83,12 @@ function EditAbout() {
   };
 
   const single = <T extends string>(
-    key: 'children' | 'smoking' | 'drinking' | 'religion',
+    key: 'children' | 'smoking' | 'drinking' | 'religion' | 'relationshipHistory',
     options: readonly T[],
   ) => (
     <ChoiceGroup
       label={t(`about.${key}`)}
-      stacked={key === 'children'}
+      stacked={key === 'children' || key === 'relationshipHistory'}
       options={[
         ...options.map((value) => ({
           value: value as string,
@@ -121,6 +122,7 @@ function EditAbout() {
         onChange={(next) => set({ interests: next.slice(0, MAX_INTERESTS) })}
       />
 
+      {single('relationshipHistory', relationshipHistories)}
       {single('children', childrenOptions)}
       {single('smoking', smokingOptions)}
       {single('drinking', drinkingOptions)}

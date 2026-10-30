@@ -117,6 +117,12 @@ const dealbreakerRules = sql.raw(`
       AND (cardinality(cpr.children_ok) = 0 OR me.children IS NULL OR me.children = ANY(cpr.children_ok))
       AND (cardinality(me.religion_ok) = 0 OR ca.religion IS NULL OR ca.religion = ANY(me.religion_ok))
       AND (cardinality(cpr.religion_ok) = 0 OR me.religion IS NULL OR me.religion = ANY(cpr.religion_ok))
+      -- Faith and stream (phase 62b), only while the community's faith module is on.
+      AND (NOT COALESCE((SELECT faith_module FROM instance_settings WHERE id = 1), false) OR (
+            (cardinality(me.faith_ok) = 0 OR ca.faith IS NULL OR ca.faith = ANY(me.faith_ok))
+        AND (cardinality(cpr.faith_ok) = 0 OR me.faith IS NULL OR me.faith = ANY(cpr.faith_ok))
+        AND (cardinality(me.stream_ok) = 0 OR ca.faith_stream IS NULL OR ca.faith_stream = ANY(me.stream_ok))
+        AND (cardinality(cpr.stream_ok) = 0 OR me.faith_stream IS NULL OR me.faith_stream = ANY(cpr.stream_ok))))
       AND (ca.height_cm IS NULL OR ((me.height_min IS NULL OR ca.height_cm >= me.height_min)
                                 AND (me.height_max IS NULL OR ca.height_cm <= me.height_max)))
       AND (me.height_cm IS NULL OR ((cpr.height_min IS NULL OR me.height_cm >= cpr.height_min)
@@ -137,6 +143,8 @@ export function candidateSql(q: CandidateQuery): SQL {
              e.embedding, e.model,
              -- About me and dealbreakers (phase 19).
              pr.smoking_ok, pr.children_ok, pr.religion_ok, pr.height_min, pr.height_max,
+             -- Faith module (phase 62b).
+             pr.faith_ok, pr.stream_ok, ma.faith, ma.faith_stream,
              -- Friends mode (phase 22).
              pr.friend_mode, pr.friend_age_min, pr.friend_age_max, pr.friend_genders,
              COALESCE(ma.interests, '{}') AS interests, ma.smoking, ma.children, ma.religion, ma.height_cm

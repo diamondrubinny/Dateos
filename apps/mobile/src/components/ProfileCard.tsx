@@ -64,6 +64,18 @@ export function ProfileCard({ profile, onLikeItem }: ProfileCardProps) {
   // Arrows point outward in both directions: "previous" sits at the start edge.
   const [prevGlyph, nextGlyph] = direction === 'rtl' ? ['›', '‹'] : ['‹', '›'];
   const photo = profile.photos[index];
+  const faith = profile.faith;
+  const faithLine = faith
+    ? [
+        faith.faith ? t(`faith.faiths.${faith.faith}`) : null,
+        faith.stream ? t(`faith.streams.${faith.stream}`) : null,
+        ...Object.entries(faith.observance).map(
+          ([q, a]) => `${t(`faith.questions.${q}`)}: ${t(`faith.answers.${a}`)}`,
+        ),
+      ]
+        .filter(Boolean)
+        .join(' · ')
+    : '';
   const identity = profile.identity;
   const identityLine = identity
     ? [
@@ -180,6 +192,16 @@ export function ProfileCard({ profile, onLikeItem }: ProfileCardProps) {
             </AppText>
           ) : null}
         </View>
+        {faithLine ? (
+          // Phase 62b: only while the community's faith module is on.
+          <AppText
+            variant="body"
+            testID="faith"
+            accessibilityLabel={t('faith.cardLabel', { text: faithLine })}
+          >
+            {faithLine}
+          </AppText>
+        ) : null}
         {identityLine ? (
           // Phase 62a: only what the member shows this viewer; one sentence for screen readers.
           <AppText

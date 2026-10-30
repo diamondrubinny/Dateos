@@ -4,6 +4,7 @@
 import { z } from 'zod';
 import { signupModes } from './trust.js';
 import { identityVocabularies } from './identity.js';
+import { intentions, intentionSchema } from './profile.js';
 import { MAX_CALL_MAX_MINUTES, MIN_CALL_MAX_MINUTES } from './calls.js';
 import { localeSchema } from './common.js';
 
@@ -119,6 +120,13 @@ export const instanceSettingsInputSchema = z
     identityVocabulary: z.enum(identityVocabularies),
     identityCustom: z.boolean(),
     identityPronouns: z.boolean(),
+    /** Phase 62b: intentions offered (at least one) and the faith module. */
+    intentionsOffered: z
+      .array(intentionSchema)
+      .min(1)
+      .max(intentions.length)
+      .refine((l) => new Set(l).size === l.length),
+    faithModule: z.boolean(),
   })
   .partial();
 export type InstanceSettingsInput = z.infer<typeof instanceSettingsInputSchema>;

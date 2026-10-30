@@ -45,6 +45,17 @@ describe('scoreCandidate', () => {
     expect(score({ vibeCosine: 0.3 }).score).toBeGreaterThan(score({ vibeCosine: 0.02 }).score);
   });
 
+  it('marriage (phase 62b) is closest to long-term, far from short-term', () => {
+    const marriage = (candidateIntention: CandidateSignals['candidateIntention']) =>
+      score({ viewerIntention: 'marriage', candidateIntention }).score;
+    expect(marriage('marriage')).toBeGreaterThan(marriage('long_term'));
+    expect(marriage('long_term')).toBeGreaterThan(marriage('open'));
+    expect(marriage('open')).toBeGreaterThan(marriage('short_term'));
+    expect(score({ candidateIntention: 'marriage' }).score).toBeGreaterThan(
+      score({ candidateIntention: 'open' }).score,
+    );
+  });
+
   it('is reciprocal: people likely to like back rank higher', () => {
     expect(score({ candidateLikedViewer: true }).score).toBeGreaterThan(score().score);
     expect(score({ candidateLikes: 18, candidateDecisions: 20 }).score).toBeGreaterThan(

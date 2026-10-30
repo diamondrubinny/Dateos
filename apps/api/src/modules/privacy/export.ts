@@ -483,6 +483,8 @@ export async function exportMemberData(
             smokingOk: preferences.smokingOk,
             childrenOk: preferences.childrenOk,
             religionOk: preferences.religionOk,
+            faithOk: preferences.faithOk,
+            streamOk: preferences.streamOk,
             heightMin: preferences.heightMin,
             heightMax: preferences.heightMax,
           },
@@ -506,6 +508,11 @@ export async function exportMemberData(
           genderCustom: about.genderCustom,
           pronouns: about.pronouns,
           identityVisibility: about.identityVisibility,
+          // Phase 62b: relationship history; faith answers only while the religion consent is given.
+          relationshipHistory: about.relationshipHistory,
+          faith: about.faith,
+          faithStream: about.faithStream,
+          observance: about.observance,
         }
       : null,
     approximateLocation: location

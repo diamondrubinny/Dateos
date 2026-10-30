@@ -4,7 +4,6 @@
 import {
   ageOn,
   genders,
-  intentions,
   MIN_AGE,
   type Gender,
   type Intention,
@@ -20,7 +19,7 @@ import { ChoiceGroup } from '../../components/Choice';
 import { Screen } from '../../components/Screen';
 import { TextField } from '../../components/TextField';
 import { ApiRequestError } from '../../lib/api';
-import { useCreateProfile } from '../../lib/queries';
+import { useCreateProfile, useOfferedIntentions } from '../../lib/queries';
 import { ONBOARDING_TOTAL } from '../../lib/routes';
 import { spacing } from '../../lib/theme';
 
@@ -54,6 +53,7 @@ export default function ProfileStep() {
   const [gender, setGender] = useState<Gender[]>([]);
   const [interestedIn, setInterestedIn] = useState<Gender[]>([]);
   const [intention, setIntention] = useState<Intention[]>([]);
+  const offeredIntentions = useOfferedIntentions();
   const [bio, setBio] = useState('');
   const [errors, setErrors] = useState<Errors>({});
   const [formError, setFormError] = useState<string>();
@@ -175,7 +175,7 @@ export default function ProfileStep() {
       />
       <ChoiceGroup
         label={t('onboarding.profile.intention')}
-        options={intentions.map((value) => ({ value, label: t(`intention.${value}`) }))}
+        options={offeredIntentions.map((value) => ({ value, label: t(`intention.${value}`) }))}
         selected={intention}
         onChange={setIntention}
         error={errors.intention}

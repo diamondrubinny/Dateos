@@ -2,6 +2,7 @@
 // Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 import { z } from 'zod';
+import { allStreams, faiths } from './faith.js';
 
 /**
  * About me (phase 19): interests, lifestyle, an opening question and dealbreakers. Every field is
@@ -74,6 +75,9 @@ export const religionOptions = [
   'very_religious',
   'spiritual',
 ] as const;
+/** Phase 62b: relationship history (optional; not special-category data). */
+export const relationshipHistories = ['never_married', 'divorced', 'separated', 'widowed'] as const;
+export type RelationshipHistory = (typeof relationshipHistories)[number];
 export const HEIGHT_MIN_CM = 120;
 export const HEIGHT_MAX_CM = 230;
 export const OPENING_QUESTION_MAX = 140;
@@ -100,6 +104,7 @@ export const aboutSchema = z.object({
   heightCm: height.nullable(),
   religion: z.enum(religionOptions).nullable(),
   openingQuestion: z.string().trim().min(1).max(OPENING_QUESTION_MAX).nullable(),
+  relationshipHistory: z.enum(relationshipHistories).nullable().default(null),
 });
 export type About = z.infer<typeof aboutSchema>;
 
@@ -111,6 +116,7 @@ export const emptyAbout: About = {
   heightCm: null,
   religion: null,
   openingQuestion: null,
+  relationshipHistory: null,
 };
 
 /**
@@ -122,6 +128,9 @@ export const dealbreakersSchema = z
     smokingOk: z.array(z.enum(smokingOptions)).max(smokingOptions.length).refine(unique),
     childrenOk: z.array(z.enum(childrenOptions)).max(childrenOptions.length).refine(unique),
     religionOk: z.array(z.enum(religionOptions)).max(religionOptions.length).refine(unique),
+    /** Phase 62b, the faith module: an empty list means any; a missing answer always passes. */
+    faithOk: z.array(z.enum(faiths)).max(faiths.length).refine(unique).default([]),
+    streamOk: z.array(z.enum(allStreams)).max(allStreams.length).refine(unique).default([]),
     heightMin: height.nullable(),
     heightMax: height.nullable(),
   })
@@ -135,6 +144,8 @@ export const noDealbreakers: Dealbreakers = {
   smokingOk: [],
   childrenOk: [],
   religionOk: [],
+  faithOk: [],
+  streamOk: [],
   heightMin: null,
   heightMax: null,
 };

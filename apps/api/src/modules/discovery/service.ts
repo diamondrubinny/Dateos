@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
-import { readIdentitySettings } from '../../lib/identity-settings.js';
+import { readCommunitySettings, readIdentitySettings } from '../../lib/community-settings.js';
 import { checkHarm, rank, scoreCandidate, type ScoreResult } from '@nexaheart/ai';
 import type { Pool } from 'pg';
 import { schema, type Database } from '@nexaheart/db';
 import {
   ageOn,
   allowedIdentity,
+  type FaithAnswers,
   type PublicIdentity,
   DAILY_INTERACTION_LIMIT,
   EVENT_BADGE_MONTHS,
@@ -1046,6 +1047,8 @@ export class DiscoveryService {
     // Gender identity and pronouns (phase 62a): what the community offers now, and "matches
     // only" (the default) unless the viewer has an open match with them.
     const identitySettings = await readIdentitySettings(this.db);
+    // Faith, stream and observance (phase 62b): only while the faith module is on.
+    const faithModule = (await readCommunitySettings(this.db)).faith;
     const matched = new Set(
       (
         await this.db.execute<{ other: string }>(sql`
@@ -1116,6 +1119,7 @@ export class DiscoveryService {
           voicePrompt: toVoicePrompt(aboutById.get(p.userId), cleanVoice),
           accessNeeds: shownAccessNeeds(aboutById.get(p.userId)),
           identity: identityFor(p.userId),
+          faith: faithModule ? faithFor(aboutById.get(p.userId)) : null,
           metInPerson: metIds.has(p.userId),
           atEvent: atEventIds.has(p.userId),
           friendTakes: takesById.get(p.userId) ?? [],
@@ -1138,6 +1142,17 @@ function toAbout(row: typeof profileAbout.$inferSelect | undefined): About | nul
     heightCm: row.heightCm,
     religion: row.religion as About['religion'],
     openingQuestion: row.openingQuestion,
+    relationshipHistory: row.relationshipHistory as About['relationshipHistory'],
+  };
+}
+
+/** Faith answers others may see (phase 62b), or null when there are none. */
+function faithFor(row: typeof profileAbout.$inferSelect | undefined): FaithAnswers | null {
+  if (!row?.faith && Object.keys(row?.observance ?? {}).length === 0) return null;
+  return {
+    faith: row!.faith as FaithAnswers['faith'],
+    stream: row!.faithStream as FaithAnswers['stream'],
+    observance: row!.observance as FaithAnswers['observance'],
   };
 }
 

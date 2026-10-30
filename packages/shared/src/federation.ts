@@ -8,6 +8,7 @@ import { publicPhotoSchema } from './discovery.js';
 import {
   genderSchema,
   intentionSchema,
+  type Intention,
   MAX_AGE,
   MAX_PHOTOS,
   MAX_PROMPTS,
@@ -157,6 +158,17 @@ export const federatedDiscoverRequestSchema = z
 export type FederatedDiscoverRequest = z.infer<typeof federatedDiscoverRequestSchema>;
 
 /** A member's card as it crosses to a partner. Never: email, location, religion, needs, voice. */
+/**
+ * Phase 62b: what a partner community understands. Partners on versions before `marriage` would
+ * refuse it, so it travels as `long_term`, its closest intention.
+ */
+export function partnerIntention(intention: Intention): Intention {
+  return intention === 'marriage' ? 'long_term' : intention;
+}
+export function partnerIntentions(list: readonly Intention[]): Intention[] {
+  return [...new Set(list.map(partnerIntention))];
+}
+
 export const federatedCardSchema = z.object({
   alias: federationAliasSchema,
   displayName: z.string().min(1).max(40),
