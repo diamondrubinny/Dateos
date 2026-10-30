@@ -14,6 +14,7 @@ import { ApiRequestError } from '../lib/api';
 import { authClient } from '../lib/auth-client';
 import { DisplayProvider } from '../lib/display';
 import { LocaleProvider, useLocale } from '../lib/locale';
+import { registerServiceWorker } from '../lib/pwa';
 import { RealtimeProvider } from '../lib/realtime';
 import { WebIntegrations } from '../components/WebIntegrations';
 import { IncomingCall } from '../components/IncomingCall';
@@ -83,6 +84,7 @@ function Navigator() {
 }
 
 export default function RootLayout() {
+  useEffect(registerServiceWorker, []);
   const [queryClient] = useState(
     () =>
       new QueryClient({

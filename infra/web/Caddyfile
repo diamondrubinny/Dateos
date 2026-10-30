@@ -31,7 +31,18 @@
 {$DOMAIN} {
 	import security
 	root * /srv/app
-	import spa
+	# Phase 57: the web app manifest, made by the API from the community's branding, served here
+	# so its paths are the app's own. In its own handle: the app's try_files would turn it into
+	# index.html otherwise.
+	handle /manifest.webmanifest {
+		rewrite * /v1/instance/manifest.webmanifest
+		reverse_proxy api:4000
+	}
+	handle {
+		import spa
+	}
+	# The service worker is checked on every visit, so a fixed build reaches people.
+	header /sw.js Cache-Control "no-cache"
 	header {
 		Content-Security-Policy "default-src 'none'; script-src 'self' {$CSP_EXTRA_HOSTS}; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data: https://api.{$DOMAIN}; media-src 'self' blob: https://api.{$DOMAIN}; connect-src 'self' https://api.{$DOMAIN} wss://api.{$DOMAIN} https://{$RTC_DOMAIN:rtc.localhost} wss://{$RTC_DOMAIN:rtc.localhost} {$CSP_EXTRA_HOSTS}; frame-src {$CSP_EXTRA_HOSTS:'none'}; font-src 'self' data:; manifest-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'"
 		X-Frame-Options "DENY"

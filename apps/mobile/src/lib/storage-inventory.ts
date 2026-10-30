@@ -9,12 +9,19 @@
 export interface StorageItem {
   /** A name ending in `*` stands for every key with that prefix (one per chat, phase 38). */
   name: string;
-  kind: 'cookie' | 'localStorage' | 'secureStore';
+  kind: 'cookie' | 'localStorage' | 'secureStore' | 'cacheStorage';
   platform: 'web' | 'native';
   /** i18n key suffix under cookies.purpose / cookies.duration */
   purpose:
-    'session' | 'sessionCache' | 'language' | 'pushToken' | 'callNotice' | 'display' | 'drafts';
-  duration: 'days30' | 'untilChanged' | 'untilSignOut' | 'days30Draft';
+    | 'session'
+    | 'sessionCache'
+    | 'language'
+    | 'pushToken'
+    | 'callNotice'
+    | 'display'
+    | 'drafts'
+    | 'appCode';
+  duration: 'days30' | 'untilChanged' | 'untilSignOut' | 'days30Draft' | 'untilNewVersion';
 }
 
 export const storageInventory: StorageItem[] = [
@@ -47,6 +54,15 @@ export const storageInventory: StorageItem[] = [
     platform: 'web',
     purpose: 'display',
     duration: 'untilChanged',
+  },
+  {
+    // Phase 57: the web app's own code (the same for everyone), kept by its service worker so the
+    // app opens when the server or the connection is away. Nothing from the API, nothing personal.
+    name: 'nexaheart-app-*',
+    kind: 'cacheStorage',
+    platform: 'web',
+    purpose: 'appCode',
+    duration: 'untilNewVersion',
   },
   {
     name: 'nexaheart_cookie',

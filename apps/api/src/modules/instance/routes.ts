@@ -8,6 +8,7 @@ import {
   localeSchema,
   setupClaimSchema,
   signupModes,
+  webManifest,
 } from '@nexaheart/shared';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';
@@ -68,6 +69,16 @@ export const instanceRoutes: FastifyPluginAsyncZod<{
       };
     },
   );
+
+  // Phase 57: the web app manifest, from the community's branding. Caddy serves it on the app's
+  // own domain as /manifest.webmanifest (infra/web/Caddyfile), so its paths are the app's.
+  app.get('/v1/instance/manifest.webmanifest', async (_request, reply) => {
+    const info = instance ? await instance.info() : fallback;
+    return reply
+      .type('application/manifest+json; charset=utf-8')
+      .header('cache-control', 'public, max-age=300')
+      .send(JSON.stringify(webManifest(info)));
+  });
 
   if (!instance) return;
   app.get('/v1/instance/logo', async (_request, reply) => {

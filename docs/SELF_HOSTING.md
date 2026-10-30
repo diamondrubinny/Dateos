@@ -140,6 +140,11 @@ git pull
 GIT_COMMIT=$(git rev-parse HEAD) docker compose -f infra/docker-compose.yml --env-file .env --profile app --profile full up -d --build
 ```
 
+The web app is installable (phase 57): Caddy serves `/manifest.webmanifest` on the app's domain from
+the API (`/v1/instance/manifest.webmanifest`, the community's branding) and `/sw.js` with
+`Cache-Control: no-cache`. Behind your own proxy, route the manifest the same way and don't cache
+`sw.js` or `index.html`. The service worker keeps only the app's own files, never API answers.
+
 An approval can carry a time (`update_requests.not_before`): `scripts/update.sh` leaves it until
 then, so the cron line doesn't change.
 

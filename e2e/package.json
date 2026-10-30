@@ -59,7 +59,8 @@
     "a11y-dark": "tsx a11y-dark.ts",
     "admin-a11y": "tsx admin-a11y.ts",
     "admin-updates": "tsx admin-updates.ts",
-    "outage": "tsx outage.ts"
+    "outage": "tsx outage.ts",
+    "pwa": "tsx pwa.ts"
   },
   "dependencies": {
     "@axe-core/playwright": "4.14.0",
