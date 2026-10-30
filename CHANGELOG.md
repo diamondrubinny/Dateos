@@ -6,6 +6,12 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Added
 
+- **An installable web app**: "Install app" / "Add to Home Screen" with the community's name, icon
+  and colour (the manifest follows Branding, in the community's language direction), and the app
+  opens even while the server restarts or the connection is away, then carries on by itself. Its
+  service worker keeps only the app's own code, never anything from the API; listed on the Privacy
+  & cookies page.
+
 - **Choose when an update installs**: now, or at a time you choose up to 7 days ahead (suggested:
   03:00 in your time zone), withdrawable until it starts; and **Previous updates** in System →
   Updates: what was installed, what didn't install and why, what was withdrawn.

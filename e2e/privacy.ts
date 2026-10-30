@@ -162,6 +162,15 @@ async function run(locale: keyof typeof T, browser: Browser) {
       `localStorage keys are all in the inventory (${stores.local.join(', ')})`,
     );
     check(stores.session.length === 0, 'nothing in sessionStorage');
+    // Phase 57: the service worker's copy of the app is listed too.
+    const cacheNames = await page.evaluate(() => caches.keys());
+    const knownCaches = web.filter((i) => i.kind === 'cacheStorage').map((i) => i.name);
+    check(
+      cacheNames.every((k) =>
+        knownCaches.some((n) => (n.endsWith('*') ? k.startsWith(n.slice(0, -1)) : k === n)),
+      ),
+      `Cache Storage is all in the inventory (${cacheNames.join(', ')})`,
+    );
     check(
       foreign.size === 0,
       `no requests to other hosts${foreign.size ? `: ${[...foreign].join(', ')}` : ''}`,

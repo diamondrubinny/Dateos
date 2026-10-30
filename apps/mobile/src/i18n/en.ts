@@ -383,6 +383,7 @@ export const en = {
       cookie: 'Cookie (HttpOnly, scripts can’t read it)',
       localStorage: 'Browser storage',
       secureStore: 'Device keychain (encrypted)',
+      cacheStorage: 'Browser app cache',
     },
     purpose: {
       drafts:
@@ -393,12 +394,15 @@ export const en = {
       language: 'Remembers the language you chose.',
       pushToken: 'Lets this device receive the notifications you turned on.',
       callNotice: 'Remembers that you read the notice before your first call.',
+      appCode:
+        'The app’s own code (the same for everyone), so it opens when the server or your connection is away. Nothing about you.',
     },
     duration: {
       days30Draft: '30 days, or until sent, emptied or you sign out',
       days30: '30 days, renewed while you use the app',
       untilChanged: 'Until you change it',
       untilSignOut: 'Until you sign out',
+      untilNewVersion: 'Until the next version of the app replaces it',
     },
     thirdPartyTitle: 'Other companies',
     thirdParty:

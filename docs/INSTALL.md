@@ -235,7 +235,11 @@ never recorded.
 
 ### App Store and Google Play apps
 
-Not required: the web app works on phones and can be added to the home screen. For store apps, build
+Not required: the web app is an installable app (phase 57). On Android and desktop Chrome, members
+get "Install app"; on an iPhone, Share → "Add to Home Screen". It opens with the community's name,
+icon and colour (from Branding), and it opens even while the server restarts or the connection is
+away, then carries on by itself. It keeps only the app's own code on the device, never anyone's
+data. For store apps, build
 `apps/mobile` with Expo under your own developer accounts 📘. See
 [SELF_HOSTING.md](SELF_HOSTING.md#mobile-apps).
 

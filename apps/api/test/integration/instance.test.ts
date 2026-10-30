@@ -204,6 +204,24 @@ describe.skipIf(!integrationEnabled)('instance setup & branding (integration)', 
     expect(info.brand.light.primary).toBe('#0F766E');
     expect(info.brand.dark.primary).not.toBe('#0F766E'); // lightened for dark mode
 
+    // Phase 57: the web app manifest follows the branding, in the default language's direction.
+    const manifest = await ctx.app.inject({
+      method: 'GET',
+      url: '/v1/instance/manifest.webmanifest',
+    });
+    expect(manifest.statusCode).toBe(200);
+    expect(manifest.headers['content-type']).toContain('application/manifest+json');
+    expect(manifest.json()).toMatchObject({
+      name: 'Ahava TLV',
+      short_name: 'Ahava TLV',
+      description: 'Dating for Tel Aviv, run by volunteers.',
+      start_url: '/',
+      display: 'standalone',
+      lang: 'he',
+      dir: 'rtl',
+      theme_color: '#0F766E',
+    });
+
     // A moderator (even with TOTP) cannot change branding.
     const modCookie = await signIn(ctx, 'mod@example.test');
     await ctx.services.dbHandle.pool.query(
