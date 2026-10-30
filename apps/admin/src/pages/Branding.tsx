@@ -1,7 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
-import { contrastRatio, isAccessiblePrimary, type InstanceSettingsInput } from '@nexaheart/shared';
+import {
+  contrastRatio,
+  identityVocabularies,
+  isAccessiblePrimary,
+  type InstanceSettingsInput,
+} from '@nexaheart/shared';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { api, type AdminInstanceSettings } from '../api';
 import { useAsync } from '../hooks';
@@ -221,6 +226,7 @@ export function Branding({ wizard, onFinish }: { wizard: boolean; onFinish?: () 
           </section>
 
           {wizard ? null : <VideoDates settings={settings.data} onSaved={settings.reload} />}
+          {wizard ? null : <Identity settings={settings.data} onSaved={settings.reload} />}
 
           <section className="card" aria-labelledby="logo-title">
             <h2 id="logo-title">{t.branding.logo}</h2>
@@ -330,6 +336,101 @@ function VideoDates({
       {error ? <ErrorBox error={error} /> : null}
       <button type="submit" className="button primary" disabled={busy || off || !validMinutes}>
         {t.branding.callsSave}
+      </button>
+    </form>
+  );
+}
+
+/**
+ * Gender identity and pronouns (phase 62a): what this community offers beside the four matching
+ * genders. Turning an option off hides it from profiles at once; members' choices are kept.
+ */
+function Identity({ settings, onSaved }: { settings: AdminInstanceSettings; onSaved: () => void }) {
+  const { t } = useLocale();
+  const [vocabulary, setVocabulary] = useState(settings.identityVocabulary);
+  const [custom, setCustom] = useState(settings.identityCustom);
+  const [pronouns, setPronouns] = useState(settings.identityPronouns);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<Error>();
+  const [saved, setSaved] = useState(false);
+
+  async function save(event: FormEvent) {
+    event.preventDefault();
+    if (busy) return;
+    setBusy(true);
+    setError(undefined);
+    setSaved(false);
+    try {
+      await api.saveSettings({
+        identityVocabulary: vocabulary,
+        identityCustom: vocabulary === 'extended' && custom,
+        identityPronouns: pronouns,
+      });
+      setSaved(true);
+      onSaved();
+    } catch (err) {
+      setError(err as Error);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <form className="card" aria-labelledby="identity-title" onSubmit={save}>
+      <h2 id="identity-title">{t.branding.identityTitle}</h2>
+      <p className="help">{t.branding.identityHint}</p>
+      <fieldset>
+        <legend>{t.branding.identityVocabulary}</legend>
+        {identityVocabularies.map((v) => (
+          <div key={v} className="radio">
+            <input
+              type="radio"
+              id={`identity-${v}`}
+              name="identity-vocabulary"
+              checked={vocabulary === v}
+              aria-describedby={`identity-${v}-help`}
+              onChange={() => setVocabulary(v)}
+            />
+            <label htmlFor={`identity-${v}`}>{t.branding.identityVocabularies[v]}</label>
+            <p id={`identity-${v}-help`} className="help">
+              {t.branding.identityVocabularyHelp[v]}
+            </p>
+          </div>
+        ))}
+      </fieldset>
+      <div className="checkbox">
+        <input
+          id="identity-custom"
+          type="checkbox"
+          checked={vocabulary === 'extended' && custom}
+          disabled={vocabulary !== 'extended'}
+          aria-describedby="identity-custom-help"
+          onChange={(e) => setCustom(e.target.checked)}
+        />
+        <label htmlFor="identity-custom">{t.branding.identityCustom}</label>
+      </div>
+      <p id="identity-custom-help" className="help">
+        {t.branding.identityCustomHelp}
+      </p>
+      <div className="checkbox">
+        <input
+          id="identity-pronouns"
+          type="checkbox"
+          checked={pronouns}
+          aria-describedby="identity-pronouns-help"
+          onChange={(e) => setPronouns(e.target.checked)}
+        />
+        <label htmlFor="identity-pronouns">{t.branding.identityPronouns}</label>
+      </div>
+      <p id="identity-pronouns-help" className="help">
+        {t.branding.identityPronounsHelp}
+      </p>
+      <p role="status" className={saved ? 'alert alert-ok' : 'visually-hidden'}>
+        {saved ? t.branding.identitySaved : ''}
+      </p>
+      {error ? <ErrorBox error={error} /> : null}
+      <button type="submit" className="button primary" disabled={busy}>
+        {t.branding.identitySave}
       </button>
     </form>
   );

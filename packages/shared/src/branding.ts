@@ -3,6 +3,7 @@
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 import { z } from 'zod';
 import { signupModes } from './trust.js';
+import { identityVocabularies } from './identity.js';
 import { MAX_CALL_MAX_MINUTES, MIN_CALL_MAX_MINUTES } from './calls.js';
 import { localeSchema } from './common.js';
 
@@ -114,6 +115,10 @@ export const instanceSettingsInputSchema = z
     callMaxMinutes: z.number().int().min(MIN_CALL_MAX_MINUTES).max(MAX_CALL_MAX_MINUTES),
     signupMode: z.enum(signupModes),
     memberInvites: z.boolean(),
+    /** Phase 62a: gender identity and pronouns the community offers. */
+    identityVocabulary: z.enum(identityVocabularies),
+    identityCustom: z.boolean(),
+    identityPronouns: z.boolean(),
   })
   .partial();
 export type InstanceSettingsInput = z.infer<typeof instanceSettingsInputSchema>;

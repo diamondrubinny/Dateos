@@ -2,7 +2,11 @@
 // Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 import { schema, type Database } from '@nexaheart/db';
+import type { z } from 'zod';
 import {
+  noIdentity,
+  type identityInputSchema,
+  type MyIdentity,
   ageOn,
   ErrorCode,
   MIN_AGE,
@@ -34,6 +38,7 @@ import {
   type ReportCategory,
 } from '@nexaheart/shared';
 import { checkHarm } from '@nexaheart/ai';
+import { readIdentitySettings } from '../../lib/identity-settings.js';
 import { and, asc, desc, eq, isNull, ne, sql } from 'drizzle-orm';
 import { normalizedText, openAutoReport } from '../safety/auto-report.js';
 import { HttpError } from '../../plugins/error-handler.js';
@@ -206,6 +211,14 @@ export class MeService {
         needs: (about?.accessNeeds ?? []) as AccessNeed[],
         show: about?.showAccessNeeds ?? false,
       },
+      identity: about
+        ? {
+            genderIdentity: about.genderIdentity as MyIdentity['genderIdentity'],
+            genderCustom: about.genderCustom,
+            pronouns: about.pronouns as MyIdentity['pronouns'],
+            visibility: about.identityVisibility as MyIdentity['visibility'],
+          }
+        : noIdentity,
       voicePrompt:
         about?.voiceAudioId && about.voicePromptKey
           ? await this.myVoicePrompt(about.voiceAudioId, about.voicePromptKey as PromptKey)
@@ -315,6 +328,37 @@ export class MeService {
       throw new HttpError(400, ErrorCode.ValidationError, 'Please rephrase your question.');
     }
     const values = { ...about, updatedAt: new Date() };
+    await this.db
+      .insert(profileAbout)
+      .values({ userId, ...values })
+      .onConflictDoUpdate({ target: profileAbout.userId, set: values });
+  }
+
+  /**
+   * Gender identity and pronouns (phase 62a): optional, sensitive (the `sensitive` consent, which
+   * onboarding requires), and only what the community offers right now.
+   */
+  async setIdentity(userId: string, input: z.output<typeof identityInputSchema>): Promise<void> {
+    await this.assertConsented(userId);
+    const settings = await readIdentitySettings(this.db);
+    const offered =
+      (input.genderIdentity === null || settings.vocabulary === 'extended') &&
+      (input.genderCustom === null ||
+        (settings.vocabulary === 'extended' && settings.customGender)) &&
+      (input.pronouns === null || settings.pronouns);
+    if (!offered) {
+      throw new HttpError(400, ErrorCode.ValidationError, 'This community doesn’t offer that.');
+    }
+    if (input.genderCustom && checkHarm(input.genderCustom).flagged) {
+      throw new HttpError(400, ErrorCode.ValidationError, 'Please choose other words.');
+    }
+    const values = {
+      genderIdentity: input.genderIdentity,
+      genderCustom: input.genderCustom,
+      pronouns: input.pronouns,
+      identityVisibility: input.visibility,
+      updatedAt: new Date(),
+    };
     await this.db
       .insert(profileAbout)
       .values({ userId, ...values })

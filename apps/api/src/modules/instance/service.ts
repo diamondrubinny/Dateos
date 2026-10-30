@@ -12,6 +12,7 @@ import {
   type InstanceSettingsInput,
   type Locale,
   type SignupMode,
+  type IdentityVocabulary,
 } from '@nexaheart/shared';
 import type { StoredObject } from '@nexaheart/storage';
 import { and, eq, sql } from 'drizzle-orm';
@@ -47,6 +48,9 @@ export interface AdminInstanceSettings {
   callMaxMinutes: number;
   signupMode: SignupMode;
   memberInvites: boolean;
+  identityVocabulary: IdentityVocabulary;
+  identityCustom: boolean;
+  identityPronouns: boolean;
 }
 
 export class InstanceService {
@@ -107,6 +111,11 @@ export class InstanceService {
       calls: liveKitConfigured(env) && Boolean(row?.callsEnabled),
       transcripts: env.TRANSCRIPTS === 'local',
       signup: (row?.signupMode ?? 'open') as SignupMode,
+      identity: {
+        vocabulary: row?.identityVocabulary === 'basic' ? 'basic' : 'extended',
+        customGender: row?.identityCustom ?? false,
+        pronouns: row?.identityPronouns ?? true,
+      },
       poweredBy: poweredBy(env),
     };
     this.cache = { value, at: Date.now() };
@@ -165,6 +174,9 @@ export class InstanceService {
       callMaxMinutes: row?.callMaxMinutes ?? DEFAULT_CALL_MAX_MINUTES,
       signupMode: (row?.signupMode ?? 'open') as SignupMode,
       memberInvites: row?.memberInvites ?? false,
+      identityVocabulary: info.identity.vocabulary,
+      identityCustom: info.identity.customGender,
+      identityPronouns: info.identity.pronouns,
     };
   }
 

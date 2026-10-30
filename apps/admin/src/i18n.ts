@@ -84,6 +84,24 @@ const en = {
     callsMax: 'Maximum call length (minutes, 5–120)',
     callsSave: 'Save video settings',
     callsSaved: 'Video settings saved.',
+    identityTitle: 'Gender identity and pronouns',
+    identityHint:
+      'Beside the four genders used for matching, members can add how they describe themselves and how to address them. Optional for them; shown to their matches only unless they choose everyone; never used for matching or sent to partner communities. Turning something off hides it at once (members’ choices are kept).',
+    identityVocabulary: 'Gender identity',
+    identityVocabularies: { basic: 'Not offered', extended: 'A longer list' },
+    identityVocabularyHelp: {
+      basic: 'Only the four matching genders (woman, man, nonbinary, other).',
+      extended:
+        'Woman, man, trans woman, trans man, nonbinary, genderqueer, genderfluid, agender, bigender, two-spirit, intersex, questioning.',
+    },
+    identityCustom: 'Members can use their own words',
+    identityCustomHelp:
+      'Up to 30 letters, checked like the rest of the profile. Only with the longer list.',
+    identityPronouns: 'Pronouns (form of address)',
+    identityPronounsHelp:
+      'She/her, he/him, they/them or any; in Hebrew, Arabic and Russian: feminine, masculine or neutral address.',
+    identitySave: 'Save identity settings',
+    identitySaved: 'Identity settings saved.',
     callsNotConfigured:
       'Video dates need LiveKit on this server. See “Video dates” in docs/SELF_HOSTING.md.',
   },
@@ -871,6 +889,23 @@ const he: Messages = {
     callsMax: 'אורך שיחה מרבי (בדקות, 5–120)',
     callsSave: 'שמירת הגדרות הווידאו',
     callsSaved: 'הגדרות הווידאו נשמרו.',
+    identityTitle: 'זהות מגדרית ולשון פנייה',
+    identityHint:
+      'מעבר לארבעת המגדרים שמשמשים להתאמה, אפשר להוסיף איך חברי הקהילה מגדירים את עצמם ואיך לפנות אליהם. זה אופציונלי, מוצג רק להתאמות אלא אם בוחרים להציג לכולם, אף פעם לא משמש להתאמה ולא נשלח לקהילות שותפות. כיבוי של אפשרות מסתיר אותה מיד (הבחירות נשמרות).',
+    identityVocabulary: 'זהות מגדרית',
+    identityVocabularies: { basic: 'לא מוצעת', extended: 'רשימה מורחבת' },
+    identityVocabularyHelp: {
+      basic: 'רק ארבעת המגדרים של ההתאמה (אישה, גבר, א־בינארי, אחר).',
+      extended:
+        'אישה, גבר, אישה טרנסית, גבר טרנס, א־בינארי, ג׳נדרקוויר, ג׳נדרפלואיד, א־מגדרי, ביג׳נדר, שתי־רוחות, אינטרסקס, בתהליך בירור.',
+    },
+    identityCustom: 'אפשר לכתוב במילים שלי',
+    identityCustomHelp: 'עד 30 אותיות, נבדק כמו שאר הפרופיל. רק עם הרשימה המורחבת.',
+    identityPronouns: 'לשון פנייה',
+    identityPronounsHelp:
+      'באנגלית she/her, he/him או they/them; בעברית, בערבית וברוסית: פנייה בלשון נקבה, זכר, ניטרלית, או כל פנייה.',
+    identitySave: 'שמירת הגדרות הזהות',
+    identitySaved: 'הגדרות הזהות נשמרו.',
     callsNotConfigured:
       'דייטים בווידאו דורשים LiveKit בשרת הזה. פרטים בפרק “Video dates” בקובץ docs/SELF_HOSTING.md.',
   },

@@ -64,6 +64,16 @@ export function ProfileCard({ profile, onLikeItem }: ProfileCardProps) {
   // Arrows point outward in both directions: "previous" sits at the start edge.
   const [prevGlyph, nextGlyph] = direction === 'rtl' ? ['›', '‹'] : ['‹', '›'];
   const photo = profile.photos[index];
+  const identity = profile.identity;
+  const identityLine = identity
+    ? [
+        identity.genderCustom ??
+          (identity.genderIdentity ? t(`identity.options.${identity.genderIdentity}`) : null),
+        identity.pronouns ? t(`identity.forms.${identity.pronouns}`) : null,
+      ]
+        .filter(Boolean)
+        .join(' · ')
+    : '';
   const total = profile.photos.length;
 
   return (
@@ -170,6 +180,16 @@ export function ProfileCard({ profile, onLikeItem }: ProfileCardProps) {
             </AppText>
           ) : null}
         </View>
+        {identityLine ? (
+          // Phase 62a: only what the member shows this viewer; one sentence for screen readers.
+          <AppText
+            variant="body"
+            testID="identity"
+            accessibilityLabel={t('identity.cardLabel', { text: identityLine })}
+          >
+            {identityLine}
+          </AppText>
+        ) : null}
         {profile.accessNeeds.length > 0 ? (
           // Phase 25: only needs the member chose to show; one sentence for screen readers.
           <AppText variant="body" testID="access-needs">

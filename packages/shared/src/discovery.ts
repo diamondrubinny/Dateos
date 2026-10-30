@@ -5,6 +5,7 @@ import { matchModeSchema, publicTakeSchema } from './friends.js';
 import { z } from 'zod';
 import { genderSchema, intentionSchema, promptKeySchema, voicePromptSchema } from './profile.js';
 import { aboutSchema, accessNeedSchema } from './about.js';
+import { publicIdentitySchema } from './identity.js';
 import { placeSchema } from './visibility.js';
 
 /** Dimension of stored profile embeddings (hashing provider and 768-d Ollama models). */
@@ -95,6 +96,11 @@ export const publicProfileSchema = z.object({
   voicePrompt: voicePromptSchema.nullable(),
   /** Accessibility needs (phase 25), only those the member chose to show; usually empty. */
   accessNeeds: z.array(accessNeedSchema),
+  /**
+   * Gender identity and pronouns (phase 62a): only what the member shows to this viewer and the
+   * community offers. Optional: partner cards never carry it.
+   */
+  identity: publicIdentitySchema.nullable().optional(),
   /** Opt-in badge: met someone from this community in person, both confirmed (phase 20). */
   metInPerson: z.boolean(),
   /** Opt-in badge: checked in at one of this community's events in the last year (phase 23). */

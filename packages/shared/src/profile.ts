@@ -3,6 +3,7 @@
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 import { accountNoticeSchema } from './moderation.js';
 import { aboutSchema, accessNeedsSchema, dealbreakersSchema } from './about.js';
+import { identitySettingsSchema, myIdentitySchema } from './identity.js';
 import { pauseStateSchema } from './visibility.js';
 import { z } from 'zod';
 import { publicIntegrationsSchema } from './integrations.js';
@@ -198,6 +199,8 @@ export const meResponseSchema = z.object({
   dealbreakers: dealbreakersSchema,
   /** Accessibility needs (phase 25), by consent; `show` puts them on the profile. */
   accessNeeds: accessNeedsSchema,
+  /** Gender identity and pronouns (phase 62a), with who may see them. */
+  identity: myIdentitySchema,
   voicePrompt: myVoicePromptSchema.nullable(),
   /** Show the "met in person" badge (phase 20, off by default). */
   showMetBadge: z.boolean(),
@@ -257,6 +260,8 @@ export const instanceSchema = z.object({
   transcripts: z.boolean(),
   /** Who may open a new account (phase 21): open, with an invite code, or through a waitlist. */
   signup: z.enum(signupModes),
+  /** What the community offers for gender identity and pronouns (phase 62a). */
+  identity: identitySettingsSchema,
   /** What clients need from the integrations (phase 24): never a secret. */
   integrations: publicIntegrationsSchema,
   /** The software credit every interface shows (license term, see NOTICE). */

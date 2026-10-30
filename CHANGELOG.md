@@ -6,6 +6,13 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Added
 
+- **Gender identity and pronouns, in the community's own vocabulary**: beside the four genders used
+  for matching (unchanged), members can add how they describe themselves (a longer list, or their
+  own words where the community allows it) and how to address them (she/her, he/him, they/them; in
+  Hebrew, Arabic and Russian, feminine, masculine or neutral address). Shown to matches only
+  unless they choose everyone; never used for matching or sent to partner communities. Admins
+  choose what the community offers in Branding.
+
 - **The reasons for a decision, and a way to appeal it**: a warning, suspension or ban now comes
   with an explanation written for the member and its ground (the community's rules or the law),
   shown in the app with the date and whether an automatic check found it, never who reported or
