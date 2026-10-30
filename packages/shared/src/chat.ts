@@ -267,7 +267,12 @@ export const chatSettingsSchema = z.object({
    * reached, new people don't see me in Discover and Picks until it drops.
    */
   dailyLikeLimit: z
-    .union(DAILY_LIKE_LIMITS.map((n) => z.literal(n)) as [z.ZodLiteral<number>, ...z.ZodLiteral<number>[]])
+    .union(
+      DAILY_LIKE_LIMITS.map((n) => z.literal(n)) as [
+        z.ZodLiteral<number>,
+        ...z.ZodLiteral<number>[],
+      ],
+    )
     .nullable(),
   /** Phase 65: only members whose photos were verified see me and can write to me. */
   verifiedContactOnly: z.boolean(),
