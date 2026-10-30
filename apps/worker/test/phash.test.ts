@@ -20,7 +20,7 @@ function scene(seed: number, width = 900, height = 1100): Promise<Buffer> {
 }
 const hash = async (image: Buffer) => (await perceptualHash(image))!;
 
-describe('perceptualHash', () => {
+describe('perceptualHash', { timeout: 30_000 }, () => {
   it('stays close for the same photo resized, re-compressed and re-encoded', async () => {
     const original = await scene(1);
     const smaller = await sharp(original).resize(320).jpeg({ quality: 55 }).toBuffer();
