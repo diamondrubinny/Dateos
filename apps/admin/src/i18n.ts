@@ -156,6 +156,11 @@ const en = {
     joinDeclaration: 'Declaration new members confirm (optional)',
     joinDeclarationHelp:
       'Up to 300 characters, e.g. “I am single and looking for a serious relationship.” When each member confirmed is stored.',
+    ageCheck: 'Require an age check through the server’s provider',
+    ageCheckHelp:
+      'New and existing members confirm their age with the provider before using the app. Only the result is kept (over 18 or not, the method, when); under 18 suspends the account. ⚖️ The provider processes what members show it: you need an agreement with it.',
+    ageCheckNotConfigured:
+      'No age-check provider is set up on this server (AGE_CHECK_URL and AGE_CHECK_SECRET in .env). See “Age checks” in docs/SELF_HOSTING.md.',
     joinSave: 'Save joining rules',
     joinSaved: 'Joining rules saved.',
     callsNotConfigured:
@@ -1012,6 +1017,11 @@ const he: Messages = {
     genders: { woman: 'נשים', man: 'גברים', nonbinary: 'אנשים א־בינאריים', other: 'אחר' },
     joinDeclaration: 'הצהרה שחברי קהילה חדשים מאשרים (לא חובה)',
     joinDeclarationHelp: 'עד 300 תווים, למשל „אני פנוי/ה ומחפש/ת קשר רציני”. מועד האישור נשמר.',
+    ageCheck: 'לדרוש בדיקת גיל דרך הספק שמוגדר בשרת',
+    ageCheckHelp:
+      'חברי קהילה חדשים וקיימים מאשרים את הגיל אצל הספק לפני השימוש באפליקציה. נשמרת רק התוצאה (מעל 18 או לא, השיטה, מתי); מתחת ל-18 החשבון מושעה. ⚖️ הספק מעבד את מה שמציגים לו: צריך הסכם איתו.',
+    ageCheckNotConfigured:
+      'בשרת הזה לא מוגדר ספק בדיקת גיל (AGE_CHECK_URL ו-AGE_CHECK_SECRET בקובץ .env). פרטים בפרק “Age checks” בקובץ docs/SELF_HOSTING.md.',
     joinSave: 'שמירת כללי ההצטרפות',
     joinSaved: 'כללי ההצטרפות נשמרו.',
     callsNotConfigured:

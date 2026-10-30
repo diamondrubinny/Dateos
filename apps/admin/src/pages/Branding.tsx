@@ -692,6 +692,7 @@ function WhoMayJoin({
   const [max, setMax] = useState(settings.joinMaxAge === null ? '' : String(settings.joinMaxAge));
   const [joinGenders, setJoinGenders] = useState<Gender[]>(settings.joinGenders);
   const [declaration, setDeclaration] = useState(settings.joinDeclaration ?? '');
+  const [ageCheck, setAgeCheck] = useState(settings.ageCheckRequired);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<Error>();
   const [saved, setSaved] = useState(false);
@@ -715,6 +716,7 @@ function WhoMayJoin({
         joinMaxAge: maxAge,
         joinGenders,
         joinDeclaration: declaration.trim() === '' ? null : declaration.trim(),
+        ...(settings.ageCheckConfigured ? { ageCheckRequired: ageCheck } : {}),
       });
       setSaved(true);
       onSaved();
@@ -792,6 +794,21 @@ function WhoMayJoin({
       />
       <p id="join-declaration-help" className="help">
         {t.branding.joinDeclarationHelp}
+      </p>
+      {/* Phase 63: an age check through the server's provider. */}
+      <div className="checkbox">
+        <input
+          id="age-check"
+          type="checkbox"
+          checked={settings.ageCheckConfigured && ageCheck}
+          disabled={!settings.ageCheckConfigured}
+          aria-describedby="age-check-help"
+          onChange={(e) => setAgeCheck(e.target.checked)}
+        />
+        <label htmlFor="age-check">{t.branding.ageCheck}</label>
+      </div>
+      <p id="age-check-help" className="help">
+        {settings.ageCheckConfigured ? t.branding.ageCheckHelp : t.branding.ageCheckNotConfigured}
       </p>
       <p role="status" className={saved ? 'alert alert-ok' : 'visually-hidden'}>
         {saved ? t.branding.joinSaved : ''}

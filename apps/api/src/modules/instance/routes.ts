@@ -53,6 +53,7 @@ export function instanceInfo(env: Env): InstanceInfo {
     signup: 'open',
     identity: defaultIdentitySettings,
     community: {
+      ageCheck: false,
       intentions: [...intentions],
       faith: false,
       join: { minAge: 18, maxAge: null, genders: [], declaration: null },
@@ -179,4 +180,6 @@ export const adminSettingsSchema = z.object({
   joinMaxAge: z.number().int().nullable(),
   joinGenders: z.array(genderSchema),
   joinDeclaration: z.string().nullable(),
+  ageCheckConfigured: z.boolean(),
+  ageCheckRequired: z.boolean(),
 });

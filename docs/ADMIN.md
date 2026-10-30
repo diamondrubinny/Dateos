@@ -256,6 +256,14 @@ Dashboard → Branding:
   their place. ⚖️ Restricting membership by age, gender or belief may not be lawful for every
   community or country: check before you do.
 
+## 7f. Age checks (phase 63, admins)
+
+Dashboard → Branding → Who may join → **Require an age check**: available once an age-check
+provider is set up on the server (`AGE_CHECK_URL`, `AGE_CHECK_SECRET`; see "Age checks" in
+SELF_HOSTING.md). Members who haven't passed one are asked before they can use the app; the
+community keeps only the result. "Under 18" suspends the account. ⚖️ You need an agreement with the
+provider.
+
 ## 8. Integrations (phase 24, admins only)
 
 The **Integrations** page connects outside services: see [INTEGRATIONS.md](INTEGRATIONS.md).

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
-import type { Decision, ReportInput, VerificationState } from '@nexaheart/shared';
+import type { AgeCheckState, Decision, ReportInput, VerificationState } from '@nexaheart/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Platform } from 'react-native';
 import { apiFetch, json } from './api';
@@ -93,5 +93,20 @@ export function useAppeal() {
     mutationFn: ({ id, text }: { id: string; text: string }) =>
       apiFetch(`/v1/me/decisions/${id}/appeal`, { method: 'POST', body: json({ text }) }),
     onSuccess: () => client.invalidateQueries({ queryKey: decisionKeys.all }),
+  });
+}
+
+/** Phase 63: the age check; asked again every few seconds while the member is at the provider. */
+export function useAgeCheck(waiting: boolean) {
+  return useQuery({
+    queryKey: ['age-check'],
+    queryFn: () => apiFetch<AgeCheckState>('/v1/me/age-check'),
+    refetchInterval: waiting ? 3000 : false,
+  });
+}
+
+export function useStartAgeCheck() {
+  return useMutation({
+    mutationFn: () => apiFetch<{ url: string }>('/v1/me/age-check', { method: 'POST' }),
   });
 }

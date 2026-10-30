@@ -36,6 +36,8 @@ export async function exportMemberData(
   if (!account) throw new Error('no such member');
   const [profile] = await db.select().from(t.profiles).where(eq(t.profiles.userId, userId));
   const [about] = await db.select().from(t.profileAbout).where(eq(t.profileAbout.userId, userId));
+  // Phase 63: the age check's result only (never what the member showed the provider).
+  const [ageCheck] = await db.select().from(t.ageChecks).where(eq(t.ageChecks.userId, userId));
   const [preferences] = await db
     .select()
     .from(t.preferences)
@@ -559,6 +561,9 @@ export async function exportMemberData(
       reversedAt: iso(m.reversedAt),
     })),
     appeals: appeals.map((a) => ({ ...a, at: iso(a.at), decidedAt: iso(a.decidedAt) })),
+    ageCheck: ageCheck
+      ? { result: ageCheck.result, method: ageCheck.method, checkedAt: iso(ageCheck.checkedAt) }
+      : null,
     photoVerifications: verifications.map((v) => ({
       ...v,
       at: iso(v.at),

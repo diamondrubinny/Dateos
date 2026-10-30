@@ -43,6 +43,7 @@ import { EmailChangeService } from './modules/account/email-change.js';
 import { StaffMfaService } from './modules/admin/mfa.js';
 import { ModerationService } from './modules/admin/moderation.js';
 import { AppealService } from './modules/safety/appeals.js';
+import { AgeCheckService } from './modules/age-check/service.js';
 import { ReportService } from './modules/safety/reports.js';
 import { InstanceService } from './modules/instance/service.js';
 import { VerificationService } from './modules/safety/verification.js';
@@ -83,6 +84,7 @@ export interface Services {
   staffMfa: StaffMfaService;
   moderation: ModerationService;
   appeals: AppealService;
+  ageCheck: AgeCheckService;
   updates: UpdateService;
   trust: TrustService;
   takes: TakeService;
@@ -313,6 +315,16 @@ export function createServices(
   );
   const moderation = new ModerationService(dbHandle.db, discovery, hashEmail, today);
   const appeals = new AppealService(dbHandle.db, mailer, env.INSTANCE_NAME, onMailError);
+  // Phase 63: age assurance through the community's provider, when one is configured.
+  const ageCheck = new AgeCheckService(
+    dbHandle.db,
+    env.AGE_CHECK_URL && env.AGE_CHECK_SECRET
+      ? { url: env.AGE_CHECK_URL, secret: env.AGE_CHECK_SECRET }
+      : undefined,
+    { api: env.PUBLIC_API_URL.replace(/\/+$/, ''), app: appUrl(env) },
+    overrides.now,
+  );
+  me.useAgeCheck(async (userId) => (await ageCheck.required()) && !(await ageCheck.passed(userId)));
   const updates = new UpdateService(
     dbHandle.db,
     {
@@ -378,6 +390,7 @@ export function createServices(
     ),
     moderation,
     appeals,
+    ageCheck,
     updates,
     instance,
     trust,

@@ -114,6 +114,16 @@ export const envSchema = z.object({
     .regex(/^[A-Za-z0-9_-]{86,88}$/)
     .optional()
     .or(z.literal('').transform(() => undefined)),
+  /**
+   * Phase 63: an age-check provider (both or neither). The member is sent to AGE_CHECK_URL; the
+   * provider signs its result with AGE_CHECK_SECRET (HMAC-SHA256). Never sent to clients or logged.
+   */
+  AGE_CHECK_URL: optionalString.pipe(z.url({ protocol: /^https?$/ }).optional()),
+  AGE_CHECK_SECRET: z
+    .string()
+    .min(32)
+    .optional()
+    .or(z.literal('').transform(() => undefined)),
   // Updates from GitHub (phase 53). The commit is baked into the image at build time.
   APP_COMMIT: z
     .string()

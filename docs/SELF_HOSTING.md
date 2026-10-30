@@ -267,6 +267,28 @@ In the dashboard, **Joining** sets how new people open an account:
 People who already have an account keep signing in as usual. Staff accounts are new accounts too: in
 invite or waitlist mode, give a new staff member a code (or approve them) before they first sign in.
 
+## Age checks (optional)
+
+A community can require every member to confirm they are over 18 with an **age-check provider of
+its choice** (Dashboard → Branding → Who may join), instead of trusting the date of birth alone.
+NexaHeart doesn't check ages itself and keeps only the result.
+
+1. Choose a provider (for example a facial age estimation or ID + liveness service, or the EU
+   age-verification app / EUDI wallet through a bridge 📘) and agree on a shared secret.
+2. In `.env`: `AGE_CHECK_URL` (the provider's page) and `AGE_CHECK_SECRET` (32+ characters). Restart.
+3. The provider (or a small bridge in front of it) must:
+   - accept `?session=…&return=…&callback=…` on `AGE_CHECK_URL`;
+   - when done, `POST` to `callback` this JSON: `{"session": "…", "result": "over_18" | "under_18" |
+"failed", "method": "your_method_name", "ts": <unix seconds>}`, with the header
+     `x-nexaheart-signature: <hex HMAC-SHA256 of "session.result.method.ts" with the secret>`;
+   - send the member back to `return`.
+4. Sessions last 15 minutes and work once; results older than 5 minutes are refused. "under_18"
+   suspends the account as an underage date of birth does.
+
+`e2e/fake-age-provider.mjs` is a pretend provider for testing this locally; never use it in
+production. ⚖️ The provider processes what members show it (possibly biometric data): you need an
+agreement with it (DPA) and possibly a data protection impact assessment.
+
 ## Passkeys
 
 Members can add a passkey in Settings and sign in with it on the web. The passkey belongs to the web

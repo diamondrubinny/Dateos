@@ -27,6 +27,7 @@ import { travelRoutes } from './modules/places/routes.js';
 import { callRoutes, callWebhookRoutes } from './modules/calls/routes.js';
 import { discoveryRoutes } from './modules/discovery/routes.js';
 import { meRoutes } from './modules/me/routes.js';
+import { ageCheckRoutes } from './modules/age-check/routes.js';
 import { exportMemberData } from './modules/privacy/export.js';
 import { audit } from './lib/audit.js';
 import { photoRoutes } from './modules/photos/routes.js';
@@ -103,6 +104,8 @@ export async function buildApp(env: Env, deps: AppDependencies): Promise<Fastify
       redis: services.redis,
       appScheme: env.APP_SCHEME,
     });
+    // Phase 63: age assurance (the member's side and the provider's signed callback).
+    await typed.register(ageCheckRoutes, { auth: services.auth, ageCheck: services.ageCheck });
     await typed.register(meRoutes, {
       auth: services.auth,
       me: services.me,

@@ -5,6 +5,8 @@ import type { MeResponse } from '@nexaheart/shared';
 
 export const onboardingRoutes = {
   profile: '/onboarding/profile',
+  /** Phase 63: only where the community requires an age check. */
+  age_check: '/onboarding/age-check',
   consents: '/onboarding/consents',
   photos: '/onboarding/photos',
   prompts: '/onboarding/prompts',

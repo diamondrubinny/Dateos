@@ -141,6 +141,8 @@ export const instanceSettingsInputSchema = z
       .max(genders.length)
       .refine((l) => new Set(l).size === l.length),
     joinDeclaration: plainText(MAX_JOIN_DECLARATION).nullable(),
+    /** Phase 63: require an age check (only where a provider is configured on the server). */
+    ageCheckRequired: z.boolean(),
   })
   .partial();
 export type InstanceSettingsInput = z.infer<typeof instanceSettingsInputSchema>;

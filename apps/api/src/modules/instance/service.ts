@@ -61,6 +61,9 @@ export interface AdminInstanceSettings {
   joinMaxAge: number | null;
   joinGenders: Gender[];
   joinDeclaration: string | null;
+  /** Phase 63: whether a provider is configured on the server, and the admins' choice. */
+  ageCheckConfigured: boolean;
+  ageCheckRequired: boolean;
 }
 
 export class InstanceService {
@@ -128,6 +131,7 @@ export class InstanceService {
       },
       // Phase 62b: intentions offered (all unless narrowed) and the faith module.
       community: {
+        ageCheck: ageCheckConfigured(env) && (row?.ageCheckRequired ?? false),
         intentions: offeredIntentions(row?.intentionsOffered),
         faith: row?.faithModule ?? false,
         join: {
@@ -204,6 +208,8 @@ export class InstanceService {
       joinMaxAge: info.community.join.maxAge,
       joinGenders: info.community.join.genders,
       joinDeclaration: info.community.join.declaration,
+      ageCheckConfigured: ageCheckConfigured(this.env),
+      ageCheckRequired: row?.ageCheckRequired ?? false,
     };
   }
 
@@ -243,6 +249,13 @@ export class InstanceService {
           'The maximum age is below the minimum.',
         );
       }
+    }
+    if (input.ageCheckRequired === true && !ageCheckConfigured(this.env)) {
+      throw new HttpError(
+        400,
+        ErrorCode.ValidationError,
+        'Set up an age-check provider on the server first (AGE_CHECK_URL and AGE_CHECK_SECRET).',
+      );
     }
     const values = { ...input, updatedBy: staff.id, updatedAt: new Date() };
     await this.db.transaction(async (tx) => {
@@ -362,4 +375,9 @@ function offeredIntentions(stored: string[] | null | undefined): Intention[] {
     (intentions as readonly string[]).includes(i),
   );
   return list.length > 0 ? list : [...intentions];
+}
+
+/** Phase 63: an age-check provider is configured on this server. */
+function ageCheckConfigured(env: Env): boolean {
+  return Boolean(env.AGE_CHECK_URL && env.AGE_CHECK_SECRET);
 }

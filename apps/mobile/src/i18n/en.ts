@@ -812,6 +812,15 @@ export const en = {
     met: 'Met in person',
     metLabel: 'Met someone here in person, confirmed by both',
   },
+  ageCheck: {
+    title: 'Confirm your age',
+    why: 'This community asks every member to confirm they are over 18 with its age-check provider. You’ll go to the provider’s page and come back here.',
+    keptTitle: 'What this community keeps',
+    kept: 'Only the result: over 18 or not, how the provider checked, and when. Not your ID, photo or date of birth: those stay with the provider.',
+    start: 'Confirm my age',
+    waiting: 'Back from the provider? This page carries on by itself once the result arrives.',
+    failed: 'The provider couldn’t confirm your age. You can try again.',
+  },
   join: {
     rulesTitle: 'Who this community is for',
     ageRange: 'Members aged {{min}} to {{max}}.',

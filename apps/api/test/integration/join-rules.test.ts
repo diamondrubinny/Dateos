@@ -97,6 +97,13 @@ describe.skipIf(!integrationEnabled)('who may join, phase 62c (integration)', ()
     expect((await settings({ joinMaxAge: null })).statusCode).toBe(200);
   });
 
+  it('an age check can’t be required without a provider on the server (phase 63)', async () => {
+    const res = await settings({ ageCheckRequired: true });
+    expect(res.statusCode).toBe(400);
+    const info = (await ctx.app.inject({ method: 'GET', url: '/v1/instance' })).json();
+    expect(info.community.ageCheck).toBe(false);
+  });
+
   it('members of some genders only', async () => {
     await settings({ joinGenders: ['woman', 'nonbinary'] });
     expect((await join('1995-01-01', { gender: 'man', interestedIn: ['woman'] })).statusCode).toBe(
