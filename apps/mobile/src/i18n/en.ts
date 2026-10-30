@@ -371,7 +371,7 @@ export const en = {
     analytics:
       'Analytics by {{provider}}, only if you allowed it in Settings: which kinds of pages are visited (never names, ids or messages).',
     pushOnly:
-      'If you turn on notifications in the phone app, a device token goes to Expo and Apple or Google to deliver them, without names or message text.',
+      'If you turn on notifications in the phone app, a device token goes to Expo and Apple or Google to deliver them, without names or message text. In the web app, your browser’s own push service (Google, Mozilla, Apple or Microsoft) delivers them, encrypted so it can’t read them.',
     title: 'Privacy & cookies',
     summary: 'No tracking, no ads, no analytics cookies. Only what the app needs to work.',
     intro:
@@ -406,7 +406,7 @@ export const en = {
     },
     thirdPartyTitle: 'Other companies',
     thirdParty:
-      'No third-party cookies or trackers: the app loads nothing from other companies’ servers. If you turn on notifications in the phone app, a device token goes to Expo and Apple or Google to deliver them, without names or message text.',
+      'No third-party cookies or trackers: the app loads nothing from other companies’ servers. If you turn on notifications in the phone app, a device token goes to Expo and Apple or Google to deliver them, without names or message text. In the web app, your browser’s own push service (Google, Mozilla, Apple or Microsoft) delivers them, encrypted so it can’t read them.',
     control:
       'Signing out removes the session items. You can also clear them in your browser or device settings. Your privacy choices (AI, analytics) are in Settings.',
   },
@@ -843,9 +843,13 @@ export const en = {
     label: 'Notifications on this device',
     hint: 'New matches and messages. Notifications never show names or message text.',
     denied: 'Notifications are blocked. You can allow them in your phone settings.',
-    unsupported: 'Notifications are available in the mobile app.',
+    unsupported: 'This browser can’t show notifications from the app. Try another browser.',
+    'home-screen':
+      'On an iPhone or iPad, add the app to your home screen first (Share → Add to Home Screen), open it from there, and turn notifications on.',
+    deniedWeb:
+      'Notifications are blocked for this site. You can allow them in your browser’s site settings.',
     'not-configured':
-      'This app build has no notification service configured. Ask the community operator.',
+      'Notifications aren’t set up for this community yet. Ask the community operator.',
     error: 'Notifications could not be turned on. Please try again.',
   },
   coach: {

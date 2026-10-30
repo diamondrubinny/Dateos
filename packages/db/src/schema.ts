@@ -910,6 +910,26 @@ export const pushTokens = pgTable(
   (t) => [index('push_tokens_user_idx').on(t.userId)],
 );
 
+/**
+ * Phase 60: a browser's Web Push subscription (the web app). The address is a browser push
+ * service's (checked against an allow-list); the two keys encrypt the notification to that
+ * browser. Deleted on sign-out, when turned off, and when the service says it's gone.
+ */
+export const webPushSubscriptions = pgTable(
+  'web_push_subscriptions',
+  {
+    endpoint: varchar('endpoint', { length: 1000 }).primaryKey(),
+    userId: ownerId(),
+    p256dh: varchar('p256dh', { length: 100 }).notNull(),
+    auth: varchar('auth', { length: 40 }).notNull(),
+    /** Language of the (content-free) notification text. */
+    locale: varchar('locale', { length: 5 }).notNull().default('en'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    lastUsedAt: timestamp('last_used_at', { withTimezone: true }),
+  },
+  (t) => [index('web_push_subscriptions_user_idx').on(t.userId)],
+);
+
 // ---------------------------------------------------------------------------
 // Safety check-in (phase 9)
 // ---------------------------------------------------------------------------

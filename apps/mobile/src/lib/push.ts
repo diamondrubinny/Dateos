@@ -10,6 +10,7 @@ import { Platform } from 'react-native';
 import { apiFetch, json } from './api';
 import { base64url } from './pkce';
 import { prefs } from './storage';
+import { disableWebPush, enableWebPush, webPushEnabled } from './web-push';
 
 const TOKEN_KEY = 'nexaheart.pushToken';
 const DEVICE_SECRET_KEY = 'nexaheart.deviceSecret';
@@ -17,7 +18,8 @@ const DEVICE_SECRET_KEY = 'nexaheart.deviceSecret';
 /**
  * A random secret made once per installation, kept only in the device's secure storage (Keychain
  * or Keystore; never localStorage), phase 29. The server keeps only its hash and moves this
- * device's push token to another account only with the same secret. Push is native-only.
+ * device's push token to another account only with the same secret. The web app uses Web Push
+ * (phase 60, lib/web-push.ts).
  */
 async function deviceSecret(): Promise<string> {
   const saved = await SecureStore.getItemAsync(DEVICE_SECRET_KEY);
@@ -27,14 +29,16 @@ async function deviceSecret(): Promise<string> {
   return secret;
 }
 
-export type PushSetupResult = 'enabled' | 'denied' | 'unsupported' | 'not-configured';
+export type PushSetupResult =
+  'enabled' | 'denied' | 'unsupported' | 'not-configured' | 'home-screen';
 
 /**
  * Opt-in push notifications. The token goes to this community's server only; notifications never
  * contain names or message text. 📘 Expo push notifications setup (EAS project id required).
  */
 export async function enablePush(locale: Locale): Promise<PushSetupResult> {
-  if (Platform.OS === 'web') return 'unsupported';
+  // Phase 60: the web app has its own (Web Push).
+  if (Platform.OS === 'web') return enableWebPush(locale);
   const projectId = Constants.expoConfig?.extra?.eas?.projectId as string | undefined;
   if (!projectId) return 'not-configured';
   const permission = await Notifications.requestPermissionsAsync();
@@ -56,6 +60,7 @@ export async function enablePush(locale: Locale): Promise<PushSetupResult> {
 
 /** Called when turning notifications off and before signing out. */
 export async function disablePush(): Promise<void> {
+  if (Platform.OS === 'web') return disableWebPush();
   const token = await prefs.get(TOKEN_KEY);
   if (!token) return;
   await apiFetch('/v1/me/push-tokens', { method: 'DELETE', body: json({ token }) }).catch(
@@ -65,5 +70,6 @@ export async function disablePush(): Promise<void> {
 }
 
 export async function pushEnabledOnThisDevice(): Promise<boolean> {
-  return Platform.OS !== 'web' && Boolean(await prefs.get(TOKEN_KEY));
+  if (Platform.OS === 'web') return webPushEnabled().catch(() => false);
+  return Boolean(await prefs.get(TOKEN_KEY));
 }

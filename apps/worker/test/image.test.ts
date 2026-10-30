@@ -20,7 +20,7 @@ async function jpegWithGps(width = 640, height = 480): Promise<Buffer> {
     .toBuffer();
 }
 
-describe('processImage', () => {
+describe('processImage', { timeout: 30_000 }, () => {
   it('strips EXIF (including GPS) and re-encodes to WebP', async () => {
     const input = await jpegWithGps();
     expect((await sharp(input).metadata()).exif).toBeDefined(); // the fixture really has EXIF

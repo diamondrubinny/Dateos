@@ -61,7 +61,8 @@
     "admin-updates": "tsx admin-updates.ts",
     "outage": "tsx outage.ts",
     "pwa": "tsx pwa.ts",
-    "showcase-readme": "tsx showcase-readme.ts"
+    "showcase-readme": "tsx showcase-readme.ts",
+    "web-push": "tsx web-push.ts"
   },
   "dependencies": {
     "@axe-core/playwright": "4.14.0",

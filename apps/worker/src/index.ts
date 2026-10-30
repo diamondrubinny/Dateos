@@ -26,7 +26,7 @@ import { Queue, Worker } from 'bullmq';
 import { Redis } from 'ioredis';
 import { pino } from 'pino';
 import { createClamavScanner, noopScanner } from './clamav.js';
-import { loadWorkerEnv } from './env.js';
+import { loadWorkerEnv, webPushSubject } from './env.js';
 import { deleteObjects, processAudio, processPhoto, type JobContext } from './jobs.js';
 import { sendPush } from './push.js';
 import { cleanupPrivacy, handleInactiveAccounts } from './privacy-jobs.js';
@@ -92,6 +92,15 @@ async function main(): Promise<void> {
     provider: env.PUSH_PROVIDER,
     expoUrl: env.EXPO_PUSH_URL,
     expoAccessToken: env.EXPO_ACCESS_TOKEN,
+    // Phase 60: notifications in the web app, when the install command made the keys.
+    webPush:
+      env.WEB_PUSH_PUBLIC_KEY && env.WEB_PUSH_PRIVATE_KEY
+        ? {
+            publicKey: env.WEB_PUSH_PUBLIC_KEY,
+            privateKey: env.WEB_PUSH_PRIVATE_KEY,
+            subject: webPushSubject(env),
+          }
+        : undefined,
   };
   publisher.on('error', (error) => log.error({ err: error }, 'redis publisher error'));
   // Integrations (phase 24): the same store as the API's (env wins, then the dashboard).

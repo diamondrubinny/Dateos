@@ -6,6 +6,7 @@ export * from './errors.js';
 export * from './health.js';
 export * from './profile.js';
 export * from './pwa.js';
+export * from './web-push.js';
 export * from './jobs.js';
 export * from './discovery.js';
 export * from './calendar.js';

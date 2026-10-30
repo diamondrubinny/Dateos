@@ -6,6 +6,11 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Added
 
+- **Notifications in the web app** (Web Push): new matches, messages, calls, safety check-ins and
+  event updates, with the same rules as the phone app (your choices, quiet hours, muted chats) and
+  no names or message text; encrypted to your browser, so its push service can't read them. A tap
+  opens the chat. The install command makes the server's keys (and adds them to existing servers).
+
 - **The community's logo as the installed app's icon**: once a logo is uploaded in Branding, the
   home-screen icon is made from it (kept whole on a white square, inside Android's safe zone for
   round icons); without one, NexaHeart's icon as before.

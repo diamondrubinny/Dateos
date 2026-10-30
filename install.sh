@@ -78,6 +78,10 @@ LIVEKIT_API_KEY="API$(secret 12)"
 LIVEKIT_API_SECRET="$(secret 48)"
 # Encrypts secrets saved in the dashboard's Integrations page (phase 24).
 INTEGRATIONS_KEY="$(openssl rand -hex 32)"
+# Notifications in the web app (phase 60): a Web Push (VAPID) key pair.
+WEB_PUSH_KEYS="$(./scripts/web-push-keys.sh)"
+WEB_PUSH_PUBLIC_KEY="$(printf '%s\n' "$WEB_PUSH_KEYS" | sed -n 's/^WEB_PUSH_PUBLIC_KEY=//p')"
+WEB_PUSH_PRIVATE_KEY="$(printf '%s\n' "$WEB_PUSH_KEYS" | sed -n 's/^WEB_PUSH_PRIVATE_KEY=//p')"
 
 umask 077
 # Write to a temp file first so a failed run never leaves a half-configured .env behind.
@@ -95,6 +99,8 @@ sed \
   -e "s|^LIVEKIT_API_KEY=.*|LIVEKIT_API_KEY=${LIVEKIT_API_KEY}|" \
   -e "s|^LIVEKIT_API_SECRET=.*|LIVEKIT_API_SECRET=${LIVEKIT_API_SECRET}|" \
   -e "s|^INTEGRATIONS_KEY=.*|INTEGRATIONS_KEY=${INTEGRATIONS_KEY}|" \
+  -e "s|^WEB_PUSH_PUBLIC_KEY=.*|WEB_PUSH_PUBLIC_KEY=${WEB_PUSH_PUBLIC_KEY}|" \
+  -e "s|^WEB_PUSH_PRIVATE_KEY=.*|WEB_PUSH_PRIVATE_KEY=${WEB_PUSH_PRIVATE_KEY}|" \
   .env.example > "$TMP_ENV"
 
 if [[ -n "$DOMAIN" ]]; then

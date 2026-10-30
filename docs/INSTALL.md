@@ -239,7 +239,8 @@ Not required: the web app is an installable app (phase 57). On Android and deskt
 get "Install app"; on an iPhone, Share → "Add to Home Screen". It opens with the community's name,
 colour and, once you upload one in Branding, its own logo as the home-screen icon, and it opens even while the server restarts or the connection is
 away, then carries on by itself. It keeps only the app's own code on the device, never anyone's
-data. For store apps, build
+data. Members can turn on notifications in it too (Settings → Notifications on this device; on an
+iPhone, after adding it to the home screen): the install command makes the server's keys for that. For store apps, build
 `apps/mobile` with Expo under your own developer accounts 📘. See
 [SELF_HOSTING.md](SELF_HOSTING.md#mobile-apps).
 

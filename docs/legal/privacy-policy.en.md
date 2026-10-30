@@ -66,7 +66,8 @@ You must be 18 or older; accounts with a birth date under 18 are suspended immed
   purpose.
 - **Service providers** that process data for us under contract: [HOSTING_PROVIDER] ([COUNTRY]),
   [EMAIL_PROVIDER] (email). If you turn on notifications: Expo, Apple or Google deliver them, with no
-  names or message text. [If enabled: external AI provider [AI_PROVIDER], only if you turn on "AI
+  names or message text; in the web app, your browser's push service (Google, Mozilla, Apple or
+  Microsoft) delivers them, encrypted so it can't read them. [If enabled: external AI provider [AI_PROVIDER], only if you turn on "AI
   features that use an external provider"; it receives your bio and prompt text only.]
 - **Partner communities**, only if you join them in the app: other NexaHeart communities this one
   connected with, each run by its own operator under an agreement with us ⚖️. They receive your card

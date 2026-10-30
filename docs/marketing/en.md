@@ -92,7 +92,7 @@ people, with safety and privacy built in.
 
 ## Built to be trusted
 
-- Tested end to end: 355 integration tests, browser tests in four languages, automated accessibility
+- Tested end to end: 366 integration tests, browser tests in four languages, automated accessibility
   checks (0 axe-core violations), a load test with 5 000 members.
 - A published security review and privacy guide; draft privacy policy, terms and accessibility
   statement to adapt with your lawyer ⚖️.

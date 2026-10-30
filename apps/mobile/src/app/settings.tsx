@@ -81,7 +81,9 @@ function SettingsContent() {
     }
     const result = await enablePush(locale).catch(() => 'error' as const);
     if (result === 'enabled') return setPush(true);
-    setPushNote(t(`push.${result}`));
+    setPushNote(
+      t(result === 'denied' && Platform.OS === 'web' ? 'push.deniedWeb' : `push.${result}`),
+    );
   };
   const [confirming, setConfirming] = useState(false);
   const [error, setError] = useState<string>();
@@ -161,18 +163,13 @@ function SettingsContent() {
       </MoreOptions>
 
       <AppText variant="heading">{t('settings.notifications')}</AppText>
-      {Platform.OS === 'web' ? (
-        <AppText variant="body" tone="muted">
-          {t('push.unsupported')}
-        </AppText>
-      ) : (
-        <Checkbox
-          label={t('push.label')}
-          hint={t('push.hint')}
-          checked={push}
-          onChange={(v) => void togglePush(v)}
-        />
-      )}
+      {/* The phone app (Expo) and, since phase 60, the web app (Web Push). */}
+      <Checkbox
+        label={t('push.label')}
+        hint={t('push.hint')}
+        checked={push}
+        onChange={(v) => void togglePush(v)}
+      />
       {pushNote ? <Banner tone="info" message={pushNote} /> : null}
       {/* Which notifications (phase 33). Calls and safety check-ins are always on. */}
       {(['notifyMatches', 'notifyMessages', 'notifyEvents'] as const).map((key) => (

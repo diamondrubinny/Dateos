@@ -134,6 +134,14 @@ else
     fail ".env is set up for another domain. Moving a running instance needs care: see docs/SELF_HOSTING.md."
 fi
 
+# Phase 60: servers installed before notifications in the web app get their key pair once.
+if ! grep -qE "^WEB_PUSH_PRIVATE_KEY=('?)[A-Za-z0-9_-]{40,}" .env; then
+  say "Creating the keys for notifications in the web app"
+  web_push_keys="$(./scripts/web-push-keys.sh)"
+  set_env WEB_PUSH_PUBLIC_KEY "$(printf '%s\n' "$web_push_keys" | sed -n 's/^WEB_PUSH_PUBLIC_KEY=//p')"
+  set_env WEB_PUSH_PRIVATE_KEY "$(printf '%s\n' "$web_push_keys" | sed -n 's/^WEB_PUSH_PRIVATE_KEY=//p')"
+fi
+
 if [[ -n "${SMTP_HOST:-}" ]]; then
   say "Saving the email (SMTP) settings"
   set_env SMTP_HOST "$SMTP_HOST"

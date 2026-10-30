@@ -10,6 +10,7 @@ import {
   setupClaimSchema,
   signupModes,
   webManifest,
+  webPushConfigSchema,
 } from '@nexaheart/shared';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';
@@ -67,6 +68,19 @@ export const instanceRoutes: FastifyPluginAsyncZod<{
       return {
         ...info,
         integrations: integrations ? await integrations.publicInfo() : fallback.integrations,
+      };
+    },
+  );
+
+  // Phase 60: whether the web app can turn on notifications, and the key to subscribe with.
+  app.get(
+    '/v1/push/web',
+    { schema: { response: { 200: webPushConfigSchema } } },
+    async (_request, reply) => {
+      reply.header('cache-control', 'public, max-age=300');
+      return {
+        enabled: Boolean(env.WEB_PUSH_PUBLIC_KEY),
+        publicKey: env.WEB_PUSH_PUBLIC_KEY ?? null,
       };
     },
   );
