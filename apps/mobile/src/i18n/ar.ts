@@ -797,6 +797,16 @@ export const ar: Translations = {
     met: 'التقى وجهًا لوجه',
     metLabel: 'التقى بشخص هنا وجهًا لوجه، بتأكيد الطرفين',
   },
+  join: {
+    rulesTitle: 'لمن هذا المجتمع',
+    ageRange: 'أعضاء بأعمار من {{min}} إلى {{max}}.',
+    ageFrom: 'أعضاء بعمر {{min}} فما فوق.',
+    genders: 'أعضاء من: {{list}}.',
+    declarationTitle: 'إقرار المجتمع',
+    declarationConfirm: 'أؤكد ذلك',
+    declarationRequired: 'للانضمام يجب تأكيد الإقرار.',
+    notEligible: 'هذا المجتمع مخصص لأعضاء آخرين (القواعد أعلاه). قد يناسبك مجتمع آخر أكثر.',
+  },
   faith: {
     title: 'الإيمان والالتزام',
     notOffered: 'هذا المجتمع لا يقدّم هذه الأسئلة.',

@@ -128,6 +128,8 @@ export const profileInputSchema = z.object({
     .array(z.string().regex(/^[a-z]{2,3}$/))
     .max(10)
     .default([]),
+  /** Phase 62c: the community's declaration, confirmed (required only where there is one). */
+  declarationAccepted: z.boolean().optional(),
 });
 export type ProfileInput = z.infer<typeof profileInputSchema>;
 
@@ -274,7 +276,17 @@ export const instanceSchema = z.object({
   /** What the community offers for gender identity and pronouns (phase 62a). */
   identity: identitySettingsSchema,
   /** Phase 62b: the intentions this community offers, and whether the faith module is on. */
-  community: z.object({ intentions: z.array(intentionSchema), faith: z.boolean() }),
+  community: z.object({
+    intentions: z.array(intentionSchema),
+    faith: z.boolean(),
+    /** Phase 62c: who may join (checked when the profile is created). */
+    join: z.object({
+      minAge: z.number().int(),
+      maxAge: z.number().int().nullable(),
+      genders: z.array(genderSchema),
+      declaration: z.string().nullable(),
+    }),
+  }),
   /** What clients need from the integrations (phase 24): never a secret. */
   integrations: publicIntegrationsSchema,
   /** The software credit every interface shows (license term, see NOTICE). */

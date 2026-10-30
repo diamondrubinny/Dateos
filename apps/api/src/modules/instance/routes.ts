@@ -6,6 +6,7 @@ import {
   identityVocabularies,
   intentions,
   intentionSchema,
+  genderSchema,
   BRAND_ICON_NAMES,
   deriveBrand,
   type InstanceInfo,
@@ -51,7 +52,11 @@ export function instanceInfo(env: Env): InstanceInfo {
     transcripts: false,
     signup: 'open',
     identity: defaultIdentitySettings,
-    community: { intentions: [...intentions], faith: false },
+    community: {
+      intentions: [...intentions],
+      faith: false,
+      join: { minAge: 18, maxAge: null, genders: [], declaration: null },
+    },
     integrations: { captcha: null, analytics: null, webErrors: false },
     poweredBy: poweredBy(env),
   };
@@ -170,4 +175,8 @@ export const adminSettingsSchema = z.object({
   identityPronouns: z.boolean(),
   intentionsOffered: z.array(intentionSchema),
   faithModule: z.boolean(),
+  joinMinAge: z.number().int(),
+  joinMaxAge: z.number().int().nullable(),
+  joinGenders: z.array(genderSchema),
+  joinDeclaration: z.string().nullable(),
 });

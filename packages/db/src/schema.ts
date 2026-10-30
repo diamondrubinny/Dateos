@@ -194,6 +194,8 @@ export const profiles = pgTable('profiles', {
   userId: ownerId().primaryKey(),
   displayName: varchar('display_name', { length: 40 }).notNull(),
   birthDate: date('birth_date').notNull(),
+  /** Phase 62c: when the community's declaration was confirmed (null: none was asked). */
+  declarationAcceptedAt: timestamp('declaration_accepted_at', { withTimezone: true }),
   gender: gender('gender').notNull(),
   interestedIn: gender('interested_in').array().notNull(),
   intention: intention('intention').notNull(),
@@ -955,6 +957,14 @@ export const instanceSettings = pgTable(
     /** Phase 62b: intentions offered (null: all of them) and the faith module (off by default). */
     intentionsOffered: text('intentions_offered').array(),
     faithModule: boolean('faith_module').notNull().default(false),
+    /** Phase 62c: who may join (ages, genders: empty means everyone) and a declaration. */
+    joinMinAge: smallint('join_min_age').notNull().default(18),
+    joinMaxAge: smallint('join_max_age'),
+    joinGenders: text('join_genders')
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
+    joinDeclaration: varchar('join_declaration', { length: 300 }),
     updatedBy: text('updated_by').references(() => user.id, { onDelete: 'set null' }),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },

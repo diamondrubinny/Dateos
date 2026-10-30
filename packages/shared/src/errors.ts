@@ -34,6 +34,8 @@ export const ErrorCode = {
    * API restarts or is being updated. Clients show "can't be reached" instead of an error.
    */
   ServerRestarting: 'SERVER_RESTARTING',
+  /** Phase 62c: this community's rules for joining (age range, gender, declaration). */
+  NotEligible: 'NOT_ELIGIBLE',
 } as const;
 
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];
