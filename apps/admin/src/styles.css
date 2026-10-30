@@ -199,6 +199,7 @@ input[type='text'],
 input[type='number'],
 input[type='date'],
 input[type='time'],
+input[type='datetime-local'],
 input:not([type]),
 textarea {
   width: 100%;
@@ -762,4 +763,19 @@ label.checkbox {
   margin-top: 2rem;
   padding-top: 1rem;
   border-top: 1px solid var(--border);
+}
+
+/* System → Updates (phase 56): when to install, and the history. */
+.update-when {
+  margin: 0.75rem 0 1rem;
+}
+.update-when .field {
+  margin-inline-start: 1.75rem;
+  max-width: 22rem;
+}
+table caption {
+  caption-side: top;
+  text-align: start;
+  font-weight: 600;
+  padding: 0.75rem 0.75rem 0.5rem;
 }

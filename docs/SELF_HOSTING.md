@@ -140,6 +140,9 @@ git pull
 GIT_COMMIT=$(git rev-parse HEAD) docker compose -f infra/docker-compose.yml --env-file .env --profile app --profile full up -d --build
 ```
 
+An approval can carry a time (`update_requests.not_before`): `scripts/update.sh` leaves it until
+then, so the cron line doesn't change.
+
 While the API restarts, Caddy answers for it: `503` with `Retry-After: 30` and the code
 `SERVER_RESTARTING` (`infra/web/Caddyfile`, `handle_errors`), which the app and the dashboard show as
 "can't be reached right now" and recover from by themselves. Behind your own proxy instead of the

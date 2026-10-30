@@ -379,6 +379,13 @@
       "when": 1793346011272,
       "tag": "0053_update_emails",
       "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1793363201059,
+      "tag": "0054_update_schedule",
+      "breakpoints": true
     }
   ]
 }

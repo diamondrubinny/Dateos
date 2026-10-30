@@ -151,8 +151,77 @@ describe.skipIf(!integrationEnabled)('updates from GitHub (integration)', () => 
     expect(again.json().error.message).toBe('An update is already waiting or running.');
     const { rows } = await q(`SELECT action, meta FROM audit_logs WHERE action = 'update.approve'`);
     expect(rows).toEqual([
-      { action: 'update.approve', meta: { from: CURRENT, to: LATEST, behind: 3 } },
+      { action: 'update.approve', meta: { from: CURRENT, to: LATEST, behind: 3, at: 'now' } },
     ]);
+  });
+
+  it('an install can be scheduled: in the future, up to 7 days ahead, audited', async () => {
+    const admin = await staff('admin');
+    github(200, ahead);
+    await call(admin, 'POST', '/v1/admin/updates/check');
+    const install = (at: string) =>
+      call(admin, 'POST', '/v1/admin/updates/install', { commit: LATEST, at });
+    const hour = 3_600_000;
+    const past = await install(new Date(Date.now() - hour).toISOString());
+    expect(past.statusCode).toBe(400);
+    expect(past.json().error.message).toBe('That time has already passed.');
+    const tooFar = await install(new Date(Date.now() + 8 * 24 * hour).toISOString());
+    expect(tooFar.statusCode).toBe(400);
+    expect(tooFar.json().error.message).toBe('An update can be scheduled up to 7 days ahead.');
+    expect((await install('tonight')).statusCode).toBe(400);
+    // A time with the admin's own offset is kept as the same moment.
+    const at = new Date(Date.now() + 5 * hour);
+    const local = at.toISOString().replace('Z', '+00:00');
+    const ok = await install(local);
+    expect(ok.statusCode).toBe(200);
+    expect(ok.json().request).toMatchObject({ status: 'pending', notBefore: at.toISOString() });
+    const { rows } = await q(
+      `SELECT meta->>'at' AS at FROM audit_logs WHERE action = 'update.approve'`,
+    );
+    expect(rows).toEqual([{ at: at.toISOString() }]);
+    // What the server's updater picks: nothing yet, until the time comes.
+    const due = () =>
+      q(
+        `SELECT id FROM update_requests WHERE status = 'pending'
+           AND (not_before IS NULL OR not_before <= now()) ORDER BY requested_at LIMIT 1`,
+      ).then((r) => r.rows.length);
+    expect(await due()).toBe(0);
+    await q(`UPDATE update_requests SET not_before = now() - interval '1 minute'`);
+    expect(await due()).toBe(1);
+  });
+
+  it('the history: finished approvals, newest first, without the latest one', async () => {
+    const admin = await staff('admin');
+    github(200, ahead);
+    await call(admin, 'POST', '/v1/admin/updates/check');
+    for (const [i, status] of (['done', 'failed', 'cancelled', 'done'] as const).entries()) {
+      await q(
+        `INSERT INTO update_requests (target_commit, from_commit, status, requested_at, finished_at, message)
+         VALUES ($1, $2, $3, now() - make_interval(days => $4), now() - make_interval(days => $4), $5)`,
+        [sha(10 + i), CURRENT, status, 10 - i, `result ${i}`],
+      );
+    }
+    for (let i = 0; i < 12; i += 1) {
+      await q(
+        `INSERT INTO update_requests (target_commit, status, requested_at, finished_at)
+         VALUES ($1, 'done', now() - make_interval(days => $2), now() - make_interval(days => $2))`,
+        [sha(100 + i), 30 + i],
+      );
+    }
+    const s = (await call(admin, 'GET', '/v1/admin/updates')).json();
+    expect(s.request).toMatchObject({ status: 'done', message: 'result 3' });
+    expect(s.history).toHaveLength(10);
+    expect(s.history.map((h: { message: string | null }) => h.message).slice(0, 3)).toEqual([
+      'result 2',
+      'result 1',
+      'result 0',
+    ]);
+    expect(s.history[0]).toMatchObject({ status: 'cancelled', notBefore: null });
+    // Open approvals are never history.
+    await call(admin, 'POST', '/v1/admin/updates/install', { commit: LATEST });
+    const after = (await call(admin, 'GET', '/v1/admin/updates')).json();
+    expect(after.request.status).toBe('pending');
+    expect(after.history[0].message).toBe('result 3');
   });
 
   it('a waiting approval can be withdrawn; one that started cannot', async () => {

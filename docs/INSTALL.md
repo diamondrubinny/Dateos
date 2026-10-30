@@ -274,6 +274,11 @@ The dashboard only records the approval. On the server, `scripts/update.sh` (run
 4. waits until the server reports ready, and **goes back to the previous version** if it doesn't,
 5. shows the result in the dashboard. Its log is `/var/log/nexaheart-update.log`.
 
+**When to install:** in the approval, choose **Now** or **At a time I choose** (up to 7 days ahead,
+in your own time zone, suggested at 03:00): the server waits until then, and the approval can be
+withdrawn until it starts. Below it, **Previous updates** lists what was installed, what didn't
+install and why, and what was withdrawn.
+
 **While it installs**, members who open the app see "Can't reach the community right now" (it's
 probably an update; they haven't been signed out) instead of the welcome page, and the app carries
 on by itself when the server is back. Members already in the app see one line at the top; the

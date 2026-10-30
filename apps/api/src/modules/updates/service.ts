@@ -5,12 +5,14 @@ import { schema, type Database } from '@nexaheart/db';
 import { refreshUpdateStatus, type UpdateSettings } from '@nexaheart/integrations';
 import {
   ErrorCode,
+  UPDATE_HISTORY_SIZE,
+  UPDATE_SCHEDULE_MAX_DAYS,
   type UpdateChange,
   type UpdateRequest,
   type UpdateRequestStatus,
   type UpdateStatusView,
 } from '@nexaheart/shared';
-import { and, desc, eq } from 'drizzle-orm';
+import { and, desc, eq, inArray } from 'drizzle-orm';
 import { audit } from '../../lib/audit.js';
 import { HttpError } from '../../plugins/error-handler.js';
 
@@ -40,6 +42,13 @@ export class UpdateService {
       .from(updateRequests)
       .orderBy(desc(updateRequests.requestedAt))
       .limit(1);
+    // Phase 56: the finished approvals, for the history (the latest is shown on its own above it).
+    const history = await this.db
+      .select()
+      .from(updateRequests)
+      .where(inArray(updateRequests.status, ['done', 'failed', 'cancelled']))
+      .orderBy(desc(updateRequests.requestedAt))
+      .limit(UPDATE_HISTORY_SIZE + 1);
     const current = this.settings.current ?? null;
     // A check made by an older image says nothing about this one, and nothing applies when the
     // running version isn't known.
@@ -57,6 +66,10 @@ export class UpdateService {
       changes: sameVersion ? (row!.changes as UpdateChange[]) : [],
       error: current ? (sameVersion ? row!.error : null) : 'unknown-version',
       request: req ? view(req) : null,
+      history: history
+        .filter((h) => h.id !== req?.id)
+        .slice(0, UPDATE_HISTORY_SIZE)
+        .map(view),
     };
   }
 
@@ -70,7 +83,23 @@ export class UpdateService {
    * An admin approves installing the latest known commit. Only that commit, only when the server
    * is behind, and one at a time (a unique index keeps a second open request out).
    */
-  async approve(adminId: string, commit: string): Promise<UpdateStatusView> {
+  async approve(adminId: string, commit: string, at?: string): Promise<UpdateStatusView> {
+    // Phase 56: a chosen time, in the future (a minute of clock difference allowed) and at most
+    // UPDATE_SCHEDULE_MAX_DAYS ahead. Absent: as soon as the server's updater sees it.
+    const notBefore = at ? new Date(at) : null;
+    if (notBefore) {
+      const now = Date.now();
+      if (notBefore.getTime() < now - 60_000) {
+        throw new HttpError(400, ErrorCode.BadRequest, 'That time has already passed.');
+      }
+      if (notBefore.getTime() > now + UPDATE_SCHEDULE_MAX_DAYS * 86_400_000) {
+        throw new HttpError(
+          400,
+          ErrorCode.BadRequest,
+          `An update can be scheduled up to ${UPDATE_SCHEDULE_MAX_DAYS} days ahead.`,
+        );
+      }
+    }
     const s = await this.status();
     if (!s.enabled) throw new HttpError(409, ErrorCode.Conflict, 'Update checks are turned off.');
     if (!s.current || !s.latest || s.behind === 0 || commit !== s.latest) {
@@ -84,14 +113,19 @@ export class UpdateService {
       await this.db.transaction(async (tx) => {
         const [req] = await tx
           .insert(updateRequests)
-          .values({ targetCommit: commit, fromCommit: s.current, requestedBy: adminId })
+          .values({ targetCommit: commit, fromCommit: s.current, requestedBy: adminId, notBefore })
           .returning({ id: updateRequests.id });
         await audit(tx, {
           actorId: adminId,
           action: 'update.approve',
           targetType: 'update',
           targetId: req!.id,
-          meta: { from: s.current ?? '', to: commit, behind: s.behind },
+          meta: {
+            from: s.current ?? '',
+            to: commit,
+            behind: s.behind,
+            at: notBefore?.toISOString() ?? 'now',
+          },
         });
       });
     } catch (error) {
@@ -128,6 +162,7 @@ function view(r: typeof updateRequests.$inferSelect): UpdateRequest {
     target: r.targetCommit,
     from: r.fromCommit,
     requestedAt: r.requestedAt.toISOString(),
+    notBefore: r.notBefore?.toISOString() ?? null,
     startedAt: r.startedAt?.toISOString() ?? null,
     finishedAt: r.finishedAt?.toISOString() ?? null,
     message: r.message,

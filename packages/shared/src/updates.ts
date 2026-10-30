@@ -9,6 +9,10 @@ export const updateRequestStatuses = ['pending', 'running', 'done', 'failed', 'c
 export type UpdateRequestStatus = (typeof updateRequestStatuses)[number];
 /** A request nobody picked up for this long: the server's updater probably isn't set up. */
 export const UPDATE_PICKUP_MINUTES = 5;
+/** Phase 56: an install can be scheduled up to this many days ahead. */
+export const UPDATE_SCHEDULE_MAX_DAYS = 7;
+/** Finished approvals shown in the history. */
+export const UPDATE_HISTORY_SIZE = 10;
 
 export const updateChangeSchema = z.object({
   title: z.string(),
@@ -23,6 +27,8 @@ export const updateRequestSchema = z.object({
   target: commitSchema,
   from: commitSchema.nullable(),
   requestedAt: z.string(),
+  /** Phase 56: not installed before this time; null = as soon as possible. */
+  notBefore: z.string().nullable(),
   startedAt: z.string().nullable(),
   finishedAt: z.string().nullable(),
   message: z.string().nullable(),
@@ -48,8 +54,16 @@ export const updateStatusViewSchema = z.object({
   error: z.string().nullable(),
   /** The latest request (approval) and what happened to it. */
   request: updateRequestSchema.nullable(),
+  /** Phase 56: the last finished approvals (installed, failed, withdrawn), newest first. */
+  history: z.array(updateRequestSchema),
 });
 export type UpdateStatusView = z.infer<typeof updateStatusViewSchema>;
 
-export const installUpdateSchema = z.object({ commit: commitSchema }).strict();
+export const installUpdateSchema = z
+  .object({
+    commit: commitSchema,
+    /** Phase 56: install at this time (ISO 8601, with an offset); absent = as soon as possible. */
+    at: z.iso.datetime({ offset: true }).optional(),
+  })
+  .strict();
 export type InstallUpdate = z.infer<typeof installUpdateSchema>;
