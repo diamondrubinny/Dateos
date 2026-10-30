@@ -112,6 +112,8 @@ export const envSchema = z.object({
     .optional()
     .or(z.literal('').transform(() => undefined)),
   UPDATE_CHECK: z.enum(['on', 'off']).default('on'),
+  /** Phase 54: email the admins when an update is available and when one finishes. */
+  UPDATE_EMAILS: z.enum(['on', 'off']).default('on'),
   UPDATE_REPO: z
     .string()
     .regex(/^[A-Za-z0-9-]+\/[A-Za-z0-9._-]+$/)

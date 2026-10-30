@@ -36,8 +36,20 @@ export const workerEnvSchema = z.object({
     .string()
     .optional()
     .transform((v) => (v ? v : undefined)),
-  /** The dashboard's address, for links in team alerts. */
+  /**
+   * The dashboard's address, for links in team alerts and admin emails. Empty: admin.<app's host>,
+   * as the API does (see dashboardUrl).
+   */
   PUBLIC_ADMIN_URL: z
+    .string()
+    .optional()
+    .transform((v) => v ?? ''),
+  /** The web app's address; else the first CORS origin (install.sh sets https://DOMAIN first). */
+  PUBLIC_APP_URL: z
+    .string()
+    .optional()
+    .transform((v) => v ?? ''),
+  CORS_ORIGINS: z
     .string()
     .optional()
     .transform((v) => v ?? ''),
@@ -61,6 +73,8 @@ export const workerEnvSchema = z.object({
     .optional()
     .or(z.literal('').transform(() => undefined)),
   UPDATE_CHECK: z.enum(['on', 'off']).default('on'),
+  /** Phase 54: email the admins when an update is available and when one finishes. */
+  UPDATE_EMAILS: z.enum(['on', 'off']).default('on'),
   UPDATE_REPO: z
     .string()
     .regex(/^[A-Za-z0-9-]+\/[A-Za-z0-9._-]+$/)
@@ -106,6 +120,18 @@ export const workerEnvSchema = z.object({
 
 export type WorkerEnv = z.infer<typeof workerEnvSchema>;
 
+/**
+ * The dashboard's address without a trailing slash: PUBLIC_ADMIN_URL, else admin.<host> of the web
+ * app (PUBLIC_APP_URL or the first CORS origin), as the API does. Empty when none is set.
+ */
+export function dashboardUrl(
+  env: Pick<WorkerEnv, 'PUBLIC_ADMIN_URL' | 'PUBLIC_APP_URL' | 'CORS_ORIGINS'>,
+): string {
+  const app = env.PUBLIC_APP_URL || (env.CORS_ORIGINS.split(',')[0] ?? '').trim();
+  const admin = env.PUBLIC_ADMIN_URL || app.replace(/^(https?:\/\/)/, '$1admin.');
+  return admin.replace(/\/+$/, '');
+}
+
 export function loadWorkerEnv(source: NodeJS.ProcessEnv = process.env): WorkerEnv {
   const result = workerEnvSchema.safeParse(source);
   if (!result.success) {
@@ -113,5 +139,5 @@ export function loadWorkerEnv(source: NodeJS.ProcessEnv = process.env): WorkerEn
     // Key names only: values may be secrets.
     throw new Error(`Invalid or missing environment variables: ${keys.join(', ')}`);
   }
-  return result.data;
+  return { ...result.data, PUBLIC_ADMIN_URL: dashboardUrl(result.data) };
 }

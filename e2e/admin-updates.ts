@@ -114,6 +114,10 @@ try {
         (await page.getByRole('heading', { name: u.available(3) }).count()) === 1,
         'how many changes',
       );
+      check(
+        (await page.getByTestId('updates').innerText()).includes(u.emailsOn),
+        'says the admins are emailed about updates',
+      );
       await audit(page, `${locale}/admin-updates`);
       await page.getByTestId('updates').scrollIntoViewIfNeeded();
       await shot(page, `${locale}/127-admin-update-available`);

@@ -274,6 +274,10 @@ The dashboard only records the approval. On the server, `scripts/update.sh` (run
 4. waits until the server reports ready, and **goes back to the previous version** if it doesn't,
 5. shows the result in the dashboard. Its log is `/var/log/nexaheart-update.log`.
 
+**By email, too:** the admins get an email when a new version is available (what was added or fixed,
+at most once a day) and when an approved update finishes (installed, or why not). The emails link to
+the dashboard; nothing installs from an email. `UPDATE_EMAILS=off` in `.env` turns them off.
+
 The check sends one request to GitHub every 6 hours. Turn it off with `UPDATE_CHECK=off` in `.env`
 (then update with the table above). Servers installed by hand don't know their version until you run
 the install command once; the dashboard says so.

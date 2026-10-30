@@ -310,12 +310,16 @@ export function createServices(
     storage,
   );
   const moderation = new ModerationService(dbHandle.db, discovery, hashEmail, today);
-  const updates = new UpdateService(dbHandle.db, {
-    enabled: env.UPDATE_CHECK === 'on',
-    repo: env.UPDATE_REPO,
-    branch: env.UPDATE_BRANCH,
-    current: env.APP_COMMIT,
-  });
+  const updates = new UpdateService(
+    dbHandle.db,
+    {
+      enabled: env.UPDATE_CHECK === 'on',
+      repo: env.UPDATE_REPO,
+      branch: env.UPDATE_BRANCH,
+      current: env.APP_COMMIT,
+    },
+    env.UPDATE_EMAILS === 'on',
+  );
   const federatedSafety = new FederatedSafety(dbHandle.db, federation, federated, () =>
     reports.alertStaff(),
   );

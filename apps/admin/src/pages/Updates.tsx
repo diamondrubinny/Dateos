@@ -67,7 +67,7 @@ export function Updates() {
   const githubPr = (n: number) => `https://github.com/${s.repo}/pull/${n}`;
 
   return (
-    <div data-testid="updates">
+    <div className="updates-section" data-testid="updates">
       <h2 id="updates-title">{u.title}</h2>
       {problem ? (
         <p className="alert alert-error" role="alert">
@@ -196,6 +196,8 @@ export function Updates() {
           {u.upToDate}
         </p>
       ) : null}
+
+      {s.enabled ? <p className="muted">{s.emails ? u.emailsOn : u.emailsOff}</p> : null}
 
       {s.enabled ? (
         <button
