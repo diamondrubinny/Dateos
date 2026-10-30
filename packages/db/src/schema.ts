@@ -1835,3 +1835,37 @@ export const ageChecks = pgTable('age_checks', {
   method: varchar('method', { length: 40 }).notNull(),
   checkedAt: timestamp('checked_at', { withTimezone: true }).notNull(),
 });
+
+/**
+ * Phase 64: the security incident log (Israel's data security regulations, GDPR Art. 33) ⚖️.
+ * About systems, not people: no names, emails or message text. Admins only; never deleted, every
+ * change audited.
+ */
+export const securityIncidents = pgTable(
+  'security_incidents',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    title: varchar('title', { length: 120 }).notNull(),
+    kind: varchar('kind', { length: 32 }).notNull(),
+    severity: varchar('severity', { length: 12 }).notNull(),
+    occurredAt: timestamp('occurred_at', { withTimezone: true }),
+    discoveredAt: timestamp('discovered_at', { withTimezone: true }).notNull(),
+    affectedMembers: integer('affected_members'),
+    description: varchar('description', { length: 2000 }).notNull(),
+    actions: varchar('actions', { length: 2000 }),
+    authorityNotifiedAt: timestamp('authority_notified_at', { withTimezone: true }),
+    membersNotifiedAt: timestamp('members_notified_at', { withTimezone: true }),
+    closedAt: timestamp('closed_at', { withTimezone: true }),
+    createdBy: text('created_by').references(() => user.id, { onDelete: 'set null' }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    check(
+      'security_incidents_kind',
+      sql`${t.kind} IN ('unauthorized_access', 'data_leak', 'lost_device', 'malware', 'outage', 'other')`,
+    ),
+    check('security_incidents_severity', sql`${t.severity} IN ('low', 'medium', 'high', 'severe')`),
+    index('security_incidents_time_idx').on(t.discoveredAt),
+  ],
+);

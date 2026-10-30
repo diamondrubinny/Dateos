@@ -26,6 +26,7 @@ export * from './about.js';
 export * from './identity.js';
 export * from './faith.js';
 export * from './age-check.js';
+export * from './compliance.js';
 export * from './after-match.js';
 export * from './trust.js';
 export * from './friends.js';

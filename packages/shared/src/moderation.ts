@@ -330,6 +330,8 @@ export type AuditEntry = z.infer<typeof auditEntrySchema>;
 export const auditQuerySchema = z.object({
   before: z.iso.datetime().optional(),
   limit: z.coerce.number().int().min(1).max(100).default(50),
+  /** Phase 64: staff access to member data only. */
+  only: z.enum(['staff_access']).optional(),
 });
 
 /** Retention (see docs/phases/PHASE-4.md). Requires legal review per instance. */

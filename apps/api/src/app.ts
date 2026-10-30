@@ -145,6 +145,7 @@ export async function buildApp(env: Env, deps: AppDependencies): Promise<Fastify
       updates: services.updates,
       dependencies: deps.dependencies,
       appeals: services.appeals,
+      compliance: services.compliance,
     });
     await typed.register(federationRoutes, {
       federation: services.federation,
