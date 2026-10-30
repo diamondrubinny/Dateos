@@ -1326,6 +1326,25 @@ export const en = {
     showArchived: 'Archived chats ({{count}})',
     hideArchived: 'Hide archived chats ({{count}})',
   },
+  reach: {
+    title: 'Who can reach me',
+    intro: 'Limits you set for yourself. Nobody is told that you chose them.',
+    likesLabel: 'New likes a day',
+    noLimit: 'No limit',
+    likesPerDay: 'Up to {{count}}',
+    likesHint:
+      'Once you get this many new likes in 24 hours, new people stop seeing you in Discover and Picks until it drops. People you liked and your matches aren’t affected.',
+    verifiedLabel: 'Only verified members can reach me',
+    verifiedHint:
+      'People whose photos weren’t verified don’t see you in Discover and can’t write to you first. Partner communities don’t see you.',
+    chatNotice:
+      '{{name}} accepts first messages from verified members only. Verify your photos to write, or wait for them to write first.',
+    verifyCta: 'Verify my photos',
+    extortionTitle: 'This looks like a threat to share images',
+    extortionBody:
+      'Don’t pay and don’t send anything else: paying rarely stops it. Don’t delete the chat, it’s evidence. Report it now and our team will treat it as urgent. You’re not to blame.',
+    extortionReport: 'Report {{name}} now',
+  },
   chatControl: {
     actions: 'React, reply or unsend',
     reply: 'Reply',

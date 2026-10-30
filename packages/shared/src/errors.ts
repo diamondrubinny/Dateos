@@ -36,6 +36,8 @@ export const ErrorCode = {
   ServerRestarting: 'SERVER_RESTARTING',
   /** Phase 62c: this community's rules for joining (age range, gender, declaration). */
   NotEligible: 'NOT_ELIGIBLE',
+  /** Phase 65: the receiver accepts messages from verified members only. */
+  VerifiedOnly: 'VERIFIED_ONLY',
 } as const;
 
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];

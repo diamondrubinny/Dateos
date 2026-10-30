@@ -6,6 +6,13 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Added
 
+- **Who can reach me**: members can limit new likes a day (10, 25 or 50; once reached, new people
+  stop seeing them until it drops) and accept first messages from verified members only (others
+  see why and how to verify). Threats to share images unless someone pays are recognised in four
+  languages: the receiver sees an urgent banner (don't pay, keep the chat, report now) and "Report"
+  opens with Threat chosen. More local scam phrasing (cheques, matchmaker and registration fees,
+  parcels at customs) in Hebrew, Arabic and Russian.
+
 - **Compliance kit in the dashboard**: a transparency report for any period (counts only, CSV and
   JSON); a security incident log that shows when the authority should be told and can't be
   deleted; a security statement, a no-paid-features pledge and a risk assessment in English and

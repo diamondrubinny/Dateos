@@ -8,7 +8,14 @@
  */
 
 export type HarmCategory = 'insult' | 'sexual' | 'threat';
-export type ScamSignal = 'money' | 'crypto' | 'gift_card' | 'off_platform' | 'link';
+export type ScamSignal =
+  | 'money'
+  | 'crypto'
+  | 'gift_card'
+  | 'off_platform'
+  | 'link'
+  /** Phase 65: threats to share images or tell people unless the person pays. */
+  | 'extortion';
 
 export interface HarmResult {
   flagged: boolean;
@@ -291,7 +298,7 @@ export function checkHarm(text: string): HarmResult {
   return { flagged: categories.length > 0, categories };
 }
 
-const SCAM_RULES: Record<Exclude<ScamSignal, 'off_platform' | 'link'>, RegExp> = {
+const SCAM_RULES: Record<Exclude<ScamSignal, 'off_platform' | 'link' | 'extortion'>, RegExp> = {
   money: lexicon(
     [
       'send me money',
@@ -322,6 +329,20 @@ const SCAM_RULES: Record<Exclude<ScamSignal, 'off_platform' | 'link'>, RegExp> =
       'בביט',
       'בפייבוקס',
       'תשלח לי בביט',
+      // Phase 65: cheques, fees paid first (a "matchmaker", registration), parcels at customs.
+      "צ'ק בנקאי",
+      'שיק בנקאי',
+      'לפדות שיק',
+      "לפדות צ'ק",
+      'דמי שידוך מראש',
+      'לשלם לשדכן',
+      'תשלום לשדכן',
+      'דמי רישום',
+      'לשלם מכס',
+      'תקועה במכס',
+      'תקוע במכס',
+      'דמי שחרור',
+      'עמלת שחרור',
     ],
     false,
     [
@@ -332,6 +353,12 @@ const SCAM_RULES: Record<Exclude<ScamSignal, 'off_platform' | 'link'>, RegExp> =
       'اقرضني',
       'احتاج مال',
       'ويسترن يونيون',
+      'شيك بنكي',
+      'رسوم جمركية',
+      'رسوم الجمارك',
+      'عالقة في الجمارك',
+      'رسوم التسجيل',
+      'رسوم الخاطبة',
     ],
     [
       'переведи деньги',
@@ -341,6 +368,12 @@ const SCAM_RULES: Record<Exclude<ScamSignal, 'off_platform' | 'link'>, RegExp> =
       'нужны деньги',
       'банковский перевод',
       'займи',
+      'оплатить таможню',
+      'таможенный сбор',
+      'застряла на таможне',
+      'застрял на таможне',
+      'регистрационный взнос',
+      'обналичить чек',
     ],
   ),
   crypto: lexicon(
@@ -377,6 +410,60 @@ const SCAM_RULES: Record<Exclude<ScamSignal, 'off_platform' | 'link'>, RegExp> =
   ),
 };
 
+/**
+ * Phase 65: sextortion, threats to share images or tell family unless the person pays. The most
+ * urgent case: the receiver is pointed to an urgent report, never told to pay or delete.
+ */
+const EXTORTION = lexicon(
+  [
+    'or i will send',
+    'or i will share',
+    'or i will post',
+    'leak your photos',
+    'leak your pics',
+    'leak your nudes',
+    'i recorded you',
+    'i will expose you',
+    "i'll expose you",
+    'pay or else',
+  ],
+  [
+    'אפיץ את התמונות',
+    'אפיץ את הסרטון',
+    'אשלח את התמונות',
+    'אשלח את הסרטון',
+    'אפרסם את התמונות',
+    'אפרסם את הסרטון',
+    'הקלטתי אותך',
+    'צילמתי אותך',
+    'אחשוף אותך',
+    'תשלם או שאני',
+    'תשלמי או שאני',
+    'תשלם או שאפיץ',
+    'תשלמי או שאפיץ',
+  ],
+  false,
+  [
+    'سأنشر صورك',
+    'سانشر صورك',
+    'سأرسل صورك',
+    'سارسل صورك',
+    'سأفضحك',
+    'سافضحك',
+    'ادفع وإلا',
+    'ادفع والا',
+    'ادفعي والا',
+    'سجلتك',
+  ],
+  [
+    'разошлю твои фото',
+    'опубликую твои фото',
+    'солью твои фото',
+    'я тебя записал',
+    'заплати или',
+  ],
+);
+
 const OFF_PLATFORM = lexicon(
   [
     'whatsapp',
@@ -407,6 +494,7 @@ export function detectScamSignals(text: string, messagesSoFar: number): ScamSign
   for (const [signal, rule] of Object.entries(SCAM_RULES) as [ScamSignal, RegExp][]) {
     if (rule.test(normalized)) signals.push(signal);
   }
+  if (EXTORTION.test(normalized)) signals.push('extortion');
   if (messagesSoFar < 10 && (OFF_PLATFORM.test(normalized) || PHONE.test(text)))
     signals.push('off_platform');
   if (LINK.test(text)) signals.push('link');

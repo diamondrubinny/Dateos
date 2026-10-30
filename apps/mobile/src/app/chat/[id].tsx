@@ -162,6 +162,9 @@ function ChatScreen() {
       // A gentle start (phase 36): a brand-new account starting many chats.
       else if (e instanceof ApiRequestError && e.code === 'SLOW_DOWN') {
         setError(t('chat.newAccountLimit', { count: NEW_ACCOUNT_CHAT_STARTS }));
+      } else if (e instanceof ApiRequestError && e.code === 'VERIFIED_ONLY') {
+        // Phase 65: they changed the setting while this chat was open.
+        void messages.refetch();
       } else setError(t('chat.failed'));
     }
   };
@@ -210,6 +213,8 @@ function ChatScreen() {
     (newest?.imagesUnlocked ?? false) ||
     (textCount(true) >= MESSAGES_BEFORE_IMAGES && textCount(false) >= MESSAGES_BEFORE_IMAGES);
   const voiceAccepted = newest?.otherAcceptsVoice ?? true;
+  // Phase 65: they accept messages from verified members only, until they write here themselves.
+  const needsVerification = (newest?.writeNeedsVerification ?? false) && !all.some((m) => !m.mine);
   const callsAvailable = newest?.callsAvailable ?? false;
   const callBlocked = !unlocked
     ? t('chat.imagesLocked', { n: MESSAGES_BEFORE_IMAGES })
@@ -454,6 +459,8 @@ function ChatScreen() {
         <FlatList
           // Keyboard users must be able to focus and scroll the conversation (WCAG 2.1.1).
           focusable
+          // A named region: a label alone isn't allowed on a plain element (axe, even when empty).
+          role="region"
           accessibilityLabel={t('chat.title', { name })}
           style={styles.flex}
           contentContainerStyle={styles.list}
@@ -480,57 +487,60 @@ function ChatScreen() {
             messages.hasNextPage && !messages.isFetchingNextPage && void messages.fetchNextPage()
           }
           ListEmptyComponent={
-            <View style={[styles.empty, { backgroundColor: colors.surface }]}>
-              <AppText variant="heading" center>
-                {t('chat.emptyTitle')}
-              </AppText>
-              <AppText variant="body" tone="muted" center>
-                {t('chat.emptyBody')}
-              </AppText>
-              {conversation?.profile.about?.openingQuestion ? (
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityHint={t('chat.answerQuestionHint')}
-                  onPress={() => setText(`“${conversation.profile.about!.openingQuestion}”\n`)}
-                  style={[
-                    styles.suggestion,
-                    { borderColor: colors.primary, backgroundColor: colors.primarySoft },
-                  ]}
-                  testID="opening-question"
+            // Phase 65: no openers to someone who can't write yet (the notice below says why).
+            needsVerification ? undefined : (
+              <View style={[styles.empty, { backgroundColor: colors.surface }]}>
+                <AppText variant="heading" center>
+                  {t('chat.emptyTitle')}
+                </AppText>
+                <AppText variant="body" tone="muted" center>
+                  {t('chat.emptyBody')}
+                </AppText>
+                {conversation?.profile.about?.openingQuestion ? (
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityHint={t('chat.answerQuestionHint')}
+                    onPress={() => setText(`“${conversation.profile.about!.openingQuestion}”\n`)}
+                    style={[
+                      styles.suggestion,
+                      { borderColor: colors.primary, backgroundColor: colors.primarySoft },
+                    ]}
+                    testID="opening-question"
+                  >
+                    <AppText variant="caption" tone="primary">
+                      {t('chat.answerQuestion', { name })}
+                    </AppText>
+                    <AppText variant="body" userContent>
+                      {conversation.profile.about.openingQuestion}
+                    </AppText>
+                  </Pressable>
+                ) : null}
+                <View
+                  role="list"
+                  accessibilityLabel={t('chat.icebreakersLabel')}
+                  style={styles.suggestions}
                 >
-                  <AppText variant="caption" tone="primary">
-                    {t('chat.answerQuestion', { name })}
-                  </AppText>
-                  <AppText variant="body" userContent>
-                    {conversation.profile.about.openingQuestion}
-                  </AppText>
-                </Pressable>
-              ) : null}
-              <View
-                role="list"
-                accessibilityLabel={t('chat.icebreakersLabel')}
-                style={styles.suggestions}
-              >
-                {(icebreakers.data ?? []).map((s) => (
-                  // `role` would override the button role, so the list item wraps the button.
-                  <View key={s} role="listitem">
-                    <Pressable
-                      accessibilityRole="button"
-                      accessibilityHint={t('chat.useSuggestion')}
-                      onPress={() => setText(s)}
-                      style={[
-                        styles.suggestion,
-                        { borderColor: colors.primary, backgroundColor: colors.background },
-                      ]}
-                    >
-                      <AppText variant="body" tone="primary">
-                        {s}
-                      </AppText>
-                    </Pressable>
-                  </View>
-                ))}
+                  {(icebreakers.data ?? []).map((s) => (
+                    // `role` would override the button role, so the list item wraps the button.
+                    <View key={s} role="listitem">
+                      <Pressable
+                        accessibilityRole="button"
+                        accessibilityHint={t('chat.useSuggestion')}
+                        onPress={() => setText(s)}
+                        style={[
+                          styles.suggestion,
+                          { borderColor: colors.primary, backgroundColor: colors.background },
+                        ]}
+                      >
+                        <AppText variant="body" tone="primary">
+                          {s}
+                        </AppText>
+                      </Pressable>
+                    </View>
+                  ))}
+                </View>
               </View>
-            </View>
+            )
           }
           // Inverted lists put the header at the bottom: the typing indicator sits above the composer.
           ListHeaderComponent={
@@ -580,7 +590,14 @@ function ChatScreen() {
           </View>
         ) : null}
 
-        {!closed && recording ? (
+        {!closed && needsVerification ? (
+          <View style={styles.pad} testID="verified-only">
+            <Banner tone="info" message={t('reach.chatNotice', { name })} />
+            <Button label={t('reach.verifyCta')} onPress={() => router.push('/verify')} />
+          </View>
+        ) : null}
+
+        {!closed && recording && !needsVerification ? (
           <View style={styles.pad}>
             <VoiceRecorder
               sending={sendVoice.isPending}
@@ -590,7 +607,7 @@ function ChatScreen() {
           </View>
         ) : null}
 
-        {!closed && !recording && replyingTo ? (
+        {!closed && !recording && !needsVerification && replyingTo ? (
           <View style={[styles.replyBar, { borderTopColor: colors.border }]} testID="replying-to">
             <View style={styles.replyText}>
               <ReplyQuote
@@ -618,7 +635,7 @@ function ChatScreen() {
           </View>
         ) : null}
 
-        {!closed && !recording ? (
+        {!closed && !recording && !needsVerification ? (
           <View style={[styles.composer, { borderTopColor: colors.border }]}>
             <Pressable
               onPress={() =>

@@ -68,7 +68,8 @@
     "faith": "tsx faith.ts",
     "join-rules": "tsx join-rules.ts",
     "age-check": "tsx age-check.ts",
-    "compliance": "tsx compliance.ts"
+    "compliance": "tsx compliance.ts",
+    "receiver-protection": "tsx receiver-protection.ts"
   },
   "dependencies": {
     "@axe-core/playwright": "4.14.0",

@@ -129,3 +129,36 @@ describe('looksLikeInstructions', () => {
     }
   });
 });
+
+describe('phase 65: extortion and local scam phrases', () => {
+  it('spots threats to share images unless the person pays, in four languages', () => {
+    expect(detectScamSignals('Pay me $500 or I will send the video to your family', 40)).toContain(
+      'extortion',
+    );
+    expect(detectScamSignals('I recorded you. Pay or else.', 40)).toContain('extortion');
+    expect(detectScamSignals('תשלם 2000 שקל או שאני אשלח את הסרטון', 40)).toContain('extortion');
+    expect(detectScamSignals('אם לא תעבירי אני אפיץ את התמונות', 40)).toContain('extortion');
+    expect(detectScamSignals('ادفع والا سأنشر صورك', 40)).toContain('extortion');
+    expect(detectScamSignals('Заплати или разошлю твои фото', 40)).toContain('extortion');
+  });
+
+  it('leaves ordinary messages about photos and family alone', () => {
+    for (const text of [
+      'I will send you the photos from the trip',
+      'Send them to your family, they will love the cake!',
+      'אשלח לך את התמונות מהטיול',
+      'سأرسل لك الصور غدا',
+      'Отправлю тебе фото завтра',
+    ]) {
+      expect(detectScamSignals(text, 40)).not.toContain('extortion');
+    }
+  });
+
+  it('cheques, fees paid first and parcels at customs are money signals', () => {
+    expect(detectScamSignals('אני שולח לך שיק בנקאי, רק תפקידי', 40)).toEqual(['money']);
+    expect(detectScamSignals('צריך לשלם דמי שידוך מראש', 40)).toEqual(['money']);
+    expect(detectScamSignals('החבילה שלך תקועה במכס, צריך לשלם מכס', 40)).toEqual(['money']);
+    expect(detectScamSignals('الهدية عالقة في الجمارك', 40)).toEqual(['money']);
+    expect(detectScamSignals('Посылка застряла на таможне', 40)).toEqual(['money']);
+  });
+});

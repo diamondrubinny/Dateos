@@ -138,6 +138,8 @@ export function candidateSql(q: CandidateQuery): SQL {
              pr.age_min, pr.age_max, pr.max_distance_km, pr.intentions AS wants,
              -- Verified profiles only (phase 34).
              pr.verified_only,
+             -- Phase 65: whether the viewer's photos were verified.
+             p.verified_at IS NOT NULL AS verified,
              -- Travel mode (phase 18c): a traveller looks from the city they're visiting.
              CASE WHEN l.travel_until > now() THEN l.travel_geo ELSE l.geo END AS geo,
              e.embedding, e.model,
@@ -207,6 +209,19 @@ export function candidateSql(q: CandidateQuery): SQL {
       ${q.excludeDecided ? sql`AND NOT EXISTS (SELECT 1 FROM interactions i WHERE i.actor_id = me.user_id AND i.target_id = c.user_id)` : sql``}
       -- Verified profiles only (phase 34): someone a moderator verified, in Discover and Picks.
       ${q.excludeDecided ? sql`AND (NOT me.verified_only OR c.verified_at IS NOT NULL)` : sql``}
+      -- Phase 65, receiver controls, for new people only (someone who liked the viewer still shows):
+      -- "only verified members can reach me", and "at most N new likes in 24 hours".
+      ${
+        q.excludeDecided
+          ? sql`AND (EXISTS (SELECT 1 FROM interactions lv WHERE lv.actor_id = c.user_id
+                      AND lv.target_id = me.user_id AND lv.kind = 'like') OR (
+                  (NOT cpr.verified_contact_only OR me.verified)
+                  AND (cpr.daily_like_limit IS NULL OR (
+                    SELECT count(*) FROM interactions il
+                    WHERE il.target_id = c.user_id AND il.kind = 'like'
+                      AND il.created_at > now() - interval '24 hours') < cpr.daily_like_limit)))`
+          : sql``
+      }
       ${q.excludeSaved ? sql`AND NOT EXISTS (SELECT 1 FROM saved_profiles sp WHERE sp.user_id = me.user_id AND sp.target_id = c.user_id)` : sql``}
       -- One array parameter keeps the statement text stable, so it can be prepared once.
       AND NOT (c.user_id = ANY(${sql.param(q.excludeIds ?? [])}::text[]))

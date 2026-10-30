@@ -290,6 +290,10 @@ export const preferences = pgTable(
     quietTimeZone: varchar('quiet_time_zone', { length: 64 }),
     /** Phase 34: Discover and Picks show only people whose photos a moderator verified. */
     verifiedOnly: boolean('verified_only').notNull().default(false),
+    /** Phase 65: at most this many new likes in 24 hours (10, 25 or 50); null when off. */
+    dailyLikeLimit: smallint('daily_like_limit'),
+    /** Phase 65: only verified members see me in Discover and can write to me. */
+    verifiedContactOnly: boolean('verified_contact_only').notNull().default(false),
     /** Receiver control: people can turn video and voice calls off (phase 15). */
     acceptCalls: boolean('accept_calls').notNull().default(true),
     /** Dealbreakers (phase 19): empty means any; a missing answer always passes. */
@@ -462,6 +466,8 @@ export const interactions = pgTable(
   (t) => [
     uniqueIndex('interactions_actor_target_uq').on(t.actorId, t.targetId),
     index('interactions_target_kind_idx').on(t.targetId, t.kind),
+    // Phase 65: new likes a member received in the last 24 hours.
+    index('interactions_target_created_idx').on(t.targetId, t.createdAt),
     index('interactions_actor_created_idx').on(t.actorId, t.createdAt),
   ],
 );

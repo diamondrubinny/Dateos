@@ -473,6 +473,9 @@ export async function exportMemberData(
           acceptVoice: preferences.acceptVoice,
           acceptCalls: preferences.acceptCalls,
           allowTranscripts: preferences.allowTranscripts,
+          // Phase 65: who can reach me.
+          dailyLikeLimit: preferences.dailyLikeLimit,
+          verifiedContactOnly: preferences.verifiedContactOnly,
           showMetInPersonBadge: preferences.showMetBadge,
           showCheckedInAtEventBadge: preferences.showEventBadge,
           friendsMode: {
