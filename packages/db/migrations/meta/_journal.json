@@ -435,6 +435,13 @@
       "when": 1793398331333,
       "tag": "0061_security_incidents",
       "breakpoints": true
+    },
+    {
+      "idx": 62,
+      "version": "7",
+      "when": 1793400562626,
+      "tag": "0062_receiver_protection",
+      "breakpoints": true
     }
   ]
 }

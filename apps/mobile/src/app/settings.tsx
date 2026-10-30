@@ -47,6 +47,7 @@ import { PoweredBy } from '../components/PoweredBy';
 import { TakeABreak } from '../components/TakeABreak';
 import { TravelMode } from '../components/TravelMode';
 import { SecuritySettings } from '../components/SecuritySettings';
+import { WhoCanReachMe } from '../components/WhoCanReachMe';
 
 function SettingsContent() {
   const { t } = useTranslation();
@@ -222,6 +223,9 @@ function SettingsContent() {
           }
         />
       ) : null}
+
+      {/* Phase 65: limits set by the person receiving likes and messages. */}
+      <WhoCanReachMe onError={() => setError(t('common.genericError'))} />
 
       <MoreOptions>
         <AppText variant="heading">{t('visibility.title')}</AppText>

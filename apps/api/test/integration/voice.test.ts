@@ -128,6 +128,8 @@ describe.skipIf(!integrationEnabled)('voice messages & push (integration)', () =
       notifyMessages: true,
       notifyEvents: true,
       quietHours: null,
+      dailyLikeLimit: null,
+      verifiedContactOnly: false,
       pushDevices: 0,
     });
   });

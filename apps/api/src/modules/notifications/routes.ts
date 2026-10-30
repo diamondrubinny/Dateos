@@ -53,6 +53,8 @@ export const notificationRoutes: FastifyPluginAsyncZod<{
           quietStart: preferences.quietStart,
           quietEnd: preferences.quietEnd,
           quietTimeZone: preferences.quietTimeZone,
+          dailyLikeLimit: preferences.dailyLikeLimit,
+          verifiedContactOnly: preferences.verifiedContactOnly,
         })
         .from(preferences)
         .where(eq(preferences.userId, userId));
@@ -77,6 +79,8 @@ export const notificationRoutes: FastifyPluginAsyncZod<{
           prefs && prefs.quietStart !== null && prefs.quietEnd !== null && prefs.quietTimeZone
             ? { start: prefs.quietStart, end: prefs.quietEnd, timeZone: prefs.quietTimeZone }
             : null,
+        dailyLikeLimit: prefs?.dailyLikeLimit ?? null,
+        verifiedContactOnly: prefs?.verifiedContactOnly ?? false,
         pushDevices: devices.length + browsers.length,
       };
     },

@@ -45,9 +45,15 @@ function ReportScreen() {
     id,
     name = '',
     matchId,
-  } = useLocalSearchParams<{ id: string; name?: string; matchId?: string }>();
+    category: preset,
+  } = useLocalSearchParams<{ id: string; name?: string; matchId?: string; category?: string }>();
   const report = useReport();
-  const [category, setCategory] = useState<ReportCategory>();
+  // Phase 65: the extortion banner opens the form with "Threat" chosen.
+  const [category, setCategory] = useState<ReportCategory | undefined>(
+    (reportCategories as readonly string[]).includes(preset ?? '')
+      ? (preset as ReportCategory)
+      : undefined,
+  );
   const [details, setDetails] = useState('');
   const [attach, setAttach] = useState(Boolean(matchId));
   const [block, setBlock] = useState(true);

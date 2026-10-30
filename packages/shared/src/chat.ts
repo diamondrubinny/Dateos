@@ -24,7 +24,15 @@ export const UNMATCHED_CHAT_RETENTION_DAYS = 30;
 export const NEW_ACCOUNT_CHAT_STARTS = 10;
 
 export const harmCategories = ['insult', 'sexual', 'threat'] as const;
-export const scamSignals = ['money', 'crypto', 'gift_card', 'off_platform', 'link'] as const;
+export const scamSignals = [
+  'money',
+  'crypto',
+  'gift_card',
+  'off_platform',
+  'link',
+  /** Phase 65: threats to share images or tell people unless the person pays. */
+  'extortion',
+] as const;
 
 /** Phase 30: my own message can be unsent this long after sending. */
 export const UNSEND_MINUTES = 15;
@@ -122,6 +130,11 @@ export const messagesPageSchema = z.object({
   otherAcceptsVoice: z.boolean(),
   /** Whether a call can be started now: community feature on, chat unlocked, receiver accepts. */
   callsAvailable: z.boolean(),
+  /**
+   * Phase 65: the other person accepts messages from verified members only, and I'm not verified
+   * (and they haven't written to me): I can't write here until I verify my photos.
+   */
+  writeNeedsVerification: z.boolean(),
 });
 export type MessagesPage = z.infer<typeof messagesPageSchema>;
 
@@ -231,6 +244,9 @@ export const quietHoursSchema = z
   .refine((q) => q.start !== q.end, 'Start and end must differ');
 export type QuietHours = z.infer<typeof quietHoursSchema>;
 
+/** Phase 65: the choices for "new likes a day". */
+export const DAILY_LIKE_LIMITS = [10, 25, 50] as const;
+
 export const chatSettingsSchema = z.object({
   acceptVoice: z.boolean(),
   acceptCalls: z.boolean(),
@@ -246,6 +262,20 @@ export const chatSettingsSchema = z.object({
   notifyEvents: z.boolean(),
   /** Phase 39: null when off. */
   quietHours: quietHoursSchema.nullable(),
+  /**
+   * Phase 65, who can reach me: at most this many new likes in 24 hours (null: no limit). Once
+   * reached, new people don't see me in Discover and Picks until it drops.
+   */
+  dailyLikeLimit: z
+    .union(
+      DAILY_LIKE_LIMITS.map((n) => z.literal(n)) as [
+        z.ZodLiteral<number>,
+        ...z.ZodLiteral<number>[],
+      ],
+    )
+    .nullable(),
+  /** Phase 65: only members whose photos were verified see me and can write to me. */
+  verifiedContactOnly: z.boolean(),
 });
 export const chatSettingsInputSchema = chatSettingsSchema
   .partial()

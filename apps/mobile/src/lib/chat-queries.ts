@@ -213,6 +213,8 @@ export function useChatSettings() {
         notifyMessages: boolean;
         notifyEvents: boolean;
         quietHours: QuietHours | null;
+        dailyLikeLimit: number | null;
+        verifiedContactOnly: boolean;
         pushDevices: number;
       }>('/v1/me/settings'),
   });
@@ -242,6 +244,16 @@ export function useSetSetting() {
   const client = useQueryClient();
   return useMutation({
     mutationFn: (input: Record<string, boolean>) =>
+      apiFetch('/v1/me/settings', { method: 'PUT', body: json(input) }),
+    onSuccess: () => client.invalidateQueries({ queryKey: settingsKey }),
+  });
+}
+
+/** Phase 65, who can reach me: new likes a day (null: no limit) and verified members only. */
+export function useSetReach() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { dailyLikeLimit?: number | null; verifiedContactOnly?: boolean }) =>
       apiFetch('/v1/me/settings', { method: 'PUT', body: json(input) }),
     onSuccess: () => client.invalidateQueries({ queryKey: settingsKey }),
   });

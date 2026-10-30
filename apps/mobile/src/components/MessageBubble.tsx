@@ -6,7 +6,9 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { radius, spacing, useColors } from '../lib/theme';
+import { router } from 'expo-router';
 import { AppText } from './AppText';
+import { Button } from './Button';
 import { CallLine } from './CallLine';
 import { DateCard } from './DateCard';
 import { Reactions, canReact } from './Reactions';
@@ -28,6 +30,46 @@ export function ScamBanner() {
         ⚠️ {t('chat.scamTitle')}
       </AppText>
       <AppText variant="caption">{t('chat.scamBody')}</AppText>
+    </View>
+  );
+}
+
+/**
+ * Phase 65: a threat to share images or tell people unless they pay. Never "pay" or "delete": keep
+ * the chat as evidence and report it now (Threat is urgent for moderators).
+ */
+export function ExtortionBanner({
+  other,
+  matchId,
+}: {
+  other?: { id: string; name: string } | undefined;
+  matchId: string;
+}) {
+  const { t } = useTranslation();
+  const colors = useColors();
+  return (
+    <View
+      style={[styles.banner, { backgroundColor: colors.dangerSoft }]}
+      accessibilityRole="alert"
+      testID="extortion-banner"
+    >
+      <AppText variant="label" tone="danger">
+        ⚠️ {t('reach.extortionTitle')}
+      </AppText>
+      <AppText variant="caption">{t('reach.extortionBody')}</AppText>
+      {other ? (
+        <Button
+          variant="danger"
+          label={t('reach.extortionReport', { name: other.name })}
+          onPress={() =>
+            router.push({
+              pathname: '/report/[id]',
+              // The chat goes with the report as evidence.
+              params: { id: other.id, name: other.name, matchId, category: 'threat' },
+            })
+          }
+        />
+      ) : null}
     </View>
   );
 }
@@ -160,7 +202,11 @@ export function MessageBubble({
       style={[styles.row, mine ? styles.rowMine : styles.rowTheirs]}
       testID={`message-${message.id}`}
     >
-      {message.scam.length > 0 ? <ScamBanner /> : null}
+      {message.scam.includes('extortion') ? (
+        <ExtortionBanner other={other} matchId={message.matchId} />
+      ) : message.scam.length > 0 ? (
+        <ScamBanner />
+      ) : null}
       <View style={bubble}>
         {message.replyTo ? (
           <ReplyQuote quote={message.replyTo} otherName={other?.name ?? ''} onPrimary={mine} />

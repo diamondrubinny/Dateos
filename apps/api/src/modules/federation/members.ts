@@ -561,6 +561,8 @@ export class FederatedMembers {
       JOIN preferences pr ON pr.user_id = p.user_id
       LEFT JOIN federation_aliases fa ON fa.partner_id = ${partner.id} AND fa.user_id = p.user_id
       WHERE ${takingPartSql}
+        -- Phase 65: "only verified members can reach me": we can't vouch for partners' members.
+        AND NOT pr.verified_contact_only
         -- Both ways: gender and who each wants, ages, intentions.
         AND p.gender::text = ANY(${sql.param(viewer.interestedIn)}::text[])
         AND ${viewer.gender}::text = ANY(p.interested_in::text[])

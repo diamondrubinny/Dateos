@@ -438,7 +438,35 @@ export class ChatService {
       imagesUnlocked: await this.imagesUnlocked(matchId, viewerId, otherId),
       otherAcceptsVoice: await this.acceptsVoice(otherId),
       callsAvailable: await this.callsAvailable(matchId, viewerId, otherId),
+      writeNeedsVerification: await this.writeNeedsVerification(matchId, viewerId, otherId),
     };
+  }
+
+  /**
+   * Phase 65: the receiver accepts messages from verified members only, the sender isn't verified,
+   * and the receiver hasn't written in this chat yet.
+   */
+  private async writeNeedsVerification(
+    matchId: string,
+    senderId: string,
+    otherId: string,
+  ): Promise<boolean> {
+    const { rows } = await this.db.execute<{ blocked: boolean }>(sql`
+      SELECT COALESCE((SELECT verified_contact_only FROM preferences WHERE user_id = ${otherId}), false)
+        AND (SELECT verified_at IS NULL FROM profiles WHERE user_id = ${senderId})
+        AND NOT EXISTS (SELECT 1 FROM messages WHERE match_id = ${matchId} AND sender_id = ${otherId})
+        AS blocked`);
+    return rows[0]?.blocked ?? false;
+  }
+
+  private async requireMayWrite(matchId: string, senderId: string, otherId: string) {
+    if (await this.writeNeedsVerification(matchId, senderId, otherId)) {
+      throw new HttpError(
+        403,
+        ErrorCode.VerifiedOnly,
+        'This person accepts messages from verified members only. Verify your photos to write.',
+      );
+    }
   }
 
   private async acceptsVoice(userId: string): Promise<boolean> {
@@ -469,6 +497,7 @@ export class ChatService {
     if (!(await this.acceptsVoice(otherId))) {
       throw new HttpError(403, ErrorCode.Forbidden, 'This person does not accept voice messages.');
     }
+    await this.requireMayWrite(matchId, senderId, otherId);
     const clip = await this.audio.upload(senderId, buffer, undefined, lang);
     const clientId = `voice-${randomUUID()}`;
     await this.db
@@ -539,6 +568,7 @@ export class ChatService {
       }
     }
     await this.checkConversationStart(matchId, senderId);
+    await this.requireMayWrite(matchId, senderId, otherId);
     const total = [...(await this.counts(matchId)).values()].reduce((a, b) => a + b, 0);
     const inserted = await this.db
       .insert(messages)
@@ -649,6 +679,7 @@ export class ChatService {
         `Images unlock after you both sent ${MESSAGES_BEFORE_IMAGES} messages.`,
       );
     }
+    await this.requireMayWrite(matchId, senderId, otherId);
     const photo = await this.photos.upload(senderId, buffer, 'chat');
     const clientId = `img-${randomUUID()}`;
     await this.db
