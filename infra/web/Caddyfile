@@ -38,6 +38,12 @@
 		rewrite * /v1/instance/manifest.webmanifest
 		reverse_proxy api:4000
 	}
+	# Phase 59: the installed app's icons, made by the API from the community's logo (the built-in
+	# ones when there's none: the API redirects to /icons/…).
+	handle_path /brand-icons/* {
+		rewrite * /v1/instance/icons{path}
+		reverse_proxy api:4000
+	}
 	handle {
 		import spa
 	}

@@ -50,4 +50,20 @@ describe('the web app manifest (phase 57)', () => {
     expect(Array.from(emoji.short_name)).toHaveLength(PWA_SHORT_NAME_MAX);
     expect(webManifest(info('  \n ')).name).toBe('NexaHeart');
   });
+
+  it('uses the community’s logo as the icon when there is one (phase 59)', () => {
+    const withLogo = webManifest({ ...info('Ahava'), logoUrl: '/v1/instance/logo?v=1a2b3c4d' });
+    expect(withLogo.icons.map((i) => i.src)).toEqual([
+      '/brand-icons/icon-192.png?v=1a2b3c4d',
+      '/brand-icons/icon-512.png?v=1a2b3c4d',
+      '/brand-icons/maskable-512.png?v=1a2b3c4d',
+    ]);
+    expect(webManifest({ ...info('Ahava'), logoUrl: null }).icons[0]!.src).toBe(
+      '/icons/icon-192.png',
+    );
+    // Anything odd in the logo address: the built-in icons.
+    expect(
+      webManifest({ ...info('Ahava'), logoUrl: '/v1/instance/logo?v=<script>' }).icons[0]!.src,
+    ).toBe('/icons/icon-192.png');
+  });
 });

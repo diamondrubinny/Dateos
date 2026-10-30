@@ -6,6 +6,10 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Added
 
+- **The community's logo as the installed app's icon**: once a logo is uploaded in Branding, the
+  home-screen icon is made from it (kept whole on a white square, inside Android's safe zone for
+  round icons); without one, NexaHeart's icon as before.
+
 - **An installable web app**: "Install app" / "Add to Home Screen" with the community's name, icon
   and colour (the manifest follows Branding, in the community's language direction), and the app
   opens even while the server restarts or the connection is away, then carries on by itself. Its

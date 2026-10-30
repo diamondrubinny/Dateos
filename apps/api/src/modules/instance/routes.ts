@@ -2,6 +2,7 @@
 // Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 import {
+  BRAND_ICON_NAMES,
   deriveBrand,
   type InstanceInfo,
   instanceSchema,
@@ -79,6 +80,22 @@ export const instanceRoutes: FastifyPluginAsyncZod<{
       .header('cache-control', 'public, max-age=300')
       .send(JSON.stringify(webManifest(info)));
   });
+
+  // Phase 59: the installed app's icons, from the community's logo. Served on the app's domain as
+  // /brand-icons/* (infra/web/Caddyfile); without a logo, the built-in icons there.
+  app.get(
+    '/v1/instance/icons/:name',
+    { schema: { params: z.object({ name: z.enum(BRAND_ICON_NAMES) }) } },
+    async (request, reply) => {
+      const icon = instance ? await instance.brandIcon(request.params.name) : null;
+      if (!icon) {
+        return reply
+          .header('cache-control', 'public, max-age=300')
+          .redirect(`/icons/${request.params.name}`, 302);
+      }
+      return reply.type('image/png').header('cache-control', 'public, max-age=86400').send(icon);
+    },
+  );
 
   if (!instance) return;
   app.get('/v1/instance/logo', async (_request, reply) => {
