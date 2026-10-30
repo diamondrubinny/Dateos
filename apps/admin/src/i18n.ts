@@ -193,6 +193,9 @@ const en = {
     unknown: 'unknown',
     checked: (when: string) => `checked ${when}`,
     off: 'Update checks are off on this server (UPDATE_CHECK=off). Update by hand when you choose.',
+    emailsOn:
+      'Admins are emailed when a new version is available (at most once a day) and when an update finishes.',
+    emailsOff: 'Update emails are off on this server (UPDATE_EMAILS=off).',
     unknownHelp:
       'This server’s version isn’t known, so updates can’t be offered here. Run the install command once more on the server: it records the version, and updates appear here after that.',
     failed: (why: string) => `The last check didn’t work: ${why}`,
@@ -908,12 +911,14 @@ const he: Messages = {
     unknown: 'לא ידועה',
     checked: (when: string) => `נבדק ${when}`,
     off: 'בדיקת העדכונים כבויה בשרת הזה (UPDATE_CHECK=off). אפשר לעדכן ידנית מתי שרוצים.',
+    emailsOn: 'מנהלי הקהילה מקבלים מייל כשיש גרסה חדשה (פעם ביום לכל היותר) וכשעדכון מסתיים.',
+    emailsOff: 'המיילים על עדכונים כבויים בשרת הזה (UPDATE_EMAILS=off).',
     unknownHelp:
       'הגרסה של השרת הזה לא ידועה, ולכן אי אפשר להציע כאן עדכונים. הריצו בשרת את פקודת ההתקנה פעם נוספת: היא רושמת את הגרסה, ומאז העדכונים יופיעו כאן.',
     failed: (why: string) => `הבדיקה האחרונה לא הצליחה: ${why}`,
     upToDate: 'השרת מעודכן.',
     available: (n: number) => (n === 1 ? 'יש עדכון: שינוי אחד' : `יש עדכון: ${n} שינויים`),
-    allChanges: 'כל השינויים ב־GitHub',
+    allChanges: 'כל השינויים באתר GitHub',
     install: 'התקנת העדכון…',
     confirmTitle: (v: string) => `להתקין עכשיו את הגרסה ${v}?`,
     confirmSteps: [

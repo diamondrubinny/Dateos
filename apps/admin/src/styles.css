@@ -751,3 +751,10 @@ label.checkbox {
   color: inherit;
   font-weight: 600;
 }
+
+/* System → Updates (phase 53): its own section below the status table and its button. */
+.updates-section {
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}

@@ -136,6 +136,7 @@ export async function setupIntegration(options: SetupOptions = {}): Promise<Test
     ...(options.callMedia ? TEST_LIVEKIT : {}),
     APP_COMMIT: options.appCommit ?? '',
     UPDATE_CHECK: 'on',
+    UPDATE_EMAILS: 'on',
   });
   await runMigrations(env.DATABASE_URL);
 

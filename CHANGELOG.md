@@ -6,6 +6,10 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Added
 
+- **Update emails to the admins**: an email when a new version is available (what was added or
+  fixed, at most once a day) and when an approved update finishes (installed, or why not), in
+  Hebrew and English. `UPDATE_EMAILS=off` turns them off.
+
 - **Updates from GitHub, approved in the dashboard**: admins see what was added or fixed since their
   version (System → Updates, and a notice on every page) and approve installing it; the server
   backs up, updates, checks it started, and goes back to the previous version if it didn't.
@@ -264,6 +268,10 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
   link included).
 - Arabic and Russian were missing from the native apps' language list (iOS and Android).
 - The chat header cut off its last action in Arabic and Russian; it now wraps.
+- Emails to the admins (backup alerts) linked to `/#/system` without an address when
+  `PUBLIC_ADMIN_URL` was empty, as after the install command; they now use `https://admin.<domain>`.
+- Dashboard, System → Updates: the section has its own spacing, and the Hebrew "all changes" link
+  reads correctly next to "GitHub".
 
 ## 0.2.0 (2026-10-22)
 

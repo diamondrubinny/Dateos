@@ -29,6 +29,8 @@ export class UpdateService {
   constructor(
     private readonly db: Database,
     private readonly settings: UpdateSettings,
+    /** UPDATE_EMAILS=on: admins are emailed about new versions and results (phase 54). */
+    private readonly emails = false,
   ) {}
 
   async status(): Promise<UpdateStatusView> {
@@ -44,6 +46,7 @@ export class UpdateService {
     const sameVersion = Boolean(current) && row !== undefined && row.currentCommit === current;
     return {
       enabled: this.settings.enabled,
+      emails: this.emails,
       repo: this.settings.repo,
       branch: this.settings.branch,
       current,

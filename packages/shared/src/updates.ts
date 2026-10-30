@@ -32,6 +32,8 @@ export type UpdateRequest = z.infer<typeof updateRequestSchema>;
 export const updateStatusViewSchema = z.object({
   /** UPDATE_CHECK=on in the server's .env. */
   enabled: z.boolean(),
+  /** UPDATE_EMAILS=on: admins are emailed when a version is available and when one finishes. */
+  emails: z.boolean(),
   repo: z.string(),
   branch: z.string(),
   /** The commit this server runs, or null when it isn't known (installed without the script). */

@@ -131,7 +131,9 @@ delete again the accounts that were deleted since. Document your backup retentio
 
 Admins approve updates in the dashboard (**System → Updates**); the server installs them with a
 backup first and goes back if the new version doesn't start. See [INSTALL.md, Updates from the
-dashboard](INSTALL.md#updates-from-the-dashboard). By hand:
+dashboard](INSTALL.md#updates-from-the-dashboard). Admins are also emailed when a version is
+available and when an update finishes (`UPDATE_EMAILS=off` stops it); the emails link to
+`PUBLIC_ADMIN_URL`, or `https://admin.<domain>` when it's empty. By hand:
 
 ```bash
 git pull

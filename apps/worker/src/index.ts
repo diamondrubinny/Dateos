@@ -39,6 +39,7 @@ import { processSignupRetention } from './signup-jobs.js';
 import { processFriendRetention } from './friend-jobs.js';
 import { processCalls } from './call-jobs.js';
 import { processBackupWatch } from './backup-watch.js';
+import { processUpdateNotice, processUpdateResults } from './update-mail.js';
 import { markTranscriptFailed, processTranscript } from './transcript-jobs.js';
 import { createWhisper } from './transcribe.js';
 import {
@@ -131,6 +132,20 @@ async function main(): Promise<void> {
       ? { auth: { user: env.SMTP_USER, pass: env.SMTP_PASSWORD } }
       : {}),
   });
+  // Emails to the community's admins (phases 52, 54): the community's name and the dashboard.
+  const staffMail = {
+    db,
+    adminUrl: env.PUBLIC_ADMIN_URL,
+    instanceName: async () => {
+      const { rows } = await db.execute<{ name: string | null }>(
+        sql`SELECT name FROM instance_settings WHERE id = 1`,
+      );
+      return rows[0]?.name ?? env.INSTANCE_NAME;
+    },
+    sendMail: async (m: { to: string; subject: string; text: string; html: string }) => {
+      await mailer.sendMail({ from: env.SMTP_FROM, ...m });
+    },
+  };
 
   const liveKitApi = env.LIVEKIT_API_URL ?? env.LIVEKIT_URL?.replace(/^ws/, 'http') ?? undefined;
   const liveKitRooms =
@@ -234,26 +249,27 @@ async function main(): Promise<void> {
           return processFriendRetention(db);
         case 'daily-summary':
           return dailySummary(outbound);
-        case 'update-check':
-          return refreshUpdateStatus(db, {
+        case 'update-check': {
+          const checked = await refreshUpdateStatus(db, {
             enabled: env.UPDATE_CHECK === 'on',
             repo: env.UPDATE_REPO,
             branch: env.UPDATE_BRANCH,
             current: env.APP_COMMIT,
           });
+          // Phase 54: tell the admins by email about a version they weren't told about yet.
+          if (checked !== 'checked' || env.UPDATE_EMAILS !== 'on') return { checked };
+          const notice = await processUpdateNotice({
+            ...staffMail,
+            repo: env.UPDATE_REPO,
+            current: env.APP_COMMIT,
+          });
+          return { checked, notice };
+        }
+        case 'update-results':
+          return env.UPDATE_EMAILS === 'on' ? processUpdateResults(staffMail) : { off: true };
         case 'backup-watch':
           return processBackupWatch({
-            db,
-            adminUrl: env.PUBLIC_ADMIN_URL,
-            instanceName: async () => {
-              const { rows } = await db.execute<{ name: string | null }>(
-                sql`SELECT name FROM instance_settings WHERE id = 1`,
-              );
-              return rows[0]?.name ?? env.INSTANCE_NAME;
-            },
-            sendMail: async (m) => {
-              await mailer.sendMail({ from: env.SMTP_FROM, ...m });
-            },
+            ...staffMail,
             alert: async (text) => {
               const cfg = await store.get('alerts');
               if (!cfg.enabled) return;
@@ -372,6 +388,12 @@ async function main(): Promise<void> {
     'update-check',
     { every: 6 * 3_600_000 },
     { name: 'update-check' },
+  );
+  // The result of an approved update, emailed to the admins (phase 54, every 2 minutes).
+  await scheduler.upsertJobScheduler(
+    'update-results',
+    { every: 2 * 60_000 },
+    { name: 'update-results' },
   );
   // Backups stopped (phase 52): tell the admins by email and the alert channel (daily).
   await scheduler.upsertJobScheduler(

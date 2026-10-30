@@ -1658,6 +1658,9 @@ export const updateStatus = pgTable(
     changes: jsonb('changes').notNull().default([]),
     /** Why the last check didn't work, in a few words (no response bodies). */
     error: varchar('error', { length: 200 }),
+    /** The latest commit the admins were emailed about (phase 54), and when. */
+    notifiedCommit: varchar('notified_commit', { length: 40 }),
+    notifiedAt: timestamp('notified_at', { withTimezone: true }),
   },
   (t) => [check('update_status_single_row', sql`${t.id} = 1`)],
 );
@@ -1678,6 +1681,8 @@ export const updateRequests = pgTable(
     startedAt: timestamp('started_at', { withTimezone: true }),
     finishedAt: timestamp('finished_at', { withTimezone: true }),
     message: varchar('message', { length: 500 }),
+    /** When the admins were emailed the result (phase 54). */
+    notifiedAt: timestamp('notified_at', { withTimezone: true }),
   },
   (t) => [
     check(
