@@ -14,6 +14,10 @@ const en = {
   retry: 'Try again',
   error: 'Something went wrong. Please try again.',
   rateLimited: 'Too many attempts. Please wait a few minutes and try again.',
+  unreachable: {
+    title: 'The server can’t be reached right now',
+    body: 'It’s probably restarting or installing an update, which usually takes a minute or two. This page checks every 10 seconds and carries on by itself.',
+  },
   nav: {
     reports: 'Reports',
     overview: 'Overview',
@@ -741,6 +745,10 @@ const he: Messages = {
   retry: 'לנסות שוב',
   error: 'משהו השתבש. נסו שוב.',
   rateLimited: 'יותר מדי ניסיונות. חכו כמה דקות ונסו שוב.',
+  unreachable: {
+    title: 'אין חיבור לשרת כרגע',
+    body: 'כנראה שהוא מופעל מחדש או מתקין עדכון, וזה לוקח בדרך כלל דקה או שתיים. העמוד בודק כל 10 שניות וממשיך לבד.',
+  },
   nav: { reports: 'דיווחים', overview: 'סקירה', verifications: 'אימותים', audit: 'יומן ביקורת' },
   signIn: {
     title: 'כניסת צוות',

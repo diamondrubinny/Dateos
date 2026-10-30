@@ -15,6 +15,14 @@ export const en = {
     offline: 'You seem to be offline.',
     draftNotice: 'Draft: this document requires legal review before publication.',
   },
+  server: {
+    unreachableTitle: 'Can’t reach the community right now',
+    unreachableBody:
+      'Its server isn’t answering. It’s probably restarting or installing an update, which usually takes a minute or two. You haven’t been signed out.',
+    unreachableAuto: 'We’ll keep checking and carry on by ourselves when it’s back.',
+    banner:
+      'Can’t reach the server right now (maybe an update). We’ll keep trying and refresh when it’s back.',
+  },
   language: { label: 'Language', he: 'עברית', en: 'English', ar: 'العربية', ru: 'Русский' },
   welcome: {
     title: 'Dating that respects you',

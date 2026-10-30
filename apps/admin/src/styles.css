@@ -287,6 +287,11 @@ textarea {
   background: var(--error-bg);
   color: var(--error-text);
 }
+/* Phase 55: the server is restarting or updating; not an error the admin caused. */
+.alert-info {
+  background: var(--normal-bg);
+  color: var(--normal-text);
+}
 .field-error {
   color: var(--error-text);
   background: var(--error-bg);

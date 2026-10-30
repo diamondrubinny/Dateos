@@ -274,6 +274,11 @@ The dashboard only records the approval. On the server, `scripts/update.sh` (run
 4. waits until the server reports ready, and **goes back to the previous version** if it doesn't,
 5. shows the result in the dashboard. Its log is `/var/log/nexaheart-update.log`.
 
+**While it installs**, members who open the app see "Can't reach the community right now" (it's
+probably an update; they haven't been signed out) instead of the welcome page, and the app carries
+on by itself when the server is back. Members already in the app see one line at the top; the
+dashboard says the same.
+
 **By email, too:** the admins get an email when a new version is available (what was added or fixed,
 at most once a day) and when an approved update finishes (installed, or why not). The emails link to
 the dashboard; nothing installs from an email. `UPDATE_EMAILS=off` in `.env` turns them off.

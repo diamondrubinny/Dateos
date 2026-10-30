@@ -58,7 +58,8 @@
     "date-counter": "tsx date-counter.ts",
     "a11y-dark": "tsx a11y-dark.ts",
     "admin-a11y": "tsx admin-a11y.ts",
-    "admin-updates": "tsx admin-updates.ts"
+    "admin-updates": "tsx admin-updates.ts",
+    "outage": "tsx outage.ts"
   },
   "dependencies": {
     "@axe-core/playwright": "4.14.0",

@@ -64,6 +64,25 @@ api.{$DOMAIN} {
 		max_size 12MB
 	}
 	reverse_proxy api:4000
+
+	# Phase 55: while the API restarts or installs an update, Caddy can't reach it. Instead of an
+	# empty 502, answer like the API would: 503, SERVER_RESTARTING, try again in 30 seconds. The
+	# app and the dashboard then say "can't be reached right now" and carry on by themselves. CORS
+	# only for the app and the dashboard (the origins the API itself allows), so browsers can read it.
+	handle_errors 502 503 504 {
+		@ours expression `{http.request.header.Origin} in ["https://{$DOMAIN}", "https://admin.{$DOMAIN}"]`
+		header @ours {
+			Access-Control-Allow-Origin {http.request.header.Origin}
+			Access-Control-Allow-Credentials true
+			Vary Origin
+		}
+		header {
+			Content-Type application/json
+			Retry-After 30
+			Cache-Control no-store
+		}
+		respond `{"error":{"code":"SERVER_RESTARTING","message":"The server is restarting or installing an update. Try again in a minute."}}` 503
+	}
 }
 
 # Video dates (docker compose --profile video): LiveKit's signalling over WSS. Audio and video use

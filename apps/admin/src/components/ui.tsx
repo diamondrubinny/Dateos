@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
-import { useEffect, useState, type ReactNode } from 'react';
-import { ApiError, fetchImage } from '../api';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { API_URL, ApiError, fetchImage, isUnreachable } from '../api';
 import { useLocale } from '../i18n';
 
 export function Loading() {
@@ -14,14 +14,48 @@ export function Loading() {
   );
 }
 
+/** How often the dashboard asks whether the server is back (phase 55). */
+const HEALTH_POLL_MS = 10_000;
+
 export function ErrorBox({ error, onRetry }: { error: Error; onRetry?: () => void }) {
   const { t } = useLocale();
+  const unreachable = isUnreachable(error);
+  const retry = useRef(onRetry);
+  retry.current = onRetry;
+  // While the server doesn't answer (an update, a restart), ask its public health check and carry
+  // on by itself when it's back.
+  useEffect(() => {
+    if (!unreachable) return;
+    const timer = setInterval(() => {
+      void fetch(`${API_URL}/health`, { cache: 'no-store', credentials: 'omit' })
+        .then((res) => {
+          if (res.ok) retry.current?.();
+        })
+        .catch(() => undefined);
+    }, HEALTH_POLL_MS);
+    return () => clearInterval(timer);
+  }, [unreachable]);
+  if (unreachable) {
+    return (
+      <div className="alert alert-info" role="status" data-testid="server-unreachable">
+        <p>
+          <strong>{t.unreachable.title}</strong>
+        </p>
+        <p>{t.unreachable.body}</p>
+        {onRetry ? (
+          <button type="button" className="button" onClick={onRetry}>
+            {t.retry}
+          </button>
+        ) : null}
+      </div>
+    );
+  }
   return (
     <div className="alert alert-error" role="alert">
       <p>
         {error instanceof ApiError && error.status === 429
           ? t.rateLimited
-          : error instanceof ApiError && error.status < 500
+          : error instanceof ApiError && error.status < 500 && error.status > 0
             ? error.message
             : t.error}
       </p>

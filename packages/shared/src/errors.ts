@@ -29,6 +29,11 @@ export const ErrorCode = {
   /** Phase 28: another community couldn't be reached or answered wrongly. */
   BadGateway: 'BAD_GATEWAY',
   Internal: 'INTERNAL_ERROR',
+  /**
+   * Phase 55: not from the API but from the proxy in front of it (infra/web/Caddyfile), while the
+   * API restarts or is being updated. Clients show "can't be reached" instead of an error.
+   */
+  ServerRestarting: 'SERVER_RESTARTING',
 } as const;
 
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];
