@@ -1,7 +1,15 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
-import { moderationActions, type ModerationAction, type StaffMe } from '@nexaheart/shared';
+import {
+  MAX_DECISION_EXPLANATION,
+  MIN_DECISION_EXPLANATION,
+  moderationActions,
+  moderationGrounds,
+  type ModerationAction,
+  type ModerationGround,
+  type StaffMe,
+} from '@nexaheart/shared';
 import { useId, useRef, useState, type FormEvent } from 'react';
 import { api } from '../api';
 import { useAsync } from '../hooks';
@@ -20,6 +28,8 @@ export function ReportDetail({ id, staff }: { id: string; staff: StaffMe }) {
   const { data: report, error, loading, reload } = useAsync(() => api.report(id), [id]);
   const [action, setAction] = useState<ModerationAction>('dismiss');
   const [reason, setReason] = useState('');
+  const [explanation, setExplanation] = useState('');
+  const [ground, setGround] = useState<ModerationGround>('terms');
   const [confirmed, setConfirmed] = useState(false);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string>();
@@ -34,7 +44,13 @@ export function ReportDetail({ id, staff }: { id: string; staff: StaffMe }) {
 
   const severe = action === 'suspend' || action === 'ban';
   const available = moderationActions.filter((a) => a !== 'ban' || staff.role === 'admin');
-  const canSubmit = reason.trim().length >= 3 && (!severe || confirmed) && !busy;
+  // Phase 61: anything but a dismissal is explained to the member (statement of reasons).
+  const explains = action !== 'dismiss';
+  const canSubmit =
+    reason.trim().length >= 3 &&
+    (!explains || explanation.trim().length >= MIN_DECISION_EXPLANATION) &&
+    (!severe || confirmed) &&
+    !busy;
 
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -42,7 +58,12 @@ export function ReportDetail({ id, staff }: { id: string; staff: StaffMe }) {
     setBusy(true);
     setSubmitError(undefined);
     try {
-      await api.resolve(id, action, reason.trim());
+      await api.resolve(
+        id,
+        action,
+        reason.trim(),
+        explains ? { ground, explanation: explanation.trim() } : { ground: 'terms' },
+      );
       setNotice(t.detail.done);
       reload();
       statusRef.current?.focus();
@@ -227,8 +248,22 @@ export function ReportDetail({ id, staff }: { id: string; staff: StaffMe }) {
                       · <bdi>{h.staffName}</bdi>
                     </>
                   ) : null}
+                  {h.reversed ? (
+                    <>
+                      {' '}
+                      · <Badge tone="ok">{t.detail.reversed}</Badge>
+                    </>
+                  ) : null}
                   <br />
                   <span className="muted user-text">{h.reason}</span>
+                  {h.explanation ? (
+                    <>
+                      <br />
+                      <span className="small">
+                        {t.detail.told}: <span className="user-text">{h.explanation}</span>
+                      </span>
+                    </>
+                  ) : null}
                 </li>
               ))}
             </ul>
@@ -263,6 +298,44 @@ export function ReportDetail({ id, staff }: { id: string; staff: StaffMe }) {
                 </div>
               ))}
             </fieldset>
+            {explains ? (
+              <>
+                <fieldset>
+                  <legend>{t.detail.ground}</legend>
+                  {moderationGrounds.map((g) => (
+                    <div key={g} className="radio">
+                      <input
+                        type="radio"
+                        id={`${formId}-ground-${g}`}
+                        name="ground"
+                        value={g}
+                        checked={ground === g}
+                        onChange={() => setGround(g)}
+                      />
+                      <label htmlFor={`${formId}-ground-${g}`}>
+                        {g === 'terms' ? t.detail.groundTerms : t.detail.groundIllegal}
+                      </label>
+                    </div>
+                  ))}
+                  <p className="help">{t.detail.groundHelp}</p>
+                </fieldset>
+                <label htmlFor={`${formId}-explanation`}>{t.detail.explanation}</label>
+                <textarea
+                  id={`${formId}-explanation`}
+                  required
+                  minLength={MIN_DECISION_EXPLANATION}
+                  maxLength={MAX_DECISION_EXPLANATION}
+                  rows={4}
+                  dir="auto"
+                  aria-describedby={`${formId}-explanation-help`}
+                  value={explanation}
+                  onChange={(e) => setExplanation(e.target.value)}
+                />
+                <p id={`${formId}-explanation-help`} className="help">
+                  {t.detail.explanationHelp}
+                </p>
+              </>
+            ) : null}
             <label htmlFor={`${formId}-reason`}>{t.detail.reason}</label>
             <textarea
               id={`${formId}-reason`}

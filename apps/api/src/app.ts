@@ -106,6 +106,7 @@ export async function buildApp(env: Env, deps: AppDependencies): Promise<Fastify
     await typed.register(meRoutes, {
       auth: services.auth,
       me: services.me,
+      appeals: services.appeals,
       exportData: async (userId) => {
         const zip = await exportMemberData(services.dbHandle.db, services.storage, userId);
         await audit(services.dbHandle.db, {
@@ -140,6 +141,7 @@ export async function buildApp(env: Env, deps: AppDependencies): Promise<Fastify
       federation: services.federation,
       updates: services.updates,
       dependencies: deps.dependencies,
+      appeals: services.appeals,
     });
     await typed.register(federationRoutes, {
       federation: services.federation,

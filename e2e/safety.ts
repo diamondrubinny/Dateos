@@ -34,6 +34,7 @@ const people = {
     hello: 'Hi Lia! Loved your beach photo',
     reply: 'Hi Max, thanks!',
     details: 'He asked me for gift cards after two messages.',
+    explanation: 'You asked another member to send money with a gift card, two messages in.',
     action: 'suspend' as const,
   },
   he: {
@@ -43,6 +44,7 @@ const people = {
     hello: 'היי! אהבתי את התמונה מהחוף',
     reply: 'היי, תודה!',
     details: 'ביקש ממני גיפט קארד אחרי שתי הודעות.',
+    explanation: 'נשלחה ממך בקשה להעביר כסף בגיפט קארד לאדם אחר בקהילה, כבר בהודעה השנייה.',
     action: 'warn' as const,
   },
 } as const;
@@ -236,6 +238,8 @@ async function run(locale: 'en' | 'he', browser: Browser) {
     await S.page.locator('img.photo').first().waitFor();
     await shot(S.page, `${locale}/admin-04-report-detail`);
     await S.page.getByRole('radio', { name: a.actions[s.action] }).check();
+    // Phase 61: the member is told why (statement of reasons).
+    await S.page.getByLabel(a.detail.explanation).fill(s.explanation);
     await S.page
       .getByLabel(a.detail.reason)
       .fill('Gift-card scam pattern; confirmed by chat evidence.');

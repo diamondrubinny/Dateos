@@ -416,7 +416,11 @@ describe.skipIf(!integrationEnabled)('video dates (integration)', () => {
       method: 'POST',
       url: `/v1/admin/reports/${filed.json().reportId}/resolve`,
       headers: { cookie: mod },
-      payload: { action: 'suspend', reason: 'Harassment on a call' },
+      payload: {
+        action: 'suspend',
+        reason: 'Harassment on a call',
+        explanation: 'Messages you sent broke the community guidelines.',
+      },
     });
     expect(resolved.statusCode).toBe(200);
     await new Promise((r) => setTimeout(r, 50));

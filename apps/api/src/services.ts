@@ -42,6 +42,7 @@ import { createEmailHasher } from './lib/banned.js';
 import { EmailChangeService } from './modules/account/email-change.js';
 import { StaffMfaService } from './modules/admin/mfa.js';
 import { ModerationService } from './modules/admin/moderation.js';
+import { AppealService } from './modules/safety/appeals.js';
 import { ReportService } from './modules/safety/reports.js';
 import { InstanceService } from './modules/instance/service.js';
 import { VerificationService } from './modules/safety/verification.js';
@@ -81,6 +82,7 @@ export interface Services {
   verification: VerificationService;
   staffMfa: StaffMfaService;
   moderation: ModerationService;
+  appeals: AppealService;
   updates: UpdateService;
   trust: TrustService;
   takes: TakeService;
@@ -310,6 +312,7 @@ export function createServices(
     storage,
   );
   const moderation = new ModerationService(dbHandle.db, discovery, hashEmail, today);
+  const appeals = new AppealService(dbHandle.db, mailer, env.INSTANCE_NAME, onMailError);
   const updates = new UpdateService(
     dbHandle.db,
     {
@@ -374,6 +377,7 @@ export function createServices(
       overrides.now,
     ),
     moderation,
+    appeals,
     updates,
     instance,
     trust,

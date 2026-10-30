@@ -23,6 +23,7 @@ import { Partners } from './pages/Partners';
 import { Venues } from './pages/Venues';
 import { Signup } from './pages/Signup';
 import { Verifications } from './pages/Verifications';
+import { Appeals } from './pages/Appeals';
 
 const LOCALE_KEY = 'nexaheart-admin-locale';
 
@@ -81,6 +82,7 @@ function Shell({
       | 'reports'
       | 'overview'
       | 'verifications'
+      | 'appeals'
       | 'venues'
       | 'events'
       | 'signup'
@@ -123,6 +125,7 @@ function Shell({
               {link('reports')}
               {link('overview')}
               {link('verifications')}
+              {link('appeals')}
               {link('venues')}
               {link('events')}
               {link('signup')}
@@ -164,6 +167,7 @@ function Routes({ staff }: { staff: NonNullable<Awaited<ReturnType<typeof api.me
   if (route[0] === 'reports' && route[1]) return <ReportDetail id={route[1]} staff={staff} />;
   if (route[0] === 'overview') return <Overview />;
   if (route[0] === 'verifications') return <Verifications />;
+  if (route[0] === 'appeals') return <Appeals />;
   if (route[0] === 'venues') return <Venues isAdmin={staff.role === 'admin'} />;
   if (route[0] === 'events') return <Events isAdmin={staff.role === 'admin'} />;
   if (route[0] === 'signup') return <Signup isAdmin={staff.role === 'admin'} />;

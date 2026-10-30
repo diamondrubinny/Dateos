@@ -18,6 +18,8 @@ import type {
   InstanceInfo,
   InstanceSettingsInput,
   ModerationAction,
+  ModerationGround,
+  AppealSummary,
   ReportDetail,
   ReportSummary,
   StaffMe,
@@ -221,10 +223,23 @@ export const api = {
     request<{ reports: ReportSummary[] }>('GET', `/v1/admin/reports?status=${status}`),
   report: (id: string) =>
     request<ReportDetail>('GET', `/v1/admin/reports/${encodeURIComponent(id)}`),
-  resolve: (id: string, action: ModerationAction, reason: string) =>
+  resolve: (
+    id: string,
+    action: ModerationAction,
+    reason: string,
+    statement: { ground: ModerationGround; explanation?: string },
+  ) =>
     request<{ ok: true }>('POST', `/v1/admin/reports/${encodeURIComponent(id)}/resolve`, {
       action,
       reason,
+      ...statement,
+    }),
+  appeals: (status: 'open' | 'closed') =>
+    request<{ appeals: AppealSummary[] }>('GET', `/v1/admin/appeals?status=${status}`),
+  decideAppeal: (id: string, reverse: boolean, response: string) =>
+    request<{ ok: true }>('POST', `/v1/admin/appeals/${encodeURIComponent(id)}/decide`, {
+      reverse,
+      response,
     }),
   unsuspend: (userId: string, reason: string) =>
     request<{ ok: true }>('POST', `/v1/admin/users/${encodeURIComponent(userId)}/unsuspend`, {

@@ -179,6 +179,7 @@ describe.skipIf(!integrationEnabled)('partner communities: safety (integration)'
     const resolved = await asAdmin(b, adminB, 'POST', `/v1/admin/reports/${summary!.id}/resolve`, {
       action: 'suspend',
       reason: 'Threats, confirmed by the chat.',
+      explanation: 'Messages you sent broke the community guidelines.',
     });
     expect(resolved.statusCode, resolved.body).toBe(200);
     const row = (await qa('SELECT reviewed_at FROM federation_reports_out')).rows[0];

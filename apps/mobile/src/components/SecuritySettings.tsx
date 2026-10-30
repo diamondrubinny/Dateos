@@ -129,6 +129,11 @@ export function SecuritySettings() {
         label={t('blocked.open')}
         onPress={() => router.push('/blocked')}
       />
+      <Button
+        variant="secondary"
+        label={t('decisions.open')}
+        onPress={() => router.push('/decisions')}
+      />
 
       <AppText variant="caption" tone="muted">
         {screenCaptureBlocked ? t('security.screenshotsNative') : t('security.screenshotsWeb')}

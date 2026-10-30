@@ -2,6 +2,8 @@
 // Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 import {
+  appealInputSchema,
+  decisionsSchema,
   consentsInputSchema,
   meResponseSchema,
   aboutSchema,
@@ -23,18 +25,29 @@ import { perUserLimit } from '../../plugins/security.js';
 import type { Auth } from '../../auth/auth.js';
 import { currentUser, requireRecentSignIn, requireUser } from '../../auth/session.js';
 import type { MeService } from './service.js';
+import type { AppealService } from '../safety/appeals.js';
 
 const ok = z.object({ ok: z.literal(true) });
 
 /** What a suspended member can still do: see why, and delete the account (right to erasure). */
-const allowedWhileSuspended = new Set(['GET /v1/me', 'DELETE /v1/me', 'GET /v1/me/export']);
+const allowedWhileSuspended = new Set([
+  'GET /v1/me',
+  'DELETE /v1/me',
+  'GET /v1/me/export',
+  // Phase 61: why, and the appeal.
+  'GET /v1/me/decisions',
+  'POST /v1/me/decisions/:id/appeal',
+  'POST /v1/me/notices/:id/ack',
+]);
 
 export const meRoutes: FastifyPluginAsyncZod<{
   auth: Auth;
   me: MeService;
   /** Builds the member's data archive (ZIP). */
   exportData?: (userId: string) => Promise<Uint8Array>;
-}> = async (app, { auth, me, exportData }) => {
+  /** Phase 61: decisions about my account and appeals. */
+  appeals?: AppealService;
+}> = async (app, { auth, me, exportData, appeals }) => {
   app.addHook('preHandler', requireUser(auth, { allowSuspended: true }));
   app.addHook('preHandler', async (request) => {
     const route = `${request.method} ${request.routeOptions.url ?? ''}`;
@@ -204,6 +217,29 @@ export const meRoutes: FastifyPluginAsyncZod<{
       return { ok: true as const };
     },
   );
+
+  if (appeals) {
+    app.get(
+      '/v1/me/decisions',
+      { schema: { response: { 200: decisionsSchema } } },
+      async (request) => ({ decisions: await appeals.decisions(currentUser(request).id) }),
+    );
+    app.post(
+      '/v1/me/decisions/:id/appeal',
+      {
+        schema: {
+          params: z.object({ id: z.uuid() }),
+          body: appealInputSchema,
+          response: { 201: ok },
+        },
+        config: perUserLimit(10, 24 * 60 * 60 * 1000),
+      },
+      async (request, reply) => {
+        await appeals.appeal(currentUser(request).id, request.params.id, request.body.text);
+        return reply.status(201).send({ ok: true as const });
+      },
+    );
+  }
 
   if (exportData) {
     app.get(

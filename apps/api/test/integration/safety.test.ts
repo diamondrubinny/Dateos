@@ -336,6 +336,7 @@ describe.skipIf(!integrationEnabled)('safety & moderation (integration)', () => 
     const res = await admin(mod.cookie, 'POST', `/v1/admin/reports/${reportId}/resolve`, {
       action: 'warn',
       reason: 'internal: rude messages, first offence',
+      explanation: 'Messages you sent broke the community guidelines.',
     });
     expect(res.statusCode).toBe(200);
     const me = (await api(ctx, dan, 'GET', '/v1/me')).json();
@@ -381,6 +382,7 @@ describe.skipIf(!integrationEnabled)('safety & moderation (integration)', () => 
     const res = await admin(mod.cookie, 'POST', `/v1/admin/reports/${first.reportId}/resolve`, {
       action: 'suspend',
       reason: 'repeated harassment',
+      explanation: 'Messages you sent broke the community guidelines.',
     });
     expect(res.statusCode).toBe(200);
     expect((await api(ctx, dan, 'GET', '/v1/me')).statusCode).toBe(401); // session revoked
@@ -403,6 +405,7 @@ describe.skipIf(!integrationEnabled)('safety & moderation (integration)', () => 
         await admin(mod.cookie, 'POST', `/v1/admin/reports/${again.reportId}/resolve`, {
           action: 'ban',
           reason: 'nope',
+          explanation: 'Messages you sent broke the community guidelines.',
         })
       ).statusCode,
     ).toBe(403);
@@ -433,6 +436,7 @@ describe.skipIf(!integrationEnabled)('safety & moderation (integration)', () => 
         await admin(boss.cookie, 'POST', `/v1/admin/reports/${reportId}/resolve`, {
           action: 'ban',
           reason: 'romance scam',
+          explanation: 'Messages you sent broke the community guidelines.',
         })
       ).statusCode,
     ).toBe(200);
@@ -462,6 +466,7 @@ describe.skipIf(!integrationEnabled)('safety & moderation (integration)', () => 
     await admin(boss.cookie, 'POST', `/v1/admin/reports/${reportId}/resolve`, {
       action: 'ban',
       reason: 'spam bot',
+      explanation: 'Messages you sent broke the community guidelines.',
     });
     expect(
       (
@@ -506,6 +511,7 @@ describe.skipIf(!integrationEnabled)('safety & moderation (integration)', () => 
         await admin(boss.cookie, 'POST', `/v1/admin/reports/${reportId}/resolve`, {
           action: 'suspend',
           reason: 'x'.repeat(5),
+          explanation: 'Messages you sent broke the community guidelines.',
         })
       ).statusCode,
     ).toBe(403);

@@ -26,6 +26,8 @@ import {
 import {
   consentKinds,
   moderationActions,
+  moderationGrounds,
+  appealStatuses,
   reportCategories,
   reportPriorities,
   reportStatuses,
@@ -658,6 +660,8 @@ export const moderationActionEnum = pgEnum('moderation_action', [
   ...moderationActions,
   'unsuspend',
 ] as const);
+export const moderationGroundEnum = pgEnum('moderation_ground', moderationGrounds);
+export const appealStatusEnum = pgEnum('appeal_status', appealStatuses);
 
 export const reports = pgTable(
   'reports',
@@ -738,10 +742,44 @@ export const moderationLog = pgTable(
     /** Shown to the member for warnings (the category only, never the internal reason). */
     category: reportCategoryEnum('category'),
     reason: varchar('reason', { length: 500 }).notNull(),
+    /** Phase 61, statement of reasons: the community's rules or the law. */
+    ground: moderationGroundEnum('ground').notNull().default('terms'),
+    /** Phase 61: the facts, written for the member (null before phase 61). */
+    explanation: varchar('explanation', { length: 1000 }),
+    /** Phase 61: the report came from an automatic check (a person still decided). */
+    automatedDetection: boolean('automated_detection').notNull().default(false),
+    /** Phase 61: withdrawn after an appeal. */
+    reversedAt: timestamp('reversed_at', { withTimezone: true }),
     acknowledgedAt: timestamp('acknowledged_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index('moderation_actions_target_idx').on(t.targetId, t.createdAt)],
+);
+
+/**
+ * Phase 61: a member's appeal against a decision (DSA Art. 20). One per decision; deleted with the
+ * decision (moderation log retention) and with the account.
+ */
+export const moderationAppeals = pgTable(
+  'moderation_appeals',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    decisionId: uuid('decision_id')
+      .notNull()
+      .unique()
+      .references(() => moderationLog.id, { onDelete: 'cascade' }),
+    userId: ownerId(),
+    text: varchar('text', { length: 1000 }).notNull(),
+    status: appealStatusEnum('status').notNull().default('open'),
+    reviewerId: text('reviewer_id').references(() => user.id, { onDelete: 'set null' }),
+    /** Shown to the member. */
+    response: varchar('response', { length: 1000 }),
+    decidedAt: timestamp('decided_at', { withTimezone: true }),
+    /** The member dismissed "Your appeal was decided". */
+    memberSeenAt: timestamp('member_seen_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index('moderation_appeals_queue_idx').on(t.status, t.createdAt)],
 );
 
 /**

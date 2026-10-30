@@ -6,6 +6,7 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
+import { AccountDecisions } from '../components/AccountDecisions';
 import { AppText } from '../components/AppText';
 import { Banner } from '../components/Banner';
 import { Button } from '../components/Button';
@@ -18,8 +19,8 @@ import { radius, spacing, useColors } from '../lib/theme';
 import { PoweredBy } from '../components/PoweredBy';
 
 /**
- * Suspended members can read why, download their data (right of access) and delete their account
- * (right to erasure), nothing else.
+ * Suspended members can read why and appeal (phase 61), download their data (right of access) and
+ * delete their account (right to erasure), nothing else.
  */
 function SuspendedScreen() {
   const { t } = useTranslation();
@@ -46,6 +47,8 @@ function SuspendedScreen() {
     <Screen title={t('account.suspendedTitle')}>
       {error ? <Banner tone="error" message={error} /> : null}
       <AppText variant="body">{t('account.suspendedBody')}</AppText>
+      {/* Phase 61: why, and the appeal. An age suspension has no moderation decision. */}
+      <AccountDecisions emptyText={t('account.suspendedAge')} />
       <AppText variant="body">{t('account.suspendedAppeal')}</AppText>
       <DownloadData />
       <Button variant="ghost" label={t('settings.signOut')} onPress={() => void signOut()} />

@@ -9,6 +9,7 @@ import {
   type SystemStatus,
   type AuditEntry,
   type ModerationAction,
+  type ModerationGround,
   type ReportDetail,
   type ReportSummary,
 } from '@nexaheart/shared';
@@ -36,6 +37,30 @@ const {
   photos,
   auditLogs,
 } = schema;
+
+type Tx = Pick<Database, 'insert' | 'update' | 'delete'>;
+
+/**
+ * Lifts a moderation suspension or ban, inside the caller's transaction: by an admin from the
+ * dashboard, or when an appeal is upheld (phase 61). The caller checks the account's state.
+ */
+export async function liftModeration(
+  tx: Tx,
+  staffId: string,
+  userId: string,
+  reason: string,
+): Promise<void> {
+  await tx.update(user).set({ status: 'active', suspendedReason: null }).where(eq(user.id, userId));
+  await tx.delete(bannedEmails).where(eq(bannedEmails.userId, userId));
+  await tx.delete(bannedPhotoHashes).where(eq(bannedPhotoHashes.userId, userId));
+  await tx.insert(moderationLog).values({ targetId: userId, staffId, action: 'unsuspend', reason });
+  await audit(tx, {
+    actorId: staffId,
+    action: 'moderation.unsuspend',
+    targetType: 'user',
+    targetId: userId,
+  });
+}
 
 const notFound = () => new HttpError(404, ErrorCode.NotFound, 'Resource not found.');
 const forbidden = (message: string) => new HttpError(403, ErrorCode.Forbidden, message);
@@ -178,6 +203,8 @@ export class ModerationService {
         action: moderationLog.action,
         category: moderationLog.category,
         reason: moderationLog.reason,
+        explanation: moderationLog.explanation,
+        reversedAt: moderationLog.reversedAt,
         createdAt: moderationLog.createdAt,
         staffName: profiles.displayName,
       })
@@ -234,6 +261,8 @@ export class ModerationService {
         action: h.action,
         category: h.category,
         reason: h.reason,
+        explanation: h.explanation,
+        reversed: h.reversedAt !== null,
         staffName: h.staffName,
         createdAt: h.createdAt.toISOString(),
       })),
@@ -245,6 +274,8 @@ export class ModerationService {
     reportId: string,
     action: ModerationAction,
     reason: string,
+    /** Phase 61, the statement of reasons the member reads. */
+    statement: { ground: ModerationGround; explanation?: string | undefined } = { ground: 'terms' },
   ): Promise<void> {
     const [report] = await this.db.select().from(reports).where(eq(reports.id, reportId));
     if (!report) throw notFound();
@@ -292,6 +323,9 @@ export class ModerationService {
           action,
           category: report.category,
           reason,
+          ground: statement.ground,
+          explanation: statement.explanation ?? null,
+          automatedDetection: report.automatic,
         });
       }
       if (removesAccess) {
@@ -344,23 +378,7 @@ export class ModerationService {
     ) {
       throw new HttpError(409, ErrorCode.Conflict, 'This account has no moderation suspension.');
     }
-    await this.db.transaction(async (tx) => {
-      await tx
-        .update(user)
-        .set({ status: 'active', suspendedReason: null })
-        .where(eq(user.id, userId));
-      await tx.delete(bannedEmails).where(eq(bannedEmails.userId, userId));
-      await tx.delete(bannedPhotoHashes).where(eq(bannedPhotoHashes.userId, userId));
-      await tx
-        .insert(moderationLog)
-        .values({ targetId: userId, staffId: staff.id, action: 'unsuspend', reason });
-      await audit(tx, {
-        actorId: staff.id,
-        action: 'moderation.unsuspend',
-        targetType: 'user',
-        targetId: userId,
-      });
-    });
+    await this.db.transaction((tx) => liftModeration(tx, staff.id, userId, reason));
   }
 
   async auditLog(before: string | undefined, limit: number): Promise<AuditEntry[]> {

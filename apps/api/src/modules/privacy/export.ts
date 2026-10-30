@@ -175,10 +175,25 @@ export async function exportMemberData(
     .select({
       action: t.moderationLog.action,
       category: t.moderationLog.category,
+      // Phase 61: what you were told (never the staff's internal note or who decided).
+      ground: t.moderationLog.ground,
+      explanation: t.moderationLog.explanation,
+      automatedDetection: t.moderationLog.automatedDetection,
+      reversedAt: t.moderationLog.reversedAt,
       at: t.moderationLog.createdAt,
     })
     .from(t.moderationLog)
     .where(eq(t.moderationLog.targetId, userId));
+  const appeals = await db
+    .select({
+      text: t.moderationAppeals.text,
+      status: t.moderationAppeals.status,
+      response: t.moderationAppeals.response,
+      at: t.moderationAppeals.createdAt,
+      decidedAt: t.moderationAppeals.decidedAt,
+    })
+    .from(t.moderationAppeals)
+    .where(eq(t.moderationAppeals.userId, userId));
   const verifications = await db
     .select({
       status: t.verifications.status,
@@ -526,7 +541,12 @@ export async function exportMemberData(
     messagesYouSent: sent.map((m) => ({ ...m, at: iso(m.at), unsentAt: iso(m.unsentAt) })),
     blocks: blocks.map((b) => ({ ...b, at: iso(b.at) })),
     reportsYouFiled: reportsFiled.map((r) => ({ ...r, at: iso(r.at) })),
-    moderationAffectingYou: moderation.map((m) => ({ ...m, at: iso(m.at) })),
+    moderationAffectingYou: moderation.map((m) => ({
+      ...m,
+      at: iso(m.at),
+      reversedAt: iso(m.reversedAt),
+    })),
+    appeals: appeals.map((a) => ({ ...a, at: iso(a.at), decidedAt: iso(a.decidedAt) })),
     photoVerifications: verifications.map((v) => ({
       ...v,
       at: iso(v.at),

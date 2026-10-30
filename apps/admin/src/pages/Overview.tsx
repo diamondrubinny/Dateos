@@ -53,6 +53,7 @@ export function Overview() {
             [o.total, num(data.open.total)],
             [o.oldest, hours(data.open.oldestHours)],
             [o.verificationsWaiting, num(data.verificationsWaiting)],
+            [o.appealsWaiting, num(data.appealsWaiting)],
           ])}
           {table(
             'overview-priority',

@@ -13,6 +13,8 @@ import {
   decideVerificationSchema,
   ErrorCode,
   liftSuspensionSchema,
+  appealSummarySchema,
+  decideAppealSchema,
   mfaSetupSchema,
   reportDetailSchema,
   reportSummarySchema,
@@ -66,6 +68,7 @@ import type { TrustService } from '../trust/service.js';
 import type { IntegrationService } from '../integrations/service.js';
 import { isStaffRole, type StaffMfaService } from './mfa.js';
 import type { ModerationService } from './moderation.js';
+import type { AppealService } from '../safety/appeals.js';
 
 const ok = z.object({ ok: z.literal(true) });
 const idParams = z.object({ id: z.uuid() });
@@ -94,6 +97,8 @@ export const adminRoutes: FastifyPluginAsyncZod<{
   updates: UpdateService;
   /** Checked by the System page (phase 51), as by /ready. */
   dependencies: Dependency[];
+  /** Phase 61. */
+  appeals?: AppealService;
 }> = async (
   app,
   {
@@ -111,6 +116,7 @@ export const adminRoutes: FastifyPluginAsyncZod<{
     federation,
     updates,
     dependencies,
+    appeals,
   },
 ) => {
   await app.register(multipart, {
@@ -249,6 +255,7 @@ export const adminRoutes: FastifyPluginAsyncZod<{
         request.params.id,
         request.body.action,
         request.body.reason,
+        { ground: request.body.ground, explanation: request.body.explanation },
       );
       return { ok: true as const };
     },
@@ -279,6 +286,35 @@ export const adminRoutes: FastifyPluginAsyncZod<{
         .send(object.body);
     },
   );
+
+  // Phase 61: appeals against decisions.
+  if (appeals) {
+    app.get(
+      '/v1/admin/appeals',
+      {
+        schema: {
+          querystring: z.object({ status: z.enum(['open', 'closed']).default('open') }),
+          response: { 200: z.object({ appeals: z.array(appealSummarySchema) }) },
+        },
+      },
+      async (request) => ({
+        appeals: await appeals.queue(currentUser(request), request.query.status),
+      }),
+    );
+    app.post(
+      '/v1/admin/appeals/:id/decide',
+      { schema: { params: idParams, body: decideAppealSchema, response: { 200: ok } } },
+      async (request) => {
+        await appeals.decide(
+          currentUser(request),
+          request.params.id,
+          request.body.reverse,
+          request.body.response,
+        );
+        return { ok: true as const };
+      },
+    );
+  }
 
   app.post(
     '/v1/admin/users/:userId/unsuspend',

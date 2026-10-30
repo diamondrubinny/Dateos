@@ -28,6 +28,7 @@ export async function safetyOverview(db: Database): Promise<SafetyOverview> {
     accounts,
     suspensions,
     waiting,
+    appeals,
   ] = await Promise.all([
     rows<Count>(sql`SELECT priority::text AS key, count(*)::int AS n FROM reports
         WHERE status = 'open' GROUP BY priority`),
@@ -49,6 +50,9 @@ export async function safetyOverview(db: Database): Promise<SafetyOverview> {
     rows<{ n: number }>(sql`SELECT count(*)::int AS n FROM audit_logs
         WHERE action IN ('moderation.suspend', 'moderation.ban') AND created_at > ${since}`),
     rows<{ n: number }>(sql`SELECT count(*)::int AS n FROM verifications WHERE status = 'pending'`),
+    rows<{ n: number }>(
+      sql`SELECT count(*)::int AS n FROM moderation_appeals WHERE status = 'open'`,
+    ),
   ]);
 
   const priorities = toRecord(byPriority);
@@ -72,5 +76,6 @@ export async function safetyOverview(db: Database): Promise<SafetyOverview> {
       suspensions: suspensions[0]?.n ?? 0,
     },
     verificationsWaiting: waiting[0]?.n ?? 0,
+    appealsWaiting: appeals[0]?.n ?? 0,
   };
 }

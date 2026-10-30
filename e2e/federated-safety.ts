@@ -170,6 +170,7 @@ async function run(browser: Browser, locale: L, a: Admin, b: Admin) {
   await b.call('POST', `/v1/admin/reports/${fresh!.id}/resolve`, {
     action: 'warn',
     reason: 'Warned for threats.',
+    explanation: 'Messages you sent broke the community guidelines.',
   });
   const partners = await a.call<{ partners: { reports: { reviewed: number } }[] }>(
     'GET',

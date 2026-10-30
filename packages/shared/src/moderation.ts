@@ -61,10 +61,15 @@ export const REPORT_OUTCOME_DAYS = 30;
 export const accountNoticeSchema = z.object({
   id: z.uuid(),
   /** A warning to me, or the outcome of a report I sent (phase 37). */
-  kind: z.enum(['warning', 'report_reviewed']),
+  kind: z.enum(['warning', 'report_reviewed', 'appeal_decided']),
   category: z.enum(reportCategories),
-  /** report_reviewed only: whether something was done (never which action). */
-  outcome: z.enum(['actioned', 'dismissed']).optional(),
+  /**
+   * report_reviewed: whether something was done (never which action). appeal_decided (phase 61):
+   * whether the decision was reversed.
+   */
+  outcome: z.enum(['actioned', 'dismissed', 'upheld', 'reversed']).optional(),
+  /** warning, appeal_decided: the decision, to open its statement (phase 61). */
+  decisionId: z.uuid().optional(),
   createdAt: z.string(),
 });
 export type AccountNotice = z.infer<typeof accountNoticeSchema>;
@@ -123,10 +128,112 @@ export const mfaSetupSchema = z.object({ secret: z.string(), otpauthUrl: z.strin
 export const moderationActions = ['dismiss', 'warn', 'suspend', 'ban'] as const;
 export type ModerationAction = (typeof moderationActions)[number];
 
-export const resolveReportSchema = z.object({
-  action: z.enum(moderationActions),
-  /** Internal note for the audit trail; never shown to the member. */
-  reason: z.string().trim().min(3).max(500),
+/**
+ * Phase 61, the ground for a decision (DSA Art. 17(3)(d)): the community's rules, or the law. ⚖️
+ * Which law is for the operator to name in the explanation.
+ */
+export const moderationGrounds = ['terms', 'illegal'] as const;
+export type ModerationGround = (typeof moderationGrounds)[number];
+
+export const MIN_DECISION_EXPLANATION = 10;
+export const MAX_DECISION_EXPLANATION = 1000;
+
+export const resolveReportSchema = z
+  .object({
+    action: z.enum(moderationActions),
+    /** Internal note for the audit trail; never shown to the member. */
+    reason: z.string().trim().min(3).max(500),
+    ground: z.enum(moderationGrounds).default('terms'),
+    /** Phase 61: the facts, for the member (statement of reasons). Required unless dismissing. */
+    explanation: z.string().trim().max(MAX_DECISION_EXPLANATION).optional(),
+  })
+  .refine(
+    (r) => r.action === 'dismiss' || (r.explanation?.length ?? 0) >= MIN_DECISION_EXPLANATION,
+    { message: 'Explain the decision to the member.', path: ['explanation'] },
+  );
+
+// ---------------------------------------------------------------------------
+// Decisions about my account and appeals (phase 61)
+// ---------------------------------------------------------------------------
+
+/** DSA Art. 20(1): at least six months after the decision. */
+export const APPEAL_WINDOW_DAYS = 183;
+export const MIN_APPEAL_TEXT = 10;
+export const MAX_APPEAL_TEXT = 1000;
+export const MAX_APPEAL_RESPONSE = 1000;
+
+export const appealableActions = ['warn', 'suspend', 'ban'] as const;
+export type AppealableAction = (typeof appealableActions)[number];
+export const appealStatuses = ['open', 'upheld', 'reversed'] as const;
+export type AppealStatus = (typeof appealStatuses)[number];
+
+/** The last day an appeal can be made for a decision taken at `decidedAt`. */
+export function appealDeadline(decidedAt: Date): Date {
+  return new Date(decidedAt.getTime() + APPEAL_WINDOW_DAYS * 24 * 60 * 60 * 1000);
+}
+
+export const appealInputSchema = z.object({
+  text: z.string().trim().min(MIN_APPEAL_TEXT).max(MAX_APPEAL_TEXT),
+});
+
+/** A statement of reasons, as the member reads it: never the internal note or who decided. */
+export const decisionSchema = z.object({
+  id: z.uuid(),
+  action: z.enum(appealableActions),
+  category: z.enum(reportCategories).nullable(),
+  ground: z.enum(moderationGrounds),
+  /** Null for decisions taken before phase 61. */
+  explanation: z.string().nullable(),
+  /** Found by an automatic check (phase 21, 34); a person always decides. */
+  automatedDetection: z.boolean(),
+  createdAt: z.string(),
+  /** Withdrawn after an appeal. */
+  reversed: z.boolean(),
+  appealUntil: z.string(),
+  canAppeal: z.boolean(),
+  appeal: z
+    .object({
+      status: z.enum(appealStatuses),
+      createdAt: z.string(),
+      decidedAt: z.string().nullable(),
+      response: z.string().nullable(),
+    })
+    .nullable(),
+});
+export type Decision = z.infer<typeof decisionSchema>;
+
+export const decisionsSchema = z.object({ decisions: z.array(decisionSchema) });
+
+export const appealSummarySchema = z.object({
+  id: z.uuid(),
+  status: z.enum(appealStatuses),
+  createdAt: z.string(),
+  text: z.string(),
+  member: z.object({ id: z.string(), displayName: z.string().nullable(), status: z.string() }),
+  decision: z.object({
+    id: z.uuid(),
+    action: z.enum(appealableActions),
+    category: z.enum(reportCategories).nullable(),
+    ground: z.enum(moderationGrounds),
+    explanation: z.string().nullable(),
+    /** The internal note (staff only). */
+    reason: z.string(),
+    automatedDetection: z.boolean(),
+    staffName: z.string().nullable(),
+    reportId: z.uuid().nullable(),
+    createdAt: z.string(),
+  }),
+  /** This staff member may decide it (not their own decision, unless the only admin). */
+  canDecide: z.boolean(),
+  decidedAt: z.string().nullable(),
+  response: z.string().nullable(),
+});
+export type AppealSummary = z.infer<typeof appealSummarySchema>;
+
+export const decideAppealSchema = z.object({
+  reverse: z.boolean(),
+  /** Shown to the member. */
+  response: z.string().trim().min(MIN_DECISION_EXPLANATION).max(MAX_APPEAL_RESPONSE),
 });
 
 export const liftSuspensionSchema = z.object({ reason: z.string().trim().min(3).max(500) });
@@ -163,6 +270,9 @@ export const moderationHistorySchema = z.object({
   action: z.enum([...moderationActions, 'unsuspend']),
   category: z.enum(reportCategories).nullable(),
   reason: z.string(),
+  /** Phase 61: what the member was told, and whether an appeal reversed it. */
+  explanation: z.string().nullable(),
+  reversed: z.boolean(),
   staffName: z.string().nullable(),
   createdAt: z.string(),
 });
@@ -255,5 +365,7 @@ export const safetyOverviewSchema = z.object({
     suspensions: z.number().int(),
   }),
   verificationsWaiting: z.number().int(),
+  /** Phase 61. */
+  appealsWaiting: z.number().int(),
 });
 export type SafetyOverview = z.infer<typeof safetyOverviewSchema>;

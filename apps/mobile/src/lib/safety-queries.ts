@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
-import type { ReportInput, VerificationState } from '@nexaheart/shared';
+import type { Decision, ReportInput, VerificationState } from '@nexaheart/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Platform } from 'react-native';
 import { apiFetch, json } from './api';
@@ -74,5 +74,24 @@ export function useAcknowledgeNotice() {
   return useMutation({
     mutationFn: (id: string) => apiFetch(`/v1/me/notices/${id}/ack`, { method: 'POST' }),
     onSuccess: () => client.invalidateQueries({ queryKey: keys.me }),
+  });
+}
+
+/** Phase 61: decisions about my account (statement of reasons) and appeals. */
+export const decisionKeys = { all: ['decisions'] as const };
+
+export function useDecisions() {
+  return useQuery({
+    queryKey: decisionKeys.all,
+    queryFn: () => apiFetch<{ decisions: Decision[] }>('/v1/me/decisions'),
+  });
+}
+
+export function useAppeal() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, text }: { id: string; text: string }) =>
+      apiFetch(`/v1/me/decisions/${id}/appeal`, { method: 'POST', body: json({ text }) }),
+    onSuccess: () => client.invalidateQueries({ queryKey: decisionKeys.all }),
   });
 }
