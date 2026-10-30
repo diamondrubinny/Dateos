@@ -38,6 +38,9 @@ NexaHeart is built the other way around:
 - 💬 **Real-time chat with built-in kindness.** An "Are you sure?" check before hurtful messages, offensive messages hidden for the receiver, scam warnings, and photos that stay blurred until you choose to look.
 - 🤖 **AI that respects you.** Matching runs on the instance's own server by default (offline or with a local Ollama model); cloud AI is opt-in only.
 - 🌍 **Four languages, accessible.** English, Hebrew, Arabic and Russian (full right-to-left support), screen-reader labels, keyboard navigation, and a button for every gesture.
+- 📲 **An app without the app stores.** The web app installs to the home screen with your community's name and colour, and opens even when the server restarts or the connection drops.
+- 🧰 **Runs itself, without a sysadmin.** One command over SSH installs it; updates from GitHub appear in the dashboard with what changed and install on approval (now or tonight), with a backup first and an automatic way back; admins are emailed when backups stop or an update is waiting.
+- 🤝 **Communities that connect.** Two communities can agree to let members who opt in meet and chat across both, with signed server-to-server requests and nothing more shared than the card.
 
 ## Status
 
@@ -75,6 +78,18 @@ NexaHeart is in active development. Here is what works today and what comes next
 | Friends: friends' takes (written without an account, shown only after you approve), double dates with a friend (shown only when all four can see each other) and a separate friends mode                                          | ✅ Available |
 | Live events: video speed dating (paired by everyone's own settings, a match only on a mutual yes), check-in at the venue with a rotating QR code and an opt-in badge, and a matchmaker that suggests settings you choose to apply | ✅ Available |
 | Integrations in the dashboard: email, sign-in, CAPTCHA, AI, video, push, error monitoring, consent-gated analytics, team alerts and signed webhooks, with encrypted write-only secrets and a test button                          | ✅ Available |
+| Easy mode and accessibility needs: larger text, high contrast, reduced motion, a simpler three-tab layout, step-free dates and needs you choose to share; photo descriptions read by screen readers                               | ✅ Available |
+| Voice message transcripts made on your own server; event updates and questions to the organizers                                                                                                                                  | ✅ Available |
+| Partner communities: members who opt in meet, match and chat with people from another community (signed server-to-server requests, reports and suspensions across both)                                                           | ✅ Available |
+| Chat controls: reactions, replies, unsend, read receipts you can turn off, mute, archive, pin, drafts that stay on the device, search inside a chat, undo a pass                                                                  | ✅ Available |
+| Your account: your devices and sign-in alerts, change your email safely, a fresh sign-in before anything irreversible, notifications you choose and quiet hours                                                                   | ✅ Available |
+| Profile: see your profile as others do (and why it might be hidden), profile strength, blocked people                                                                                                                             | ✅ Available |
+| Dates: suggest another time, add to calendar (discreet), running late? move a safety check-in, a safety overview                                                                                                                  | ✅ Available |
+| Fake-profile defences: bot checks, new-account limits on starting chats, the reporter told the outcome                                                                                                                            | ✅ Available |
+| Running it: one command over SSH installs and updates, encrypted daily backups with an alert when they stop, a System page in the dashboard                                                                                       | ✅ Available |
+| Updates from GitHub in the dashboard: what was added or fixed, approve now or at a time you choose, a backup first and an automatic way back, emails when one is waiting and when it's done, a history                            | ✅ Available |
+| Short outages without losing anyone: while the server restarts, members see "can't reach the community right now" (not signed out) and carry on by themselves                                                                     | ✅ Available |
+| An installable web app (PWA): add to the home screen with the community's name, icon and colour; opens without the server or a connection                                                                                         | ✅ Available |
 
 ## Screenshots
 
@@ -116,6 +131,26 @@ NexaHeart is in active development. Here is what works today and what comes next
 
 <img src="docs/screenshots/showcase-calls-en.png" alt="An invitation to a video call with Join and Not now, the call with the other person's camera on and the controls, and the call-ended screen" width="100%">
 
+**Everyday chat: pinned chats and drafts, reactions, replies, quiet hours, add to calendar**
+
+<img src="docs/screenshots/showcase-everyday-en.png" alt="Matches with a pinned chat and a draft, a reaction on a message, a reply quoting a message, quiet hours in notification settings, and an agreed date with Add to calendar" width="100%">
+
+**You, as others see you, and accessibility**
+
+<img src="docs/screenshots/showcase-profile-en.png" alt="See my profile as others do, profile strength, a photo description for screen readers, display settings with larger text and easy mode, and Discover in easy mode" width="100%">
+
+**Dates: another time, running late, after the date**
+
+<img src="docs/screenshots/showcase-dates-en.png" alt="Suggesting another time for a date, the agreed date, an active safety check-in moved 30 minutes later, and the private did-you-meet answer showing you both want to meet again" width="100%">
+
+**Communities that connect**
+
+<img src="docs/screenshots/showcase-partners-en.png" alt="Joining partner communities with what is and isn't shared, Discover showing someone from a partner community, the match, and a text chat across communities with a scam warning" width="100%">
+
+**Dark mode, and when the server or the connection is away**
+
+<img src="docs/screenshots/showcase-resilience-en.png" alt="A chat and a safety check-in in dark mode, the banner shown while the server restarts, and the installed app opening without a connection" width="100%">
+
 **Privacy**
 
 <img src="docs/screenshots/showcase-privacy-en.png" alt="The Privacy and cookies page listing every stored item, and Settings with Download my data" width="60%">
@@ -137,7 +172,7 @@ More in each language: [English](docs/marketing/en.md) · [עברית](docs/mark
 
 A ready-made marketing website in English and Hebrew is in [`site/`](site/README.md): build it with `node site/build.mjs` and upload `site/dist` to any static host.
 
-<sub>All 74 screens (37 in English, 37 in Hebrew) are in <a href="docs/screenshots">docs/screenshots</a>. Demo members are fictional and their pictures are illustrations.
+<sub>All screens (172 in English, 170 in Hebrew, 91 in Arabic and 90 in Russian) are in <a href="docs/screenshots">docs/screenshots</a>; every one is taken by an end-to-end test run, never drawn by hand (<a href="e2e/showcase-readme.ts">e2e/showcase-readme.ts</a> builds the strips above). Demo members are fictional and their pictures are illustrations.
 Chat screenshots come from two real accounts chatting live in two browsers (<a href="e2e/chat.ts">e2e/chat.ts</a>); the safety screens from a reporter, a reported member and a moderator in three browsers (<a href="e2e/safety.ts">e2e/safety.ts</a>).</sub>
 
 ## Quick start
@@ -258,14 +293,24 @@ Thank you to everyone in [SUPPORTERS.md](SUPPORTERS.md).
 
 ## Running a public instance
 
-**Run your own community in three commands** on any server with Docker. Step-by-step guide with
-questions and answers: [English](docs/INSTALL.md) · [עברית](docs/INSTALL.he.md) (short reference: [`docs/SELF_HOSTING.md`](docs/SELF_HOSTING.md)):
+**Run your own community with one command** on any Linux server (Ubuntu or Debian), over SSH. It
+installs Docker if needed, downloads NexaHeart, configures it (including your mail server), starts it,
+waits until it's ready, sets up encrypted daily backups and the updater, and prints the setup token.
+Point `example.org`, `admin.example.org` and `api.example.org` at the server first. Step-by-step guide
+with questions and answers: [English](docs/INSTALL.md) · [עברית](docs/INSTALL.he.md) (short
+reference: [`docs/SELF_HOSTING.md`](docs/SELF_HOSTING.md)):
 
 ```bash
-./install.sh --domain example.org          # secrets, production settings, one-time setup token
-docker compose -f infra/docker-compose.yml --env-file .env --profile app --profile full up -d --build
-# open https://admin.example.org, sign in, enter the setup token, set up 2FA, brand it
+ssh root@YOUR_SERVER_IP 'curl -fsSL https://raw.githubusercontent.com/diamondrubinny/NexaHeart/main/scripts/bootstrap.sh | DOMAIN=example.org SMTP_HOST=smtp.your-provider.example SMTP_USER=you@example.org SMTP_PASSWORD=your-smtp-password bash'
+# then open https://admin.example.org, sign in, enter the setup token, set up 2FA, brand it
 ```
+
+After that, it looks after itself: the dashboard's **System** page shows whether every part works
+and when the last backup finished (admins are emailed when backups stop); **Updates** lists what was
+added or fixed on GitHub and installs it on an admin's approval, now or at a quiet hour, with a backup
+first and an automatic way back if the new version doesn't start.
+
+<img src="docs/screenshots/showcase-admin-ops-en.png" alt="The dashboard's System page with a missing-backup alert and the status of every part, an available update with the list of changes, choosing a time to install it, and the history of updates" width="100%">
 
 <img src="docs/screenshots/showcase-instance-en.png" alt="A community's own branded instance: welcome screen in light and dark mode, and the accessibility statement with the operator's contact" width="100%">
 

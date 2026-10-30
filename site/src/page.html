@@ -772,7 +772,7 @@
       <a href="#operators" data-t="navOps">For operators</a>
       <a href="#install" data-t="navInstall">Install</a>
       <a href="#faq" data-t="navFaq">Questions</a>
-      <a href="https://github.com/diamondrubinny/Dateos">GitHub</a>
+      <a href="https://github.com/diamondrubinny/NexaHeart">GitHub</a>
       <div class="lang" role="group" aria-label="Language / שפה">
         <button type="button" id="lang-en" data-lang="en" aria-pressed="true" lang="en">EN</button>
         <button type="button" id="lang-he" data-lang="he" aria-pressed="false" lang="he">
@@ -1185,18 +1185,19 @@
       <div>
         <h2 id="install-title" data-t="installTitle">Start in an afternoon</h2>
         <p class="section-intro" data-t="installIntro">
-          You need a Linux server with Docker and a domain name. The installer asks a few questions
-          and starts everything.
+          You need a Linux server and a domain name. One command over SSH installs Docker if needed,
+          sets everything up, and prints the setup token.
         </p>
         <ul class="checklist">
           <li data-t="i1">HTTPS certificates set up for you</li>
           <li data-t="i2">A setup page to claim the instance and pick your brand</li>
           <li data-t="i3">A production checklist before you invite members</li>
+          <li data-t="i4">Encrypted daily backups, and updates you approve from the dashboard</li>
         </ul>
         <p class="guide-link">
           <a
-            href="https://github.com/diamondrubinny/Dateos/blob/main/docs/INSTALL.md"
-            data-href-he="https://github.com/diamondrubinny/Dateos/blob/main/docs/INSTALL.he.md"
+            href="https://github.com/diamondrubinny/NexaHeart/blob/main/docs/INSTALL.md"
+            data-href-he="https://github.com/diamondrubinny/NexaHeart/blob/main/docs/INSTALL.he.md"
             data-t="guide"
             >Read the step-by-step installation guide</a
           >
@@ -1207,9 +1208,9 @@
           <span>bash</span
           ><button class="copybtn" type="button" id="copy" data-t="copy">Copy</button>
         </div>
-        <pre id="cmd"><code>git clone https://github.com/diamondrubinny/Dateos.git nexaheart
-cd nexaheart
-./install.sh --domain example.org</code></pre>
+        <pre
+          id="cmd"
+        ><code>ssh root@YOUR_SERVER_IP 'curl -fsSL https://raw.githubusercontent.com/diamondrubinny/NexaHeart/main/scripts/bootstrap.sh | DOMAIN=example.org SMTP_HOST=smtp.your-provider.example SMTP_USER=you@example.org SMTP_PASSWORD=your-smtp-password bash'</code></pre>
       </div>
     </div>
     <div class="wrap">
@@ -1300,8 +1301,8 @@ cd nexaheart
       </div>
       <p class="guide-link">
         <a
-          href="https://github.com/diamondrubinny/Dateos/blob/main/docs/INSTALL.md#questions-and-answers"
-          data-href-he="https://github.com/diamondrubinny/Dateos/blob/main/docs/INSTALL.he.md#שאלות-ותשובות"
+          href="https://github.com/diamondrubinny/NexaHeart/blob/main/docs/INSTALL.md#questions-and-answers"
+          data-href-he="https://github.com/diamondrubinny/NexaHeart/blob/main/docs/INSTALL.he.md#שאלות-ותשובות"
           data-t="faqMore"
           >More questions in the installation guide</a
         >
@@ -1313,17 +1314,19 @@ cd nexaheart
 <footer>
   <div class="wrap">
     <div class="links">
-      <a href="https://github.com/diamondrubinny/Dateos" data-t="fRepo">Source code</a>
+      <a href="https://github.com/diamondrubinny/NexaHeart" data-t="fRepo">Source code</a>
       <a
-        href="https://github.com/diamondrubinny/Dateos/blob/main/docs/SELF_HOSTING.md"
+        href="https://github.com/diamondrubinny/NexaHeart/blob/main/docs/SELF_HOSTING.md"
         data-t="fHost"
         >Self-hosting guide</a
       >
-      <a href="https://github.com/diamondrubinny/Dateos/blob/main/docs/PRIVACY.md" data-t="fPrivacy"
+      <a
+        href="https://github.com/diamondrubinny/NexaHeart/blob/main/docs/PRIVACY.md"
+        data-t="fPrivacy"
         >Privacy guide</a
       >
       <a
-        href="https://github.com/diamondrubinny/Dateos/blob/main/docs/SECURITY_REVIEW.md"
+        href="https://github.com/diamondrubinny/NexaHeart/blob/main/docs/SECURITY_REVIEW.md"
         data-t="fSecurity"
         >Security review</a
       >
@@ -1336,7 +1339,7 @@ cd nexaheart
     <p class="powered-by">
       <a href="https://nexaheart.com" data-t="fPoweredBy">Powered by NexaHeart</a>
       <span aria-hidden="true">·</span>
-      <a href="https://github.com/diamondrubinny/Dateos" data-t="fOpenSource">Open source</a>
+      <a href="https://github.com/diamondrubinny/NexaHeart" data-t="fOpenSource">Open source</a>
     </p>
   </div>
 </footer>
@@ -1436,10 +1439,12 @@ cd nexaheart
       o3Body:
         'בלי אנליטיקס ובלי סקריפטים של צד שלישי. מיילים עוברים דרך הספק שאתם בוחרים, והתראות הן לפי בחירה ובלי שמות או תוכן הודעות.',
       installTitle: 'מתחילים בצהריים אחד',
-      installIntro: 'צריך שרת Linux עם Docker ושם דומיין. ההתקנה שואלת כמה שאלות ומפעילה הכול.',
+      installIntro:
+        'צריך שרת Linux ושם דומיין. פקודה אחת דרך SSH מתקינה Docker אם צריך, מגדירה הכול ומדפיסה את קוד ההקמה.',
       i1: 'תעודות HTTPS מוגדרות בשבילכם',
       i2: 'עמוד הגדרה לתפיסת השרת ולבחירת המיתוג',
       i3: 'רשימת בדיקות לפני שמזמינים חברים',
+      i4: 'גיבויים יומיים מוצפנים, ועדכונים שמאשרים מלוח הניהול',
       copy: 'העתקה',
       copied: 'הועתק',
       whoTitle: 'למי זה מתאים',
