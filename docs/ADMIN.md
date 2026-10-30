@@ -209,6 +209,22 @@ are retried for 7 days.
 signing key** on Partners makes a new one and tells every partner, signed with the old key. A
 partner that's down is told within a week; after that, renew that partnership.
 
+## 7c. Gender identity and pronouns (phase 62a, admins)
+
+Dashboard → Branding → **Gender identity and pronouns**. Matching always uses the four genders
+members choose when they join; this is how they describe themselves and how to address them:
+
+- **Gender identity**: not offered, or a longer list (trans woman, trans man, nonbinary,
+  genderqueer, genderfluid, agender, bigender, two-spirit, intersex, questioning…).
+- **Own words** (off by default): up to 30 letters, checked like the rest of the profile.
+- **Pronouns / form of address** (on by default): she/her, he/him, they/them or any; in Hebrew,
+  Arabic and Russian, feminine, masculine or neutral address.
+
+Members choose who sees it: their matches (the default) or everyone. It is never used for matching
+and never sent to partner communities or an AI model. Turning an option off hides it from profiles
+at once; members' choices are kept, so turning it back on restores them. ⚖️ This is special-category
+data (GDPR Art. 9; sensitive under Israel's privacy law).
+
 ## 8. Integrations (phase 24, admins only)
 
 The **Integrations** page connects outside services: see [INTEGRATIONS.md](INTEGRATIONS.md).

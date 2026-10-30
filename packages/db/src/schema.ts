@@ -232,6 +232,15 @@ export const profileAbout = pgTable('profile_about', {
     .default(sql`'{}'::text[]`),
   /** Phase 25: show the needs on the profile (off by default). */
   showAccessNeeds: boolean('show_access_needs').notNull().default(false),
+  /**
+   * Phase 62a: gender identity (a key or the member's own words) and form of address. Sensitive
+   * data: only with the `sensitive` consent, never ranked on, never sent to partners or an AI.
+   */
+  genderIdentity: varchar('gender_identity', { length: 24 }),
+  genderCustom: varchar('gender_custom', { length: 30 }),
+  pronouns: varchar('pronouns', { length: 12 }),
+  /** Who sees them: everyone, or matches only (the default). */
+  identityVisibility: varchar('identity_visibility', { length: 10 }).notNull().default('matches'),
   /** Voice prompt: the prompt it answers and the clip (deleted with it). */
   voicePromptKey: varchar('voice_prompt_key', { length: 40 }),
   voiceAudioId: uuid('voice_audio_id').references(() => audioClips.id, { onDelete: 'set null' }),
@@ -916,6 +925,12 @@ export const instanceSettings = pgTable(
     signupMode: varchar('signup_mode', { length: 10 }).notNull().default('open'),
     /** In invite mode, verified members can invite a few people themselves. */
     memberInvites: boolean('member_invites').notNull().default(false),
+    /** Phase 62a: what the community offers for gender identity and pronouns. */
+    identityVocabulary: varchar('identity_vocabulary', { length: 10 })
+      .notNull()
+      .default('extended'),
+    identityCustom: boolean('identity_custom').notNull().default(false),
+    identityPronouns: boolean('identity_pronouns').notNull().default(true),
     updatedBy: text('updated_by').references(() => user.id, { onDelete: 'set null' }),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },

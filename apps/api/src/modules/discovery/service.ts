@@ -1,11 +1,14 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
+import { readIdentitySettings } from '../../lib/identity-settings.js';
 import { checkHarm, rank, scoreCandidate, type ScoreResult } from '@nexaheart/ai';
 import type { Pool } from 'pg';
 import { schema, type Database } from '@nexaheart/db';
 import {
   ageOn,
+  allowedIdentity,
+  type PublicIdentity,
   DAILY_INTERACTION_LIMIT,
   EVENT_BADGE_MONTHS,
   DAILY_PICKS_COUNT,
@@ -1040,6 +1043,34 @@ export class DiscoveryService {
         (a) => [a.userId, a],
       ),
     );
+    // Gender identity and pronouns (phase 62a): what the community offers now, and "matches
+    // only" (the default) unless the viewer has an open match with them.
+    const identitySettings = await readIdentitySettings(this.db);
+    const matched = new Set(
+      (
+        await this.db.execute<{ other: string }>(sql`
+          SELECT CASE WHEN user_a = ${viewerId} THEN user_b ELSE user_a END AS other
+          FROM matches WHERE unmatched_at IS NULL
+            AND ((user_a = ${viewerId} AND user_b = ANY(${sql.param(ids)}::text[]))
+              OR (user_b = ${viewerId} AND user_a = ANY(${sql.param(ids)}::text[])))`)
+      ).rows.map((r) => r.other),
+    );
+    const identityFor = (userId: string): PublicIdentity | null => {
+      const row = aboutById.get(userId);
+      if (!row) return null;
+      const mayShow =
+        row.identityVisibility === 'everyone' || matched.has(userId) || userId === viewerId;
+      return mayShow
+        ? allowedIdentity(
+            {
+              genderIdentity: row.genderIdentity as PublicIdentity['genderIdentity'],
+              genderCustom: row.genderCustom,
+              pronouns: row.pronouns as PublicIdentity['pronouns'],
+            },
+            identitySettings,
+          )
+        : null;
+    };
     // Travellers (phase 18c) show "Visiting {city}" instead of a distance from the city centre.
     const trips = await this.db
       .select({ userId: locations.userId, cityId: locations.travelCityId })
@@ -1084,6 +1115,7 @@ export class DiscoveryService {
           about: toAbout(aboutById.get(p.userId)),
           voicePrompt: toVoicePrompt(aboutById.get(p.userId), cleanVoice),
           accessNeeds: shownAccessNeeds(aboutById.get(p.userId)),
+          identity: identityFor(p.userId),
           metInPerson: metIds.has(p.userId),
           atEvent: atEventIds.has(p.userId),
           friendTakes: takesById.get(p.userId) ?? [],

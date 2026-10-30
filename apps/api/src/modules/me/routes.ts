@@ -4,6 +4,7 @@
 import {
   appealInputSchema,
   decisionsSchema,
+  identityInputSchema,
   consentsInputSchema,
   meResponseSchema,
   aboutSchema,
@@ -136,6 +137,18 @@ export const meRoutes: FastifyPluginAsyncZod<{
     },
     async (request) => {
       await me.setAbout(currentUser(request).id, request.body);
+      return { ok: true as const };
+    },
+  );
+
+  app.put(
+    '/v1/me/identity',
+    {
+      schema: { body: identityInputSchema, response: { 200: ok } },
+      config: perUserLimit(60, 60 * 60 * 1000),
+    },
+    async (request) => {
+      await me.setIdentity(currentUser(request).id, request.body);
       return { ok: true as const };
     },
   );

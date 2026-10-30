@@ -19,6 +19,7 @@ import type {
   InstanceSettingsInput,
   ModerationAction,
   ModerationGround,
+  IdentityVocabulary,
   AppealSummary,
   ReportDetail,
   ReportSummary,
@@ -106,6 +107,9 @@ export interface AdminInstanceSettings {
   callMaxMinutes: number;
   signupMode: SignupMode;
   memberInvites: boolean;
+  identityVocabulary: IdentityVocabulary;
+  identityCustom: boolean;
+  identityPronouns: boolean;
 }
 
 async function upload(path: string, file: File): Promise<void> {

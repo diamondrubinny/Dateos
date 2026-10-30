@@ -114,6 +114,11 @@ function ProfileContent() {
           />
           <Button
             variant="secondary"
+            label={t('identity.title')}
+            onPress={() => router.push('/edit-identity')}
+          />
+          <Button
+            variant="secondary"
             label={t('access.title')}
             onPress={() => router.push('/access-needs')}
           />

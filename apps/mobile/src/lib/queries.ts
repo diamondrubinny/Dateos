@@ -21,6 +21,7 @@ import type {
   PauseDuration,
   About,
   AccessNeeds,
+  IdentityInput,
   Dealbreakers,
   Place,
   TravelInput,
@@ -164,6 +165,11 @@ export const useSetAbout = () =>
 export const useSetAccessNeeds = () =>
   useBreakMutation((input: AccessNeeds) =>
     apiFetch('/v1/me/access-needs', { method: 'PUT', body: json(input) }),
+  );
+/** Gender identity and pronouns (phase 62a): what others see changes, so the feeds refresh. */
+export const useSetIdentity = () =>
+  useBreakMutation((input: IdentityInput) =>
+    apiFetch('/v1/me/identity', { method: 'PUT', body: json(input) }),
   );
 export const useSetDealbreakers = () =>
   useBreakMutation((d: Dealbreakers) =>

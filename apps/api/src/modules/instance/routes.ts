@@ -2,6 +2,8 @@
 // Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 import {
+  defaultIdentitySettings,
+  identityVocabularies,
   BRAND_ICON_NAMES,
   deriveBrand,
   type InstanceInfo,
@@ -46,6 +48,7 @@ export function instanceInfo(env: Env): InstanceInfo {
     calls: false,
     transcripts: false,
     signup: 'open',
+    identity: defaultIdentitySettings,
     integrations: { captcha: null, analytics: null, webErrors: false },
     poweredBy: poweredBy(env),
   };
@@ -159,4 +162,7 @@ export const adminSettingsSchema = z.object({
   callMaxMinutes: z.number().int(),
   signupMode: z.enum(signupModes),
   memberInvites: z.boolean(),
+  identityVocabulary: z.enum(identityVocabularies),
+  identityCustom: z.boolean(),
+  identityPronouns: z.boolean(),
 });

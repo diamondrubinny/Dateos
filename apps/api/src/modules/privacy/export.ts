@@ -501,6 +501,11 @@ export async function exportMemberData(
           // Phase 25: only while the accessibility consent is given.
           accessNeeds: about.accessNeeds,
           showAccessNeeds: about.showAccessNeeds,
+          // Phase 62a: gender identity and pronouns, and who sees them.
+          genderIdentity: about.genderIdentity,
+          genderCustom: about.genderCustom,
+          pronouns: about.pronouns,
+          identityVisibility: about.identityVisibility,
         }
       : null,
     approximateLocation: location
