@@ -23,10 +23,20 @@ const types = {
 const api = process.env.API_URL ?? 'http://localhost:4000';
 
 createServer((req, res) => {
-  if (req.url === '/manifest.webmanifest') {
-    fetch(`${api}/v1/instance/manifest.webmanifest`)
+  // Phase 57/59: as Caddy does, the manifest and the brand icons come from the API.
+  const proxied =
+    req.url === '/manifest.webmanifest'
+      ? '/v1/instance/manifest.webmanifest'
+      : req.url?.startsWith('/brand-icons/')
+        ? `/v1/instance/icons/${req.url.slice('/brand-icons/'.length)}`
+        : null;
+  if (proxied) {
+    fetch(`${api}${proxied}`, { redirect: 'manual' })
       .then(async (r) => {
-        res.writeHead(r.status, { 'content-type': r.headers.get('content-type') ?? 'text/plain' });
+        res.writeHead(r.status, {
+          'content-type': r.headers.get('content-type') ?? 'text/plain',
+          ...(r.headers.get('location') ? { location: r.headers.get('location') } : {}),
+        });
         res.end(Buffer.from(await r.arrayBuffer()));
       })
       .catch(() => res.writeHead(502).end());

@@ -32,7 +32,8 @@ const indexFile = join(dist, 'index.html');
 const tags = [
   '<link rel="manifest" href="/manifest.webmanifest">',
   '<meta name="theme-color" content="#7C3AED">',
-  '<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">',
+  // Phase 59: the community's logo when it has one (the API sends the built-in icon otherwise).
+  '<link rel="apple-touch-icon" href="/brand-icons/apple-touch-icon.png">',
   '<meta name="mobile-web-app-capable" content="yes">',
   '<meta name="apple-mobile-web-app-capable" content="yes">',
 ];

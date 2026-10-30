@@ -14,6 +14,15 @@ export const PWA_ICONS = [
   { src: '/icons/maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
 ] as const;
 
+/** Phase 59: the icon names the API makes from the community's logo (`/v1/instance/icons/:name`). */
+export const BRAND_ICON_NAMES = [
+  'icon-192.png',
+  'icon-512.png',
+  'maskable-512.png',
+  'apple-touch-icon.png',
+] as const;
+export type BrandIconName = (typeof BRAND_ICON_NAMES)[number];
+
 /** Home-screen labels are short: longer names are cut (whole characters, not halves of emoji). */
 export const PWA_SHORT_NAME_MAX = 12;
 
@@ -39,7 +48,9 @@ export interface WebManifest {
  * (the same as `/v1/instance`). Paths are relative to the app's origin, where Caddy serves it.
  */
 export function webManifest(
-  info: Pick<InstanceInfo, 'name' | 'tagline' | 'defaultLocale' | 'brand'>,
+  info: Pick<InstanceInfo, 'name' | 'tagline' | 'defaultLocale' | 'brand'> & {
+    logoUrl?: string | null;
+  },
 ): WebManifest {
   const name = info.name.replace(/\s+/g, ' ').trim() || 'NexaHeart';
   const chars = Array.from(name);
@@ -60,6 +71,16 @@ export function webManifest(
     dir: locale.success && isRtl(locale.data) ? 'rtl' : 'ltr',
     theme_color: info.brand.light.primary,
     background_color: '#FFFFFF',
-    icons: PWA_ICONS.map((icon) => ({ ...icon })),
+    icons: PWA_ICONS.map((icon) => ({ ...icon, src: iconSrc(icon.src, info.logoUrl) })),
   };
+}
+
+/**
+ * Phase 59: with a logo, the icon comes from the community's logo (`/brand-icons/` on the app's
+ * domain, served by the API); the logo's version in the address makes a new logo a new icon.
+ */
+function iconSrc(builtIn: string, logoUrl: string | null | undefined): string {
+  const version = logoUrl ? /[?&]v=([0-9a-f-]{1,36})/.exec(logoUrl)?.[1] : undefined;
+  if (!logoUrl || !version) return builtIn;
+  return `${builtIn.replace('/icons/', '/brand-icons/')}?v=${version}`;
 }

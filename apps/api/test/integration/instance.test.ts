@@ -250,6 +250,13 @@ describe.skipIf(!integrationEnabled)('instance setup & branding (integration)', 
     expect((await upload('png')).statusCode).toBe(202);
     const job = ctx.jobs.process.at(-1)!;
     expect((await instance()).logoUrl).toBeNull(); // not scanned yet
+    // Phase 59: no clean logo yet: the installed app keeps the built-in icon.
+    const noLogoIcon = await ctx.app.inject({
+      method: 'GET',
+      url: '/v1/instance/icons/icon-192.png',
+    });
+    expect(noLogoIcon.statusCode).toBe(302);
+    expect(noLogoIcon.headers.location).toBe('/icons/icon-192.png');
     expect(
       (
         await ctx.app.inject({
@@ -286,6 +293,49 @@ describe.skipIf(!integrationEnabled)('instance setup & branding (integration)', 
     expect(logo.statusCode).toBe(200);
     expect(logo.headers['content-type']).toBe('image/webp');
 
+    // Phase 59: the installed app's icons are made from the logo, and the manifest points to them.
+    const icon = async (name: string) => {
+      const res = await ctx.app.inject({ method: 'GET', url: `/v1/instance/icons/${name}` });
+      expect(res.statusCode).toBe(200);
+      expect(res.headers['content-type']).toBe('image/png');
+      const { data, info: meta } = await sharp(res.rawPayload)
+        .raw()
+        .toBuffer({ resolveWithObject: true });
+      const at = (x: number, y: number) => {
+        const i = (y * meta.width + x) * meta.channels;
+        return `#${[data[i], data[i + 1], data[i + 2]].map((v) => v!.toString(16).padStart(2, '0')).join('')}`;
+      };
+      return { width: meta.width, height: meta.height, at };
+    };
+    // The logo is WebP (lossy): its colour within a few steps of #0f766e.
+    const teal = (hex: string) =>
+      [0x0f, 0x76, 0x6e].every(
+        (v, i) => Math.abs(parseInt(hex.slice(1 + i * 2, 3 + i * 2), 16) - v) <= 4,
+      );
+    const any512 = await icon('icon-512.png');
+    expect([any512.width, any512.height]).toEqual([512, 512]);
+    expect(any512.at(5, 5)).toBe('#ffffff'); // a white margin
+    expect(teal(any512.at(256, 256))).toBe(true); // the logo in the middle
+    expect(teal(any512.at(60, 256))).toBe(true); // 80 %: the logo reaches 51 px from the edge
+    const maskable = await icon('maskable-512.png');
+    expect(maskable.at(60, 256)).toBe('#ffffff'); // 60 %: kept inside Android's safe zone
+    expect(teal(maskable.at(256, 256))).toBe(true);
+    expect((await icon('apple-touch-icon.png')).width).toBe(180);
+    expect(
+      (await ctx.app.inject({ method: 'GET', url: '/v1/instance/icons/..%2Fsecret.png' }))
+        .statusCode,
+    ).toBe(400);
+    const manifest = await ctx.app.inject({
+      method: 'GET',
+      url: '/v1/instance/manifest.webmanifest',
+    });
+    const version = info.logoUrl!.split('v=')[1];
+    expect(manifest.json().icons.map((i: { src: string }) => i.src)).toEqual([
+      `/brand-icons/icon-192.png?v=${version}`,
+      `/brand-icons/icon-512.png?v=${version}`,
+      `/brand-icons/maskable-512.png?v=${version}`,
+    ]);
+
     // Replacing the logo purges the old file; removing it clears the URL.
     await upload('png');
     expect(ctx.jobs.delete.at(-1)?.mediaKeys).toEqual([key]);
@@ -300,5 +350,8 @@ describe.skipIf(!integrationEnabled)('instance setup & branding (integration)', 
     ).toBe(200);
     ctx.services.instance.invalidate();
     expect((await instance()).logoUrl).toBeNull();
+    expect(
+      (await ctx.app.inject({ method: 'GET', url: '/v1/instance/icons/icon-512.png' })).statusCode,
+    ).toBe(302);
   });
 });

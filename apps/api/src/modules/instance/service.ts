@@ -4,6 +4,7 @@
 import { createHash, timingSafeEqual } from 'node:crypto';
 import { schema, type Database } from '@nexaheart/db';
 import {
+  type BrandIconName,
   DEFAULT_CALL_MAX_MINUTES,
   deriveBrand,
   ErrorCode,
@@ -20,6 +21,7 @@ import { HttpError } from '../../plugins/error-handler.js';
 import type { AuthUser } from '../../auth/session.js';
 import type { PhotoService } from '../photos/service.js';
 import { liveKitConfigured } from '../../lib/livekit.js';
+import { brandIcon } from './brand-icons.js';
 import { poweredBy } from '../../lib/credit.js';
 
 const { instanceSettings, photos, user } = schema;
@@ -113,6 +115,30 @@ export class InstanceService {
 
   invalidate(): void {
     this.cache = undefined;
+  }
+
+  /** Phase 59: icons made from the logo, per logo version (a new logo is a new version). */
+  private icons = new Map<string, Buffer>();
+
+  /**
+   * The home-screen icon `name` made from the community's logo, or null when there's no logo yet
+   * (the route then sends the built-in icon).
+   */
+  async brandIcon(name: BrandIconName): Promise<Buffer | null> {
+    const row = await this.row();
+    if (!row?.logoPhotoId || !(await this.logoReady(row.logoPhotoId))) return null;
+    const key = `${row.logoPhotoId}:${name}`;
+    const cached = this.icons.get(key);
+    if (cached) return cached;
+    const object = await this.photos.openForStaff(row.logoPhotoId, 'branding');
+    const chunks: Buffer[] = [];
+    for await (const chunk of object.body) chunks.push(Buffer.from(chunk as Uint8Array));
+    const icon = await brandIcon(Buffer.concat(chunks), name);
+    // Only the current logo's icons are kept.
+    for (const k of this.icons.keys())
+      if (!k.startsWith(`${row.logoPhotoId}:`)) this.icons.delete(k);
+    this.icons.set(key, icon);
+    return icon;
   }
 
   async logo(): Promise<StoredObject> {

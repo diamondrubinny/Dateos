@@ -9,23 +9,33 @@
  * itself; an older copy is removed.
  * Usage: pnpm --dir e2e pwa
  */
-import { mkdtempSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { chromium } from 'playwright';
 import { en } from '../apps/mobile/src/i18n/en.ts';
 import { he } from '../apps/mobile/src/i18n/he.ts';
+import { createDb } from '@nexaheart/db';
+import sharp from 'sharp';
+import { totp } from '../apps/api/src/lib/totp.ts';
 import {
   API,
+  apiClient,
   audit,
   LOCALE_TAGS,
   locales,
   onboardMember,
   reportA11y,
   resetSignInLimits,
+  OUT,
   shot,
+  signInHttp,
   WEB,
 } from './lib.ts';
+
+const envFile = new URL('../.env', import.meta.url);
+if (existsSync(envFile)) process.loadEnvFile(envFile);
+const { pool } = createDb(process.env.DATABASE_URL ?? '', { max: 1 });
 
 const T = { en, he } as const;
 const problems: string[] = [];
@@ -36,7 +46,80 @@ const check = (ok: boolean, message: string) => {
 
 await resetSignInLimits();
 const instance = (await (await fetch(`${API}/v1/instance`)).json()) as { name: string };
-// 0. Installable: Chrome's own check. It never offers installing in an incognito-like context, so
+// 0. Phase 59: the community uploads its own logo (as an admin does: two-factor sign-in, the upload
+// pipeline, the worker's scan). Wide on purpose: the icon must keep it whole.
+process.stdout.write('logo:\n');
+const adminEmail = `pwa-admin-${Date.now()}@example.test`;
+const adminSession = await signInHttp(adminEmail);
+await pool.query(`UPDATE "user" SET role = 'admin' WHERE email = $1`, [adminEmail]);
+const admin = apiClient(adminSession.header);
+const { secret } = await admin<{ secret: string }>('POST', '/v1/admin/mfa/setup');
+await admin('POST', '/v1/admin/mfa/verify', { code: totp(secret, Date.now()) });
+const logoPng = await sharp(
+  Buffer.from(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="600" height="300">' +
+      '<circle cx="200" cy="150" r="130" fill="#0F766E"/>' +
+      '<circle cx="400" cy="150" r="130" fill="#F97316" fill-opacity="0.85"/></svg>',
+  ),
+)
+  .png()
+  .toBuffer();
+const form = new FormData();
+form.append('file', new Blob([new Uint8Array(logoPng)], { type: 'image/png' }), 'logo.png');
+await admin('POST', '/v1/admin/instance/logo', form);
+let logoUrl: string | null = null;
+for (let i = 0; i < 60 && !logoUrl; i += 1) {
+  await new Promise((r) => setTimeout(r, 1000));
+  logoUrl = ((await (await fetch(`${API}/v1/instance`)).json()) as { logoUrl: string | null })
+    .logoUrl;
+}
+check(Boolean(logoUrl), 'the logo passed the scan and is the community’s');
+const version = logoUrl?.split('v=')[1] ?? '';
+const manifestIcons = (
+  (await (await fetch(`${WEB}/manifest.webmanifest`)).json()) as { icons: { src: string }[] }
+).icons.map((i) => i.src);
+check(
+  manifestIcons.every((src) => src.startsWith('/brand-icons/') && src.endsWith(`?v=${version}`)),
+  `the manifest’s icons are the community’s (${manifestIcons[0]})`,
+);
+const iconRes = await fetch(`${WEB}/brand-icons/maskable-512.png?v=${version}`);
+const iconPng = Buffer.from(await iconRes.arrayBuffer());
+const iconMeta = await sharp(iconPng).metadata();
+check(
+  iconRes.ok && iconMeta.width === 512 && iconMeta.height === 512,
+  'the icon is a 512 × 512 PNG made from the logo',
+);
+// What a phone shows: the icon as is, and the maskable one cut to a circle (Android).
+const anyPng = Buffer.from(
+  await (await fetch(`${WEB}/brand-icons/icon-512.png?v=${version}`)).arrayBuffer(),
+);
+const circle = Buffer.from(
+  '<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512"><circle cx="256" cy="256" r="256"/></svg>',
+);
+const round = await sharp(iconPng)
+  .composite([{ input: circle, blend: 'dest-in' }])
+  .png()
+  .toBuffer();
+const gap = 40;
+await sharp({
+  create: { width: 512 * 3 + gap * 4, height: 512 + gap * 2, channels: 4, background: '#EDE5FF' },
+})
+  .composite([
+    {
+      input: await sharp(logoPng)
+        .resize(512, 512, { fit: 'contain', background: '#EDE5FF' })
+        .toBuffer(),
+      left: gap,
+      top: gap,
+    },
+    { input: anyPng, left: gap * 2 + 512, top: gap },
+    { input: round, left: gap * 3 + 1024, top: gap },
+  ])
+  .png()
+  .toFile(join(OUT, 'showcase-brand-icon.png'));
+check(true, 'showcase-brand-icon.png');
+
+// 0b. Installable: Chrome's own check. It never offers installing in an incognito-like context, so
 // this one uses a normal (temporary) browser profile.
 {
   process.stdout.write('install:\n');
@@ -170,6 +253,9 @@ try {
   }
 } finally {
   await browser.close();
+  // Leave the development community as it was: no logo.
+  await admin('DELETE', '/v1/admin/instance/logo').catch(() => undefined);
+  await pool.end();
 }
 reportA11y();
 if (problems.length > 0) {
