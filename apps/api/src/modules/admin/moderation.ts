@@ -6,6 +6,7 @@ import {
   ageOn,
   BACKUP_STALE_HOURS,
   ErrorCode,
+  STAFF_ACCESS_ACTIONS,
   type SystemStatus,
   type AuditEntry,
   type ModerationAction,
@@ -13,7 +14,7 @@ import {
   type ReportDetail,
   type ReportSummary,
 } from '@nexaheart/shared';
-import { and, asc, desc, eq, lt, ne, sql, type SQL } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, lt, ne, sql, type SQL } from 'drizzle-orm';
 import { audit } from '../../lib/audit.js';
 import type { EmailHasher } from '../../lib/banned.js';
 import { HttpError } from '../../plugins/error-handler.js';
@@ -381,7 +382,11 @@ export class ModerationService {
     await this.db.transaction((tx) => liftModeration(tx, staff.id, userId, reason));
   }
 
-  async auditLog(before: string | undefined, limit: number): Promise<AuditEntry[]> {
+  async auditLog(
+    before: string | undefined,
+    limit: number,
+    only?: 'staff_access',
+  ): Promise<AuditEntry[]> {
     const rows = await this.db
       .select()
       .from(auditLogs)
@@ -390,6 +395,10 @@ export class ModerationService {
         and(
           ne(auditLogs.action, 'session.created'),
           before ? lt(auditLogs.createdAt, new Date(before)) : undefined,
+          // Phase 64: who looked at member data.
+          only === 'staff_access'
+            ? inArray(auditLogs.action, [...STAFF_ACCESS_ACTIONS])
+            : undefined,
         ),
       )
       .orderBy(desc(auditLogs.createdAt))

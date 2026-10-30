@@ -264,6 +264,29 @@ SELF_HOSTING.md). Members who haven't passed one are asked before they can use t
 community keeps only the result. "Under 18" suspends the account. ⚖️ You need an agreement with the
 provider.
 
+## 7g. Compliance kit (phase 64, admins)
+
+Dashboard → **Compliance**. A starting point, not legal advice ⚖️ 📘:
+
+- **Transparency report**: choose a period (up to a year) and download CSV or JSON. Counts only:
+  notices by source (members, automatic checks, partner communities) and category; notices closed
+  with a decision or with no action and the median time to close; decisions (warnings, suspensions,
+  bans) by ground, how many came from automatic checks (a person still decided) and how many were
+  reversed on appeal; appeals and their outcomes. Decisions deleted by the retention rules or with
+  the account aren't counted, so older periods may count fewer. Online platforms in the EU publish
+  one at least once a year (DSA Art. 15 and 24); check the Commission's template for the format.
+- **Security incidents**: record every incident, even a small one, without names, emails or message
+  text. High and severe incidents show when the authority should be told (72 hours under GDPR
+  Art. 33; in Israel, severe incidents are reported to the Privacy Protection Authority at once);
+  mark when the authority and the members were told, and close it. Incidents can't be deleted, and
+  every change is in the audit log.
+- **Documents**: a security statement, a no-paid-features pledge and a risk assessment, in English or
+  Hebrew, filled from this community's settings (faith module, age checks, partners, video, outside
+  AI). Each is a draft: fill in what's in brackets (hosting, disk encryption, providers) and have it
+  reviewed before publishing.
+- **Audit log → "Staff access to member data only"**: every time staff opened a report, a reported
+  photo, a verification selfie or reported voice evidence.
+
 ## 8. Integrations (phase 24, admins only)
 
 The **Integrations** page connects outside services: see [INTEGRATIONS.md](INTEGRATIONS.md).

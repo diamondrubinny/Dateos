@@ -15,6 +15,11 @@ import type {
   VenueInput,
   VenueUpdate,
   AuditEntry,
+  ComplianceTemplate,
+  Incident,
+  IncidentDraft,
+  IncidentUpdate,
+  TransparencyReport,
   InstanceInfo,
   InstanceSettingsInput,
   ModerationAction,
@@ -85,6 +90,18 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
     throw new ApiError(res.status, code, payload?.error?.message ?? res.statusText);
   }
   return (await res.json()) as T;
+}
+
+/** A text download (phase 64 templates). */
+async function requestText(path: string): Promise<string> {
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}${path}`, { credentials: 'include' });
+  } catch {
+    throw new ApiError(0, 'NETWORK_ERROR', 'The server could not be reached.');
+  }
+  if (!res.ok) throw new ApiError(res.status, 'UNKNOWN', res.statusText);
+  return res.text();
 }
 
 /** Fetches a protected image with the session cookie and returns an object URL. */
@@ -276,11 +293,26 @@ export const api = {
     ),
   cancelUpdate: (id: string) =>
     request<UpdateStatusView>('POST', `/v1/admin/updates/${encodeURIComponent(id)}/cancel`),
-  audit: (before?: string) =>
+  audit: (before?: string, only?: 'staff_access') =>
     request<{ entries: AuditEntry[] }>(
       'GET',
-      `/v1/admin/audit?limit=50${before ? `&before=${encodeURIComponent(before)}` : ''}`,
+      `/v1/admin/audit?limit=50${before ? `&before=${encodeURIComponent(before)}` : ''}${
+        only ? `&only=${only}` : ''
+      }`,
     ),
+  // Phase 64: the compliance kit (admins only).
+  transparency: (from: string, to: string) =>
+    request<TransparencyReport>(
+      'GET',
+      `/v1/admin/compliance/transparency?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
+    ),
+  incidents: () => request<{ incidents: Incident[] }>('GET', '/v1/admin/compliance/incidents'),
+  createIncident: (input: IncidentDraft) =>
+    request<Incident>('POST', '/v1/admin/compliance/incidents', input),
+  updateIncident: (id: string, update: IncidentUpdate) =>
+    request<Incident>('PATCH', `/v1/admin/compliance/incidents/${encodeURIComponent(id)}`, update),
+  template: (name: ComplianceTemplate, locale: 'en' | 'he') =>
+    requestText(`/v1/admin/compliance/templates/${name}?locale=${locale}`),
   photoPath: (userId: string, photoId: string) =>
     `/v1/admin/users/${encodeURIComponent(userId)}/photos/${encodeURIComponent(photoId)}`,
   selfiePath: (id: string) => `/v1/admin/verifications/${encodeURIComponent(id)}/selfie`,

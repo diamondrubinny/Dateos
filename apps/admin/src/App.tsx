@@ -24,6 +24,7 @@ import { Venues } from './pages/Venues';
 import { Signup } from './pages/Signup';
 import { Verifications } from './pages/Verifications';
 import { Appeals } from './pages/Appeals';
+import { Compliance } from './pages/Compliance';
 
 const LOCALE_KEY = 'nexaheart-admin-locale';
 
@@ -90,25 +91,28 @@ function Shell({
       | 'branding'
       | 'integrations'
       | 'partners'
+      | 'compliance'
       | 'system',
   ) => (
     <li>
       <a href={`#/${key}`} aria-current={current === key ? 'page' : undefined}>
         {key === 'system'
           ? t.system.nav
-          : key === 'partners'
-            ? t.partners.nav
-            : key === 'integrations'
-              ? t.integrations.nav
-              : key === 'branding'
-                ? t.branding.nav
-                : key === 'venues'
-                  ? t.venues.nav
-                  : key === 'events'
-                    ? t.events.nav
-                    : key === 'signup'
-                      ? t.signup.nav
-                      : t.nav[key]}
+          : key === 'compliance'
+            ? t.compliance.nav
+            : key === 'partners'
+              ? t.partners.nav
+              : key === 'integrations'
+                ? t.integrations.nav
+                : key === 'branding'
+                  ? t.branding.nav
+                  : key === 'venues'
+                    ? t.venues.nav
+                    : key === 'events'
+                      ? t.events.nav
+                      : key === 'signup'
+                        ? t.signup.nav
+                        : t.nav[key]}
       </a>
     </li>
   );
@@ -133,6 +137,7 @@ function Shell({
               {link('audit')}
               {isAdmin ? link('branding') : null}
               {isAdmin ? link('integrations') : null}
+              {isAdmin ? link('compliance') : null}
               {isAdmin ? link('system') : null}
             </ul>
           </nav>
@@ -176,6 +181,7 @@ function Routes({ staff }: { staff: NonNullable<Awaited<ReturnType<typeof api.me
   if (route[0] === 'branding' && staff.role === 'admin') return <Branding wizard={false} />;
   if (route[0] === 'integrations' && staff.role === 'admin') return <Integrations />;
   if (route[0] === 'system' && staff.role === 'admin') return <System />;
+  if (route[0] === 'compliance' && staff.role === 'admin') return <Compliance />;
   return <Reports />;
 }
 

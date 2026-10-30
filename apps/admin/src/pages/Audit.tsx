@@ -11,7 +11,10 @@ import { ErrorBox, formatDate, Loading } from '../components/ui';
 export function Audit() {
   const { t, locale } = useLocale();
   const [older, setOlder] = useState<AuditEntry[]>([]);
-  const { data, error, loading, reload } = useAsync(() => api.audit(), []);
+  // Phase 64: who looked at member data.
+  const [staffOnly, setStaffOnly] = useState(false);
+  const only = staffOnly ? ('staff_access' as const) : undefined;
+  const { data, error, loading, reload } = useAsync(() => api.audit(undefined, only), [only]);
   const [loadingMore, setLoadingMore] = useState(false);
   const entries = [...(data?.entries ?? []), ...older];
 
@@ -20,7 +23,7 @@ export function Audit() {
     if (!last) return;
     setLoadingMore(true);
     try {
-      const page = await api.audit(last.createdAt);
+      const page = await api.audit(last.createdAt, only);
       setOlder((prev) => [...prev, ...page.entries]);
     } finally {
       setLoadingMore(false);
@@ -40,6 +43,22 @@ export function Audit() {
     <section aria-labelledby="audit-title">
       <h1 id="audit-title">{t.audit.title}</h1>
       <p>{t.audit.intro}</p>
+      <div className="checkbox">
+        <input
+          type="checkbox"
+          id="audit-staff-only"
+          checked={staffOnly}
+          aria-describedby="audit-staff-only-help"
+          onChange={(e) => {
+            setOlder([]);
+            setStaffOnly(e.target.checked);
+          }}
+        />
+        <label htmlFor="audit-staff-only">{t.audit.staffOnly}</label>
+        <p id="audit-staff-only-help" className="help">
+          {t.audit.staffOnlyHelp}
+        </p>
+      </div>
       {loading && !data ? <Loading /> : null}
       {error ? <ErrorBox error={error} onRetry={reload} /> : null}
       {entries.length > 0 ? (

@@ -6,6 +6,12 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Added
 
+- **Compliance kit in the dashboard**: a transparency report for any period (counts only, CSV and
+  JSON); a security incident log that shows when the authority should be told and can't be
+  deleted; a security statement, a no-paid-features pledge and a risk assessment in English and
+  Hebrew, filled from the community's settings; and an audit log filter for staff access to member
+  data.
+
 - **Age checks through the community's provider**: an admin can require every member to confirm
   they're over 18 with an age-check provider set up on the server. The provider sends back only the
   result, signed (HMAC) and single-use; the community never sees an ID or a photo. Under 18

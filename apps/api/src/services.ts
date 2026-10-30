@@ -43,6 +43,7 @@ import { EmailChangeService } from './modules/account/email-change.js';
 import { StaffMfaService } from './modules/admin/mfa.js';
 import { ModerationService } from './modules/admin/moderation.js';
 import { AppealService } from './modules/safety/appeals.js';
+import { ComplianceService } from './modules/compliance/service.js';
 import { AgeCheckService } from './modules/age-check/service.js';
 import { ReportService } from './modules/safety/reports.js';
 import { InstanceService } from './modules/instance/service.js';
@@ -84,6 +85,8 @@ export interface Services {
   staffMfa: StaffMfaService;
   moderation: ModerationService;
   appeals: AppealService;
+  /** Phase 64. */
+  compliance: ComplianceService;
   ageCheck: AgeCheckService;
   updates: UpdateService;
   trust: TrustService;
@@ -324,6 +327,16 @@ export function createServices(
     { api: env.PUBLIC_API_URL.replace(/\/+$/, ''), app: appUrl(env) },
     overrides.now,
   );
+  const compliance = new ComplianceService(
+    dbHandle.db,
+    {
+      instanceName: env.INSTANCE_NAME,
+      ageCheckProvider: Boolean(env.AGE_CHECK_URL && env.AGE_CHECK_SECRET),
+      externalAi: env.ICEBREAKERS_PROVIDER === 'openai' && env.OPENAI_EXTERNAL,
+      videoCalls: Boolean(env.LIVEKIT_URL && env.LIVEKIT_API_KEY && env.LIVEKIT_API_SECRET),
+    },
+    overrides.now,
+  );
   me.useAgeCheck(async (userId) => (await ageCheck.required()) && !(await ageCheck.passed(userId)));
   const updates = new UpdateService(
     dbHandle.db,
@@ -390,6 +403,7 @@ export function createServices(
     ),
     moderation,
     appeals,
+    compliance,
     ageCheck,
     updates,
     instance,

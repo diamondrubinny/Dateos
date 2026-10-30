@@ -46,6 +46,13 @@ import {
   inviteSchema,
   waitlistEntrySchema,
   waitlistStatuses,
+  transparencyQuerySchema,
+  transparencyReportSchema,
+  incidentSchema,
+  incidentInputSchema,
+  incidentUpdateSchema,
+  templateParamsSchema,
+  templateQuerySchema,
 } from '@nexaheart/shared';
 import type { Storage, StoredObject } from '@nexaheart/storage';
 import type { FastifyReply } from 'fastify';
@@ -69,6 +76,7 @@ import type { IntegrationService } from '../integrations/service.js';
 import { isStaffRole, type StaffMfaService } from './mfa.js';
 import type { ModerationService } from './moderation.js';
 import type { AppealService } from '../safety/appeals.js';
+import type { ComplianceService } from '../compliance/service.js';
 
 const ok = z.object({ ok: z.literal(true) });
 const idParams = z.object({ id: z.uuid() });
@@ -99,6 +107,8 @@ export const adminRoutes: FastifyPluginAsyncZod<{
   dependencies: Dependency[];
   /** Phase 61. */
   appeals?: AppealService;
+  /** Phase 64. */
+  compliance?: ComplianceService;
 }> = async (
   app,
   {
@@ -117,6 +127,7 @@ export const adminRoutes: FastifyPluginAsyncZod<{
     updates,
     dependencies,
     appeals,
+    compliance,
   },
 ) => {
   await app.register(multipart, {
@@ -380,9 +391,78 @@ export const adminRoutes: FastifyPluginAsyncZod<{
     },
     async (request) => {
       adminOnly(currentUser(request).role);
-      return { entries: await moderation.auditLog(request.query.before, request.query.limit) };
+      const { before, limit, only } = request.query;
+      return { entries: await moderation.auditLog(before, limit, only) };
     },
   );
+
+  // ---------------------------------------------------------------- compliance kit (phase 64, admins)
+
+  if (compliance) {
+    app.get(
+      '/v1/admin/compliance/transparency',
+      {
+        schema: {
+          querystring: transparencyQuerySchema,
+          response: { 200: transparencyReportSchema },
+        },
+      },
+      async (request) => {
+        adminOnly(currentUser(request).role);
+        return compliance.transparency(request.query);
+      },
+    );
+
+    app.get(
+      '/v1/admin/compliance/incidents',
+      { schema: { response: { 200: z.object({ incidents: z.array(incidentSchema) }) } } },
+      async (request) => {
+        adminOnly(currentUser(request).role);
+        return { incidents: await compliance.incidents() };
+      },
+    );
+
+    app.post(
+      '/v1/admin/compliance/incidents',
+      {
+        schema: { body: incidentInputSchema, response: { 201: incidentSchema } },
+        config: perUserLimit(30, 60 * 60 * 1000),
+      },
+      async (request, reply) => {
+        const admin = currentUser(request);
+        adminOnly(admin.role);
+        return reply.code(201).send(await compliance.createIncident(admin.id, request.body));
+      },
+    );
+
+    app.patch(
+      '/v1/admin/compliance/incidents/:id',
+      {
+        schema: { params: idParams, body: incidentUpdateSchema, response: { 200: incidentSchema } },
+        config: perUserLimit(60, 60 * 60 * 1000),
+      },
+      async (request) => {
+        const admin = currentUser(request);
+        adminOnly(admin.role);
+        return compliance.updateIncident(admin.id, request.params.id, request.body);
+      },
+    );
+
+    app.get(
+      '/v1/admin/compliance/templates/:name',
+      { schema: { params: templateParamsSchema, querystring: templateQuerySchema } },
+      async (request, reply) => {
+        adminOnly(currentUser(request).role);
+        const { name } = request.params;
+        const { locale } = request.query;
+        const text = await compliance.template(name, locale);
+        return reply
+          .type('text/markdown; charset=utf-8')
+          .header('content-disposition', `attachment; filename="${name}.${locale}.md"`)
+          .send(text);
+      },
+    );
+  }
 
   // ---------------------------------------------------------------- instance branding (admins)
 
