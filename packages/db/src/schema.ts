@@ -1678,6 +1678,8 @@ export const updateRequests = pgTable(
     status: varchar('status', { length: 12 }).notNull().default('pending'),
     requestedBy: text('requested_by').references(() => user.id, { onDelete: 'set null' }),
     requestedAt: timestamp('requested_at', { withTimezone: true }).notNull().defaultNow(),
+    /** Phase 56: install at this time or later (an admin's chosen time); null = as soon as possible. */
+    notBefore: timestamp('not_before', { withTimezone: true }),
     startedAt: timestamp('started_at', { withTimezone: true }),
     finishedAt: timestamp('finished_at', { withTimezone: true }),
     message: varchar('message', { length: 500 }),

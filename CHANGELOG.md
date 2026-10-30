@@ -6,6 +6,10 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Added
 
+- **Choose when an update installs**: now, or at a time you choose up to 7 days ahead (suggested:
+  03:00 in your time zone), withdrawable until it starts; and **Previous updates** in System →
+  Updates: what was installed, what didn't install and why, what was withdrawn.
+
 - **Short outages without losing anyone**: while the server restarts or installs an update, a
   member opening the app sees "Can't reach the community right now" (not signed out) instead of
   the welcome page, and the app carries on by itself when it's back; inside the app, one line at
@@ -276,6 +280,8 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 - The chat header cut off its last action in Arabic and Russian; it now wraps.
 - Emails to the admins (backup alerts) linked to `/#/system` without an address when
   `PUBLIC_ADMIN_URL` was empty, as after the install command; they now use `https://admin.<domain>`.
+- Dashboard, System → Updates: the server's message about a failed update kept its full stop on
+  the wrong side in Hebrew; it now has its own direction.
 - Dashboard, System → Updates: the section has its own spacing, and the Hebrew "all changes" link
   reads correctly next to "GitHub".
 

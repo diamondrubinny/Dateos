@@ -148,6 +148,56 @@ try {
         'a waiting approval can be withdrawn',
       );
 
+      // 4b. Phase 56: install at a chosen time (e.g. at night), not now.
+      await page.getByRole('button', { name: u.install }).click();
+      await page.getByRole('radio', { name: u.whenLater }).check();
+      const atField = page.getByLabel(u.at);
+      check(
+        /T03:00$/.test(await atField.inputValue()),
+        'the time starts at the coming 03:00, in the admin’s time zone',
+      );
+      // A time that has passed is refused in place, tied to the field.
+      // Written as a string: the test runner's helpers don't exist in the page.
+      const local = (offsetMs: number) =>
+        page.evaluate<string>(`(() => {
+          const d = new Date(Date.now() + ${offsetMs});
+          const p = (n) => String(n).padStart(2, '0');
+          return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + 'T' +
+            p(d.getHours()) + ':' + p(d.getMinutes());
+        })()`);
+      await atField.fill(await local(-3_600_000));
+      await page.getByRole('button', { name: u.approveAt }).click();
+      await page.getByText(u.atInvalid(7)).waitFor();
+      check(
+        (await atField.getAttribute('aria-invalid')) === 'true' &&
+          ((await atField.getAttribute('aria-describedby')) ?? '').includes('update-at-error'),
+        'a past time is refused in place, tied to the field',
+      );
+      const chosen = await local(5 * 3_600_000);
+      await atField.fill(chosen);
+      await audit(page, `${locale}/admin-update-schedule`);
+      await page.getByTestId('updates').scrollIntoViewIfNeeded();
+      await shot(page, `${locale}/134-admin-update-schedule`);
+      await page.getByRole('button', { name: u.approveAt }).click();
+      const scheduled = page.getByTestId('update-request');
+      await scheduled.getByText(u.scheduled('').split(' ')[0]!, { exact: false }).waitFor();
+      const sched = await pool.query(
+        `SELECT status, not_before FROM update_requests WHERE status = 'pending'`,
+      );
+      const notBefore = sched.rows[0]?.not_before as Date | undefined;
+      check(
+        Boolean(notBefore) &&
+          Math.abs(notBefore!.getTime() - (Date.now() + 5 * 3_600_000)) < 120_000,
+        'the approval is recorded for the chosen time',
+      );
+      check(
+        (await scheduled.innerText()).includes(u.cancel),
+        'until then it says when, and can be withdrawn',
+      );
+      await shot(page, `${locale}/135-admin-update-scheduled`);
+      await scheduled.getByRole('button', { name: u.cancel }).click();
+      await page.getByRole('button', { name: u.install }).waitFor();
+
       // 5. A failed update is explained, as an alert.
       await pool.query(
         `INSERT INTO update_requests (target_commit, from_commit, status, finished_at, message)
@@ -165,6 +215,22 @@ try {
         'the banner says the last update failed',
       );
       await audit(page, `${locale}/admin-update-failed`);
+
+      // 6. Phase 56: the history of finished approvals (the two withdrawn above), in words.
+      const history = page.getByTestId('update-history');
+      await history.waitFor();
+      check(
+        (await history.locator('caption').innerText()) === u.history.title &&
+          (await history.getByRole('columnheader').count()) === 3,
+        'the history is a table with a caption and column headers',
+      );
+      check(
+        (await history.getByRole('row').count()) === 3 &&
+          (await history.getByText(u.history.cancelled).count()) === 2,
+        'it lists the withdrawn approvals, in words',
+      );
+      await history.scrollIntoViewIfNeeded();
+      await shot(page, `${locale}/136-admin-update-history`);
     } finally {
       await context.close();
     }

@@ -1,7 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
-import { UPDATE_PICKUP_MINUTES, type UpdateStatusView } from '@nexaheart/shared';
+import {
+  UPDATE_PICKUP_MINUTES,
+  UPDATE_SCHEDULE_MAX_DAYS,
+  type UpdateStatusView,
+} from '@nexaheart/shared';
 import { useEffect, useState } from 'react';
 import { api, ApiError } from '../api';
 import { useAsync } from '../hooks';
@@ -9,6 +13,19 @@ import { useLocale } from '../i18n';
 import { ErrorBox, Loading } from '../components/ui';
 
 const short = (commit: string) => commit.slice(0, 7);
+
+/** A `datetime-local` value (local time, minutes) for a Date. */
+const localInput = (d: Date) => {
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+};
+/** The coming 03:00 in the admin's time zone: a quiet time for most communities. */
+const nextQuietHour = (now = new Date()) => {
+  const d = new Date(now);
+  d.setHours(3, 0, 0, 0);
+  if (d.getTime() <= now.getTime() + 15 * 60_000) d.setDate(d.getDate() + 1);
+  return d;
+};
 
 /**
  * Updates from GitHub (phase 53), inside System: what's new and a button to approve installing it.
@@ -21,6 +38,11 @@ export function Updates() {
   const [view, setView] = useState<UpdateStatusView>();
   const [busy, setBusy] = useState<'check' | 'install' | 'cancel'>();
   const [confirming, setConfirming] = useState(false);
+  // Phase 56: install now, or at a time the admin chooses (their own time zone).
+  const [later, setLater] = useState(false);
+  const [at, setAt] = useState(() => localInput(nextQuietHour()));
+  const [atError, setAtError] = useState(false);
+  const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const [problem, setProblem] = useState<string>();
   const s = view ?? data;
   const when = (iso: string) =>
@@ -61,9 +83,23 @@ export function Updates() {
   if (error && !s) return <ErrorBox error={error} onRetry={reload} />;
   if (!s) return null;
   const r = s.request;
+  // A scheduled one counts from its time, not from the approval (phase 56).
+  const dueAt = r
+    ? Math.max(Date.parse(r.requestedAt), r.notBefore ? Date.parse(r.notBefore) : 0)
+    : 0;
+  const scheduledLater = r?.status === 'pending' && dueAt > Date.now();
   const waitingLong =
-    r?.status === 'pending' &&
-    Date.now() - Date.parse(r.requestedAt) > UPDATE_PICKUP_MINUTES * 60_000;
+    r?.status === 'pending' && Date.now() - dueAt > UPDATE_PICKUP_MINUTES * 60_000;
+  const approve = () => {
+    if (!later) return run('install', () => api.installUpdate(s.latest!));
+    const chosen = new Date(at);
+    const ok =
+      !Number.isNaN(chosen.getTime()) &&
+      chosen.getTime() > Date.now() &&
+      chosen.getTime() <= Date.now() + UPDATE_SCHEDULE_MAX_DAYS * 86_400_000;
+    setAtError(!ok);
+    if (ok) void run('install', () => api.installUpdate(s.latest!, chosen.toISOString()));
+  };
   const githubPr = (n: number) => `https://github.com/${s.repo}/pull/${n}`;
 
   return (
@@ -95,7 +131,9 @@ export function Updates() {
           <p>
             <strong>
               {r.status === 'pending'
-                ? u.pending
+                ? scheduledLater
+                  ? u.scheduled(when(r.notBefore!))
+                  : u.pending
                 : r.status === 'running'
                   ? u.installing
                   : r.status === 'done'
@@ -103,7 +141,8 @@ export function Updates() {
                     : u.failedInstall}
             </strong>
           </p>
-          {r.message ? <p>{r.message}</p> : null}
+          {/* The server's message is English: its own direction, so punctuation stays put. */}
+          {r.message ? <p dir="auto">{r.message}</p> : null}
           {waitingLong ? (
             <>
               <p>{u.noUpdater(UPDATE_PICKUP_MINUTES)}</p>
@@ -172,13 +211,64 @@ export function Updates() {
                     <li key={step}>{step}</li>
                   ))}
                 </ul>
+                <fieldset className="update-when">
+                  <legend>{u.when}</legend>
+                  <label className="radio">
+                    <input
+                      type="radio"
+                      name="update-when"
+                      checked={!later}
+                      onChange={() => setLater(false)}
+                    />
+                    <span>{u.whenNow}</span>
+                  </label>
+                  <label className="radio">
+                    <input
+                      type="radio"
+                      name="update-when"
+                      checked={later}
+                      onChange={() => setLater(true)}
+                    />
+                    <span>{u.whenLater}</span>
+                  </label>
+                  {later ? (
+                    <div className="field">
+                      <label htmlFor="update-at">{u.at}</label>
+                      <input
+                        id="update-at"
+                        type="datetime-local"
+                        value={at}
+                        min={localInput(new Date())}
+                        max={localInput(
+                          new Date(Date.now() + UPDATE_SCHEDULE_MAX_DAYS * 86_400_000),
+                        )}
+                        aria-invalid={atError || undefined}
+                        aria-describedby={
+                          atError ? 'update-at-hint update-at-error' : 'update-at-hint'
+                        }
+                        onChange={(e) => {
+                          setAt(e.target.value);
+                          setAtError(false);
+                        }}
+                      />
+                      <p id="update-at-hint" className="muted">
+                        {u.atHint(zone, UPDATE_SCHEDULE_MAX_DAYS)}
+                      </p>
+                      {atError ? (
+                        <p id="update-at-error" className="field-error" role="alert">
+                          {u.atInvalid(UPDATE_SCHEDULE_MAX_DAYS)}
+                        </p>
+                      ) : null}
+                    </div>
+                  ) : null}
+                </fieldset>
                 <button
                   type="button"
                   className="button primary"
                   disabled={busy !== undefined}
-                  onClick={() => run('install', () => api.installUpdate(s.latest!))}
+                  onClick={() => void approve()}
                 >
-                  {busy === 'install' ? u.approving : u.approve}
+                  {busy === 'install' ? u.approving : later ? u.approveAt : u.approve}
                 </button>{' '}
                 <button type="button" className="button" onClick={() => setConfirming(false)}>
                   {u.notNow}
@@ -198,6 +288,45 @@ export function Updates() {
       ) : null}
 
       {s.enabled ? <p className="muted">{s.emails ? u.emailsOn : u.emailsOff}</p> : null}
+
+      {s.history.length > 0 ? (
+        <div className="table-wrap">
+          <table data-testid="update-history">
+            <caption>{u.history.title}</caption>
+            <thead>
+              <tr>
+                <th scope="col">{u.history.when}</th>
+                <th scope="col">{u.history.version}</th>
+                <th scope="col">{u.history.result}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {s.history.map((h) => (
+                <tr key={h.id}>
+                  <td>
+                    <bdi>{when(h.finishedAt ?? h.requestedAt)}</bdi>
+                  </td>
+                  <td>
+                    <code dir="ltr">
+                      {h.from ? `${short(h.from)} → ` : ''}
+                      {short(h.target)}
+                    </code>
+                  </td>
+                  <td>
+                    <strong>{u.history[h.status as 'done' | 'failed' | 'cancelled']}</strong>
+                    {h.message ? (
+                      <span className="muted">
+                        {' · '}
+                        <bdi>{h.message}</bdi>
+                      </span>
+                    ) : null}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : null}
 
       {s.enabled ? (
         <button

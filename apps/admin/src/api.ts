@@ -238,8 +238,13 @@ export const api = {
   system: () => request<SystemStatus>('GET', '/v1/admin/system'),
   updates: () => request<UpdateStatusView>('GET', '/v1/admin/updates'),
   checkUpdates: () => request<UpdateStatusView>('POST', '/v1/admin/updates/check'),
-  installUpdate: (commit: string) =>
-    request<UpdateStatusView>('POST', '/v1/admin/updates/install', { commit }),
+  /** Phase 56: `at` (ISO) installs at that time; without it, as soon as possible. */
+  installUpdate: (commit: string, at?: string) =>
+    request<UpdateStatusView>(
+      'POST',
+      '/v1/admin/updates/install',
+      at ? { commit, at } : { commit },
+    ),
   cancelUpdate: (id: string) =>
     request<UpdateStatusView>('POST', `/v1/admin/updates/${encodeURIComponent(id)}/cancel`),
   audit: (before?: string) =>

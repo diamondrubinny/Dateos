@@ -205,7 +205,7 @@ export const adminRoutes: FastifyPluginAsyncZod<{
       const admin = currentUser(request);
       adminOnly(admin.role);
       requireRecentSignIn(request);
-      return updates.approve(admin.id, request.body.commit);
+      return updates.approve(admin.id, request.body.commit, request.body.at);
     },
   );
   app.post(

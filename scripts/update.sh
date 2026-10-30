@@ -54,9 +54,16 @@ sql -c "UPDATE update_requests SET status = 'failed', finished_at = now(),
   message = 'The update was interrupted (the server restarted or the updater stopped). Approve it again to retry.'
   WHERE status = 'running' AND started_at < now() - interval '2 hours'" >/dev/null 2>&1 || true
 
-# The oldest waiting approval, if any. A database from before phase 53 has no table: nothing to do.
-row="$(sql -c "SELECT id || ' ' || target_commit FROM update_requests WHERE status = 'pending' ORDER BY requested_at LIMIT 1" 2>/dev/null || true)"
-[[ -n "$row" ]] || exit 0
+# The oldest waiting approval whose time has come (phase 56: an admin may choose when; the time is
+# compared inside SQL, never read into the shell). A database from before phase 53 has no table.
+row="$(sql -c "SELECT id || ' ' || target_commit FROM update_requests WHERE status = 'pending' AND (not_before IS NULL OR not_before <= now()) ORDER BY requested_at LIMIT 1" 2>/dev/null || true)"
+if [[ -z "$row" ]]; then
+  if [[ "${UPDATE_DRY_RUN:-0}" == 1 ]]; then
+    later="$(sql -c "SELECT count(*) FROM update_requests WHERE status = 'pending' AND not_before > now()" 2>/dev/null || true)"
+    [[ "${later:-0}" =~ ^[1-9] ]] && log "Dry run: an approved update is scheduled for later. Nothing to do yet."
+  fi
+  exit 0
+fi
 id="${row%% *}"
 target="${row##* }"
 [[ "$id" =~ ^[0-9a-f-]{36}$ && "$target" =~ ^[0-9a-f]{40}$ ]] || {
@@ -79,7 +86,7 @@ fi
 
 claimed="$(sql -v id="$id" <<'SQL'
 UPDATE update_requests SET status = 'running', started_at = now()
-WHERE id = :'id' AND status = 'pending' RETURNING id;
+WHERE id = :'id' AND status = 'pending' AND (not_before IS NULL OR not_before <= now()) RETURNING id;
 SQL
 )"
 [[ -n "$claimed" ]] || exit 0 # withdrawn in the meantime

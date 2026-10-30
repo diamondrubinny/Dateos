@@ -1,0 +1,1 @@
+ALTER TABLE "update_requests" ADD COLUMN "not_before" timestamp with time zone;
