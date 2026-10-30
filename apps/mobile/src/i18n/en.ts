@@ -1326,6 +1326,18 @@ export const en = {
     showArchived: 'Archived chats ({{count}})',
     hideArchived: 'Hide archived chats ({{count}})',
   },
+  blur: {
+    settingLabel: 'Blur my photos',
+    settingHint:
+      'Others see your photos blurred until you show them to a match in your chat. A match who sees them could still take a screenshot.',
+    hiddenLabel: 'Photo blurred',
+    byChoice: '{{name}} shows photos to matches by choice',
+    afterMatch: 'Photos are shown after a match',
+    blurredFor: 'Your photos are blurred for {{name}}. Once shown, a screenshot is still possible.',
+    shownTo: '{{name}} can see your photos.',
+    showTo: 'Show my photos to {{name}}',
+    hideAgain: 'Blur them again',
+  },
   reach: {
     title: 'Who can reach me',
     intro: 'Limits you set for yourself. Nobody is told that you chose them.',

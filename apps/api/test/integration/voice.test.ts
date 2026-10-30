@@ -130,6 +130,7 @@ describe.skipIf(!integrationEnabled)('voice messages & push (integration)', () =
       quietHours: null,
       dailyLikeLimit: null,
       verifiedContactOnly: false,
+      blurPhotos: false,
       pushDevices: 0,
     });
   });

@@ -2,6 +2,7 @@
 // Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 import { randomBytes } from 'node:crypto';
+import { Readable } from 'node:stream';
 import { schema, type Database } from '@nexaheart/db';
 import {
   ageOn,
@@ -32,6 +33,7 @@ import {
 } from '@nexaheart/shared';
 import type { Storage, StoredObject } from '@nexaheart/storage';
 import { and, asc, desc, eq, inArray, sql, type SQL } from 'drizzle-orm';
+import { blurredCopy, blurredOwners, photosMayBlur } from '../../lib/photo-blur.js';
 import { audit } from '../../lib/audit.js';
 import { HttpError } from '../../plugins/error-handler.js';
 import { notOnBreak } from '../discovery/visibility.js';
@@ -320,6 +322,7 @@ export class FederatedMembers {
         width: ph.width,
         height: ph.height,
         description: ph.description ?? null,
+        ...(ph.blurred ? { blurred: true } : {}),
       })),
       verified: card.verified,
     };
@@ -615,6 +618,8 @@ export class FederatedMembers {
         and(inArray(photos.userId, ids), eq(photos.status, 'clean'), eq(photos.purpose, 'profile')),
       )
       .orderBy(asc(photos.position));
+    // Phase 66a: photos that may be blurred here go to partners blurred, without descriptions.
+    const blurred = await blurredOwners(this.db, null, ids);
     const cards = rows.flatMap((r): FederatedCard[] => {
       const alias = aliases.get(r.id);
       const own = photoRows.filter((ph) => ph.userId === r.id);
@@ -635,7 +640,8 @@ export class FederatedMembers {
             id: ph.id,
             width: ph.width,
             height: ph.height,
-            description: ph.description,
+            description: blurred.has(r.id) ? null : ph.description,
+            ...(blurred.has(r.id) ? { blurred: true } : {}),
           })),
           verified: r.verified,
         },
@@ -742,8 +748,8 @@ export class FederatedMembers {
   ): Promise<StoredObject> {
     const partner = await this.federation.verifyActive(incoming);
     if (!federationAliasSchema.safeParse(viewer).success) throw badRequest();
-    const { rows } = await this.db.execute<{ key: string }>(sql`
-      SELECT ph.media_key AS key
+    const { rows } = await this.db.execute<{ key: string; owner: string }>(sql`
+      SELECT ph.media_key AS key, ph.user_id AS owner
       FROM photos ph
       JOIN profiles p ON p.user_id = ph.user_id
       JOIN "user" u ON u.id = p.user_id
@@ -754,7 +760,12 @@ export class FederatedMembers {
           WHERE d.user_id = p.user_id AND d.partner_id = ${partner.id}
             AND d.alias = ${viewer} AND d.kind = 'block')`);
     if (!rows[0]) throw notFound();
-    return this.storage.get(this.storage.buckets.media, rows[0].key);
+    const object = await this.storage.get(this.storage.buckets.media, rows[0].key);
+    // Phase 66a: partners' members get a blurred copy of photos that may be blurred here.
+    if (await photosMayBlur(this.db, rows[0].owner)) {
+      return { ...object, body: Readable.from(await blurredCopy(object.body)) };
+    }
+    return object;
   }
 }
 

@@ -9,6 +9,7 @@ import { and, asc, eq, ne, sql } from 'drizzle-orm';
 import { fileTypeFromBuffer } from 'file-type';
 import { HttpError } from '../../plugins/error-handler.js';
 import type { MediaQueue } from '../../lib/queue.js';
+import { blurredCopy, blurredOwners, photosMayBlur } from '../../lib/photo-blur.js';
 
 const { photos } = schema;
 const allowed = new Set<string>(allowedPhotoMimeTypes);
@@ -101,8 +102,15 @@ export class PhotoService {
     };
   }
 
-  /** Owners, and people allowed to see the owner's profile, may view a clean photo. */
-  async open(viewerId: string, photoId: string): Promise<StoredObject> {
+  /**
+   * Owners, and people allowed to see the owner's profile, may view a clean photo. Phase 66a: a
+   * profile photo blurred for this viewer is served as a tiny blurred copy; `noStore` when it may
+   * be blurred for anyone, so a reveal taken back is never answered from a cache.
+   */
+  async open(
+    viewerId: string,
+    photoId: string,
+  ): Promise<{ body: StoredObject['body'] | Buffer; noStore: boolean }> {
     const [row] = await this.db
       .select({ mediaKey: photos.mediaKey, userId: photos.userId, purpose: photos.purpose })
       .from(photos)
@@ -116,7 +124,15 @@ export class PhotoService {
         ? await this.canViewChatImage(viewerId, photoId)
         : await this.canView(viewerId, row.userId);
     if (!allowed) throw notFound();
-    return this.storage.get(this.storage.buckets.media, row.mediaKey);
+    const object = await this.storage.get(this.storage.buckets.media, row.mediaKey);
+    if (row.purpose !== 'profile' || row.userId === viewerId) {
+      return { body: object.body, noStore: false };
+    }
+    const noStore = await photosMayBlur(this.db, row.userId);
+    if (noStore && (await blurredOwners(this.db, viewerId, [row.userId])).has(row.userId)) {
+      return { body: await blurredCopy(object.body), noStore };
+    }
+    return { body: object.body, noStore };
   }
 
   /** Staff access (admin API only): any clean photo of a member, regardless of visibility. */

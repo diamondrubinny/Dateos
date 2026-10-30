@@ -121,6 +121,9 @@ const en = {
     faithModule: 'Faith module (faith, stream and observance)',
     faithModuleHelp:
       'Optional for members, with their consent: faith, stream (e.g. national-religious, Haredi, traditional, Sunni, Catholic) and observance questions (Shabbat, kashrut, halal, prayer…), with matching filters. Special-category data ⚖️: never ranked on, never sent to partners or an AI model.',
+    photosAfterMatch: 'Photos only after a match',
+    photosAfterMatchHelp:
+      'Everyone’s photos are blurred (on the server) until two people match; profiles lead with words. Members can also blur their own photos in any community.',
     communitySave: 'Save community profile',
     communitySaved: 'Community profile saved.',
     presetsTitle: 'Start from a preset',
@@ -1079,6 +1082,9 @@ const he: Messages = {
     faithModule: 'מודול אמונה (דת, זרם ושמירה)',
     faithModuleHelp:
       'לא חובה לחברי הקהילה, ובהסכמתם: דת, זרם (למשל דתי־לאומי, חרדי, מסורתי, סוני, קתולי) ושאלות שמירה (שבת, כשרות, חלאל, תפילה…), עם מסנני התאמה. מידע רגיש במיוחד ⚖️: לא משמש לדירוג ולא נשלח לשותפויות או למודל AI.',
+    photosAfterMatch: 'תמונות רק אחרי התאמה',
+    photosAfterMatchHelp:
+      'התמונות של כולם מטושטשות (בשרת) עד ששני אנשים מתאימים, והפרופילים מתחילים במילים. חברי הקהילה יכולים גם לטשטש את התמונות שלהם בכל קהילה.',
     communitySave: 'שמירת פרופיל הקהילה',
     communitySaved: 'פרופיל הקהילה נשמר.',
     presetsTitle: 'התחלה מתבנית',

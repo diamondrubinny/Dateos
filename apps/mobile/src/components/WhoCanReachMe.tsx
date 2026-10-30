@@ -49,6 +49,13 @@ export function WhoCanReachMe({ onError }: { onError: () => void }) {
         checked={settings.data?.verifiedContactOnly ?? false}
         onChange={(v) => setReach.mutate({ verifiedContactOnly: v }, { onError })}
       />
+      {/* Phase 66a: blurred on the server until shown to a match, in the chat. */}
+      <Checkbox
+        label={t('blur.settingLabel')}
+        hint={t('blur.settingHint')}
+        checked={settings.data?.blurPhotos ?? false}
+        onChange={(v) => setReach.mutate({ blurPhotos: v }, { onError })}
+      />
     </>
   );
 }

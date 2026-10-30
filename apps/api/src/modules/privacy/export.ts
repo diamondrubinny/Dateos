@@ -103,6 +103,15 @@ export async function exportMemberData(
     })
     .from(t.matches)
     .where(or(eq(t.matches.userA, userId), eq(t.matches.userB, userId)));
+  // Phase 66a: matches where you showed your blurred photos.
+  const shown = new Set(
+    (
+      await db
+        .select({ matchId: t.photoReveals.matchId })
+        .from(t.photoReveals)
+        .where(eq(t.photoReveals.userId, userId))
+    ).map((r) => r.matchId),
+  );
   // Partner communities (phase 28b): your alias there, your decisions and matches.
   const partnerName = t.federationPartners.name;
   const federatedAliases = await db
@@ -476,6 +485,8 @@ export async function exportMemberData(
           // Phase 65: who can reach me.
           dailyLikeLimit: preferences.dailyLikeLimit,
           verifiedContactOnly: preferences.verifiedContactOnly,
+          // Phase 66a.
+          blurPhotos: preferences.blurPhotos,
           showMetInPersonBadge: preferences.showMetBadge,
           showCheckedInAtEventBadge: preferences.showEventBadge,
           friendsMode: {
@@ -554,6 +565,7 @@ export async function exportMemberData(
       otherMemberId: m.userA === userId ? m.userB : m.userA,
       createdAt: iso(m.createdAt),
       unmatchedAt: iso(m.unmatchedAt),
+      youShowedYourPhotos: shown.has(m.id),
     })),
     messagesYouSent: sent.map((m) => ({ ...m, at: iso(m.at), unsentAt: iso(m.unsentAt) })),
     blocks: blocks.map((b) => ({ ...b, at: iso(b.at) })),

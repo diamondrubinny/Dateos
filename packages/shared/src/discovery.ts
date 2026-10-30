@@ -79,6 +79,11 @@ export const publicPhotoSchema = z.object({
   height: z.number().int().nullable(),
   /** Phase 40: what the photo shows, for screen readers (optional: older partner servers). */
   description: z.string().max(150).nullable().optional(),
+  /**
+   * Phase 66a: served blurred to this viewer (the owner blurs, or the community shows photos after a
+   * match); its description is withheld.
+   */
+  blurred: z.boolean().optional(),
 });
 
 export const publicProfileSchema = z.object({

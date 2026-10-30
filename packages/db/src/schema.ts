@@ -294,6 +294,8 @@ export const preferences = pgTable(
     dailyLikeLimit: smallint('daily_like_limit'),
     /** Phase 65: only verified members see me in Discover and can write to me. */
     verifiedContactOnly: boolean('verified_contact_only').notNull().default(false),
+    /** Phase 66a: my photos are blurred for others until I show them to a match. */
+    blurPhotos: boolean('blur_photos').notNull().default(false),
     /** Receiver control: people can turn video and voice calls off (phase 15). */
     acceptCalls: boolean('accept_calls').notNull().default(true),
     /** Dealbreakers (phase 19): empty means any; a missing answer always passes. */
@@ -963,6 +965,8 @@ export const instanceSettings = pgTable(
     /** Phase 62b: intentions offered (null: all of them) and the faith module (off by default). */
     intentionsOffered: text('intentions_offered').array(),
     faithModule: boolean('faith_module').notNull().default(false),
+    /** Phase 66a: everyone's photos are blurred until two people match (text first). */
+    photosAfterMatch: boolean('photos_after_match').notNull().default(false),
     /** Phase 62c: who may join (ages, genders: empty means everyone) and a declaration. */
     joinMinAge: smallint('join_min_age').notNull().default(18),
     joinMaxAge: smallint('join_max_age'),
@@ -1874,4 +1878,21 @@ export const securityIncidents = pgTable(
     check('security_incidents_severity', sql`${t.severity} IN ('low', 'medium', 'high', 'severe')`),
     index('security_incidents_time_idx').on(t.discoveredAt),
   ],
+);
+
+/**
+ * Phase 66a: a member showed their (blurred) photos to the other person in this match. Valid only
+ * while the match is active; deleted with the match or the account.
+ */
+export const photoReveals = pgTable(
+  'photo_reveals',
+  {
+    matchId: uuid('match_id')
+      .notNull()
+      .references(() => matches.id, { onDelete: 'cascade' }),
+    /** Whose photos were shown. */
+    userId: ownerId(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.matchId, t.userId] })],
 );

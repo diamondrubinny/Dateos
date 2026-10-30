@@ -215,6 +215,7 @@ export function useChatSettings() {
         quietHours: QuietHours | null;
         dailyLikeLimit: number | null;
         verifiedContactOnly: boolean;
+        blurPhotos: boolean;
         pushDevices: number;
       }>('/v1/me/settings'),
   });
@@ -253,9 +254,22 @@ export function useSetSetting() {
 export function useSetReach() {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (input: { dailyLikeLimit?: number | null; verifiedContactOnly?: boolean }) =>
-      apiFetch('/v1/me/settings', { method: 'PUT', body: json(input) }),
+    mutationFn: (input: {
+      dailyLikeLimit?: number | null;
+      verifiedContactOnly?: boolean;
+      blurPhotos?: boolean;
+    }) => apiFetch('/v1/me/settings', { method: 'PUT', body: json(input) }),
     onSuccess: () => client.invalidateQueries({ queryKey: settingsKey }),
+  });
+}
+
+/** Phase 66a: show my blurred photos to this match, or take it back. */
+export function useShowPhotos(matchId: string) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (shown: boolean) =>
+      apiFetch(`/v1/matches/${matchId}/photos-shown`, { method: 'PUT', body: json({ shown }) }),
+    onSuccess: () => client.invalidateQueries({ queryKey: chatKeys.messages(matchId) }),
   });
 }
 

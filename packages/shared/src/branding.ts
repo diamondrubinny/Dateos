@@ -130,6 +130,8 @@ export const instanceSettingsInputSchema = z
       .max(intentions.length)
       .refine((l) => new Set(l).size === l.length),
     faithModule: z.boolean(),
+    /** Phase 66a: everyone's photos are blurred until two people match. */
+    photosAfterMatch: z.boolean(),
     /**
      * Phase 62c, who may join: ages (never below 18), genders (empty: everyone) and a declaration
      * every new member confirms. ⚖️ Restricting membership may not be lawful everywhere.

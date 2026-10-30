@@ -42,6 +42,7 @@ import {
   useConversations,
   useIcebreakers,
   useMessages,
+  useShowPhotos,
   useReact,
   useUnsend,
   useChatPrefs,
@@ -66,6 +67,7 @@ function ChatScreen() {
   const conversations = useConversations();
   const conversation = conversations.data?.find((c) => c.matchId === matchId);
   const messages = useMessages(matchId);
+  const showPhotos = useShowPhotos(matchId);
   const send = useSendMessage(matchId);
   const react = useReact(matchId);
   const unsend = useUnsend(matchId);
@@ -590,6 +592,25 @@ function ChatScreen() {
           </View>
         ) : null}
 
+        {/* Phase 66a: my photos are blurred for them until I show them here. */}
+        {!closed && newest && newest.myPhotosShown !== null ? (
+          <View style={[styles.pad, styles.photosRow]} testID="photos-shown">
+            <AppText variant="caption" tone="muted">
+              {newest.myPhotosShown ? t('blur.shownTo', { name }) : t('blur.blurredFor', { name })}
+            </AppText>
+            <Button
+              variant="secondary"
+              label={newest.myPhotosShown ? t('blur.hideAgain') : t('blur.showTo', { name })}
+              loading={showPhotos.isPending}
+              onPress={() =>
+                showPhotos.mutate(!newest.myPhotosShown, {
+                  onError: () => setError(t('common.genericError')),
+                })
+              }
+            />
+          </View>
+        ) : null}
+
         {!closed && needsVerification ? (
           <View style={styles.pad} testID="verified-only">
             <Banner tone="info" message={t('reach.chatNotice', { name })} />
@@ -774,6 +795,8 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
   },
   replyText: { flex: 1 },
+  // Stacked, so long sentences and 200% text are never squeezed beside the button.
+  photosRow: { gap: 8 },
   composer: {
     flexDirection: 'row',
     alignItems: 'flex-end',

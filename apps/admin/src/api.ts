@@ -131,6 +131,7 @@ export interface AdminInstanceSettings {
   identityPronouns: boolean;
   intentionsOffered: Intention[];
   faithModule: boolean;
+  photosAfterMatch: boolean;
   joinMinAge: number;
   joinMaxAge: number | null;
   joinGenders: Gender[];

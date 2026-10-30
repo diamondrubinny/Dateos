@@ -44,11 +44,11 @@ export const photoRoutes: FastifyPluginAsyncZod<{ auth: Auth; photos: PhotoServi
   );
 
   app.get('/v1/photos/:id', { schema: { params: idParams } }, async (request, reply) => {
-    const object = await photos.open(currentUser(request).id, request.params.id);
+    const photo = await photos.open(currentUser(request).id, request.params.id);
     return reply
       .type('image/webp')
-      .header('cache-control', 'private, max-age=300')
-      .send(object.body);
+      .header('cache-control', photo.noStore ? 'private, no-store' : 'private, max-age=300')
+      .send(photo.body);
   });
 
   app.delete(

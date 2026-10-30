@@ -43,6 +43,7 @@ import {
 } from '@nexaheart/shared';
 import type { Realtime } from '../../lib/realtime.js';
 import { and, asc, desc, eq, gt, inArray, isNull, or, sql } from 'drizzle-orm';
+import { blurredOwners, photosMayBlur } from '../../lib/photo-blur.js';
 import { audit } from '../../lib/audit.js';
 import { openAutoReport } from '../safety/auto-report.js';
 import { HttpError } from '../../plugins/error-handler.js';
@@ -1088,6 +1089,10 @@ export class DiscoveryService {
       }),
     );
 
+    // Phase 66a: photos blurred for this viewer; my own preview shows what strangers see.
+    const blurred = includeViewer
+      ? new Set((await photosMayBlur(this.db, viewerId)) ? [viewerId] : [])
+      : await blurredOwners(this.db, viewerId, ids);
     return items.flatMap((item) => {
       const p = byId.get(item.userId);
       if (!p || (item.userId === viewerId && !includeViewer)) return [];
@@ -1110,7 +1115,9 @@ export class DiscoveryService {
               url: photoUrl(id),
               width,
               height,
-              description,
+              // A blurred photo's description would say what it hides.
+              description: blurred.has(p.userId) ? null : description,
+              ...(blurred.has(p.userId) ? { blurred: true } : {}),
             })),
           distance:
             Number.isFinite(item.km) && !visiting.has(p.userId) ? distanceBucket(item.km) : null,
