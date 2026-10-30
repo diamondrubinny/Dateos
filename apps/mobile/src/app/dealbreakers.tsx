@@ -6,6 +6,8 @@ import {
   HEIGHT_MAX_CM,
   HEIGHT_MIN_CM,
   religionOptions,
+  allStreams,
+  faiths,
   smokingOptions,
   type Dealbreakers,
 } from '@nexaheart/shared';
@@ -20,7 +22,7 @@ import { Loading } from '../components/Loading';
 import { RequireSession } from '../components/RequireSession';
 import { Screen } from '../components/Screen';
 import { TextField } from '../components/TextField';
-import { useMe, useSetDealbreakers } from '../lib/queries';
+import { useInstance, useMe, useSetDealbreakers } from '../lib/queries';
 
 const cm = (text: string) => (text.trim() === '' ? null : Number(text));
 const validCm = (v: number | null) =>
@@ -32,6 +34,7 @@ function DealbreakersScreen() {
   const me = useMe();
   const save = useSetDealbreakers();
   const [d, setD] = useState<Dealbreakers>();
+  const faithModule = useInstance().data?.community?.faith ?? false;
   const [min, setMin] = useState('');
   const [max, setMax] = useState('');
   const [error, setError] = useState<string>();
@@ -115,6 +118,25 @@ function DealbreakersScreen() {
           {t('deal.religionNeedsConsent')}
         </AppText>
       )}
+      {/* Faith and stream (phase 62b), while the community's faith module is on. */}
+      {faithModule && me.data.consents.religion ? (
+        <>
+          <ChoiceGroup
+            label={t('faith.dealFaith')}
+            multiple
+            options={faiths.map((value) => ({ value, label: t(`faith.faiths.${value}`) }))}
+            selected={d.faithOk}
+            onChange={(faithOk) => setD({ ...d, faithOk })}
+          />
+          <ChoiceGroup
+            label={t('faith.dealStream')}
+            multiple
+            options={allStreams.map((value) => ({ value, label: t(`faith.streams.${value}`) }))}
+            selected={d.streamOk}
+            onChange={(streamOk) => setD({ ...d, streamOk })}
+          />
+        </>
+      ) : null}
       <TextField
         label={t('deal.heightMin')}
         value={min}

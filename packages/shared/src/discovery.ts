@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { genderSchema, intentionSchema, promptKeySchema, voicePromptSchema } from './profile.js';
 import { aboutSchema, accessNeedSchema } from './about.js';
 import { publicIdentitySchema } from './identity.js';
+import { faithSchema } from './faith.js';
 import { placeSchema } from './visibility.js';
 
 /** Dimension of stored profile embeddings (hashing provider and 768-d Ollama models). */
@@ -101,6 +102,11 @@ export const publicProfileSchema = z.object({
    * community offers. Optional: partner cards never carry it.
    */
   identity: publicIdentitySchema.nullable().optional(),
+  /**
+   * Faith, stream and observance (phase 62b): only while the community's faith module is on.
+   * Optional: partner cards never carry it.
+   */
+  faith: faithSchema.nullable().optional(),
   /** Opt-in badge: met someone from this community in person, both confirmed (phase 20). */
   metInPerson: z.boolean(),
   /** Opt-in badge: checked in at one of this community's events in the last year (phase 23). */

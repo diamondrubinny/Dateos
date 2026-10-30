@@ -12,13 +12,14 @@ import { MoreOptions } from '../../components/MoreOptions';
 import { ProfileStrength } from '../../components/ProfileStrength';
 import { Screen } from '../../components/Screen';
 import { mediaUrl } from '../../lib/api';
-import { useMe } from '../../lib/queries';
+import { useInstance, useMe } from '../../lib/queries';
 import { routeFor } from '../../lib/routes';
 import { radius, spacing, useColors } from '../../lib/theme';
 import { useSessionCookie } from '../../lib/use-cookie';
 
 function ProfileContent() {
   const { t } = useTranslation();
+  const faithModule = useInstance().data?.community?.faith ?? false;
   const colors = useColors();
   const me = useMe();
   const cookie = useSessionCookie();
@@ -117,6 +118,13 @@ function ProfileContent() {
             label={t('identity.title')}
             onPress={() => router.push('/edit-identity')}
           />
+          {faithModule ? (
+            <Button
+              variant="secondary"
+              label={t('faith.title')}
+              onPress={() => router.push('/edit-faith')}
+            />
+          ) : null}
           <Button
             variant="secondary"
             label={t('access.title')}

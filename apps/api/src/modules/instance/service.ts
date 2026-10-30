@@ -13,6 +13,8 @@ import {
   type Locale,
   type SignupMode,
   type IdentityVocabulary,
+  type Intention,
+  intentions,
 } from '@nexaheart/shared';
 import type { StoredObject } from '@nexaheart/storage';
 import { and, eq, sql } from 'drizzle-orm';
@@ -51,6 +53,8 @@ export interface AdminInstanceSettings {
   identityVocabulary: IdentityVocabulary;
   identityCustom: boolean;
   identityPronouns: boolean;
+  intentionsOffered: Intention[];
+  faithModule: boolean;
 }
 
 export class InstanceService {
@@ -116,6 +120,11 @@ export class InstanceService {
         customGender: row?.identityCustom ?? false,
         pronouns: row?.identityPronouns ?? true,
       },
+      // Phase 62b: intentions offered (all unless narrowed) and the faith module.
+      community: {
+        intentions: offeredIntentions(row?.intentionsOffered),
+        faith: row?.faithModule ?? false,
+      },
       poweredBy: poweredBy(env),
     };
     this.cache = { value, at: Date.now() };
@@ -177,6 +186,8 @@ export class InstanceService {
       identityVocabulary: info.identity.vocabulary,
       identityCustom: info.identity.customGender,
       identityPronouns: info.identity.pronouns,
+      intentionsOffered: info.community.intentions,
+      faithModule: info.community.faith,
     };
   }
 
@@ -314,4 +325,12 @@ export class InstanceService {
     if (claimed === 'wrong')
       throw new HttpError(403, ErrorCode.Forbidden, 'The setup token is not valid.');
   }
+}
+
+/** Phase 62b: the stored list, or all intentions when none was chosen. */
+function offeredIntentions(stored: string[] | null | undefined): Intention[] {
+  const list = (stored ?? []).filter((i): i is Intention =>
+    (intentions as readonly string[]).includes(i),
+  );
+  return list.length > 0 ? list : [...intentions];
 }

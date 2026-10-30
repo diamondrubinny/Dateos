@@ -1,14 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
-import {
-  ageOn,
-  genders,
-  intentions,
-  MIN_AGE,
-  type Gender,
-  type Intention,
-} from '@nexaheart/shared';
+import { ageOn, genders, MIN_AGE, type Gender, type Intention } from '@nexaheart/shared';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -20,7 +13,7 @@ import { ChoiceGroup } from '../../components/Choice';
 import { Screen } from '../../components/Screen';
 import { TextField } from '../../components/TextField';
 import { ApiRequestError } from '../../lib/api';
-import { useCreateProfile } from '../../lib/queries';
+import { useCreateProfile, useOfferedIntentions } from '../../lib/queries';
 import { ONBOARDING_TOTAL } from '../../lib/routes';
 import { spacing } from '../../lib/theme';
 
@@ -54,6 +47,7 @@ export default function ProfileStep() {
   const [gender, setGender] = useState<Gender[]>([]);
   const [interestedIn, setInterestedIn] = useState<Gender[]>([]);
   const [intention, setIntention] = useState<Intention[]>([]);
+  const offeredIntentions = useOfferedIntentions();
   const [bio, setBio] = useState('');
   const [errors, setErrors] = useState<Errors>({});
   const [formError, setFormError] = useState<string>();
@@ -175,7 +169,7 @@ export default function ProfileStep() {
       />
       <ChoiceGroup
         label={t('onboarding.profile.intention')}
-        options={intentions.map((value) => ({ value, label: t(`intention.${value}`) }))}
+        options={offeredIntentions.map((value) => ({ value, label: t(`intention.${value}`) }))}
         selected={intention}
         onChange={setIntention}
         error={errors.intention}

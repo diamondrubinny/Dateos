@@ -60,11 +60,20 @@ export const WEIGHTS = {
 
 /** Symmetric compatibility of what two people are looking for. */
 const INTENTION: Record<Intention, Record<Intention, number>> = {
-  long_term: { long_term: 1, open: 0.7, unsure: 0.6, short_term: 0.2, friends: 0.2 },
-  short_term: { short_term: 1, open: 0.8, unsure: 0.5, long_term: 0.2, friends: 0.3 },
-  open: { open: 1, long_term: 0.7, short_term: 0.8, friends: 0.6, unsure: 0.7 },
-  friends: { friends: 1, open: 0.6, unsure: 0.4, long_term: 0.2, short_term: 0.3 },
-  unsure: { unsure: 0.8, long_term: 0.6, short_term: 0.5, open: 0.7, friends: 0.4 },
+  long_term: { long_term: 1, marriage: 0.9, open: 0.7, unsure: 0.6, short_term: 0.2, friends: 0.2 },
+  // Phase 62b: marriage is closest to long-term.
+  marriage: { marriage: 1, long_term: 0.9, unsure: 0.5, open: 0.4, short_term: 0.1, friends: 0.2 },
+  short_term: {
+    short_term: 1,
+    open: 0.8,
+    unsure: 0.5,
+    long_term: 0.2,
+    marriage: 0.1,
+    friends: 0.3,
+  },
+  open: { open: 1, long_term: 0.7, marriage: 0.4, short_term: 0.8, friends: 0.6, unsure: 0.7 },
+  friends: { friends: 1, open: 0.6, unsure: 0.4, long_term: 0.2, marriage: 0.2, short_term: 0.3 },
+  unsure: { unsure: 0.8, long_term: 0.6, marriage: 0.5, short_term: 0.5, open: 0.7, friends: 0.4 },
 };
 
 /** Typical cosine range per embedding family, so lexical and semantic scores are comparable. */

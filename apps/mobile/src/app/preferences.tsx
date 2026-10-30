@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
-import { intentions, MAX_AGE, MIN_AGE, type Intention } from '@nexaheart/shared';
+import { MAX_AGE, MIN_AGE, type Intention } from '@nexaheart/shared';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
@@ -12,7 +12,7 @@ import { Loading } from '../components/Loading';
 import { RequireSession } from '../components/RequireSession';
 import { Screen } from '../components/Screen';
 import { TextField } from '../components/TextField';
-import { useMe, useSetPreferences } from '../lib/queries';
+import { useMe, useOfferedIntentions, useSetPreferences } from '../lib/queries';
 import { spacing } from '../lib/theme';
 
 const distances = ['5', '10', '25', '50', '100', '250'] as const;
@@ -25,6 +25,7 @@ function PreferencesContent() {
   const [ageMax, setAgeMax] = useState('');
   const [distance, setDistance] = useState<(typeof distances)[number]>('50');
   const [wanted, setWanted] = useState<Intention[]>([]);
+  const offeredIntentions = useOfferedIntentions(wanted);
   // Phase 34: only people a moderator verified.
   const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [notice, setNotice] = useState<'saved' | 'invalid' | 'error'>();
@@ -108,7 +109,7 @@ function PreferencesContent() {
       <ChoiceGroup
         label={t('preferences.intentions')}
         multiple
-        options={intentions.map((value) => ({ value, label: t(`intention.${value}`) }))}
+        options={offeredIntentions.map((value) => ({ value, label: t(`intention.${value}`) }))}
         selected={wanted}
         onChange={setWanted}
       />

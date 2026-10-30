@@ -4,6 +4,8 @@
 import {
   contrastRatio,
   identityVocabularies,
+  intentions,
+  type Intention,
   isAccessiblePrimary,
   type InstanceSettingsInput,
 } from '@nexaheart/shared';
@@ -227,6 +229,7 @@ export function Branding({ wizard, onFinish }: { wizard: boolean; onFinish?: () 
 
           {wizard ? null : <VideoDates settings={settings.data} onSaved={settings.reload} />}
           {wizard ? null : <Identity settings={settings.data} onSaved={settings.reload} />}
+          {wizard ? null : <CommunityProfile settings={settings.data} onSaved={settings.reload} />}
 
           <section className="card" aria-labelledby="logo-title">
             <h2 id="logo-title">{t.branding.logo}</h2>
@@ -431,6 +434,93 @@ function Identity({ settings, onSaved }: { settings: AdminInstanceSettings; onSa
       {error ? <ErrorBox error={error} /> : null}
       <button type="submit" className="button primary" disabled={busy}>
         {t.branding.identitySave}
+      </button>
+    </form>
+  );
+}
+
+/**
+ * Community profile (phase 62b): which intentions members can choose, and the faith module (faith,
+ * stream and observance, with the religion consent). Off and narrowed options are hidden at once;
+ * members keep what they chose.
+ */
+function CommunityProfile({
+  settings,
+  onSaved,
+}: {
+  settings: AdminInstanceSettings;
+  onSaved: () => void;
+}) {
+  const { t } = useLocale();
+  const [offered, setOffered] = useState<Intention[]>(settings.intentionsOffered);
+  const [faith, setFaith] = useState(settings.faithModule);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<Error>();
+  const [saved, setSaved] = useState(false);
+
+  async function save(event: FormEvent) {
+    event.preventDefault();
+    if (busy || offered.length === 0) return;
+    setBusy(true);
+    setError(undefined);
+    setSaved(false);
+    try {
+      await api.saveSettings({ intentionsOffered: offered, faithModule: faith });
+      setSaved(true);
+      onSaved();
+    } catch (err) {
+      setError(err as Error);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <form className="card" aria-labelledby="community-title" onSubmit={save}>
+      <h2 id="community-title">{t.branding.communityTitle}</h2>
+      <p className="help">{t.branding.communityHint}</p>
+      <fieldset aria-describedby="intentions-help">
+        <legend>{t.branding.intentionsOffered}</legend>
+        {intentions.map((i) => (
+          <div key={i} className="checkbox">
+            <input
+              id={`intention-${i}`}
+              type="checkbox"
+              checked={offered.includes(i)}
+              onChange={(e) =>
+                setOffered((list) =>
+                  e.target.checked
+                    ? intentions.filter((x) => x === i || list.includes(x))
+                    : list.filter((x) => x !== i),
+                )
+              }
+            />
+            <label htmlFor={`intention-${i}`}>{t.branding.intentions[i]}</label>
+          </div>
+        ))}
+        <p id="intentions-help" className="help" role={offered.length === 0 ? 'alert' : undefined}>
+          {offered.length === 0 ? t.branding.intentionsNone : t.branding.intentionsHelp}
+        </p>
+      </fieldset>
+      <div className="checkbox">
+        <input
+          id="faith-module"
+          type="checkbox"
+          checked={faith}
+          aria-describedby="faith-module-help"
+          onChange={(e) => setFaith(e.target.checked)}
+        />
+        <label htmlFor="faith-module">{t.branding.faithModule}</label>
+      </div>
+      <p id="faith-module-help" className="help">
+        {t.branding.faithModuleHelp}
+      </p>
+      <p role="status" className={saved ? 'alert alert-ok' : 'visually-hidden'}>
+        {saved ? t.branding.communitySaved : ''}
+      </p>
+      {error ? <ErrorBox error={error} /> : null}
+      <button type="submit" className="button primary" disabled={busy || offered.length === 0}>
+        {t.branding.communitySave}
       </button>
     </form>
   );

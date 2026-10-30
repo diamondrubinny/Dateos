@@ -24,6 +24,9 @@ export function AboutSection({
   const { t } = useTranslation();
   const colors = useColors();
   const facts = [
+    about.relationshipHistory
+      ? t(`about.relationshipHistoryOptions.${about.relationshipHistory}`)
+      : null,
     about.children ? t(`about.childrenOptions.${about.children}`) : null,
     about.smoking ? t(`about.smokingShort.${about.smoking}`) : null,
     about.drinking ? t(`about.drinkingShort.${about.drinking}`) : null,

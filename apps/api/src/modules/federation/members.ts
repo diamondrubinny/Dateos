@@ -25,6 +25,8 @@ import {
   type FederatedViewer,
   type Gender,
   type Intention,
+  partnerIntention,
+  partnerIntentions,
   type PromptKey,
   type RealtimeEvent,
 } from '@nexaheart/shared';
@@ -249,8 +251,8 @@ export class FederatedMembers {
       age: ageOn(row.birthDate, this.today()),
       ageMin: row.ageMin,
       ageMax: row.ageMax,
-      intention: row.intention as Intention,
-      wants: row.wants as Intention[],
+      intention: partnerIntention(row.intention as Intention),
+      wants: partnerIntentions(row.wants as Intention[]),
     };
   }
 
@@ -564,8 +566,8 @@ export class FederatedMembers {
         AND ${viewer.gender}::text = ANY(p.interested_in::text[])
         AND date_part('year', age(${today}, p.birth_date)) BETWEEN ${viewer.ageMin} AND ${viewer.ageMax}
         AND ${viewer.age} BETWEEN pr.age_min AND pr.age_max
-        AND (${viewer.wants.length} = 0 OR p.intention::text = ANY(${sql.param(viewer.wants)}::text[]))
-        AND (cardinality(pr.intentions) = 0 OR ${viewer.intention}::text = ANY(pr.intentions::text[]))
+        AND (${viewer.wants.length} = 0 OR replace(p.intention::text, 'marriage', 'long_term') = ANY(${sql.param(partnerIntentions(viewer.wants))}::text[]))
+        AND (cardinality(pr.intentions) = 0 OR ${partnerIntention(viewer.intention)}::text = ANY(array_replace(pr.intentions::text[], 'marriage', 'long_term')))
         -- Not someone the viewer already decided on, and not someone who blocked the viewer.
         AND (fa.alias IS NULL OR NOT (fa.alias = ANY(${sql.param(exclude)}::text[])))
         AND NOT EXISTS (SELECT 1 FROM federation_decisions d
@@ -621,7 +623,7 @@ export class FederatedMembers {
           displayName: r.name,
           age: ageOn(r.birth_date, this.today()),
           gender: r.gender,
-          intention: r.intention,
+          intention: partnerIntention(r.intention),
           bio: r.bio,
           languages: r.languages.slice(0, 10),
           prompts: promptRows

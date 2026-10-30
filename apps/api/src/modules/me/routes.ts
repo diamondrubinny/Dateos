@@ -5,6 +5,7 @@ import {
   appealInputSchema,
   decisionsSchema,
   identityInputSchema,
+  faithInputSchema,
   consentsInputSchema,
   meResponseSchema,
   aboutSchema,
@@ -137,6 +138,18 @@ export const meRoutes: FastifyPluginAsyncZod<{
     },
     async (request) => {
       await me.setAbout(currentUser(request).id, request.body);
+      return { ok: true as const };
+    },
+  );
+
+  app.put(
+    '/v1/me/faith',
+    {
+      schema: { body: faithInputSchema, response: { 200: ok } },
+      config: perUserLimit(60, 60 * 60 * 1000),
+    },
+    async (request) => {
+      await me.setFaith(currentUser(request).id, request.body);
       return { ok: true as const };
     },
   );

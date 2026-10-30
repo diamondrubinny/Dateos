@@ -20,6 +20,7 @@ import type {
   ModerationAction,
   ModerationGround,
   IdentityVocabulary,
+  Intention,
   AppealSummary,
   ReportDetail,
   ReportSummary,
@@ -110,6 +111,8 @@ export interface AdminInstanceSettings {
   identityVocabulary: IdentityVocabulary;
   identityCustom: boolean;
   identityPronouns: boolean;
+  intentionsOffered: Intention[];
+  faithModule: boolean;
 }
 
 async function upload(path: string, file: File): Promise<void> {

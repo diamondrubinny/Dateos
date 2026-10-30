@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
-import type { Locale } from '@nexaheart/shared';
+import { intentions, type Intention, type Locale } from '@nexaheart/shared';
 import type {
   CoachResponse,
   ConsentInput,
@@ -22,6 +22,7 @@ import type {
   About,
   AccessNeeds,
   IdentityInput,
+  FaithAnswers,
   Dealbreakers,
   Place,
   TravelInput,
@@ -43,6 +44,15 @@ export function useInstance() {
     queryFn: () => apiFetch<InstanceInfo>('/v1/instance'),
     staleTime: 60 * 60 * 1000,
   });
+}
+
+/**
+ * Phase 62b: the intentions this community offers (all of them until the server says otherwise),
+ * plus any in `keep` that a member already chose, so a narrowed list never loses their choice.
+ */
+export function useOfferedIntentions(keep: readonly Intention[] = []): Intention[] {
+  const offered = useInstance().data?.community?.intentions ?? intentions;
+  return intentions.filter((i) => offered.includes(i) || keep.includes(i));
 }
 
 export function useMe(enabled = true) {
@@ -170,6 +180,11 @@ export const useSetAccessNeeds = () =>
 export const useSetIdentity = () =>
   useBreakMutation((input: IdentityInput) =>
     apiFetch('/v1/me/identity', { method: 'PUT', body: json(input) }),
+  );
+/** Faith, stream and observance (phase 62b): what others see changes, so the feeds refresh. */
+export const useSetFaith = () =>
+  useBreakMutation((input: FaithAnswers) =>
+    apiFetch('/v1/me/faith', { method: 'PUT', body: json(input) }),
   );
 export const useSetDealbreakers = () =>
   useBreakMutation((d: Dealbreakers) =>

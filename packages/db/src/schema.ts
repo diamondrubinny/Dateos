@@ -241,6 +241,18 @@ export const profileAbout = pgTable('profile_about', {
   pronouns: varchar('pronouns', { length: 12 }),
   /** Who sees them: everyone, or matches only (the default). */
   identityVisibility: varchar('identity_visibility', { length: 10 }).notNull().default('matches'),
+  /** Phase 62b: relationship history (optional). */
+  relationshipHistory: varchar('relationship_history', { length: 16 }),
+  /**
+   * Phase 62b, the faith module: special-category data, only while the `religion` consent is
+   * given; deleted when it's withdrawn.
+   */
+  faith: varchar('faith', { length: 16 }),
+  faithStream: varchar('faith_stream', { length: 20 }),
+  observance: jsonb('observance')
+    .$type<Record<string, string>>()
+    .notNull()
+    .default(sql`'{}'::jsonb`),
   /** Voice prompt: the prompt it answers and the clip (deleted with it). */
   voicePromptKey: varchar('voice_prompt_key', { length: 40 }),
   voiceAudioId: uuid('voice_audio_id').references(() => audioClips.id, { onDelete: 'set null' }),
@@ -288,6 +300,15 @@ export const preferences = pgTable(
       .notNull()
       .default(sql`'{}'::text[]`),
     religionOk: text('religion_ok')
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
+    /** Phase 62b, faith module dealbreakers (with the `religion` consent). */
+    faithOk: text('faith_ok')
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
+    streamOk: text('stream_ok')
       .array()
       .notNull()
       .default(sql`'{}'::text[]`),
@@ -931,6 +952,9 @@ export const instanceSettings = pgTable(
       .default('extended'),
     identityCustom: boolean('identity_custom').notNull().default(false),
     identityPronouns: boolean('identity_pronouns').notNull().default(true),
+    /** Phase 62b: intentions offered (null: all of them) and the faith module (off by default). */
+    intentionsOffered: text('intentions_offered').array(),
+    faithModule: boolean('faith_module').notNull().default(false),
     updatedBy: text('updated_by').references(() => user.id, { onDelete: 'set null' }),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },

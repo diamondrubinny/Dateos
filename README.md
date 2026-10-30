@@ -93,6 +93,7 @@ NexaHeart is in active development. Here is what works today and what comes next
 | Notifications in the web app (Web Push): matches, messages, calls and check-ins, the same rules as the phone app, encrypted to the browser, no names or text                                                                      | ✅ Available |
 | The reasons for a decision, and an appeal: what was decided and why (the rule or the law), shown in the app; appeal within 6 months, decided by another person in the dashboard                                                   | ✅ Available |
 | Gender identity and pronouns: a longer list or own words, and how to address you (feminine, masculine or neutral in Hebrew, Arabic and Russian); matches only by default; each community chooses what it offers                   | ✅ Available |
+| Marriage, relationship history and a faith module (faith, stream, Shabbat/kashrut/halal…, with filters), each community choosing what it offers                                                                                   | ✅ Available |
 
 ## Screenshots
 

@@ -6,6 +6,12 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Added
 
+- **Marriage, relationship history and a faith module**: "marriage" as an intention (matched
+  closest to long-term); relationship history in "About me"; and, where the community turns it on,
+  faith, stream (e.g. national-religious, Haredi, traditional, Sunni, Catholic) and observance
+  (Shabbat, kashrut, halal, prayer…) with faith and stream filters, with the religion consent.
+  Admins choose the intentions the community offers.
+
 - **Gender identity and pronouns, in the community's own vocabulary**: beside the four genders used
   for matching (unchanged), members can add how they describe themselves (a longer list, or their
   own words where the community allows it) and how to address them (she/her, he/him, they/them; in

@@ -4,6 +4,7 @@
 import { accountNoticeSchema } from './moderation.js';
 import { aboutSchema, accessNeedsSchema, dealbreakersSchema } from './about.js';
 import { identitySettingsSchema, myIdentitySchema } from './identity.js';
+import { faithSchema } from './faith.js';
 import { pauseStateSchema } from './visibility.js';
 import { z } from 'zod';
 import { publicIntegrationsSchema } from './integrations.js';
@@ -21,7 +22,15 @@ export const genders = ['woman', 'man', 'nonbinary', 'other'] as const;
 export const genderSchema = z.enum(genders);
 export type Gender = z.infer<typeof genderSchema>;
 
-export const intentions = ['long_term', 'short_term', 'open', 'friends', 'unsure'] as const;
+/** Phase 62b: `marriage`, matched closest to long-term; partners on older versions get long-term. */
+export const intentions = [
+  'long_term',
+  'marriage',
+  'short_term',
+  'open',
+  'friends',
+  'unsure',
+] as const;
 export const intentionSchema = z.enum(intentions);
 export type Intention = z.infer<typeof intentionSchema>;
 
@@ -201,6 +210,8 @@ export const meResponseSchema = z.object({
   accessNeeds: accessNeedsSchema,
   /** Gender identity and pronouns (phase 62a), with who may see them. */
   identity: myIdentitySchema,
+  /** Faith, stream and observance (phase 62b), with the `religion` consent. */
+  faith: faithSchema,
   voicePrompt: myVoicePromptSchema.nullable(),
   /** Show the "met in person" badge (phase 20, off by default). */
   showMetBadge: z.boolean(),
@@ -262,6 +273,8 @@ export const instanceSchema = z.object({
   signup: z.enum(signupModes),
   /** What the community offers for gender identity and pronouns (phase 62a). */
   identity: identitySettingsSchema,
+  /** Phase 62b: the intentions this community offers, and whether the faith module is on. */
+  community: z.object({ intentions: z.array(intentionSchema), faith: z.boolean() }),
   /** What clients need from the integrations (phase 24): never a secret. */
   integrations: publicIntegrationsSchema,
   /** The software credit every interface shows (license term, see NOTICE). */

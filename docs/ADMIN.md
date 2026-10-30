@@ -225,6 +225,23 @@ and never sent to partner communities or an AI model. Turning an option off hide
 at once; members' choices are kept, so turning it back on restores them. ⚖️ This is special-category
 data (GDPR Art. 9; sensitive under Israel's privacy law).
 
+## 7d. Community profile: intentions and the faith module (phase 62b, admins)
+
+Dashboard → Branding → **Community profile**:
+
+- **Intentions members can choose**, including **marriage** (matched closest to long-term; partner
+  communities see it as long-term). At least one. Members who already chose one you remove keep it
+  until they change it.
+- **Faith module** (off by default): members can add, with the religion consent, their faith, a
+  stream (Jewish: secular, traditional, national-religious, Torani, Haredi, Chabad, Conservative,
+  Reform; Muslim: Sunni, Shia; Christian: Catholic, Orthodox, Protestant) and observance questions
+  that fit the faith (Shabbat, kashrut, shomer negiah, halal, prayer, services), and filter by
+  faith and stream. ⚖️ Special-category data: never ranked on, never sent to partners or an AI
+  model. Turning it off hides everything at once and stops the filters (kept, so turning it on
+  restores them).
+
+Relationship history (never married, divorced, separated, widowed) is always available in "About me".
+
 ## 8. Integrations (phase 24, admins only)
 
 The **Integrations** page connects outside services: see [INTEGRATIONS.md](INTEGRATIONS.md).

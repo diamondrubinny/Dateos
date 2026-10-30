@@ -4,6 +4,10 @@
 import { schema, type Database } from '@nexaheart/db';
 import type { z } from 'zod';
 import {
+  noFaith,
+  type FaithAnswers,
+  type FaithInput,
+  type Intention,
   noIdentity,
   type identityInputSchema,
   type MyIdentity,
@@ -38,7 +42,7 @@ import {
   type ReportCategory,
 } from '@nexaheart/shared';
 import { checkHarm } from '@nexaheart/ai';
-import { readIdentitySettings } from '../../lib/identity-settings.js';
+import { readCommunitySettings, readIdentitySettings } from '../../lib/community-settings.js';
 import { and, asc, desc, eq, isNull, ne, sql } from 'drizzle-orm';
 import { normalizedText, openAutoReport } from '../safety/auto-report.js';
 import { HttpError } from '../../plugins/error-handler.js';
@@ -204,6 +208,7 @@ export class MeService {
             drinking: about.drinking as About['drinking'],
             heightCm: about.heightCm,
             religion: about.religion as About['religion'],
+            relationshipHistory: about.relationshipHistory as About['relationshipHistory'],
             openingQuestion: about.openingQuestion,
           }
         : emptyAbout,
@@ -211,6 +216,13 @@ export class MeService {
         needs: (about?.accessNeeds ?? []) as AccessNeed[],
         show: about?.showAccessNeeds ?? false,
       },
+      faith: about
+        ? {
+            faith: about.faith as FaithAnswers['faith'],
+            stream: about.faithStream as FaithAnswers['stream'],
+            observance: about.observance as FaithAnswers['observance'],
+          }
+        : noFaith,
       identity: about
         ? {
             genderIdentity: about.genderIdentity as MyIdentity['genderIdentity'],
@@ -230,6 +242,8 @@ export class MeService {
             smokingOk: prefs.smokingOk as Dealbreakers['smokingOk'],
             childrenOk: prefs.childrenOk as Dealbreakers['childrenOk'],
             religionOk: prefs.religionOk as Dealbreakers['religionOk'],
+            faithOk: prefs.faithOk as Dealbreakers['faithOk'],
+            streamOk: prefs.streamOk as Dealbreakers['streamOk'],
             heightMin: prefs.heightMin,
             heightMax: prefs.heightMax,
           }
@@ -335,6 +349,43 @@ export class MeService {
   }
 
   /**
+   * Faith, stream and observance (phase 62b): only while the community's faith module is on, and
+   * with the `religion` consent (special-category data).
+   */
+  async setFaith(userId: string, input: FaithInput): Promise<void> {
+    await this.assertConsented(userId);
+    if (!(await readCommunitySettings(this.db)).faith) {
+      throw new HttpError(400, ErrorCode.ValidationError, 'This community doesn’t offer that.');
+    }
+    const answering = input.faith !== null || Object.keys(input.observance).length > 0;
+    if (answering) await this.assertReligionConsent(userId);
+    const values = {
+      faith: input.faith,
+      faithStream: input.stream,
+      observance: input.observance as Record<string, string>,
+      updatedAt: new Date(),
+    };
+    await this.db
+      .insert(profileAbout)
+      .values({ userId, ...values })
+      .onConflictDoUpdate({ target: profileAbout.userId, set: values });
+  }
+
+  /** Phase 62b: a new intention choice must be one the community offers (old ones are kept). */
+  private async assertIntentionOffered(intention: Intention, userId?: string): Promise<void> {
+    const { intentions: offered } = await readCommunitySettings(this.db);
+    if (offered.includes(intention)) return;
+    if (userId) {
+      const [current] = await this.db
+        .select({ intention: profiles.intention })
+        .from(profiles)
+        .where(eq(profiles.userId, userId));
+      if (current?.intention === intention) return;
+    }
+    throw new HttpError(400, ErrorCode.ValidationError, 'This community doesn’t offer that.');
+  }
+
+  /**
    * Gender identity and pronouns (phase 62a): optional, sensitive (the `sensitive` consent, which
    * onboarding requires), and only what the community offers right now.
    */
@@ -391,7 +442,9 @@ export class MeService {
 
   /** Dealbreakers (phase 19): stored with the other preferences, which onboarding creates. */
   async setDealbreakers(userId: string, d: Dealbreakers): Promise<void> {
-    if (d.religionOk.length > 0) await this.assertReligionConsent(userId);
+    if (d.religionOk.length > 0 || d.faithOk.length > 0 || d.streamOk.length > 0) {
+      await this.assertReligionConsent(userId);
+    }
     const updated = await this.db
       .update(preferences)
       .set({ ...d, updatedAt: new Date() })
@@ -478,6 +531,7 @@ export class MeService {
       .where(eq(profiles.userId, userId));
     if (existing) throw new HttpError(409, ErrorCode.Conflict, 'Profile already exists.');
 
+    await this.assertIntentionOffered(input.intention);
     const age = ageOn(input.birthDate, this.today());
     if (age < MIN_AGE) {
       await this.db.transaction(async (tx) => {
@@ -556,6 +610,7 @@ export class MeService {
       Object.entries(input).filter(([, value]) => value !== undefined),
     ) as ProfileUpdate;
     if (Object.keys(values).length === 0) return;
+    if (values.intention !== undefined) await this.assertIntentionOffered(values.intention, userId);
     if (values.gender !== undefined || values.interestedIn !== undefined) {
       await this.assertConsented(userId);
     }
@@ -626,11 +681,15 @@ export class MeService {
       }
       // Withdrawing the religion consent deletes the answer and the filter built on it.
       if (items.some((item) => item.kind === 'religion' && !item.granted)) {
+        // Phase 62b: the faith module's answers and filters too.
         await tx
           .update(profileAbout)
-          .set({ religion: null })
+          .set({ religion: null, faith: null, faithStream: null, observance: {} })
           .where(eq(profileAbout.userId, userId));
-        await tx.update(preferences).set({ religionOk: [] }).where(eq(preferences.userId, userId));
+        await tx
+          .update(preferences)
+          .set({ religionOk: [], faithOk: [], streamOk: [] })
+          .where(eq(preferences.userId, userId));
       }
       // Withdrawing the accessibility consent deletes the needs (phase 25).
       if (items.some((item) => item.kind === 'accessibility' && !item.granted)) {

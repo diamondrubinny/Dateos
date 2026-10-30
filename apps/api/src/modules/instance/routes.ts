@@ -4,6 +4,8 @@
 import {
   defaultIdentitySettings,
   identityVocabularies,
+  intentions,
+  intentionSchema,
   BRAND_ICON_NAMES,
   deriveBrand,
   type InstanceInfo,
@@ -49,6 +51,7 @@ export function instanceInfo(env: Env): InstanceInfo {
     transcripts: false,
     signup: 'open',
     identity: defaultIdentitySettings,
+    community: { intentions: [...intentions], faith: false },
     integrations: { captcha: null, analytics: null, webErrors: false },
     poweredBy: poweredBy(env),
   };
@@ -165,4 +168,6 @@ export const adminSettingsSchema = z.object({
   identityVocabulary: z.enum(identityVocabularies),
   identityCustom: z.boolean(),
   identityPronouns: z.boolean(),
+  intentionsOffered: z.array(intentionSchema),
+  faithModule: z.boolean(),
 });

@@ -102,6 +102,26 @@ const en = {
       'She/her, he/him, they/them or any; in Hebrew, Arabic and Russian: feminine, masculine or neutral address.',
     identitySave: 'Save identity settings',
     identitySaved: 'Identity settings saved.',
+    communityTitle: 'Community profile',
+    communityHint:
+      'What members describe on their profiles. Narrowing a list or turning the faith module off hides it at once; members keep what they chose.',
+    intentionsOffered: 'Intentions members can choose',
+    intentions: {
+      long_term: 'A long-term relationship',
+      marriage: 'Marriage',
+      short_term: 'Something casual',
+      open: 'Open to anything',
+      friends: 'New friends',
+      unsure: 'Still figuring it out',
+    },
+    intentionsHelp:
+      'Marriage is matched closest to long-term. Partner communities see it as long-term.',
+    intentionsNone: 'Choose at least one.',
+    faithModule: 'Faith module (faith, stream and observance)',
+    faithModuleHelp:
+      'Optional for members, with their consent: faith, stream (e.g. national-religious, Haredi, traditional, Sunni, Catholic) and observance questions (Shabbat, kashrut, halal, prayer…), with matching filters. Special-category data ⚖️: never ranked on, never sent to partners or an AI model.',
+    communitySave: 'Save community profile',
+    communitySaved: 'Community profile saved.',
     callsNotConfigured:
       'Video dates need LiveKit on this server. See “Video dates” in docs/SELF_HOSTING.md.',
   },
@@ -906,6 +926,26 @@ const he: Messages = {
       'באנגלית she/her, he/him או they/them; בעברית, בערבית וברוסית: פנייה בלשון נקבה, זכר, ניטרלית, או כל פנייה.',
     identitySave: 'שמירת הגדרות הזהות',
     identitySaved: 'הגדרות הזהות נשמרו.',
+    communityTitle: 'פרופיל הקהילה',
+    communityHint:
+      'מה חברי הקהילה מתארים בפרופיל. צמצום רשימה או כיבוי מודול האמונה מסתירים מיד; הבחירות של חברי הקהילה נשמרות.',
+    intentionsOffered: 'כוונות שאפשר לבחור',
+    intentions: {
+      long_term: 'קשר רציני לטווח ארוך',
+      marriage: 'נישואין',
+      short_term: 'משהו קליל',
+      open: 'פתוח/ה לכל דבר',
+      friends: 'חברים חדשים',
+      unsure: 'עוד לא בטוח/ה',
+    },
+    intentionsHelp:
+      'נישואין מותאמים הכי קרוב לקשר לטווח ארוך. קהילות שותפות רואות זאת כקשר לטווח ארוך.',
+    intentionsNone: 'יש לבחור לפחות אחת.',
+    faithModule: 'מודול אמונה (דת, זרם ושמירה)',
+    faithModuleHelp:
+      'לא חובה לחברי הקהילה, ובהסכמתם: דת, זרם (למשל דתי־לאומי, חרדי, מסורתי, סוני, קתולי) ושאלות שמירה (שבת, כשרות, חלאל, תפילה…), עם מסנני התאמה. מידע רגיש במיוחד ⚖️: לא משמש לדירוג ולא נשלח לשותפויות או למודל AI.',
+    communitySave: 'שמירת פרופיל הקהילה',
+    communitySaved: 'פרופיל הקהילה נשמר.',
     callsNotConfigured:
       'דייטים בווידאו דורשים LiveKit בשרת הזה. פרטים בפרק “Video dates” בקובץ docs/SELF_HOSTING.md.',
   },
