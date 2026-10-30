@@ -6,6 +6,11 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Added
 
+- **Age checks through the community's provider**: an admin can require every member to confirm
+  they're over 18 with an age-check provider set up on the server. The provider sends back only the
+  result, signed (HMAC) and single-use; the community never sees an ID or a photo. Under 18
+  suspends the account.
+
 - **Presets and who may join**: one click sets a community up as general, LGBTQ+, faith and
   marriage, 50+ or friendship only; admins can set an age range, limit joining to some genders and
   ask new members to confirm a declaration. Onboarding shows the rules and explains a refusal

@@ -118,6 +118,8 @@ export interface AdminInstanceSettings {
   joinMaxAge: number | null;
   joinGenders: Gender[];
   joinDeclaration: string | null;
+  ageCheckConfigured: boolean;
+  ageCheckRequired: boolean;
 }
 
 async function upload(path: string, file: File): Promise<void> {
