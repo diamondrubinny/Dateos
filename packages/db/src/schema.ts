@@ -965,6 +965,8 @@ export const instanceSettings = pgTable(
       .notNull()
       .default(sql`'{}'::text[]`),
     joinDeclaration: varchar('join_declaration', { length: 300 }),
+    /** Phase 63: an age check is required (only effective where a provider is configured). */
+    ageCheckRequired: boolean('age_check_required').notNull().default(false),
     updatedBy: text('updated_by').references(() => user.id, { onDelete: 'set null' }),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
@@ -1806,3 +1808,30 @@ export const updateRequests = pgTable(
     index('update_requests_time_idx').on(t.requestedAt),
   ],
 );
+
+/**
+ * Phase 63: one-time sessions at the age-check provider (15 minutes, bound to the member). Used
+ * ones are kept until they expire, so a replay is refused.
+ */
+export const ageCheckSessions = pgTable(
+  'age_check_sessions',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: ownerId(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    usedAt: timestamp('used_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index('age_check_sessions_user_idx').on(t.userId)],
+);
+
+/**
+ * Phase 63: the latest age-check result per member, and only the result: over 18 or not, the
+ * provider's method name and when. Never a document, photo or date of birth.
+ */
+export const ageChecks = pgTable('age_checks', {
+  userId: ownerId().primaryKey(),
+  result: varchar('result', { length: 12 }).notNull(),
+  method: varchar('method', { length: 40 }).notNull(),
+  checkedAt: timestamp('checked_at', { withTimezone: true }).notNull(),
+});

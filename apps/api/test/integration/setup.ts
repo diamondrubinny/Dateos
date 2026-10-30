@@ -25,6 +25,11 @@ import { createServices, type Services } from '../../src/services.js';
 
 /** A well-formed (made-up) VAPID public key: the API only hands it to browsers. */
 export const TEST_WEB_PUSH_KEY = `B${'A'.repeat(86)}`;
+/** Phase 63: a pretend age-check provider (never a real secret). */
+export const TEST_AGE_CHECK = {
+  AGE_CHECK_URL: 'https://age.example.test/check',
+  AGE_CHECK_SECRET: 'test-only-age-check-secret-0123456789abcdef',
+};
 
 export const integrationEnabled = process.env.INTEGRATION === '1';
 
@@ -87,6 +92,8 @@ export interface SetupOptions {
   appCommit?: string;
   /** Phase 60: the server's Web Push public key; '' turns web notifications off. */
   webPushKey?: string;
+  /** Phase 63: an age-check provider (TEST_AGE_CHECK) for this suite. */
+  ageCheck?: boolean;
   /** Text AI model for this suite (default: none). */
   /** Pass undefined to use the dashboard's model (phase 24). */
   textModel?: TextModel | null | undefined;
@@ -143,6 +150,7 @@ export async function setupIntegration(options: SetupOptions = {}): Promise<Test
     UPDATE_CHECK: 'on',
     UPDATE_EMAILS: 'on',
     WEB_PUSH_PUBLIC_KEY: options.webPushKey ?? TEST_WEB_PUSH_KEY,
+    ...(options.ageCheck ? TEST_AGE_CHECK : {}),
   });
   await runMigrations(env.DATABASE_URL);
 

@@ -144,6 +144,8 @@ export class MeService {
     const missing: OnboardingStep[] = [];
     if (!this.hasRequiredConsents(consentState)) missing.push('consents');
     if (!profile) missing.push('profile');
+    // Phase 63: where the community requires an age check, before anything else is shown.
+    else if (await this.ageCheckMissing(userId)) missing.push('age_check');
     if (photoRows.length < MIN_PHOTOS) missing.push('photos');
     if (promptRows.length === 0) missing.push('prompts');
     const [location] = await this.db
@@ -369,6 +371,12 @@ export class MeService {
       .insert(profileAbout)
       .values({ userId, ...values })
       .onConflictDoUpdate({ target: profileAbout.userId, set: values });
+  }
+
+  /** Phase 63: whether this member still owes the community's age check. */
+  private ageCheckMissing: (userId: string) => Promise<boolean> = async () => false;
+  useAgeCheck(missing: (userId: string) => Promise<boolean>): void {
+    this.ageCheckMissing = missing;
   }
 
   /** Phase 62b: a new intention choice must be one the community offers (old ones are kept). */

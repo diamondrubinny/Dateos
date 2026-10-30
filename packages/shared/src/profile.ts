@@ -196,7 +196,15 @@ export const photoSchema = z.object({
 export type Photo = z.infer<typeof photoSchema>;
 
 // Consents come first: nothing sensitive is stored before the person has agreed to it.
-export const onboardingSteps = ['consents', 'profile', 'photos', 'prompts', 'location'] as const;
+/** Phase 63: `age_check`, only where the community requires one. */
+export const onboardingSteps = [
+  'consents',
+  'profile',
+  'age_check',
+  'photos',
+  'prompts',
+  'location',
+] as const;
 export type OnboardingStep = (typeof onboardingSteps)[number];
 
 export const meResponseSchema = z.object({
@@ -280,6 +288,8 @@ export const instanceSchema = z.object({
     intentions: z.array(intentionSchema),
     faith: z.boolean(),
     /** Phase 62c: who may join (checked when the profile is created). */
+    /** Phase 63: an age check is required (and a provider is configured). */
+    ageCheck: z.boolean(),
     join: z.object({
       minAge: z.number().int(),
       maxAge: z.number().int().nullable(),
