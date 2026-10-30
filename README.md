@@ -89,7 +89,7 @@ NexaHeart is in active development. Here is what works today and what comes next
 | Running it: one command over SSH installs and updates, encrypted daily backups with an alert when they stop, a System page in the dashboard                                                                                       | ✅ Available |
 | Updates from GitHub in the dashboard: what was added or fixed, approve now or at a time you choose, a backup first and an automatic way back, emails when one is waiting and when it's done, a history                            | ✅ Available |
 | Short outages without losing anyone: while the server restarts, members see "can't reach the community right now" (not signed out) and carry on by themselves                                                                     | ✅ Available |
-| An installable web app (PWA): add to the home screen with the community's name, icon and colour; opens without the server or a connection                                                                                         | ✅ Available |
+| An installable web app (PWA): add to the home screen with the community's name, colour and logo as the icon; opens without the server or a connection                                                                             | ✅ Available |
 
 ## Screenshots
 
