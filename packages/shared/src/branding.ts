@@ -35,7 +35,7 @@ export function mix(a: string, b: string, weight: number): string {
 }
 
 /** Shipped default; the app shows the tagline only when an operator replaced it. */
-export const DEFAULT_TAGLINE = 'Free, open-source dating. Built for real connections.';
+export const DEFAULT_TAGLINE = 'Your people. Your someone.';
 
 export const LIGHT_BACKGROUND = '#FFFFFF';
 export const DARK_BACKGROUND = '#120F1C';
