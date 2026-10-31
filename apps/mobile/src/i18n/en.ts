@@ -1326,6 +1326,45 @@ export const en = {
     showArchived: 'Archived chats ({{count}})',
     hideArchived: 'Hide archived chats ({{count}})',
   },
+  discretion: {
+    title: 'Discretion',
+    hideDistanceLabel: 'Hide my distance',
+    hideDistanceHint:
+      'Others see no distance, “near you” or “visiting” for you. Matching still works.',
+    discreetLabel: 'Discreet notifications',
+    discreetHint:
+      'Notifications say only “New notification”: not the community’s name, and not whether it’s a message or a match.',
+  },
+  appLock: {
+    title: 'App lock',
+    intro:
+      'A code of 4 to 8 digits, asked when the app opens and after 5 minutes away. It’s kept only on this device.',
+    limits:
+      'It stops someone holding your unlocked phone, not a phone that’s already compromised. If you forget it, you sign in again on this device.',
+    isOn: 'App lock is on for this device.',
+    isOff: 'App lock is off.',
+    current: 'Current code',
+    newCode: 'New code (4–8 digits)',
+    again: 'New code again',
+    turnOn: 'Turn on app lock',
+    change: 'Change the code',
+    turnOff: 'Turn off app lock',
+    saved: 'App lock is on.',
+    removed: 'App lock is off.',
+    invalid: 'Use 4 to 8 digits.',
+    mismatch: 'The two codes are different.',
+    wrong: 'That code isn’t right.',
+    wait: 'Too many tries. Wait {{seconds}} seconds and try again.',
+    locked: 'Locked',
+    code: 'Your code',
+    open: 'Open',
+    forgot: 'Forgot the code? Sign out on this device',
+  },
+  helpNearYou: {
+    title: 'Help near you',
+    intro: 'Local help listed by {{name}}:',
+    none: 'Nothing is listed yet.',
+  },
   album: {
     title: 'Private album',
     intro:

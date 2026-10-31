@@ -6,6 +6,11 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Added
 
+- **Discretion**: hide my distance (no distance, "near you" or "visiting" for others), discreet
+  notifications ("New notification", without the community's name or what happened), an app lock
+  code kept only on the device (asked on opening and after 5 minutes away), and "Help near you",
+  local help the community lists in the dashboard.
+
 - **Private album**: up to 6 photos never on the profile, shared from a chat with one match for one
   look (a minute), 10 minutes from the first look, or without a limit; stopping or ending the match
   closes it at once. The server checks the share on every photo request.

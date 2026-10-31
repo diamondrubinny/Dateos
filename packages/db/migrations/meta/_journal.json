@@ -463,6 +463,13 @@
       "when": 1793406350809,
       "tag": "0065_private_album",
       "breakpoints": true
+    },
+    {
+      "idx": 66,
+      "version": "7",
+      "when": 1793408898896,
+      "tag": "0066_discretion",
+      "breakpoints": true
     }
   ]
 }

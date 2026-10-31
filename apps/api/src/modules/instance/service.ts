@@ -58,6 +58,7 @@ export interface AdminInstanceSettings {
   intentionsOffered: Intention[];
   faithModule: boolean;
   photosAfterMatch: boolean;
+  safetyResources: string | null;
   joinMinAge: number;
   joinMaxAge: number | null;
   joinGenders: Gender[];
@@ -136,6 +137,7 @@ export class InstanceService {
         intentions: offeredIntentions(row?.intentionsOffered),
         faith: row?.faithModule ?? false,
         photosAfterMatch: row?.photosAfterMatch ?? false,
+        safetyResources: row?.safetyResources ?? null,
         join: {
           minAge: Math.max(MIN_AGE, row?.joinMinAge ?? MIN_AGE),
           maxAge: row?.joinMaxAge ?? null,
@@ -207,6 +209,7 @@ export class InstanceService {
       intentionsOffered: info.community.intentions,
       faithModule: info.community.faith,
       photosAfterMatch: info.community.photosAfterMatch,
+      safetyResources: info.community.safetyResources,
       joinMinAge: info.community.join.minAge,
       joinMaxAge: info.community.join.maxAge,
       joinGenders: info.community.join.genders,

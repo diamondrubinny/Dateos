@@ -97,6 +97,9 @@ const plainText = (max: number) =>
     // eslint-disable-next-line no-control-regex -- matching control characters is the point
     .refine((v) => !/[\u0000-\u001F\u007F<>]/.test(v), 'Plain text only');
 
+/** Phase 67a: the longest list of local help. */
+export const MAX_SAFETY_RESOURCES = 2000;
+
 /** Phase 62c: the longest community declaration. */
 export const MAX_JOIN_DECLARATION = 300;
 
@@ -132,6 +135,15 @@ export const instanceSettingsInputSchema = z
     faithModule: z.boolean(),
     /** Phase 66a: everyone's photos are blurred until two people match. */
     photosAfterMatch: z.boolean(),
+    /** Phase 67a: local help (legal aid, emergency lines), plain text with line breaks. */
+    safetyResources: z
+      .string()
+      .trim()
+      .min(1)
+      .max(MAX_SAFETY_RESOURCES)
+      // eslint-disable-next-line no-control-regex -- matching control characters is the point
+      .refine((v) => !/[\u0000-\u0009\u000B\u000C\u000E-\u001F\u007F<>]/.test(v), 'Plain text only')
+      .nullable(),
     /**
      * Phase 62c, who may join: ages (never below 18), genders (empty: everyone) and a declaration
      * every new member confirms. ⚖️ Restricting membership may not be lawful everywhere.

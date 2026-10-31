@@ -303,6 +303,10 @@ export const preferences = pgTable(
     verifiedContactOnly: boolean('verified_contact_only').notNull().default(false),
     /** Phase 66a: my photos are blurred for others until I show them to a match. */
     blurPhotos: boolean('blur_photos').notNull().default(false),
+    /** Phase 67a: others see no distance, "near you" or "visiting" for me. */
+    hideDistance: boolean('hide_distance').notNull().default(false),
+    /** Phase 67a: notifications without the community's name or what happened. */
+    discreetNotifications: boolean('discreet_notifications').notNull().default(false),
     /** Receiver control: people can turn video and voice calls off (phase 15). */
     acceptCalls: boolean('accept_calls').notNull().default(true),
     /** Dealbreakers (phase 19): empty means any; a missing answer always passes. */
@@ -974,6 +978,8 @@ export const instanceSettings = pgTable(
     faithModule: boolean('faith_module').notNull().default(false),
     /** Phase 66a: everyone's photos are blurred until two people match (text first). */
     photosAfterMatch: boolean('photos_after_match').notNull().default(false),
+    /** Phase 67a: local help the operator lists (legal aid, emergency lines), plain text. */
+    safetyResources: varchar('safety_resources', { length: 2000 }),
     /** Phase 62c: who may join (ages, genders: empty means everyone) and a declaration. */
     joinMinAge: smallint('join_min_age').notNull().default(18),
     joinMaxAge: smallint('join_max_age'),

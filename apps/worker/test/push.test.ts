@@ -20,3 +20,19 @@ describe('push content', () => {
     expect(pushContent('message', 'toString', 'Ahava').body).toBe('You have a new message');
   });
 });
+
+describe('discreet notifications (phase 67a)', () => {
+  it('say nothing about the community or what happened, in every language', () => {
+    for (const locale of ['en', 'he', 'ar', 'ru', 'fr']) {
+      for (const kind of ['message', 'match', 'call', 'event', 'checkin'] as const) {
+        const content = pushContent(kind, locale, 'Rainbow Club', true);
+        expect(JSON.stringify(content)).not.toContain('Rainbow');
+        expect(content).toEqual(pushContent('message', locale, 'Other', true));
+      }
+    }
+    expect(pushContent('match', 'he', 'Rainbow Club', true)).toEqual({
+      title: 'התראה חדשה',
+      body: 'יש משהו חדש',
+    });
+  });
+});
