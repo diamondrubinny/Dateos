@@ -23,6 +23,9 @@ export const BRAND_ICON_NAMES = [
 ] as const;
 export type BrandIconName = (typeof BRAND_ICON_NAMES)[number];
 
+/** Phase 67b: the colour of a discreet app's plain icons and bar. */
+export const DISCREET_COLOR = '#4B5563';
+
 /** Home-screen labels are short: longer names are cut (whole characters, not halves of emoji). */
 export const PWA_SHORT_NAME_MAX = 12;
 
@@ -50,9 +53,12 @@ export interface WebManifest {
 export function webManifest(
   info: Pick<InstanceInfo, 'name' | 'tagline' | 'defaultLocale' | 'brand'> & {
     logoUrl?: string | null;
+    /** Phase 67b: a neutral name; then plain icons, no description and a neutral colour. */
+    discreetName?: string | null;
   },
 ): WebManifest {
-  const name = info.name.replace(/\s+/g, ' ').trim() || 'NexaHeart';
+  const discreet = info.discreetName?.trim() || null;
+  const name = discreet ?? (info.name.replace(/\s+/g, ' ').trim() || 'NexaHeart');
   const chars = Array.from(name);
   const shortName =
     chars.length <= PWA_SHORT_NAME_MAX ? name : chars.slice(0, PWA_SHORT_NAME_MAX).join('').trim();
@@ -61,7 +67,7 @@ export function webManifest(
   return {
     name,
     short_name: shortName,
-    description: info.tagline.replace(/\s+/g, ' ').trim(),
+    description: discreet ? '' : info.tagline.replace(/\s+/g, ' ').trim(),
     id: '/',
     start_url: '/',
     scope: '/',
@@ -69,9 +75,15 @@ export function webManifest(
     orientation: 'portrait',
     lang,
     dir: locale.success && isRtl(locale.data) ? 'rtl' : 'ltr',
-    theme_color: info.brand.light.primary,
+    theme_color: discreet ? DISCREET_COLOR : info.brand.light.primary,
     background_color: '#FFFFFF',
-    icons: PWA_ICONS.map((icon) => ({ ...icon, src: iconSrc(icon.src, info.logoUrl) })),
+    icons: PWA_ICONS.map((icon) => ({
+      ...icon,
+      // Phase 67b: the API makes plain icons for a discreet app (never the logo or the heart).
+      src: discreet
+        ? `${icon.src.replace('/icons/', '/brand-icons/')}?v=discreet`
+        : iconSrc(icon.src, info.logoUrl),
+    })),
   };
 }
 

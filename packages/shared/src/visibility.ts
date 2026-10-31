@@ -76,9 +76,21 @@ export const placesQuerySchema = z.object({ q: z.string().trim().min(2).max(60) 
 export const travelInputSchema = z.object({
   cityId: z.number().int().positive(),
   days: z.number().int().min(1).max(TRAVEL_MAX_DAYS),
+  /**
+   * Phase 67b: in a country the community considers at risk, hide me from new people for the trip
+   * (the default there); ignored elsewhere.
+   */
+  hideWhileThere: z.boolean().optional(),
 });
 export type TravelInput = z.infer<typeof travelInputSchema>;
 
 /** null: at home. */
-export const travelStateSchema = placeSchema.extend({ until: z.string() }).nullable();
+export const travelStateSchema = placeSchema
+  .extend({
+    until: z.string(),
+    /** Phase 67b: a country the community considers at risk, and whether I'm hidden there. */
+    atRisk: z.boolean(),
+    hidden: z.boolean(),
+  })
+  .nullable();
 export type TravelState = z.infer<typeof travelStateSchema>;

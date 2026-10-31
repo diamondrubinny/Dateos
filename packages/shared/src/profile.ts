@@ -272,6 +272,8 @@ export const instanceSchema = z.object({
     dark: z.object({ primary: z.string(), primarySoft: z.string() }),
   }),
   logoUrl: z.string().nullable(),
+  /** Phase 67b: the installed app's neutral name (tab title, notifications), or null. */
+  discreetName: z.string().nullable(),
   /** Who runs this instance (shown in the legal pages and accessibility statement). */
   operatorName: z.string().nullable(),
   contactEmail: z.string().nullable(),
@@ -293,6 +295,8 @@ export const instanceSchema = z.object({
     photosAfterMatch: z.boolean(),
     /** Phase 67a: local help the operator lists; null when none. */
     safetyResources: z.string().nullable(),
+    /** Phase 67b: countries the community considers dangerous (ISO codes). */
+    riskCountries: z.array(z.string()),
     /** Phase 62c: who may join (checked when the profile is created). */
     /** Phase 63: an age check is required (and a provider is configured). */
     ageCheck: z.boolean(),

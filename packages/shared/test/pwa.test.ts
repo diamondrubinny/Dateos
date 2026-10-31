@@ -3,7 +3,7 @@
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 import { describe, expect, it } from 'vitest';
 import { deriveBrand } from '../src/branding.js';
-import { PWA_SHORT_NAME_MAX, webManifest } from '../src/pwa.js';
+import { DISCREET_COLOR, PWA_SHORT_NAME_MAX, webManifest } from '../src/pwa.js';
 
 const info = (name: string, defaultLocale = 'en') => ({
   name,
@@ -65,5 +65,27 @@ describe('the web app manifest (phase 57)', () => {
     expect(
       webManifest({ ...info('Ahava'), logoUrl: '/v1/instance/logo?v=<script>' }).icons[0]!.src,
     ).toBe('/icons/icon-192.png');
+  });
+});
+
+describe('a discreet app (phase 67b)', () => {
+  it('a neutral name, no description, a neutral colour and plain icons, never the logo', () => {
+    const m = webManifest({
+      ...info('Rainbow Club'),
+      logoUrl: '/v1/instance/logo?v=0f8fad5b-d9cb-469f-a165-70867728950e',
+      discreetName: 'Notes',
+    });
+    expect(m).toMatchObject({
+      name: 'Notes',
+      short_name: 'Notes',
+      description: '',
+      theme_color: DISCREET_COLOR,
+    });
+    expect(JSON.stringify(m)).not.toContain('Rainbow');
+    expect(
+      m.icons.every((i) => i.src.startsWith('/brand-icons/') && i.src.endsWith('?v=discreet')),
+    ).toBe(true);
+    // Without it, as before.
+    expect(webManifest({ ...info('Rainbow Club'), discreetName: null }).name).toBe('Rainbow Club');
   });
 });

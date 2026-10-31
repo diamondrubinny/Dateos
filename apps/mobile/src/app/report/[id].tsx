@@ -129,6 +129,12 @@ function ReportScreen() {
         }}
         error={missingCategory ? t('report.pickCategory') : undefined}
       />
+      {/* Phase 67b: a common sign of a fake profile or a setup, from LGBTQ+ safety guides. */}
+      {category === 'fake_profile' ? (
+        <AppText variant="caption" tone="muted" testID="fake-profile-hint">
+          {t('report.fakeProfileHint')}
+        </AppText>
+      ) : null}
       <TextField
         label={t('report.details')}
         hint={t('report.detailsHint')}

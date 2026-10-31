@@ -26,7 +26,7 @@ import { HttpError } from '../../plugins/error-handler.js';
 import type { AuthUser } from '../../auth/session.js';
 import type { PhotoService } from '../photos/service.js';
 import { liveKitConfigured } from '../../lib/livekit.js';
-import { brandIcon } from './brand-icons.js';
+import { brandIcon, plainIcon } from './brand-icons.js';
 import { poweredBy } from '../../lib/credit.js';
 
 const { instanceSettings, photos, user } = schema;
@@ -59,6 +59,8 @@ export interface AdminInstanceSettings {
   faithModule: boolean;
   photosAfterMatch: boolean;
   safetyResources: string | null;
+  discreetName: string | null;
+  riskCountries: string[];
   joinMinAge: number;
   joinMaxAge: number | null;
   joinGenders: Gender[];
@@ -117,6 +119,7 @@ export class InstanceService {
       legal: { termsVersion: env.TERMS_VERSION, privacyVersion: env.PRIVACY_VERSION },
       brand: deriveBrand(primaryColor),
       // The id in the URL changes with the logo, so clients can cache it safely.
+      discreetName: row?.discreetName ?? null,
       logoUrl: (await this.logoReady(row?.logoPhotoId))
         ? `/v1/instance/logo?v=${row!.logoPhotoId!.slice(0, 8)}`
         : null,
@@ -138,6 +141,7 @@ export class InstanceService {
         faith: row?.faithModule ?? false,
         photosAfterMatch: row?.photosAfterMatch ?? false,
         safetyResources: row?.safetyResources ?? null,
+        riskCountries: row?.riskCountries ?? [],
         join: {
           minAge: Math.max(MIN_AGE, row?.joinMinAge ?? MIN_AGE),
           maxAge: row?.joinMaxAge ?? null,
@@ -164,6 +168,13 @@ export class InstanceService {
    */
   async brandIcon(name: BrandIconName): Promise<Buffer | null> {
     const row = await this.row();
+    // Phase 67b: a discreet app gets plain icons, never the logo (or the built-in heart).
+    if (row?.discreetName) {
+      const key = `discreet:${name}`;
+      const cached = this.icons.get(key) ?? (await plainIcon(name));
+      this.icons.set(key, cached);
+      return cached;
+    }
     if (!row?.logoPhotoId || !(await this.logoReady(row.logoPhotoId))) return null;
     const key = `${row.logoPhotoId}:${name}`;
     const cached = this.icons.get(key);
@@ -210,6 +221,8 @@ export class InstanceService {
       faithModule: info.community.faith,
       photosAfterMatch: info.community.photosAfterMatch,
       safetyResources: info.community.safetyResources,
+      discreetName: info.discreetName,
+      riskCountries: info.community.riskCountries,
       joinMinAge: info.community.join.minAge,
       joinMaxAge: info.community.join.maxAge,
       joinGenders: info.community.join.genders,

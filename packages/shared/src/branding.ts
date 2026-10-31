@@ -135,6 +135,13 @@ export const instanceSettingsInputSchema = z
     faithModule: z.boolean(),
     /** Phase 66a: everyone's photos are blurred until two people match. */
     photosAfterMatch: z.boolean(),
+    /** Phase 67b: a neutral name for the installed app (with plain icons), or null. */
+    discreetName: plainText(30).nullable(),
+    /** Phase 67b: countries the community considers dangerous (ISO 3166-1 alpha-2), each once. */
+    riskCountries: z
+      .array(z.string().regex(/^[A-Z]{2}$/))
+      .max(250)
+      .refine((l) => new Set(l).size === l.length),
     /** Phase 67a: local help (legal aid, emergency lines), plain text with line breaks. */
     safetyResources: z
       .string()

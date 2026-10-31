@@ -27,7 +27,10 @@ function Navigator() {
   const { direction } = useLocale();
   const colors = useColors();
   const session = authClient.useSession();
-  const name = useInstance().data?.name;
+  const instanceInfo = useInstance().data;
+  // Phase 67b: a discreet app shows its neutral name and a plain icon in the browser tab too.
+  const name = instanceInfo?.discreetName ?? instanceInfo?.name;
+  const discreet = Boolean(instanceInfo?.discreetName);
   useEffect(() => {
     if (Platform.OS === 'web') return;
     // Tapping a notification opens the conversation (the payload carries only the match id).
@@ -60,6 +63,11 @@ function Navigator() {
     // Browser tab and bookmarks show the community's own name.
     if (Platform.OS === 'web' && name) document.title = name;
   }, [name]);
+  useEffect(() => {
+    if (Platform.OS !== 'web' || !discreet) return;
+    const icon = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
+    if (icon) icon.href = '/brand-icons/icon-192.png?v=discreet';
+  }, [discreet]);
   const webDir = (Platform.OS === 'web' ? { dir: direction } : {}) as object;
   return (
     <RouterLocaleProvider direction={direction}>

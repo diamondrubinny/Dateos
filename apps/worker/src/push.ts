@@ -204,9 +204,14 @@ async function sendToDevices(ctx: PushContext, job: PushJob): Promise<PushResult
   if (throttle !== 'OK') return 'throttled';
 
   const [settings] = await ctx.db
-    .execute<{ name: string | null }>(sql`SELECT name FROM instance_settings WHERE id = 1`)
+    .execute<{
+      name: string | null;
+      discreet: string | null;
+    }>(sql`SELECT name, discreet_name AS discreet FROM instance_settings WHERE id = 1`)
     .then((r) => r.rows);
-  const instanceName = settings?.name ?? process.env.INSTANCE_NAME ?? 'NexaHeart';
+  // Phase 67b: a discreet app's neutral name, never the community's, on every notification.
+  const instanceName =
+    settings?.discreet ?? settings?.name ?? process.env.INSTANCE_NAME ?? 'NexaHeart';
   const discreet =
     (
       await ctx.db.execute<{ yes: boolean }>(
