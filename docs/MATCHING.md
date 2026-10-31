@@ -74,7 +74,15 @@ That someone liked you is used for ranking only. Their like appears in your **Li
 **Fairness:** `exposure = 1 / (1 + times shown in the last 24 h / 20)` dampens profiles that everyone is already seeing,
 and members in their first week get a ×1.1 boost.
 
-`score = compatibility × reciprocity × fairness`, scaled to 0–1000. Ties are broken by a stable daily key, so lists don't reshuffle on reload.
+**Accountability** (phase 70): while **5 or more** people a member **matched with** have been waiting
+over 3 days for their reply (the other person wrote last), new people see them a bit less (×0.6).
+Only matches count, never incoming likes they didn't return, and it lifts at once when they reply or
+close kindly: no penalty period. Someone who met a match in person (both confirmed, in the last 180
+days) gets ×1.05. Neither is ever shown to others; the member sees the first under Profile → **My
+visibility**, which lists everything that limits who can find them (a break, incognito, no photo,
+no area, waiting for approval, the daily like limit, verified members only, people waiting).
+
+`fairness = exposure × newcomer × accountability`, and `score = compatibility × reciprocity × fairness`, scaled to 0–1000. Ties are broken by a stable daily key, so lists don't reshuffle on reload.
 
 ## Step 3: surfaces
 

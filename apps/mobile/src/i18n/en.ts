@@ -1207,6 +1207,40 @@ export const en = {
     remove: 'Remove',
     full: 'Your “Maybe later” list is full (30). Decide on someone there first.',
   },
+  myVisibility: {
+    open: 'My visibility',
+    title: 'My visibility',
+    intro:
+      'Who can find you right now, and why not everyone can. Nothing limits your visibility without being listed here.',
+    visible: 'You’re visible: new people who fit your preferences can find you.',
+    hiddenTitle: 'New people can’t find you right now',
+    fewerTitle: 'Fewer people see you right now',
+    private: 'Only you see this page.',
+    item: {
+      on_break: 'You’re taking a break until you end it. Your matches still see you.',
+      on_break_until: 'You’re taking a break until {{date}}. Your matches still see you.',
+      incognito: 'Incognito is on: only people you liked can see you.',
+      no_photo: 'There’s no approved photo yet. A profile needs at least one.',
+      no_location: 'Your area isn’t set.',
+      pending_review:
+        'Your profile is waiting for the moderators’ approval. You’ll hear as soon as it’s checked.',
+      like_limit:
+        'You got the most likes you chose for one day (limit: {{count}}). New people see you again tomorrow.',
+      verified_only:
+        'You chose to hear only from verified members, so people who aren’t verified can’t start a chat.',
+      unanswered:
+        'People waiting for your reply for over 3 days: {{count}}. Until fewer are waiting, new people see you a bit less. Reply, or close kindly, and it lifts at once.',
+    },
+    fix: {
+      on_break: 'Open settings',
+      incognito: 'Open settings',
+      no_photo: 'Add a photo',
+      no_location: 'Set your area',
+      like_limit: 'Change the limit',
+      verified_only: 'Change who can reach me',
+      unanswered: 'Open my chats',
+    },
+  },
   preview: {
     open: 'See my profile as others do',
     title: 'Your profile, as others see it',

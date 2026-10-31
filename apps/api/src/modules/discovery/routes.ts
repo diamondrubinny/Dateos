@@ -18,6 +18,7 @@ import {
   yourTurnSchema,
   blockedPersonSchema,
   profilePreviewSchema,
+  myVisibilitySchema,
 } from '@nexaheart/shared';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { perUserLimit } from '../../plugins/security.js';
@@ -104,6 +105,16 @@ export const discoveryRoutes: FastifyPluginAsyncZod<{
       },
     },
     async (request) => discovery.profile(currentUser(request).id, request.params.id),
+  );
+
+  // Phase 70: "My visibility" (no shadow bans).
+  app.get(
+    '/v1/me/visibility',
+    {
+      schema: { response: { 200: myVisibilitySchema } },
+      config: perUserLimit(60, 60_000),
+    },
+    async (request) => discovery.myVisibility(currentUser(request).id),
   );
 
   // "See my profile as others do" (phase 44).

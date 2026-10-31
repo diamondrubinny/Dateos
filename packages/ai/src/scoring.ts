@@ -31,7 +31,17 @@ export interface CandidateSignals {
   impressions24h: number;
   /** Interests both people picked (phase 19). */
   sharedInterests?: number;
+  /**
+   * Phase 70: matches who have been waiting 3+ days for the candidate's reply. From
+   * UNANSWERED_LIMIT on, new people see the candidate a bit less, until they reply or close.
+   */
+  waitingOnCandidate?: number;
+  /** Phase 70: met a match in person (both confirmed) in the last 180 days. */
+  showedUp?: boolean;
 }
+
+/** Phase 70: the ranking factors for accountability (documented in docs/MATCHING.md). */
+export const ACCOUNTABILITY = { unansweredLimit: 5, unanswered: 0.6, showedUp: 1.05 } as const;
 
 export interface ScoreResult {
   /** 0–1000, higher is better. */
@@ -125,7 +135,12 @@ export function scoreCandidate(s: CandidateSignals): ScoreResult {
   // and give new members a fair first week.
   const exposure = 1 / (1 + s.impressions24h / 20);
   const newcomer = s.accountAgeDays < 7 ? 1.1 : 1;
-  const fairness = exposure * newcomer;
+  // Phase 70: people waiting on them lower it (lifted as soon as they reply); showing up helps.
+  const accountability =
+    ((s.waitingOnCandidate ?? 0) >= ACCOUNTABILITY.unansweredLimit
+      ? ACCOUNTABILITY.unanswered
+      : 1) * (s.showedUp ? ACCOUNTABILITY.showedUp : 1);
+  const fairness = exposure * newcomer * accountability;
 
   const score = Math.round(Math.min(1, compatibility * reciprocity * fairness) * 1000);
 

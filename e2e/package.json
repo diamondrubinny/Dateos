@@ -79,7 +79,8 @@
     "resume": "tsx resume.ts",
     "friend-suggestions": "tsx friend-suggestions.ts",
     "chaperone": "tsx chaperone.ts",
-    "liveness": "tsx liveness.ts"
+    "liveness": "tsx liveness.ts",
+    "accountability": "tsx accountability.ts"
   },
   "dependencies": {
     "@axe-core/playwright": "4.14.0",

@@ -6,6 +6,18 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Added
 
+- **My visibility**: Profile → My visibility says whether new people can find you and, if not
+  fully, every reason and what lifts it (a break, incognito, no photo, no area, waiting for
+  approval, the daily like limit, verified members only). Nothing limits a member's visibility
+  without being listed there.
+- **Mutual accountability**: while 5 or more of your matches have waited over 3 days for your
+  reply, new people see you a bit less; one reply or a kind close lifts it at once. Likes you
+  didn't return never count. Meeting a match in person counts a little in your favour.
+
+### Fixed
+
+- The approval banner showed twice in Discover while on a break or with nobody to show.
+
 - **A live check**: with a provider the community chooses (`LIVENESS_URL`/`LIVENESS_SECRET`),
   members can verify their photos in a minute: a live face compared with their first photo. Only
   the result comes back; no selfie or face data is kept. The moderator's selfie check stays.

@@ -94,3 +94,41 @@ export const travelStateSchema = placeSchema
   })
   .nullable();
 export type TravelState = z.infer<typeof travelStateSchema>;
+
+// ---------------------------------------------------------------------------
+// Phase 70: "My visibility", the opposite of a shadow ban
+// ---------------------------------------------------------------------------
+
+/** With this many matches waiting 3+ days for my reply, new people see me a bit less. */
+export const UNANSWERED_LIMIT = 5;
+
+/** Everything that keeps new people from finding me, fully or partly. */
+export const visibilityCodes = [
+  'on_break',
+  'incognito',
+  'no_photo',
+  'no_location',
+  'pending_review',
+  'like_limit',
+  'verified_only',
+  'unanswered',
+] as const;
+export type VisibilityCode = (typeof visibilityCodes)[number];
+
+export const visibilityItemSchema = z.object({
+  code: z.enum(visibilityCodes),
+  /** Hidden from new people (true) or only seen less / by fewer (false). */
+  hides: z.boolean(),
+  /** on_break: when the break ends (null: until I end it). */
+  until: z.string().nullable().optional(),
+  /** unanswered: people waiting; like_limit: the limit. */
+  count: z.number().int().optional(),
+});
+export type VisibilityItem = z.infer<typeof visibilityItemSchema>;
+
+export const myVisibilitySchema = z.object({
+  /** Nothing limits it: new people can find me as usual. */
+  visible: z.boolean(),
+  items: z.array(visibilityItemSchema),
+});
+export type MyVisibility = z.infer<typeof myVisibilitySchema>;

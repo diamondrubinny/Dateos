@@ -40,6 +40,9 @@ import {
   type PublicTake,
   type TakeRelation,
   type BlockedPerson,
+  UNANSWERED_LIMIT,
+  type MyVisibility,
+  type VisibilityItem,
 } from '@nexaheart/shared';
 import type { Realtime } from '../../lib/realtime.js';
 import { and, asc, desc, eq, gt, inArray, isNull, or, sql } from 'drizzle-orm';
@@ -54,6 +57,7 @@ import { photoUrl } from '../me/service.js';
 import type { CityIndex } from '../places/cities.js';
 import {
   introductionReached,
+  waitingOn,
   notContactHidden,
   notOnBreak,
   notSeparated,
@@ -200,6 +204,8 @@ export class DiscoveryService {
         candidateLikedViewer: row.liked_viewer,
         impressions24h: row.impressions_24h,
         sharedInterests: row.shared_interests,
+        waitingOnCandidate: Number(row.waiting_on_candidate),
+        showedUp: row.showed_up,
       }),
     }));
     return rank(scored, this.today());
@@ -440,6 +446,63 @@ export class DiscoveryService {
    * My own card as others see it (phase 44): the same fields, built by the same code, with no
    * distance or reasons (those depend on who's looking). Says what currently keeps it out of decks.
    */
+  /**
+   * Phase 70, "My visibility": everything that keeps new people from finding me, fully or partly,
+   * and why. Nothing limits visibility without being listed here (no shadow bans).
+   */
+  async myVisibility(userId: string): Promise<MyVisibility> {
+    const { rows } = await this.db.execute<{
+      paused_at: Date | null;
+      paused_until: Date | null;
+      on_break: boolean;
+      incognito: boolean;
+      photos: number;
+      located: boolean;
+      review_status: string | null;
+      like_limit: number | null;
+      likes_24h: number;
+      verified_only: boolean;
+      waiting: number;
+    }>(sql`
+      SELECT u.paused_at, u.paused_until, NOT COALESCE(${notOnBreak('u')}, false) AS on_break,
+        u.incognito,
+        (SELECT count(*) FROM photos ph WHERE ph.user_id = u.id AND ph.purpose = 'profile'
+           AND ph.status = 'clean')::int AS photos,
+        EXISTS (SELECT 1 FROM locations l WHERE l.user_id = u.id) AS located,
+        (SELECT review_status FROM profiles WHERE user_id = u.id) AS review_status,
+        pr.daily_like_limit AS like_limit,
+        (SELECT count(*) FROM interactions il WHERE il.target_id = u.id AND il.kind = 'like'
+           AND il.created_at > now() - interval '24 hours')::int AS likes_24h,
+        COALESCE(pr.verified_contact_only, false) AS verified_only,
+        ${waitingOn(sql`u.id`)} AS waiting
+      FROM "user" u LEFT JOIN preferences pr ON pr.user_id = u.id
+      WHERE u.id = ${userId}`);
+    const r = rows[0];
+    if (!r) throw notFound();
+    const items: VisibilityItem[] = [];
+    if (r.on_break) {
+      items.push({
+        code: 'on_break',
+        hides: true,
+        until: r.paused_until ? new Date(r.paused_until).toISOString() : null,
+      });
+    }
+    if (r.incognito) items.push({ code: 'incognito', hides: true });
+    if (r.photos === 0) items.push({ code: 'no_photo', hides: true });
+    if (!r.located) items.push({ code: 'no_location', hides: true });
+    if (r.review_status && r.review_status !== 'approved') {
+      items.push({ code: 'pending_review', hides: true });
+    }
+    if (r.like_limit !== null && r.likes_24h >= r.like_limit) {
+      items.push({ code: 'like_limit', hides: true, count: r.like_limit });
+    }
+    if (r.verified_only) items.push({ code: 'verified_only', hides: false });
+    if (r.waiting >= UNANSWERED_LIMIT) {
+      items.push({ code: 'unanswered', hides: false, count: r.waiting });
+    }
+    return { visible: items.length === 0, items };
+  }
+
   /** Phase 68b: my own card as strangers see it (the résumé picks from it). */
   async ownCard(userId: string): Promise<PublicProfile | undefined> {
     const [profile] = await this.toProfiles(
