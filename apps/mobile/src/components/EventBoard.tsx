@@ -95,6 +95,11 @@ export function EventBoard({ eventId, open }: { eventId: string; open: boolean }
               role="listitem"
               style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}
             >
+              {q.urgent ? (
+                <AppText variant="caption" tone="danger">
+                  🆘 {t('eventHelp.badge')}
+                </AppText>
+              ) : null}
               <AppText variant="label" userContent>
                 {q.body}
               </AppText>

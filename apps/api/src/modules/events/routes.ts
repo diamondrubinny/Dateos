@@ -70,7 +70,13 @@ export const eventRoutes: FastifyPluginAsyncZod<{
       config: perUserLimit(20, 60 * 60_000),
       schema: { params, body: eventQuestionInputSchema, response: { 200: eventQuestionSchema } },
     },
-    async (request) => events.ask(request.params.id, currentUser(request).id, request.body.body),
+    async (request) =>
+      events.ask(
+        request.params.id,
+        currentUser(request).id,
+        request.body.body,
+        request.body.urgent,
+      ),
   );
   app.delete(
     '/v1/events/:id/questions/:questionId',

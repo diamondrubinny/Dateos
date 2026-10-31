@@ -45,6 +45,7 @@ const texts = {
     call: 'You have an incoming call',
     visible: 'Your break is over: new people can see your profile again',
     introduction: 'You have a new introduction from a community matchmaker',
+    event_help: 'Someone at a community event needs help: open the dashboard',
   },
   he: {
     message: 'יש לך הודעה חדשה',
@@ -54,6 +55,7 @@ const texts = {
     call: 'יש לך שיחה נכנסת',
     visible: 'ההפסקה הסתיימה: אנשים חדשים יכולים לראות שוב את הפרופיל שלך',
     introduction: 'יש לך הצעת היכרות חדשה משדכנות הקהילה',
+    event_help: 'מישהו באירוע קהילה צריך עזרה: כדאי לפתוח את לוח הניהול',
   },
   ar: {
     message: 'لديك رسالة جديدة',
@@ -63,6 +65,7 @@ const texts = {
     call: 'لديك مكالمة واردة',
     visible: 'انتهت الاستراحة: يمكن لأشخاص جدد رؤية ملفك الشخصي مرة أخرى',
     introduction: 'لديك اقتراح تعارف جديد في المجتمع',
+    event_help: 'شخص ما في فعالية مجتمعية يحتاج إلى مساعدة: افتح لوحة الإدارة',
   },
   ru: {
     message: 'У вас новое сообщение',
@@ -72,6 +75,7 @@ const texts = {
     call: 'Вам звонят',
     visible: 'Перерыв закончился: новые люди снова видят ваш профиль',
     introduction: 'Вам предложили новое знакомство в сообществе',
+    event_help: 'Кому-то на мероприятии сообщества нужна помощь: откройте панель управления',
   },
 } as const;
 
@@ -147,12 +151,19 @@ export async function sendPush(ctx: PushContext, job: PushJob): Promise<PushResu
     );
     if (off.rows.length > 0) return 'off';
   }
-  // Quiet hours (phase 39), in the member's own time zone; calls and safety check-ins still come.
-  if (job.kind !== 'call' && job.kind !== 'checkin' && (await inQuietHours(ctx, job.userId))) {
+  // Quiet hours (phase 39), in the member's own time zone; calls, safety check-ins and someone
+  // needing help at an event (phase 71c, to admins) still come.
+  if (
+    job.kind !== 'call' &&
+    job.kind !== 'checkin' &&
+    job.kind !== 'event_help' &&
+    (await inQuietHours(ctx, job.userId))
+  ) {
     return 'quiet';
   }
   if (job.kind === 'checkin') return sendToDevices(ctx, job); // safety: no match or presence check
   if (job.kind === 'event') return sendToDevices(ctx, job); // not about a conversation
+  if (job.kind === 'event_help') return sendToDevices(ctx, job); // to admins, about an event
   if (job.kind === 'visible') return sendToDevices(ctx, job); // about the member's own profile
   if (job.kind === 'introduction') return sendToDevices(ctx, job); // not a conversation yet
   if (job.kind === 'partner_message') {

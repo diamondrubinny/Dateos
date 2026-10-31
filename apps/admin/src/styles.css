@@ -787,3 +787,9 @@ table caption {
   font-weight: 600;
   padding: 0.75rem 0.75rem 0.5rem;
 }
+
+/* Phase 71c: an unanswered "I need help now" in the event board. */
+.board-list li.urgent-item {
+  border-inline-start: 6px solid var(--danger);
+  padding-inline-start: 0.75rem;
+}

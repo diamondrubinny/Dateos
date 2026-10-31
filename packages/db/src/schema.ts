@@ -1302,6 +1302,8 @@ export const eventQuestions = pgTable(
       .references(() => events.id, { onDelete: 'cascade' }),
     userId: ownerId(),
     body: varchar('body', { length: 500 }).notNull(),
+    /** Phase 71c: "I need help now", during the event. */
+    urgent: boolean('urgent').notNull().default(false),
     answer: varchar('answer', { length: 1000 }),
     answeredBy: text('answered_by').references(() => user.id, { onDelete: 'set null' }),
     answeredAt: timestamp('answered_at', { withTimezone: true }),

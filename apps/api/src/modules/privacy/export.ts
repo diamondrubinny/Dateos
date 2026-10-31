@@ -339,6 +339,7 @@ export async function exportMemberData(
     .select({
       event: t.events.title,
       question: t.eventQuestions.body,
+      urgent: t.eventQuestions.urgent,
       answer: t.eventQuestions.answer,
       askedAt: t.eventQuestions.createdAt,
       answeredAt: t.eventQuestions.answeredAt,

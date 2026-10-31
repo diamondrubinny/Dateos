@@ -17,6 +17,7 @@ import {
   MAX_SPEED_CAPACITY,
   SPEED_ROUND_DEFAULT,
   MAX_OPEN_EVENT_QUESTIONS,
+  MAX_URGENT_EVENT_QUESTIONS,
   type EventBoard,
   type EventQuestion,
   type EventAudience,
@@ -146,6 +147,7 @@ interface Row {
 const toQuestion = (q: typeof eventQuestions.$inferSelect): EventQuestion => ({
   id: q.id,
   body: q.body,
+  urgent: q.urgent,
   answer: q.answer,
   answeredAt: q.answeredAt?.toISOString() ?? null,
   createdAt: q.createdAt.toISOString(),
@@ -200,6 +202,8 @@ export interface EventOptions {
   appUrl?: string;
   /** Whether video speed dating can run (video calls configured and on). */
   speedAvailable?: () => Promise<boolean>;
+  /** Phase 71c: a content-free push to an admin: someone at an event needs help. */
+  helpPush?: (adminId: string, eventId: string) => Promise<void>;
 }
 
 /**
@@ -806,12 +810,32 @@ export class EventService {
     };
   }
 
-  async ask(eventId: string, userId: string, body: string): Promise<EventQuestion> {
+  async ask(eventId: string, userId: string, body: string, urgent = false): Promise<EventQuestion> {
     const event = await this.requireAttendee(eventId, userId);
     if (event.status !== 'scheduled' || event.endsAt.getTime() <= this.now()) {
       throw new HttpError(409, ErrorCode.Conflict, 'This event is over.');
     }
     if (checkHarm(body).flagged) throw invalid('Please rephrase your question.');
+    if (urgent) {
+      // Phase 71c: "I need help now", during the event only, a few times at most.
+      if (this.now() < event.startsAt.getTime() - CHECK_IN_EARLY_MINUTES * 60_000) {
+        throw new HttpError(409, ErrorCode.Conflict, 'Urgent help opens when the event starts.');
+      }
+      const [{ n }] = (
+        await this.db.execute<{ n: number }>(sql`
+          SELECT count(*)::int AS n FROM event_questions
+          WHERE event_id = ${eventId} AND user_id = ${userId} AND urgent`)
+      ).rows as [{ n: number }];
+      if (n >= MAX_URGENT_EVENT_QUESTIONS) {
+        throw new HttpError(429, ErrorCode.RateLimited, 'The organizers have your messages.');
+      }
+      const [row] = await this.db
+        .insert(eventQuestions)
+        .values({ eventId, userId, body, urgent: true })
+        .returning();
+      await this.tellAdminsHelp(eventId);
+      return toQuestion(row!);
+    }
     const [open] = await this.db
       .select({ n: sql<number>`count(*)::int` })
       .from(eventQuestions)
@@ -830,6 +854,14 @@ export class EventService {
       .values({ eventId, userId, body })
       .returning();
     return toQuestion(row!);
+  }
+
+  /** Phase 71c: every admin gets a content-free push (best effort). */
+  private async tellAdminsHelp(eventId: string): Promise<void> {
+    if (!this.options.helpPush) return;
+    const { rows } = await this.db.execute<{ id: string }>(sql`
+      SELECT id FROM "user" WHERE role = 'admin' AND status = 'active'`);
+    for (const { id } of rows) await this.options.helpPush(id, eventId).catch(() => undefined);
   }
 
   async deleteQuestion(eventId: string, userId: string, questionId: string): Promise<void> {
@@ -856,7 +888,11 @@ export class EventService {
           .select()
           .from(eventQuestions)
           .where(eq(eventQuestions.eventId, eventId))
-          .orderBy(asc(eventQuestions.createdAt))
+          // Phase 71c: someone needing help (and not answered yet) comes first.
+          .orderBy(
+            sql`(${eventQuestions.urgent} AND ${eventQuestions.answeredAt} IS NULL) DESC`,
+            asc(eventQuestions.createdAt),
+          )
       ).map(toQuestion),
     };
   }

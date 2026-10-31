@@ -334,8 +334,16 @@ function BoardPanel({
           ) : (
             <ul className="board-list">
               {board.questions.map((q) => (
-                <li key={q.id}>
-                  <p className="muted">{formatDate(q.createdAt, locale)}</p>
+                <li key={q.id} className={q.urgent && !q.answer ? 'urgent-item' : undefined}>
+                  <p className="muted">
+                    {q.urgent ? (
+                      // Phase 71c: someone at the event needs help now.
+                      <>
+                        <Badge tone="urgent">{t.events.urgent}</Badge>{' '}
+                      </>
+                    ) : null}
+                    {formatDate(q.createdAt, locale)}
+                  </p>
                   <p dir="auto">
                     <strong>{q.body}</strong>
                   </p>

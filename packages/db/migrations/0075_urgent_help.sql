@@ -1,0 +1,1 @@
+ALTER TABLE "event_questions" ADD COLUMN "urgent" boolean DEFAULT false NOT NULL;
