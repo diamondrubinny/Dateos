@@ -1025,6 +1025,8 @@ export const instanceSettings = pgTable(
       .default(sql`'{}'::text[]`),
     /** Phase 73a: what partners see before a match (`full` or `minimal`), and our country. */
     partnerCards: varchar('partner_cards', { length: 10 }).notNull().default('full'),
+    /** Phase 75a: hours members have to answer an introduction. */
+    introductionHours: smallint('introduction_hours').notNull().default(336),
     /** Phase 73b: share banned photos' hashes with partners, and accept theirs (off). */
     shareTrustSignals: boolean('share_trust_signals').notNull().default(false),
     communityCountry: varchar('community_country', { length: 2 }),

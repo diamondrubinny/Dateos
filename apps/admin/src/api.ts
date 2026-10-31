@@ -145,6 +145,7 @@ export interface AdminInstanceSettings {
   shareTrustSignals: boolean;
   communityCountry: string | null;
   introductionOrder: IntroductionOrder;
+  introductionHours: number;
   profileApproval: boolean;
   joinMinAge: number;
   joinMaxAge: number | null;

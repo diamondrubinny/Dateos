@@ -174,6 +174,34 @@ describe.skipIf(!integrationEnabled)('community matchmakers, phase 68a (integrat
     expect(empty.matchmakers[0]).toMatchObject({ introductions: 0, matches: 0 });
   });
 
+  it('phase 75a: the community sets the time to answer', async () => {
+    await grant(rina);
+    expect(
+      (await api(ctx, admin, 'PATCH', '/v1/admin/instance', { introductionHours: 30 })).statusCode,
+    ).toBe(400);
+    expect(
+      (await api(ctx, admin, 'PATCH', '/v1/admin/instance', { introductionHours: 24 })).statusCode,
+    ).toBe(200);
+    expect((await api(ctx, admin, 'GET', '/v1/admin/instance')).json().introductionHours).toBe(24);
+    await order('women_first');
+    const id = (await introduce(dan, noa)).json().id as string;
+    const hoursLeft = async () =>
+      Number(
+        (
+          await q(
+            `SELECT extract(epoch FROM expires_at - now()) / 3600 AS h FROM introductions WHERE id = $1`,
+            [id],
+          )
+        ).rows[0].h,
+      );
+    expect(await hoursLeft()).toBeGreaterThan(23.9);
+    expect(await hoursLeft()).toBeLessThanOrEqual(24);
+    // The second side gets the same window again after the first one's yes.
+    await q(`UPDATE introductions SET expires_at = now() + interval '2 hours' WHERE id = $1`, [id]);
+    await answer(noa, id, 'yes');
+    expect(await hoursLeft()).toBeGreaterThan(23.9);
+  });
+
   it('women first: the man hears only after her yes', async () => {
     await grant(rina);
     expect((await order('women_first')).statusCode).toBe(200);

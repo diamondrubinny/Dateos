@@ -190,6 +190,7 @@ export const adminSettingsSchema = z.object({
   shareTrustSignals: z.boolean(),
   communityCountry: z.string().nullable(),
   introductionOrder: z.enum(introductionOrders),
+  introductionHours: z.number().int(),
   profileApproval: z.boolean(),
   joinMinAge: z.number().int(),
   joinMaxAge: z.number().int().nullable(),

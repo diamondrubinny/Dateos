@@ -1,0 +1,1 @@
+ALTER TABLE "instance_settings" ADD COLUMN "introduction_hours" smallint DEFAULT 336 NOT NULL;

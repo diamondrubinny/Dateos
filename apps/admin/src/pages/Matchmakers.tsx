@@ -1,11 +1,16 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
-import { matchmakersCsv, type IntroductionOrder, type MatchmakerRow } from '@nexaheart/shared';
+import {
+  introductionWindows,
+  matchmakersCsv,
+  type IntroductionOrder,
+  type MatchmakerRow,
+} from '@nexaheart/shared';
 import { useId, useState, type FormEvent } from 'react';
 import { api } from '../api';
 import { useAsync } from '../hooks';
-import { useLocale } from '../i18n';
+import { format, useLocale } from '../i18n';
 import { ErrorBox, formatDate, Loading } from '../components/ui';
 
 /** Saves text as a file the browser downloads. */
@@ -100,12 +105,14 @@ function Order() {
   const m = t.matchmakers;
   const settings = useAsync(() => api.settings(), []);
   const [choice, setChoice] = useState<IntroductionOrder>();
+  const [hours, setHours] = useState<number>();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<Error>();
   const [saved, setSaved] = useState(false);
   if (settings.loading && !settings.data) return <Loading />;
   if (!settings.data) return settings.error ? <ErrorBox error={settings.error} /> : null;
   const value = choice ?? settings.data.introductionOrder;
+  const window = hours ?? settings.data.introductionHours;
 
   async function save(event: FormEvent) {
     event.preventDefault();
@@ -114,7 +121,7 @@ function Order() {
     setError(undefined);
     setSaved(false);
     try {
-      await api.saveSettings({ introductionOrder: value });
+      await api.saveSettings({ introductionOrder: value, introductionHours: window });
       setSaved(true);
     } catch (err) {
       setError(err as Error);
@@ -141,6 +148,23 @@ function Order() {
           </div>
         ))}
       </fieldset>
+      {/* Phase 75a: how long members have to answer. */}
+      <label htmlFor="introduction-hours">{m.windowLabel}</label>
+      <select
+        id="introduction-hours"
+        value={window}
+        aria-describedby="introduction-hours-help"
+        onChange={(e) => setHours(Number(e.target.value))}
+      >
+        {introductionWindows.map((h) => (
+          <option key={h} value={h}>
+            {h < 168 ? format(m.windowHours, { n: h }) : format(m.windowDays, { n: h / 24 })}
+          </option>
+        ))}
+      </select>
+      <p id="introduction-hours-help" className="help">
+        {m.windowHelp}
+      </p>
       {error ? <ErrorBox error={error} /> : null}
       {saved ? (
         <p className="alert alert-ok" role="status">

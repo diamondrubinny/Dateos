@@ -8,7 +8,6 @@ import {
   FRIEND_SUGGESTIONS_DAILY,
   type FriendSuggestPage,
   type IntroductionKind,
-  INTRODUCTION_DAYS,
   INTRODUCTIONS_DAILY,
   type ConsoleQuery,
   type IntroductionAnswer,
@@ -255,7 +254,7 @@ export class IntroductionService {
       const { rows } = await tx.execute<{ id: string }>(sql`
         INSERT INTO introductions (matchmaker_id, kind, a_id, b_id, note, first_id, expires_at)
         VALUES (${byId}, ${kind}, ${aId}, ${bId}, ${note}, ${firstId},
-          now() + make_interval(days => ${INTRODUCTION_DAYS}))
+          now() + make_interval(hours => COALESCE((SELECT introduction_hours FROM instance_settings WHERE id = 1), 336)))
         RETURNING id`);
       const created = rows[0]!.id;
       await audit(tx, {
@@ -359,12 +358,12 @@ export class IntroductionService {
       await tx.execute(sql`
         UPDATE introductions SET ${side}_answer = ${answer}, ${side}_answered_at = now()
         WHERE id = ${id}`);
-      // The second side gets its own two weeks once the first said yes.
+      // The second side gets its own time (the community's window) once the first said yes.
       const extend = answer === 'yes' && row.first_id === userId;
       if (extend) {
         await tx.execute(sql`
           UPDATE introductions
-          SET expires_at = GREATEST(expires_at, now() + make_interval(days => ${INTRODUCTION_DAYS}))
+          SET expires_at = GREATEST(expires_at, now() + make_interval(hours => COALESCE((SELECT introduction_hours FROM instance_settings WHERE id = 1), 336)))
           WHERE id = ${id}`);
       }
       await audit(tx, {

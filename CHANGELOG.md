@@ -6,6 +6,12 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Added
 
+- **A time and a place for the two of you**: once two people who matched share when they're
+  free, the chat suggests the earliest shared time at a calm public place (step-free when either
+  needs it, never closed on Shabbat for a Saturday), and "Plan it" opens the planner with both
+  filled in. Plain logic, no AI. Communities can also set how long members have to answer an
+  introduction (24 hours to 2 weeks).
+
 - **Kosher and "closed on Shabbat" places**: admins mark places in the dashboard (kosher only with
   a valid certificate); the date planner shows the tags and can keep to kosher places only, and
   dates and events show them, as the place was when the date was proposed.

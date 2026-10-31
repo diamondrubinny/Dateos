@@ -1166,6 +1166,9 @@ export const en = {
   },
   notFound: { title: 'Page not found', home: 'Go to the home screen' },
   free: {
+    suggestion: 'Suggestion: {{when}}, at {{place}}',
+    suggestionHint: 'Opens the date planner with this time and place; you still send it.',
+    planIt: 'Plan it',
     title: 'When I’m free',
     intro:
       'Mark the times you could meet in the next two weeks. {{name}} never sees your list, only the times you’re both free.',

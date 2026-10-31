@@ -52,6 +52,7 @@ function PlanDateScreen() {
     counter: counterOf,
     place: counterPlace = '',
     startsAt: counterFrom,
+    venue: wantedVenue,
   } = useLocalSearchParams<{
     id: string;
     name?: string;
@@ -61,6 +62,8 @@ function PlanDateScreen() {
     counter?: string;
     place?: string;
     startsAt?: string;
+    /** Phase 75a: the suggested place. */
+    venue?: string;
   }>();
   const venues = useVenues();
   // Phase 25: my own needs, or the ones the other person chose to show, put step-free places first.
@@ -75,7 +78,7 @@ function PlanDateScreen() {
   const counter = useCounterDate(matchId);
   const sending = counterOf ? counter : propose;
   const [category, setCategory] = useState<'all' | VenueCategory>('all');
-  const [venueId, setVenueId] = useState<string>();
+  const [venueId, setVenueId] = useState<string | undefined>(wantedVenue);
   // Opened from a shared free time (phase 20): that day and part of the day are filled in.
   const [dayOffset, setDayOffset] = useState(() => {
     const [y, m, d] = (wantedDay ?? '').split('-').map(Number);

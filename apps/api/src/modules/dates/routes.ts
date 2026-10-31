@@ -4,6 +4,7 @@
 import {
   availabilityInputSchema,
   availabilitySchema,
+  dateSuggestionSchema,
   dateFeedbackInputSchema,
   messageViewSchema,
   proposeDateSchema,
@@ -87,6 +88,12 @@ export const dateRoutes: FastifyPluginAsyncZod<{
     '/v1/matches/:id/availability',
     { schema: { params, response: { 200: availabilitySchema } } },
     async (request) => dates.availability(request.params.id, currentUser(request).id),
+  );
+  // Phase 75a: a time and a place for the two of us, from the shared free times.
+  app.get(
+    '/v1/matches/:id/date-suggestion',
+    { schema: { params, response: { 200: dateSuggestionSchema } } },
+    async (request) => dates.suggestion(request.params.id, currentUser(request).id),
   );
   app.put(
     '/v1/matches/:id/availability',

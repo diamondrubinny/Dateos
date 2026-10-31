@@ -7,7 +7,7 @@ import { identityVocabularies } from './identity.js';
 import { genders, genderSchema, intentions, intentionSchema, MAX_AGE, MIN_AGE } from './profile.js';
 import { MAX_CALL_MAX_MINUTES, MIN_CALL_MAX_MINUTES } from './calls.js';
 import { localeSchema } from './common.js';
-import { introductionOrders } from './introductions.js';
+import { introductionOrders, introductionWindows } from './introductions.js';
 
 /** WCAG 2.x relative luminance of a #RRGGBB color. */
 export function luminance(hex: string): number {
@@ -147,6 +147,11 @@ export const instanceSettingsInputSchema = z
     profileApproval: z.boolean(),
     /** Phase 68a: who hears about an introduction first. */
     introductionOrder: z.enum(introductionOrders),
+    /** Phase 75a: hours to answer an introduction. */
+    introductionHours: z
+      .number()
+      .int()
+      .refine((n) => (introductionWindows as readonly number[]).includes(n)),
     /** Phase 67b: a neutral name for the installed app (with plain icons), or null. */
     discreetName: plainText(30).nullable(),
     /** Phase 67b: countries the community considers dangerous (ISO 3166-1 alpha-2), each once. */
