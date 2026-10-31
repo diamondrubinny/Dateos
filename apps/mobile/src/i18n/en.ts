@@ -1247,6 +1247,18 @@ export const en = {
       unanswered: 'Open my chats',
     },
   },
+  ask: {
+    title: "Ask about {{name}}'s profile",
+    hint: "Answers come only from what they wrote on their profile, and aren't saved. For anything else, ask them.",
+    label: 'Your question',
+    placeholder: 'Do they like hiking?',
+    send: 'Ask',
+    notSaid: "{{name}}'s profile doesn't say. You could ask them.",
+    needsConsent:
+      'This uses an AI service outside this community. Turn on the external AI option in Settings to use it.',
+    settings: 'Open Settings',
+    limit: "That's enough questions for today.",
+  },
   shabbat: {
     nowShabbat: "It's Shabbat now, until {{end}}",
     nowHoliday: "It's a holiday now, until {{end}}",

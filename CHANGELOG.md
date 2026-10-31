@@ -6,6 +6,10 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Added
 
+- **Ask about a profile**: where the community has a text model, a question box on a profile
+  answers from what the person wrote (never the sensitive parts), or says the profile doesn't say.
+  An external model needs both people's consent; nothing is stored.
+
 - **A time and a place for the two of you**: once two people who matched share when they're
   free, the chat suggests the earliest shared time at a calm public place (step-free when either
   needs it, never closed on Shabbat for a Saturday), and "Plan it" opens the planner with both

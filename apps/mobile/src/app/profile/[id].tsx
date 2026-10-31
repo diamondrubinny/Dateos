@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 import { AppText } from '../../components/AppText';
+import { AskProfile } from '../../components/AskProfile';
 import { Banner } from '../../components/Banner';
 import { Button } from '../../components/Button';
 import { DecisionPanel, type DecisionResult } from '../../components/DecisionPanel';
@@ -69,6 +70,9 @@ function ProfileScreen() {
       ) : (
         <DecisionPanel profile={p} onDecided={onDecided} />
       )}
+
+      {/* Phase 75b: ask about what they wrote (only where the community offers text AI). */}
+      <AskProfile id={p.id} name={p.displayName} />
 
       {confirm ? (
         <View
