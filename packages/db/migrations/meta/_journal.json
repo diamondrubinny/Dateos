@@ -533,6 +533,13 @@
       "when": 1793430630101,
       "tag": "0075_urgent_help",
       "breakpoints": true
+    },
+    {
+      "idx": 76,
+      "version": "7",
+      "when": 1793432423407,
+      "tag": "0076_event_tables",
+      "breakpoints": true
     }
   ]
 }

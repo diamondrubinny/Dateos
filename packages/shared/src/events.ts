@@ -99,6 +99,44 @@ export const eventRepeatSchema = z
   .object({ weeks: z.number().int().min(1).max(MAX_EVENT_REPEAT_WEEKS) })
   .strict();
 
+// ---------------------------------------------------------------------------
+// Phase 71d: tables by a short questionnaire, and the place revealed later
+// ---------------------------------------------------------------------------
+
+export const MIN_TABLE_SIZE = 4;
+export const MAX_TABLE_SIZE = 10;
+export const MAX_REVEAL_HOURS = 72;
+
+const revealHours = z.number().int().min(1).max(MAX_REVEAL_HOURS);
+const tableSize = z.number().int().min(MIN_TABLE_SIZE).max(MAX_TABLE_SIZE);
+
+/** Three quick questions about the evening (not the person). */
+export const tablePaces = ['calm', 'lively'] as const;
+export const tableTalks = ['deep', 'light'] as const;
+export const tableDrinks = ['alcohol', 'no_alcohol', 'either'] as const;
+export const tableAnswersSchema = z
+  .object({
+    pace: z.enum(tablePaces),
+    talk: z.enum(tableTalks),
+    drinks: z.enum(tableDrinks),
+  })
+  .strict();
+export type TableAnswers = z.infer<typeof tableAnswersSchema>;
+
+export const myTableSchema = z.object({
+  /** Whether I joined a table (answered the questions). */
+  joined: z.boolean(),
+  answers: tableAnswersSchema.nullable(),
+  /** When the tables are set (the place's reveal, or the start). */
+  setAt: z.string(),
+  /** Whether the tables are set yet. */
+  set: z.boolean(),
+  tableNo: z.number().int().nullable(),
+  /** First names of the others at my table, once the tables are set. */
+  mates: z.array(z.string()),
+});
+export type MyTable = z.infer<typeof myTableSchema>;
+
 export const eventInputSchema = z
   .object({
     title,
@@ -111,6 +149,8 @@ export const eventInputSchema = z
     roundMinutes: roundMinutes.nullable().default(null),
     audience: eventAudienceSchema.optional(),
     pools: eventPoolsSchema.default(null),
+    revealHours: revealHours.nullable().default(null),
+    tableSize: tableSize.nullable().default(null),
   })
   .strict()
   .refine(window, windowMessage)
@@ -139,6 +179,8 @@ export const eventUpdateSchema = z
     roundMinutes,
     audience: eventAudienceSchema,
     pools: eventPoolsSchema,
+    revealHours: revealHours.nullable(),
+    tableSize: tableSize.nullable(),
   })
   .partial()
   .strict()
@@ -190,6 +232,12 @@ export const eventSchema = z.object({
     .nullable(),
   /** Phase 71b: why the viewer can't take a place, or null if they can. */
   notForYou: z.enum(notForYouReasons).nullable(),
+  /** Phase 71d: when the place is revealed (null: shown from the start). */
+  placeRevealAt: z.string().nullable(),
+  /** Phase 71d: the place is hidden for now: only its area is shown. */
+  placeHidden: z.boolean(),
+  /** Phase 71d: tables of this size, or null. */
+  tableSize: z.number().int().nullable(),
   /**
    * Phase 71a: "Meet again" is open for the viewer until this time (they checked in at an
    * in-person event that ended less than MEET_AGAIN_HOURS ago), else null.
@@ -206,12 +254,15 @@ export const adminEventSchema = eventSchema
     checkedIn: true,
     meetAgainUntil: true,
     notForYou: true,
+    placeHidden: true,
   })
   .extend({
     venueId: z.uuid().nullable(),
     createdAt: z.string(),
     /** How many people checked in (a count). */
     checkedInCount: z.number().int(),
+    /** Phase 71d: people at each table, once set (counts only), or null. */
+    tables: z.array(z.number().int()).nullable(),
   });
 export type AdminEvent = z.infer<typeof adminEventSchema>;
 

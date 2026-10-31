@@ -12,6 +12,7 @@ import { Button } from '../../components/Button';
 import { EventBoard } from '../../components/EventBoard';
 import { EventHelp } from '../../components/EventHelp';
 import { EventMisses } from '../../components/EventMisses';
+import { EventTable } from '../../components/EventTable';
 import {
   eventAudience,
   eventPools,
@@ -115,12 +116,32 @@ function EventScreen() {
       ) : null}
       {e.venue ? (
         <View style={[styles.card, { backgroundColor: colors.surface }]}>
-          <AppText variant="label" userContent>
-            {t('datePlan.placeWithArea', { name: e.venue.name, area: e.venue.area })}
-          </AppText>
-          <AppText variant="body" tone="muted" userContent selectable>
-            {e.venue.address}
-          </AppText>
+          {e.placeHidden ? (
+            // Phase 71d: only the area until the reveal.
+            <>
+              <AppText variant="label" userContent>
+                {e.venue.area}
+              </AppText>
+              <AppText variant="body" tone="muted" testID="place-hidden">
+                {t('eventTable.placeLater', {
+                  when: new Date(e.placeRevealAt ?? e.startsAt).toLocaleString(locale, {
+                    weekday: 'long',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  }),
+                })}
+              </AppText>
+            </>
+          ) : (
+            <>
+              <AppText variant="label" userContent>
+                {t('datePlan.placeWithArea', { name: e.venue.name, area: e.venue.area })}
+              </AppText>
+              <AppText variant="body" tone="muted" userContent selectable>
+                {e.venue.address}
+              </AppText>
+            </>
+          )}
           {e.venue.stepFree ? (
             <AppText variant="caption" tone="success">
               ♿ {t('datePlan.stepFree')}
@@ -226,7 +247,9 @@ function EventScreen() {
                 title: e.title,
                 ...(e.venue
                   ? {
-                      location: [e.venue.name, e.venue.address].filter(Boolean).join(', '),
+                      location: e.placeHidden
+                        ? e.venue.area
+                        : [e.venue.name, e.venue.address].filter(Boolean).join(', '),
                     }
                   : {}),
               },
@@ -306,6 +329,7 @@ function EventScreen() {
           />
         </View>
       ) : null}
+      {e.tableSize && e.mine && !cancelled ? <EventTable eventId={id} open={now < end} /> : null}
       {e.meetAgainUntil ? (
         // Phase 71a: after an in-person event I checked in at.
         <View style={[styles.card, { backgroundColor: colors.primarySoft }]} testID="meet-again">

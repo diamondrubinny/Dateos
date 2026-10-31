@@ -20,6 +20,8 @@ describe('event input', () => {
       kind: 'standard',
       roundMinutes: null,
       pools: null,
+      revealHours: null,
+      tableSize: null,
     });
   });
 

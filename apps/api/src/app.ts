@@ -205,6 +205,7 @@ export async function buildApp(env: Env, deps: AppDependencies): Promise<Fastify
       auth: services.auth,
       events: services.events,
       meetAgain: services.meetAgain,
+      tables: services.tables,
     });
     await typed.register(speedRoutes, { auth: services.auth, speed: services.speed });
     await typed.register(travelRoutes, {

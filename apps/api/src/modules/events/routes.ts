@@ -10,6 +10,8 @@ import {
   meetAgainPickSchema,
   meetAgainSchema,
   myNoShowsSchema,
+  myTableSchema,
+  tableAnswersSchema,
 } from '@nexaheart/shared';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';
@@ -18,6 +20,7 @@ import { currentUser, requireUser } from '../../auth/session.js';
 import { perUserLimit } from '../../plugins/security.js';
 import type { MeetAgainService } from './meet-again.js';
 import type { EventService } from './service.js';
+import type { TableService } from './tables.js';
 
 const params = z.object({ id: z.uuid() });
 
@@ -26,7 +29,8 @@ export const eventRoutes: FastifyPluginAsyncZod<{
   auth: Auth;
   events: EventService;
   meetAgain: MeetAgainService;
-}> = async (app, { auth, events, meetAgain }) => {
+  tables: TableService;
+}> = async (app, { auth, events, meetAgain, tables }) => {
   // An active account: suspended members can't say they're going.
   app.addHook('preHandler', requireUser(auth));
 
@@ -146,5 +150,24 @@ export const eventRoutes: FastifyPluginAsyncZod<{
     '/v1/me/event-misses/:id/excuse',
     { config: limit, schema: { params, response: { 200: myNoShowsSchema } } },
     async (request) => events.excuse(currentUser(request).id, request.params.id),
+  );
+  // Tables by a short questionnaire (phase 71d): only for people going, only my own table.
+  app.get(
+    '/v1/events/:id/table',
+    { schema: { params, response: { 200: myTableSchema } } },
+    async (request) => tables.state(request.params.id, currentUser(request).id),
+  );
+  app.put(
+    '/v1/events/:id/table',
+    {
+      config: limit,
+      schema: { params, body: tableAnswersSchema, response: { 200: myTableSchema } },
+    },
+    async (request) => tables.join(request.params.id, currentUser(request).id, request.body),
+  );
+  app.delete(
+    '/v1/events/:id/table',
+    { config: limit, schema: { params, response: { 200: myTableSchema } } },
+    async (request) => tables.leave(request.params.id, currentUser(request).id),
   );
 };
