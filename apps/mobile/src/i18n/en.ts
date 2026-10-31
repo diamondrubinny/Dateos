@@ -164,6 +164,11 @@ export const en = {
       'A small badge on your profile once you and a match both confirmed you met. It tells others you go on real dates here, so it is off until you turn it on. No dates or numbers are shown.',
   },
   travel: {
+    riskWarning:
+      'This community considers this country dangerous for its members. Being seen on a dating app there could put you at risk.',
+    hideLabel: 'Hide me from new people while I’m there',
+    hideHint: 'As “take a break”, until the trip ends. Your matches and chats stay.',
+    hiddenThere: 'You’re hidden from new people for this trip.',
     dataCredit: 'City data: GeoNames (CC BY 4.0)',
     title: 'Travel mode',
     hint: 'Going somewhere? For up to two weeks, Discover shows people around a city you choose, and your profile honestly says “Visiting …”. Your own area stays as it is.',
@@ -751,6 +756,8 @@ export const en = {
     retry: 'Retry sending',
   },
   report: {
+    fakeProfileHint:
+      'A common sign: they refuse a short video call or a recent photo, or keep making excuses to meet somewhere private. Add what happened in the details.',
     title: 'Report {{name}}',
     open: 'Report',
     openLabel: 'Report {{name}}',

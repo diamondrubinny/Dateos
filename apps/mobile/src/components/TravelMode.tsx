@@ -7,12 +7,12 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Linking, StyleSheet, View } from 'react-native';
 import { useLocale } from '../lib/locale';
-import { useEndTravel, usePlaces, useStartTravel, useTravel } from '../lib/queries';
+import { useEndTravel, useInstance, usePlaces, useStartTravel, useTravel } from '../lib/queries';
 import { radius, spacing, useColors } from '../lib/theme';
 import { AppText } from './AppText';
 import { Banner } from './Banner';
 import { Button } from './Button';
-import { ChoiceGroup } from './Choice';
+import { Checkbox, ChoiceGroup } from './Choice';
 import { TextField } from './TextField';
 
 /** "Haifa, Israel" in the member's language (country names from the platform, when it has them). */
@@ -58,6 +58,10 @@ export function TravelMode() {
   const [city, setCity] = useState<Place>();
   const [days, setDays] = useState<string>('7');
   const [error, setError] = useState(false);
+  // Phase 67b: a country the community considers dangerous: warn, and hide me there by default.
+  const riskCountries = useInstance().data?.community.riskCountries ?? [];
+  const atRisk = Boolean(city && riskCountries.includes(city.country));
+  const [hide, setHide] = useState(true);
   const search = usePlaces(useDebounced(query));
   const results = search.data ?? [];
   const onError = () => setError(true);
@@ -72,6 +76,12 @@ export function TravelMode() {
       {travel.data ? (
         <>
           <Banner tone="info" message={travelLine(travel.data, locale, t)} />
+          {travel.data.atRisk ? (
+            <Banner
+              tone={travel.data.hidden ? 'info' : 'error'}
+              message={travel.data.hidden ? t('travel.hiddenThere') : t('travel.riskWarning')}
+            />
+          ) : null}
           <Button
             label={t('travel.end')}
             loading={end.isPending}
@@ -114,6 +124,17 @@ export function TravelMode() {
               onChange={(next) => setCity(results.find((p) => String(p.id) === next[0]))}
             />
           ) : null}
+          {atRisk ? (
+            <View testID="travel-risk">
+              <Banner tone="error" message={t('travel.riskWarning')} />
+              <Checkbox
+                label={t('travel.hideLabel')}
+                hint={t('travel.hideHint')}
+                checked={hide}
+                onChange={setHide}
+              />
+            </View>
+          ) : null}
           <ChoiceGroup
             label={t('travel.howLong')}
             options={travelDayOptions.map((d) => ({
@@ -133,7 +154,14 @@ export function TravelMode() {
             onPress={() => {
               if (!city) return;
               setError(false);
-              start.mutate({ cityId: city.id, days: Number(days) }, { onError });
+              start.mutate(
+                {
+                  cityId: city.id,
+                  days: Number(days),
+                  ...(atRisk ? { hideWhileThere: hide } : {}),
+                },
+                { onError },
+              );
             }}
           />
         </>

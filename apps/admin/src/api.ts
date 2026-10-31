@@ -133,6 +133,8 @@ export interface AdminInstanceSettings {
   faithModule: boolean;
   photosAfterMatch: boolean;
   safetyResources: string | null;
+  discreetName: string | null;
+  riskCountries: string[];
   joinMinAge: number;
   joinMaxAge: number | null;
   joinGenders: Gender[];

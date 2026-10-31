@@ -470,6 +470,13 @@
       "when": 1793408898896,
       "tag": "0066_discretion",
       "breakpoints": true
+    },
+    {
+      "idx": 67,
+      "version": "7",
+      "when": 1793410642235,
+      "tag": "0067_discreet_app_risk",
+      "breakpoints": true
     }
   ]
 }

@@ -6,6 +6,12 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Added
 
+- **A discreet app and countries at risk**: communities can give the installed app a neutral name
+  (with plain grey icons, never the logo, also in the browser tab and notifications) and list
+  countries they consider dangerous; travelling to one warns the member and hides them from new
+  people for the trip (on by default). The fake-profile report explains a common sign (refusing a
+  short video call or a recent photo).
+
 - **Discretion**: hide my distance (no distance, "near you" or "visiting" for others), discreet
   notifications ("New notification", without the community's name or what happened), an app lock
   code kept only on the device (asked on opening and after 5 minutes away), and "Help near you",

@@ -62,3 +62,61 @@
 - A generic installed-app name and icon (phase 59 made the community logo the icon: the opposite
   of discreet) 📘; the browser tab title.
 - A report reason for "refuses a call or a recent photo".
+
+---
+
+# Phase 67b: A discreet installed app, countries at risk and a sign of fake profiles (v1.44)
+
+> Status: ✅ done (2026-10-31).
+
+## The gap (checked in the code)
+
+- Phase 59 made the community's logo the installed app's icon and its name the app's name: on a
+  home screen checked by family or at a border, that's the opposite of discreet. Browser tabs and
+  notification icons show them too.
+- Travel mode (phase 18c) moves a member to a city anywhere, including a country where being on a
+  dating app, or LGBTQ+, is dangerous; nothing warns them or hides them there. Tinder's Traveler
+  Alert does both.
+- The research's report reason "refuses a video call or a recent photo" (a common sign of a fake
+  profile or a setup) isn't mentioned anywhere.
+
+## What changes
+
+| Part                              | Change                                                                                                                                                                                                                                                                                        |
+| --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Discreet app (admins, off)        | Dashboard → Branding: a neutral name (e.g. "Notes") for the installed app. Then the manifest, the browser tab and notification titles use it, and every icon is a plain grey one made on the server, never the logo. 📘 Installed apps keep their old icon until reinstalled on some systems. |
+| Countries at risk (admins, empty) | Dashboard → Branding: the countries (ISO codes) the community considers dangerous, chosen by the operator (ILGA's yearly report is a good start) ⚖️ 📘. No default list.                                                                                                                      |
+| Travel to one of them             | Before saving, the app warns; the profile is hidden from new people for the trip (as "take a break"), on by default, and back when the trip ends or is ended early.                                                                                                                           |
+| Report: fake profile              | The report form explains that refusing a short video call or a recent photo is a common sign.                                                                                                                                                                                                 |
+
+## Tests
+
+- Unit: the manifest with a discreet name (name, icons, no logo, neutral colour).
+- Integration: the discreet name in `/v1/instance`, the manifest and the icon route (a grey PNG, not
+  the logo); risk countries saved (ISO codes only); travel to one hides the profile from new people
+  until the trip ends (or ends early), unless the member chose not to; travel elsewhere doesn't.
+- e2e (en, he): an admin sets a discreet name and a risk country; the tab title and the manifest
+  use it; a member chooses a city there and sees the warning; the profile is hidden. axe 0.
+
+## Done (67b)
+
+- **Unit** (shared, 1): a discreet manifest has the neutral name, no description, a neutral colour
+  and plain icons, never the logo or the community's name.
+- **Integration** (4, `hostile.test.ts`): the discreet name in `/v1/instance` and the manifest, the
+  icon route makes a grey 192×192 PNG (not a redirect to the heart), markup refused, cleared;
+  countries: ISO codes only, each once, admins only; a trip to one hides the member (as a break
+  ending with the trip) and ending it early ends the hiding; elsewhere nothing changes; the member
+  can choose not to hide; a break they chose stays after the trip.
+- **e2e** `pnpm --dir e2e hostile` (en, he): the dashboard shows the name and the countries; the
+  manifest and the browser tab use the neutral name and plain icon; choosing Haifa (marked for the
+  test) warns, hiding is on by default, and the member is hidden for the trip. axe 0. Screenshots
+  `admin-37-discreet`, `161-travel-risk` (en, he).
+- Notifications' title is the discreet name too (worker).
+- Docs: PRIVACY.md, CHANGELOG, README.
+
+### Not done here
+
+- Partner communities in countries at risk: partners don't declare a country; an operator who
+  considers one dangerous can end the partnership.
+- 📘 Native builds (alternate app icons) and installed PWAs that keep their old icon until
+  reinstalled.

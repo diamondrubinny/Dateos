@@ -498,6 +498,8 @@ function CommunityProfile({
   const [faith, setFaith] = useState(settings.faithModule);
   const [afterMatch, setAfterMatch] = useState(settings.photosAfterMatch);
   const [resources, setResources] = useState(settings.safetyResources ?? '');
+  const [discreetName, setDiscreetName] = useState(settings.discreetName ?? '');
+  const [risk, setRisk] = useState(settings.riskCountries.join(', '));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<Error>();
   const [saved, setSaved] = useState(false);
@@ -514,6 +516,16 @@ function CommunityProfile({
         faithModule: faith,
         photosAfterMatch: afterMatch,
         safetyResources: resources.trim() || null,
+        discreetName: discreetName.trim() || null,
+        // "IL, ae" → ["IL", "AE"]; the server refuses anything that isn't a 2-letter code.
+        riskCountries: [
+          ...new Set(
+            risk
+              .split(/[\s,;]+/)
+              .map((c) => c.trim().toUpperCase())
+              .filter(Boolean),
+          ),
+        ],
       });
       setSaved(true);
       onSaved();
@@ -591,6 +603,31 @@ function CommunityProfile({
       />
       <p id="safety-resources-help" className="help">
         {t.branding.safetyResourcesHelp}
+      </p>
+      {/* Phase 67b: for places where having the app is dangerous. */}
+      <label htmlFor="discreet-name">{t.branding.discreetName}</label>
+      <input
+        id="discreet-name"
+        maxLength={30}
+        dir="auto"
+        aria-describedby="discreet-name-help"
+        value={discreetName}
+        onChange={(e) => setDiscreetName(e.target.value)}
+      />
+      <p id="discreet-name-help" className="help">
+        {t.branding.discreetNameHelp}
+      </p>
+      <label htmlFor="risk-countries">{t.branding.riskCountries}</label>
+      <input
+        id="risk-countries"
+        dir="ltr"
+        autoCapitalize="characters"
+        aria-describedby="risk-countries-help"
+        value={risk}
+        onChange={(e) => setRisk(e.target.value)}
+      />
+      <p id="risk-countries-help" className="help">
+        {t.branding.riskCountriesHelp}
       </p>
       <p role="status" className={saved ? 'alert alert-ok' : 'visually-hidden'}>
         {saved ? t.branding.communitySaved : ''}

@@ -127,6 +127,12 @@ const en = {
     safetyResources: 'Help near you (optional)',
     safetyResourcesHelp:
       'Local help members can find in Settings: legal aid, emergency lines, LGBTQ+ or women’s organisations. Plain text, up to 2000 characters. Check the numbers before publishing.',
+    discreetName: 'Discreet app name (optional)',
+    discreetNameHelp:
+      'For places where having a dating app is dangerous: a neutral name like “Notes” for the installed app, the browser tab and notifications, with plain grey icons instead of the logo. Some phones keep the old icon until the app is installed again.',
+    riskCountries: 'Countries at risk (optional)',
+    riskCountriesHelp:
+      'Two-letter country codes, separated by commas (e.g. AE, SA). A member travelling there is warned and hidden from new people for the trip. ILGA World’s yearly report is a good starting point; you decide the list. ⚖️',
     communitySave: 'Save community profile',
     communitySaved: 'Community profile saved.',
     presetsTitle: 'Start from a preset',
@@ -1091,6 +1097,12 @@ const he: Messages = {
     safetyResources: 'עזרה בסביבה (לא חובה)',
     safetyResourcesHelp:
       'עזרה מקומית שחברי הקהילה ימצאו בהגדרות: סיוע משפטי, קווי חירום, ארגוני להט"ב או ארגוני נשים. טקסט פשוט, עד 2000 תווים. כדאי לבדוק את המספרים לפני הפרסום.',
+    discreetName: 'שם דיסקרטי לאפליקציה (לא חובה)',
+    discreetNameHelp:
+      'למקומות שבהם אפליקציית היכרויות בטלפון היא סכנה: שם ניטרלי כמו "פתקים" לאפליקציה המותקנת, ללשונית בדפדפן ולהתראות, עם סמלים אפורים פשוטים במקום הלוגו. בחלק מהטלפונים הסמל הישן נשאר עד התקנה מחדש.',
+    riskCountries: 'מדינות בסיכון (לא חובה)',
+    riskCountriesHelp:
+      'קודי מדינה בני שתי אותיות, מופרדים בפסיקים (למשל AE, SA). מי שנוסעים לשם מקבלים אזהרה ומוסתרים מאנשים חדשים במשך הנסיעה. הדוח השנתי של ILGA World הוא נקודת פתיחה טובה; ההחלטה על הרשימה שלכם. ⚖️',
     communitySave: 'שמירת פרופיל הקהילה',
     communitySaved: 'פרופיל הקהילה נשמר.',
     presetsTitle: 'התחלה מתבנית',

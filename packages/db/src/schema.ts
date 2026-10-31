@@ -439,6 +439,8 @@ export const locations = pgTable(
     travelGeo: geographyPoint('travel_geo'),
     travelStartedAt: timestamp('travel_started_at', { withTimezone: true }),
     travelUntil: timestamp('travel_until', { withTimezone: true }),
+    /** Phase 67b: the trip is to a country at risk and the member is hidden for it. */
+    travelHidden: boolean('travel_hidden').notNull().default(false),
   },
   (t) => [
     index('locations_geo_gist').using('gist', t.geo),
@@ -980,6 +982,13 @@ export const instanceSettings = pgTable(
     photosAfterMatch: boolean('photos_after_match').notNull().default(false),
     /** Phase 67a: local help the operator lists (legal aid, emergency lines), plain text. */
     safetyResources: varchar('safety_resources', { length: 2000 }),
+    /** Phase 67b: a neutral name for the installed app; with it, plain icons, never the logo. */
+    discreetName: varchar('discreet_name', { length: 30 }),
+    /** Phase 67b: ISO 3166-1 alpha-2 codes the operator considers dangerous (no default). */
+    riskCountries: text('risk_countries')
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
     /** Phase 62c: who may join (ages, genders: empty means everyone) and a declaration. */
     joinMinAge: smallint('join_min_age').notNull().default(18),
     joinMaxAge: smallint('join_max_age'),
