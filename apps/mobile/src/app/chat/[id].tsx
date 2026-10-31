@@ -56,6 +56,7 @@ import { useDrafts, useSaveDraft } from '../../lib/drafts';
 import { useLocale } from '../../lib/locale';
 import { useRealtime } from '../../lib/realtime';
 import { useStartCall } from '../../lib/call-queries';
+import { useAskToVerify } from '../../lib/liveness-queries';
 import { useInstance } from '../../lib/queries';
 import { MIN_TOUCH, radius, spacing, useColors } from '../../lib/theme';
 
@@ -118,6 +119,8 @@ function ChatScreen() {
   const lastMineId = [...all].reverse().find((m) => m.mine)?.id;
   const name = conversation?.profile.displayName ?? '';
   const icebreakers = useIcebreakers(matchId, locale, all.length === 0 && !messages.isPending);
+  // Phase 69: asking kindly to verify.
+  const askVerify = useAskToVerify(matchId);
 
   // Mark as read on open and whenever a new message from them arrives.
   const lastTheirs = [...all].reverse().find((m) => !m.mine)?.id;
@@ -595,6 +598,37 @@ function ChatScreen() {
           </View>
         ) : null}
 
+        {/* Phase 69: asking each other kindly to verify photos. */}
+        {!closed && newest?.verifyRequest.askedMe ? (
+          <View style={[styles.pad, styles.verifyCard]} testID="verify-asked">
+            <AppText variant="body">{t('askVerify.askedMe', { name })}</AppText>
+            <Button
+              variant="secondary"
+              label={t('askVerify.goVerify')}
+              onPress={() => router.push('/verify')}
+            />
+          </View>
+        ) : null}
+        {!closed && newest && (newest.verifyRequest.canAsk || newest.verifyRequest.asked) ? (
+          <View style={styles.pad} testID="ask-verify">
+            {newest.verifyRequest.asked ? (
+              <AppText variant="caption" tone="muted">
+                {t('askVerify.asked', { name })}
+              </AppText>
+            ) : (
+              <Button
+                variant="ghost"
+                label={t('askVerify.ask', { name })}
+                loading={askVerify.isPending}
+                onPress={() =>
+                  askVerify.mutate(undefined, {
+                    onError: () => setError(t('common.genericError')),
+                  })
+                }
+              />
+            )}
+          </View>
+        ) : null}
         {/* Phase 68d: a chaperone sees this chat; both sides always know. */}
         {!closed && newest && (newest.chaperones.mine || newest.chaperones.theirs) ? (
           <View style={styles.pad} testID="chaperone-notice">
@@ -850,6 +884,7 @@ export default function ChatRoute() {
 }
 
 const styles = StyleSheet.create({
+  verifyCard: { gap: spacing.sm },
   safe: { flex: 1 },
   flex: { flex: 1 },
   pad: { padding: spacing.md, gap: spacing.sm },

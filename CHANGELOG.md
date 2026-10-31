@@ -6,6 +6,12 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Added
 
+- **A live check**: with a provider the community chooses (`LIVENESS_URL`/`LIVENESS_SECRET`),
+  members can verify their photos in a minute: a live face compared with their first photo. Only
+  the result comes back; no selfie or face data is kept. The moderator's selfie check stays.
+- **Ask to verify**: in a chat with someone not verified, a member can kindly ask them to verify,
+  once; they see a gentle card with a way to do it.
+
 - **A chaperone (wali)**: a member invites someone they trust to read their dating chats from that
   day on, text only and never writing. Everyone they chat with sees a notice naming the chaperone
   and that their own messages are read too. The member sees when the chaperone last looked and can

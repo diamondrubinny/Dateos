@@ -38,6 +38,7 @@ import { photoUrl } from '../me/service.js';
 import type { PhotoService } from '../photos/service.js';
 import type { AudioService } from './audio.js';
 import type { ChaperoneService } from '../chaperone/service.js';
+import type { LivenessService } from '../liveness/service.js';
 import type { AlbumService } from '../photos/album.js';
 
 const {
@@ -329,6 +330,11 @@ export class ChatService {
   }
 
   /** Phase 66c: album shares shown in the chat. */
+  /** Phase 69. */
+  private verifyRequests: Pick<LivenessService, 'forChat'> | undefined;
+  useVerifyRequests(service: Pick<LivenessService, 'forChat'>): void {
+    this.verifyRequests = service;
+  }
   /** Phase 68d. */
   private chaperones: Pick<ChaperoneService, 'forChat'> | undefined;
   useChaperones(chaperones: Pick<ChaperoneService, 'forChat'>): void {
@@ -483,6 +489,9 @@ export class ChatService {
       chaperones: this.chaperones
         ? await this.chaperones.forChat(viewerId, otherId)
         : { mine: null, theirs: null },
+      verifyRequest: this.verifyRequests
+        ? await this.verifyRequests.forChat(matchId, viewerId, otherId)
+        : { asked: false, askedMe: false, canAsk: false },
     };
   }
 

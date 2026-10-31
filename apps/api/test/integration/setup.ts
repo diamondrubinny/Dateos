@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
+import { randomBytes } from 'node:crypto';
 import type { TextModel } from '@nexaheart/ai';
 import { existsSync } from 'node:fs';
 import { runMigrations } from '@nexaheart/db';
@@ -25,10 +26,18 @@ import { createServices, type Services } from '../../src/services.js';
 
 /** A well-formed (made-up) VAPID public key: the API only hands it to browsers. */
 export const TEST_WEB_PUSH_KEY = `B${'A'.repeat(86)}`;
-/** Phase 63: a pretend age-check provider (never a real secret). */
+/**
+ * Phase 69: a pretend live-check provider. The secret is made fresh for each test run, so nothing
+ * that looks like a secret is ever committed.
+ */
+export const TEST_LIVENESS = {
+  LIVENESS_URL: 'https://liveness.example.test/check',
+  LIVENESS_SECRET: randomBytes(24).toString('hex'),
+};
+/** Phase 63: a pretend age-check provider (its secret made fresh for each test run). */
 export const TEST_AGE_CHECK = {
   AGE_CHECK_URL: 'https://age.example.test/check',
-  AGE_CHECK_SECRET: 'test-only-age-check-secret-0123456789abcdef',
+  AGE_CHECK_SECRET: randomBytes(24).toString('hex'),
 };
 
 export const integrationEnabled = process.env.INTEGRATION === '1';
@@ -94,6 +103,8 @@ export interface SetupOptions {
   webPushKey?: string;
   /** Phase 63: an age-check provider (TEST_AGE_CHECK) for this suite. */
   ageCheck?: boolean;
+  /** Phase 69: a live-check provider (TEST_LIVENESS) for this suite. */
+  liveness?: boolean;
   /** Text AI model for this suite (default: none). */
   /** Pass undefined to use the dashboard's model (phase 24). */
   textModel?: TextModel | null | undefined;
@@ -151,6 +162,7 @@ export async function setupIntegration(options: SetupOptions = {}): Promise<Test
     UPDATE_EMAILS: 'on',
     WEB_PUSH_PUBLIC_KEY: options.webPushKey ?? TEST_WEB_PUSH_KEY,
     ...(options.ageCheck ? TEST_AGE_CHECK : {}),
+    ...(options.liveness ? TEST_LIVENESS : {}),
   });
   await runMigrations(env.DATABASE_URL);
 
