@@ -160,6 +160,15 @@ export async function exportMemberData(
     })
     .from(t.profiles)
     .where(eq(t.profiles.userId, userId));
+  // Phase 68d: my chaperone, and whom I chaperone (since when; never what they read).
+  const chaperoneRows = (
+    await db.execute<Record<string, unknown>>(sql`
+      SELECT CASE WHEN c.user_id = ${userId} THEN 'my_chaperone' ELSE 'i_chaperone' END AS role,
+        p.display_name AS "name", c.started_at AS "since", c.last_viewed_at AS "lastViewedAt"
+      FROM chaperones c
+      JOIN profiles p ON p.user_id = CASE WHEN c.user_id = ${userId} THEN c.chaperone_id ELSE c.user_id END
+      WHERE c.user_id = ${userId} OR c.chaperone_id = ${userId}`)
+  ).rows;
   // Phase 68b: résumé links (never the token).
   const resumeLinkRows = await db
     .select({
@@ -647,6 +656,7 @@ export async function exportMemberData(
       received: introductionsReceived,
       sentAsMatchmaker: introductionsSent,
     },
+    chaperones: chaperoneRows,
     profileReview: review ? { ...review, reviewedAt: iso(review.reviewedAt) } : null,
     resumeLinks: resumeLinkRows.map((r) => ({
       ...r,

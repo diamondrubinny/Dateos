@@ -6,6 +6,11 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Added
 
+- **A chaperone (wali)**: a member invites someone they trust to read their dating chats from that
+  day on, text only and never writing. Everyone they chat with sees a notice naming the chaperone
+  and that their own messages are read too. The member sees when the chaperone last looked and can
+  remove them at any moment; the chaperone can step down.
+
 - **Friends who suggest a pair**: suggest two of your friends here (friends-mode matches or your
   double-date partner) to each other. They answer privately, as with a community matchmaker; you
   only see whether it went ahead. Members can turn friend suggestions off.

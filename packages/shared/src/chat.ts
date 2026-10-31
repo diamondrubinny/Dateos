@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
+import { chatChaperonesSchema } from './chaperone.js';
 import { matchModeSchema } from './friends.js';
 import { z } from 'zod';
 import { albumShareStateSchema } from './profile.js';
@@ -145,6 +146,8 @@ export const messagesPageSchema = z.object({
   myAlbum: z.object({ share: albumShareStateSchema.nullable() }).nullable(),
   /** Phase 66c: the other person shared their album with me. */
   theirAlbum: albumShareStateSchema.nullable(),
+  /** Phase 68d: chaperones who see this chat (mine, the other person's), shown to both. */
+  chaperones: chatChaperonesSchema,
 });
 export type MessagesPage = z.infer<typeof messagesPageSchema>;
 

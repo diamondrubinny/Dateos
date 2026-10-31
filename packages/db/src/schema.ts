@@ -1416,7 +1416,7 @@ export const friendLinks = pgTable(
   {
     tokenHash: varchar('token_hash', { length: 64 }).primaryKey(),
     ownerId: ownerId(),
-    /** 'take' or 'pair'. */
+    /** 'take', 'pair' or (phase 68d) 'wali', a chaperone invitation. */
     kind: varchar('kind', { length: 4 }).notNull(),
     expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
     usedAt: timestamp('used_at', { withTimezone: true }),
@@ -2041,5 +2041,27 @@ export const resumeLinks = pgTable(
   (t) => [
     uniqueIndex('resume_links_token_uq').on(t.tokenHash),
     index('resume_links_owner_idx').on(t.ownerId),
+  ],
+);
+
+/**
+ * Phase 68d: a member's chaperone (one at a time): read-only access to the member's dating chats,
+ * from `started_at` on, with a notice both sides see. Removing the row ends access at once.
+ */
+export const chaperones = pgTable(
+  'chaperones',
+  {
+    userId: text('user_id')
+      .primaryKey()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    chaperoneId: text('chaperone_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    startedAt: timestamp('started_at', { withTimezone: true }).notNull().defaultNow(),
+    lastViewedAt: timestamp('last_viewed_at', { withTimezone: true }),
+  },
+  (t) => [
+    index('chaperones_chaperone_idx').on(t.chaperoneId),
+    check('chaperones_not_self', sql`${t.userId} <> ${t.chaperoneId}`),
   ],
 );

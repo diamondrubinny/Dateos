@@ -50,6 +50,7 @@ import { TravelMode } from '../components/TravelMode';
 import { SecuritySettings } from '../components/SecuritySettings';
 import { WhoCanReachMe } from '../components/WhoCanReachMe';
 import { OpenToMatchmakers } from '../components/Introductions';
+import { Chaperone } from '../components/Chaperone';
 import { Discretion } from '../components/Discretion';
 
 function SettingsContent() {
@@ -238,6 +239,8 @@ function SettingsContent() {
       />
       {/* Phase 68a: introductions by the community's matchmakers. */}
       <OpenToMatchmakers onError={() => setError(t('common.genericError'))} />
+      {/* Phase 68d: a chaperone the member chooses. */}
+      <Chaperone onError={() => setError(t('common.genericError'))} />
 
       <MoreOptions>
         <AppText variant="heading">{t('visibility.title')}</AppText>

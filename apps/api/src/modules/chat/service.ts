@@ -37,6 +37,7 @@ import type { DiscoveryService } from '../discovery/service.js';
 import { photoUrl } from '../me/service.js';
 import type { PhotoService } from '../photos/service.js';
 import type { AudioService } from './audio.js';
+import type { ChaperoneService } from '../chaperone/service.js';
 import type { AlbumService } from '../photos/album.js';
 
 const {
@@ -328,6 +329,11 @@ export class ChatService {
   }
 
   /** Phase 66c: album shares shown in the chat. */
+  /** Phase 68d. */
+  private chaperones: Pick<ChaperoneService, 'forChat'> | undefined;
+  useChaperones(chaperones: Pick<ChaperoneService, 'forChat'>): void {
+    this.chaperones = chaperones;
+  }
   private album: AlbumService | undefined;
   useAlbum(album: AlbumService): void {
     this.album = album;
@@ -474,6 +480,9 @@ export class ChatService {
       ...(this.album
         ? await this.album.chatState(matchId, viewerId, otherId)
         : { myAlbum: null, theirAlbum: null }),
+      chaperones: this.chaperones
+        ? await this.chaperones.forChat(viewerId, otherId)
+        : { mine: null, theirs: null },
     };
   }
 
