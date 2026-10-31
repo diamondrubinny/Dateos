@@ -9,6 +9,7 @@ import {
   type WebPushPayload,
 } from '@nexaheart/shared';
 import { eq, inArray, sql } from 'drizzle-orm';
+import { resting } from './shabbat-jobs.js';
 import type { Redis } from 'ioredis';
 import type { Logger } from 'pino';
 import webpush from 'web-push';
@@ -44,6 +45,8 @@ export interface PushContext {
   expoUrl: string;
   expoAccessToken?: string | undefined;
   fetch?: typeof fetch;
+  /** The clock for Shabbat and holiday times (phase 74a); tests move it. */
+  now?: () => number;
 }
 
 const texts = {
@@ -56,6 +59,7 @@ const texts = {
     visible: 'Your break is over: new people can see your profile again',
     introduction: 'You have a new introduction from a community matchmaker',
     event_help: 'Someone at a community event needs help: open the dashboard',
+    after_rest: 'Welcome back: new things came in over Shabbat or the holiday',
   },
   he: {
     message: 'יש לך הודעה חדשה',
@@ -66,6 +70,7 @@ const texts = {
     visible: 'ההפסקה הסתיימה: אנשים חדשים יכולים לראות שוב את הפרופיל שלך',
     introduction: 'יש לך הצעת היכרות חדשה משדכנות הקהילה',
     event_help: 'מישהו באירוע קהילה צריך עזרה: כדאי לפתוח את לוח הניהול',
+    after_rest: 'ברוכים השבים: הגיעו דברים חדשים בזמן השבת או החג',
   },
   ar: {
     message: 'لديك رسالة جديدة',
@@ -76,6 +81,7 @@ const texts = {
     visible: 'انتهت الاستراحة: يمكن لأشخاص جدد رؤية ملفك الشخصي مرة أخرى',
     introduction: 'لديك اقتراح تعارف جديد في المجتمع',
     event_help: 'شخص ما في فعالية مجتمعية يحتاج إلى مساعدة: افتح لوحة الإدارة',
+    after_rest: 'أهلًا بعودتك: وصلت أشياء جديدة خلال السبت أو العيد',
   },
   ru: {
     message: 'У вас новое сообщение',
@@ -86,6 +92,7 @@ const texts = {
     visible: 'Перерыв закончился: новые люди снова видят ваш профиль',
     introduction: 'Вам предложили новое знакомство в сообществе',
     event_help: 'Кому-то на мероприятии сообщества нужна помощь: откройте панель управления',
+    after_rest: 'С возвращением: за Шаббат или праздник пришло новое',
   },
 } as const;
 
@@ -124,6 +131,7 @@ export type PushResult =
   | 'muted'
   | 'off'
   | 'quiet'
+  | 'resting'
   | 'throttled'
   | 'no-devices'
   | 'sent';
@@ -164,6 +172,18 @@ export async function sendPush(ctx: PushContext, job: PushJob): Promise<PushResu
     );
     if (off.rows.length > 0) return 'off';
   }
+  // Phase 74a: Shabbat and holidays: nothing but safety check-ins (and help at an event, to
+  // admins); what came in is told once, after the rest.
+  if (
+    job.kind !== 'checkin' &&
+    job.kind !== 'event_help' &&
+    (await resting(ctx.db, job.userId, ctx.now?.() ?? Date.now()))
+  ) {
+    await ctx.db.execute(
+      sql`UPDATE preferences SET shabbat_held = true WHERE user_id = ${job.userId}`,
+    );
+    return 'resting';
+  }
   // Quiet hours (phase 39), in the member's own time zone; calls, safety check-ins and someone
   // needing help at an event (phase 71c, to admins) still come.
   if (
@@ -174,6 +194,7 @@ export async function sendPush(ctx: PushContext, job: PushJob): Promise<PushResu
   ) {
     return 'quiet';
   }
+  if (job.kind === 'after_rest') return sendToDevices(ctx, job); // about the member's own inbox
   if (job.kind === 'checkin') return sendToDevices(ctx, job); // safety: no match or presence check
   if (job.kind === 'event') return sendToDevices(ctx, job); // not about a conversation
   if (job.kind === 'event_help') return sendToDevices(ctx, job); // to admins, about an event

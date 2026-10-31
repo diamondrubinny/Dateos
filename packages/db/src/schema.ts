@@ -326,6 +326,17 @@ export const preferences = pgTable(
     appBadge: boolean('app_badge').notNull().default(true),
     /** Phase 73a: partners see only the short card of me until we match. */
     partnerShortCard: boolean('partner_short_card').notNull().default(false),
+    /**
+     * Phase 74a: Shabbat and holiday mode (with the `shabbat` consent): quiet from candle lighting
+     * to nightfall; matches told only if chosen. The time zone comes from the device.
+     */
+    shabbatMode: boolean('shabbat_mode').notNull().default(false),
+    shabbatShow: boolean('shabbat_show').notNull().default(false),
+    shabbatCandles: smallint('shabbat_candles').notNull().default(18),
+    shabbatSecondDay: boolean('shabbat_second_day').notNull().default(false),
+    shabbatTimeZone: varchar('shabbat_time_zone', { length: 64 }),
+    /** Something waited during the rest: one notification after it. */
+    shabbatHeld: boolean('shabbat_held').notNull().default(false),
     /** Receiver control: people can turn video and voice calls off (phase 15). */
     acceptCalls: boolean('accept_calls').notNull().default(true),
     /** Dealbreakers (phase 19): empty means any; a missing answer always passes. */

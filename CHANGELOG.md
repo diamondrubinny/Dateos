@@ -6,6 +6,13 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Added
 
+- **Shabbat and holiday mode** (Settings → Shabbat and holidays, with its own consent): no
+  notifications from candle lighting to nightfall on Shabbat and holidays, by your approximate
+  location and the Hebrew calendar (candle-lighting minutes and a second day of holidays as
+  settings); one notification afterwards if something came in; safety check-ins still come.
+  Matches can be told "keeping Shabbat" in the chat, only during the rest. Times are worked out on
+  the server with no new dependency.
+
 - **Trust signals between partner communities** (off by default, both sides opt in): banning a
   member sends partners only fingerprints of their photos and the report's category. At a partner,
   a member with a photo that looks the same gets a report for moderators to review, never an

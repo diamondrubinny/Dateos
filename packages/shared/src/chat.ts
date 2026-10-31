@@ -172,6 +172,11 @@ export const conversationSchema = z.object({
   archived: z.boolean(),
   /** Phase 38: pinned to the top of Matches. */
   pinned: z.boolean(),
+  /**
+   * Phase 74a: the other person is keeping Shabbat (or a holiday) right now and chose to say so:
+   * until when, by their place.
+   */
+  resting: z.object({ until: z.string(), kind: z.enum(['shabbat', 'holiday']) }).nullable(),
 });
 
 /** Search in a chat (phase 32). */

@@ -458,6 +458,20 @@ function ChatScreen() {
           </View>
         ) : null}
 
+        {conversation?.resting ? (
+          // Phase 74a: only because they chose to say so, and only during their rest.
+          <View style={styles.pad} testID="chat-resting">
+            <Banner
+              tone="info"
+              message={t(
+                conversation.resting.kind === 'holiday'
+                  ? 'shabbat.restingHoliday'
+                  : 'shabbat.resting',
+                { name },
+              )}
+            />
+          </View>
+        ) : null}
         {conversation && !closed ? <FreeTimes matchId={matchId} name={name} /> : null}
 
         {searching ? (

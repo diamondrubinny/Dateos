@@ -139,6 +139,8 @@ function screenFor(data) {
       return id ? '/events/' + id : '/';
     case 'visible':
       return '/profile';
+    case 'after_rest':
+      return '/matches';
     default:
       return '/';
   }
