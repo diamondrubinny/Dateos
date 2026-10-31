@@ -1,6 +1,6 @@
 # Phase 73a: Federation, less before a match, and no partners where it's dangerous (v1.57)
 
-> Status: 🚧 in progress. ⚖️ = needs legal review.
+> Status: ✅ done (2026-10-31). ⚖️ = needs legal review.
 > From `docs/research/market-gaps-2026-10.he.md`, item 73 (trust and privacy in federation), parts
 > 2 and 3: less data to partners before a match (netmatch.me's manifesto), and a federation policy
 > that keeps a high-risk community from partners in dangerous countries. Sharing trust signals
@@ -40,3 +40,25 @@
   carries the country; invite and accept refused for a partner in a country at risk; an existing
   one flagged; the settings saved and exported.
 - e2e (en, he): the dashboard settings and the flag; the member setting. axe 0. Screenshots.
+
+## Done
+
+- **Integration** (`federation.test.ts`, `federated-discovery.test.ts`, "phase 73a"): the country is
+  validated (two letters) and published in the identity; inviting a community in a country at
+  risk is refused with the reason, before anything is sent; an invitation from one is kept and
+  flagged, and accepting it is refused until it says otherwise (checked again on accept); a
+  partner put on the list later is flagged, not ended; "Test connection" refreshes its country;
+  an older partner without a country is never refused for it. The short card (member, then
+  community): no bio, no prompts, the first photo only; the second photo is refused before a match
+  and served after; the status and the export carry the choice.
+- **e2e** `pnpm --dir e2e federation-privacy` (en, he, between two real servers): Noa picks the
+  short card in the app and Dan at community B sees it; the admin chooses short cards for everyone
+  and the country in the dashboard; a partner in a country at risk is flagged after a test; the
+  member then sees the community's note. axe 0. Screenshots `188-partners-short-card`,
+  `admin-13-before-match`, `admin-14-partner-at-risk`.
+- Docs: PRIVACY.md, CHANGELOG, README.
+
+### Not done here
+
+- Sharing trust signals between partners (phase 73b).
+- Ending partnerships automatically when a partner's country goes on the list (the admin decides).

@@ -182,6 +182,7 @@ async function run(browser: Browser, locale: L, poolA: Pool, poolB: Pool) {
     await M.context.close();
   }
   await dan.call('POST', '/v1/federated/leave');
+  await noa.call('POST', '/v1/federated/leave');
   await adminA.call('PATCH', '/v1/admin/instance', {
     partnerCards: 'full',
     communityCountry: null,
