@@ -3,6 +3,7 @@
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 import multipart from '@fastify/multipart';
 import {
+  myAlbumSchema,
   ErrorCode,
   MAX_PHOTO_BYTES,
   photoDescriptionInputSchema,
@@ -16,13 +17,16 @@ import type { Auth } from '../../auth/auth.js';
 import { currentUser, requireUser } from '../../auth/session.js';
 import { HttpError } from '../../plugins/error-handler.js';
 import type { PhotoService } from './service.js';
+import type { AlbumService } from './album.js';
 
 const idParams = z.object({ id: z.uuid() });
 
-export const photoRoutes: FastifyPluginAsyncZod<{ auth: Auth; photos: PhotoService }> = async (
-  app,
-  { auth, photos },
-) => {
+export const photoRoutes: FastifyPluginAsyncZod<{
+  auth: Auth;
+  photos: PhotoService;
+  /** Phase 66c. */
+  album?: AlbumService;
+}> = async (app, { auth, photos, album }) => {
   await app.register(multipart, {
     limits: { fileSize: MAX_PHOTO_BYTES, files: 1, fields: 0, parts: 1 },
   });
@@ -42,6 +46,26 @@ export const photoRoutes: FastifyPluginAsyncZod<{ auth: Auth; photos: PhotoServi
       return reply.status(202).send(photo);
     },
   );
+
+  // Phase 66c: my private album (never on the profile).
+  if (album) {
+    app.get('/v1/me/album', { schema: { response: { 200: myAlbumSchema } } }, async (request) =>
+      album.mine(currentUser(request).id),
+    );
+    app.post(
+      '/v1/me/album/photos',
+      {
+        schema: { response: { 202: photoSchema } },
+        config: perUserLimit(30, 60 * 60 * 1000),
+      },
+      async (request, reply) => {
+        const file = await request.file();
+        if (!file) throw new HttpError(400, ErrorCode.BadRequest, 'Attach one image file.');
+        const photo = await album.upload(currentUser(request).id, await file.toBuffer());
+        return reply.status(202).send(photo);
+      },
+    );
+  }
 
   app.get('/v1/photos/:id', { schema: { params: idParams } }, async (request, reply) => {
     const photo = await photos.open(currentUser(request).id, request.params.id);

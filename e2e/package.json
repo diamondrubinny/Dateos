@@ -71,7 +71,8 @@
     "compliance": "tsx compliance.ts",
     "receiver-protection": "tsx receiver-protection.ts",
     "photo-blur": "tsx photo-blur.ts",
-    "match-note": "tsx match-note.ts"
+    "match-note": "tsx match-note.ts",
+    "album": "tsx album.ts"
   },
   "dependencies": {
     "@axe-core/playwright": "4.14.0",

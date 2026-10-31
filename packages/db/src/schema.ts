@@ -181,6 +181,8 @@ export const photoPurpose = pgEnum('photo_purpose', [
   'chat',
   'verification',
   'branding',
+  /** Phase 66c: a member's private album, shared with one match at a time. */
+  'album',
 ]);
 export const consentKind = pgEnum('consent_kind', consentKinds);
 export const promptKey = pgEnum('prompt_key', promptKeys);
@@ -1900,4 +1902,28 @@ export const photoReveals = pgTable(
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [primaryKey({ columns: [t.matchId, t.userId] })],
+);
+
+/**
+ * Phase 66c: a member shared their private album with the other person in this match: once (one
+ * minute from the first look), ten minutes from the first look, or without a limit. The window is
+ * checked on every photo request; deleted with the match or the account.
+ */
+export const albumShares = pgTable(
+  'album_shares',
+  {
+    matchId: uuid('match_id')
+      .notNull()
+      .references(() => matches.id, { onDelete: 'cascade' }),
+    /** Whose album. */
+    userId: ownerId(),
+    mode: varchar('mode', { length: 12 }).notNull(),
+    openedAt: timestamp('opened_at', { withTimezone: true }),
+    expiresAt: timestamp('expires_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.matchId, t.userId] }),
+    check('album_shares_mode', sql`${t.mode} IN ('once', 'ten_minutes', 'unlimited')`),
+  ],
 );

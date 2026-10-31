@@ -123,6 +123,11 @@ function ProfileContent() {
             label={t('matchNote.title')}
             onPress={() => router.push('/edit-match-note')}
           />
+          <Button
+            variant="secondary"
+            label={t('album.title')}
+            onPress={() => router.push('/my-album')}
+          />
           {faithModule ? (
             <Button
               variant="secondary"

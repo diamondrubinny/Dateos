@@ -21,3 +21,6 @@ overrides:
   '@huggingface/transformers>sharp': 0.35.5
   '@esbuild-kit/core-utils>esbuild': ^0.25.0
   'xcode>uuid': ^11.1.1
+  # Expo's CLI (dev server certificates only, never in the app): the October 2026 node-forge
+  # advisories (PEM ReDoS, PKCS#12, TLS records, X.509) are fixed from 1.4.1.
+  'node-forge': ^1.4.1

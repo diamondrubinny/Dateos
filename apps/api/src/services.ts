@@ -43,6 +43,7 @@ import { EmailChangeService } from './modules/account/email-change.js';
 import { StaffMfaService } from './modules/admin/mfa.js';
 import { ModerationService } from './modules/admin/moderation.js';
 import { AppealService } from './modules/safety/appeals.js';
+import { AlbumService } from './modules/photos/album.js';
 import { ComplianceService } from './modules/compliance/service.js';
 import { AgeCheckService } from './modules/age-check/service.js';
 import { ReportService } from './modules/safety/reports.js';
@@ -87,6 +88,8 @@ export interface Services {
   appeals: AppealService;
   /** Phase 64. */
   compliance: ComplianceService;
+  /** Phase 66c. */
+  album: AlbumService;
   ageCheck: AgeCheckService;
   updates: UpdateService;
   trust: TrustService;
@@ -248,6 +251,9 @@ export function createServices(
     },
     overrides.now,
   );
+  // Phase 66c: private albums, shared in chats.
+  const album = new AlbumService(dbHandle.db, photos);
+  chat.useAlbum(album);
 
   const callMedia = () => integrations.media();
   const calls = new CallService(
@@ -404,6 +410,7 @@ export function createServices(
     moderation,
     appeals,
     compliance,
+    album,
     ageCheck,
     updates,
     instance,
