@@ -188,6 +188,8 @@ export const federatedCardSchema = z.object({
         height: z.number().int().positive().max(10_000).nullable(),
         /** Phase 43: the member's own words, for screen readers (older partners leave it out). */
         description: z.string().max(150).nullable().optional(),
+        /** Phase 66a: served blurred (older partners leave it out, and ignore it). */
+        blurred: z.boolean().optional(),
       }),
     )
     .min(1)

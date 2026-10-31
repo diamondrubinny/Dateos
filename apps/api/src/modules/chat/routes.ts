@@ -88,6 +88,23 @@ export const chatRoutes: FastifyPluginAsyncZod<ChatRouteOptions> = async (
       ),
   );
 
+  // Phase 66a: show my blurred photos to this match, or take it back.
+  app.put(
+    '/v1/matches/:id/photos-shown',
+    {
+      schema: {
+        params: matchParams,
+        body: z.object({ shown: z.boolean() }),
+        response: { 200: z.object({ ok: z.literal(true) }) },
+      },
+      config: perUserLimit(30, 60_000),
+    },
+    async (request) => {
+      await chat.showPhotos(request.params.id, currentUser(request).id, request.body.shown);
+      return { ok: true as const };
+    },
+  );
+
   app.post(
     '/v1/matches/:id/messages',
     {

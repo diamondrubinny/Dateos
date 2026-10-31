@@ -495,6 +495,7 @@ function CommunityProfile({
   const { t } = useLocale();
   const [offered, setOffered] = useState<Intention[]>(settings.intentionsOffered);
   const [faith, setFaith] = useState(settings.faithModule);
+  const [afterMatch, setAfterMatch] = useState(settings.photosAfterMatch);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<Error>();
   const [saved, setSaved] = useState(false);
@@ -506,7 +507,11 @@ function CommunityProfile({
     setError(undefined);
     setSaved(false);
     try {
-      await api.saveSettings({ intentionsOffered: offered, faithModule: faith });
+      await api.saveSettings({
+        intentionsOffered: offered,
+        faithModule: faith,
+        photosAfterMatch: afterMatch,
+      });
       setSaved(true);
       onSaved();
     } catch (err) {
@@ -555,6 +560,20 @@ function CommunityProfile({
       </div>
       <p id="faith-module-help" className="help">
         {t.branding.faithModuleHelp}
+      </p>
+      {/* Phase 66a: text first, as Lex. */}
+      <div className="checkbox">
+        <input
+          id="photos-after-match"
+          type="checkbox"
+          checked={afterMatch}
+          aria-describedby="photos-after-match-help"
+          onChange={(e) => setAfterMatch(e.target.checked)}
+        />
+        <label htmlFor="photos-after-match">{t.branding.photosAfterMatch}</label>
+      </div>
+      <p id="photos-after-match-help" className="help">
+        {t.branding.photosAfterMatchHelp}
       </p>
       <p role="status" className={saved ? 'alert alert-ok' : 'visually-hidden'}>
         {saved ? t.branding.communitySaved : ''}

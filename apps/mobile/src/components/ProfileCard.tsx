@@ -13,7 +13,7 @@ import { RemoteImage } from './RemoteImage';
 import { AboutSection } from './AboutSection';
 import { VoicePlayer } from './VoicePlayer';
 import { VoiceTranscript } from './VoiceTranscript';
-import { useMe } from '../lib/queries';
+import { useInstance, useMe } from '../lib/queries';
 
 export type LikeTarget = { itemType: 'photo' | 'prompt'; itemId: string; label: string };
 
@@ -60,6 +60,7 @@ export function ProfileCard({ profile, onLikeItem }: ProfileCardProps) {
   const colors = useColors();
   const { direction, locale } = useLocale();
   const mine = useMe().data?.about.interests;
+  const afterMatch = useInstance().data?.community.photosAfterMatch ?? false;
   const [index, setIndex] = useState(0);
   // Arrows point outward in both directions: "previous" sits at the start edge.
   const [prevGlyph, nextGlyph] = direction === 'rtl' ? ['›', '‹'] : ['‹', '›'];
@@ -94,15 +95,31 @@ export function ProfileCard({ profile, onLikeItem }: ProfileCardProps) {
         <View style={styles.photoWrap}>
           <RemoteImage
             path={photo.url}
-            // The member's own description (phase 40), when there is one.
+            // The member's own description (phase 40), when there is one; a blurred photo
+            // (phase 66a) says why instead.
             label={[
               `${profile.displayName}, ${t('discover.photoOf', { n: index + 1, total })}`,
-              photo.description,
+              photo.blurred ? t('blur.hiddenLabel') : photo.description,
             ]
               .filter(Boolean)
               .join('. ')}
             style={styles.photo}
+            // The server already sends a tiny blurred copy; this only smooths it when scaled up.
+            {...(photo.blurred ? { blurRadius: 20 } : {})}
           />
+          {photo.blurred ? (
+            <View
+              style={[styles.blurNote, { backgroundColor: colors.background }]}
+              testID="photo-blurred"
+            >
+              <AppText variant="label" center>
+                🔒{' '}
+                {afterMatch
+                  ? t('blur.afterMatch')
+                  : t('blur.byChoice', { name: profile.displayName })}
+              </AppText>
+            </View>
+          ) : null}
           {total > 1 ? (
             <View style={styles.photoNav}>
               <IconButton
@@ -362,6 +379,14 @@ const styles = StyleSheet.create({
   },
   counter: { paddingHorizontal: spacing.sm, paddingVertical: 2, borderRadius: radius.pill },
   photoLike: { position: 'absolute', bottom: spacing.md, end: spacing.md },
+  blurNote: {
+    position: 'absolute',
+    top: '40%',
+    start: spacing.lg,
+    end: spacing.lg,
+    padding: spacing.md,
+    borderRadius: radius.md,
+  },
   iconButton: {
     width: MIN_TOUCH,
     height: MIN_TOUCH,

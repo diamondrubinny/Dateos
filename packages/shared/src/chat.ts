@@ -135,6 +135,11 @@ export const messagesPageSchema = z.object({
    * (and they haven't written to me): I can't write here until I verify my photos.
    */
   writeNeedsVerification: z.boolean(),
+  /**
+   * Phase 66a: my photos are blurred for the other person; whether I showed them in this match.
+   * null when they aren't blurred for them.
+   */
+  myPhotosShown: z.boolean().nullable(),
 });
 export type MessagesPage = z.infer<typeof messagesPageSchema>;
 
@@ -276,6 +281,8 @@ export const chatSettingsSchema = z.object({
     .nullable(),
   /** Phase 65: only members whose photos were verified see me and can write to me. */
   verifiedContactOnly: z.boolean(),
+  /** Phase 66a: others see my photos blurred until I show them to a match. */
+  blurPhotos: z.boolean(),
 });
 export const chatSettingsInputSchema = chatSettingsSchema
   .partial()

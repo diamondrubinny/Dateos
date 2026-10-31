@@ -6,6 +6,11 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Added
 
+- **Blurred profile photos**: members can blur their photos for everyone and show them to one
+  match at a time from the chat (and take that back); communities can show photos only after a
+  match. The blur is made on the server, never by hiding the real photo in the app, and such
+  photos are never cached; partner communities get them blurred too.
+
 - **Who can reach me**: members can limit new likes a day (10, 25 or 50; once reached, new people
   stop seeing them until it drops) and accept first messages from verified members only (others
   see why and how to verify). Threats to share images unless someone pays are recognised in four

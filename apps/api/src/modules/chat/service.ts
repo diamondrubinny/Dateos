@@ -49,6 +49,7 @@ const {
   prompts,
   audioClips,
   preferences,
+  photoReveals,
   datePlans,
   calls,
 } = schema;
@@ -302,6 +303,29 @@ export class ChatService {
     return { otherId };
   }
 
+  /**
+   * Phase 66a: show my blurred photos to the other person in this match, or take that back.
+   * Valid only while the match lasts (deleted with it).
+   */
+  async showPhotos(matchId: string, userId: string, shown: boolean): Promise<void> {
+    await this.participant(matchId, userId);
+    if (shown) {
+      await this.db.insert(photoReveals).values({ matchId, userId }).onConflictDoNothing();
+    } else {
+      await this.db
+        .delete(photoReveals)
+        .where(and(eq(photoReveals.matchId, matchId), eq(photoReveals.userId, userId)));
+    }
+  }
+
+  /** null when my photos aren't blurred (by me) for the other person. */
+  private async myPhotosShown(matchId: string, userId: string): Promise<boolean | null> {
+    const { rows } = await this.db.execute<{ blur: boolean; shown: boolean }>(sql`
+      SELECT COALESCE((SELECT blur_photos FROM preferences WHERE user_id = ${userId}), false) AS blur,
+        EXISTS (SELECT 1 FROM photo_reveals WHERE match_id = ${matchId} AND user_id = ${userId}) AS shown`);
+    return rows[0]?.blur ? rows[0].shown : null;
+  }
+
   private rows(where: ReturnType<typeof and>) {
     return this.db
       .select({
@@ -439,6 +463,7 @@ export class ChatService {
       otherAcceptsVoice: await this.acceptsVoice(otherId),
       callsAvailable: await this.callsAvailable(matchId, viewerId, otherId),
       writeNeedsVerification: await this.writeNeedsVerification(matchId, viewerId, otherId),
+      myPhotosShown: await this.myPhotosShown(matchId, viewerId),
     };
   }
 
