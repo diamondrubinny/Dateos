@@ -233,6 +233,7 @@ export class MeService {
             visibility: about.identityVisibility as MyIdentity['visibility'],
           }
         : noIdentity,
+      matchNote: about?.matchNote ?? null,
       voicePrompt:
         about?.voiceAudioId && about.voicePromptKey
           ? await this.myVoicePrompt(about.voiceAudioId, about.voicePromptKey as PromptKey)
@@ -418,6 +419,22 @@ export class MeService {
       identityVisibility: input.visibility,
       updatedAt: new Date(),
     };
+    await this.db
+      .insert(profileAbout)
+      .values({ userId, ...values })
+      .onConflictDoUpdate({ target: profileAbout.userId, set: values });
+  }
+
+  /**
+   * Phase 66b, Match Note: may say something sensitive (a disability, an identity), so it needs the
+   * sensitive-data consent; shown only to matches. null deletes it.
+   */
+  async setMatchNote(userId: string, note: string | null): Promise<void> {
+    await this.assertConsented(userId);
+    if (note && checkHarm(note).flagged) {
+      throw new HttpError(400, ErrorCode.ValidationError, 'Please choose other words.');
+    }
+    const values = { matchNote: note, updatedAt: new Date() };
     await this.db
       .insert(profileAbout)
       .values({ userId, ...values })

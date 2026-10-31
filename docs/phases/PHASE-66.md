@@ -67,3 +67,45 @@
 
 - 66b: Match Note, a private card shown only after a match.
 - 66c: private albums with one-time, 10-minute or unlimited viewing.
+
+---
+
+# Phase 66b: Match Note, a card only matches see (v1.41)
+
+> Status: ✅ done (2026-10-31).
+
+## The gap
+
+Things people want a match to know before meeting (a wheelchair, a hidden disability, being trans,
+being a single parent, keeping kosher) either go on the public profile, seen by everyone, or wait
+for an awkward moment. Hinge's Match Note (about 2 in 3 testers said it helped, according to the
+company) and Dateability's "Deets" fill this gap.
+
+## What changes
+
+| Part        | Change                                                                                                                                                       |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Match Note  | Profile → "Note for matches": up to 500 characters of plain text, written by the member. Deleted by clearing it.                                             |
+| Who sees it | Only people the member has an open match with: on their profile and from the chat. Never strangers, the member's own "as others see it" preview or partners. |
+| Safety      | Hurtful words are refused, as elsewhere; it needs the sensitive-data consent, since it may say something sensitive ⚖️.                                       |
+| Data        | In "Download my data"; deleted with the account.                                                                                                             |
+
+## Tests
+
+- Integration: saved, cleared, refused without consent or with markup or hurtful words; a stranger
+  doesn't get it, a match does, and loses it when the match ends; the preview doesn't show it;
+  export.
+- e2e (en, he): a member writes a note; a match sees it on the profile; a stranger doesn't. axe 0.
+
+## Done (66b)
+
+- **Integration** (4, `match-note.test.ts`): saved with line breaks and cleared; markup, too long,
+  blank and hurtful words refused; refused without the sensitive-data consent; a stranger doesn't
+  get it, a member before the match doesn't either, a match does, the member's preview doesn't, and
+  it's gone when the match ends; in "Download my data".
+- **e2e** `pnpm --dir e2e match-note` (en, he): the member writes the note from the profile tab; a
+  stranger doesn't get it from the API; a match sees "A note from Noa for matches" on the card.
+  axe 0. Screenshots `153-match-note-edit`, `154-match-note-card` (en, he).
+- Found on the way: the hurtful-words filter caught "you idiot" but not "you are all idiots";
+  English words now match with plural endings (unit test; "idiomatic" still passes).
+- Docs: PRIVACY.md, CHANGELOG, README.

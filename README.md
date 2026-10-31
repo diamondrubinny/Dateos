@@ -99,6 +99,7 @@ NexaHeart is in active development. Here is what works today and what comes next
 | Compliance kit for operators: transparency report (CSV, JSON), security incident log with the 72-hour mark, security statement, no-paid-features pledge and risk assessment drafts, staff access log                              | ✅ Available |
 | Who can reach me: a limit on new likes a day, first messages from verified members only, an urgent banner for extortion threats (4 languages)                                                                                     | ✅ Available |
 | Blurred profile photos, shown to one match at a time by choice; communities can show photos only after a match                                                                                                                    | ✅ Available |
+| Match Note: what a match should know before meeting, shown only to matches                                                                                                                                                        | ✅ Available |
 
 ## Screenshots
 

@@ -55,6 +55,16 @@ export function useOfferedIntentions(keep: readonly Intention[] = []): Intention
   return intentions.filter((i) => offered.includes(i) || keep.includes(i));
 }
 
+/** Phase 66b: the Match Note; null deletes it. */
+export function useSetMatchNote() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (note: string | null) =>
+      apiFetch('/v1/me/match-note', { method: 'PUT', body: json({ note }) }),
+    onSuccess: () => client.invalidateQueries({ queryKey: keys.me }),
+  });
+}
+
 export function useMe(enabled = true) {
   return useQuery({
     queryKey: keys.me,

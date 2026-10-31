@@ -1,0 +1,1 @@
+ALTER TABLE "profile_about" ADD COLUMN "match_note" varchar(500);

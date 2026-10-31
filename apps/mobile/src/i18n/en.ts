@@ -1326,6 +1326,18 @@ export const en = {
     showArchived: 'Archived chats ({{count}})',
     hideArchived: 'Hide archived chats ({{count}})',
   },
+  matchNote: {
+    title: 'Note for matches',
+    intro:
+      'Something you’d like a match to know before you meet: a disability or access need, your identity, children, how you live. Only people you match with see it; strangers and partner communities never do.',
+    label: 'Your note',
+    hint: 'Up to 500 characters. Leave it empty to remove it.',
+    delete: 'Delete my note',
+    invalid: 'Please write it in plain, kind words.',
+    needsConsent:
+      'A note may say something sensitive, so it needs your consent for sensitive information (Settings → Privacy).',
+    cardTitle: 'A note from {{name}} for matches',
+  },
   blur: {
     settingLabel: 'Blur my photos',
     settingHint:

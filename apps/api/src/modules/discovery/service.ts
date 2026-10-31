@@ -1126,6 +1126,8 @@ export class DiscoveryService {
           voicePrompt: toVoicePrompt(aboutById.get(p.userId), cleanVoice),
           accessNeeds: shownAccessNeeds(aboutById.get(p.userId)),
           identity: identityFor(p.userId),
+          // Phase 66b: matches only (not the member's own preview, which shows what strangers see).
+          matchNote: matched.has(p.userId) ? (aboutById.get(p.userId)?.matchNote ?? null) : null,
           faith: faithModule ? faithFor(aboutById.get(p.userId)) : null,
           metInPerson: metIds.has(p.userId),
           atEvent: atEventIds.has(p.userId),

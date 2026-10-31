@@ -524,6 +524,8 @@ export async function exportMemberData(
           genderCustom: about.genderCustom,
           pronouns: about.pronouns,
           identityVisibility: about.identityVisibility,
+          // Phase 66b: shown only to matches.
+          matchNote: about.matchNote,
           // Phase 62b: relationship history; faith answers only while the religion consent is given.
           relationshipHistory: about.relationshipHistory,
           faith: about.faith,

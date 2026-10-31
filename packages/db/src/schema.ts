@@ -259,6 +259,11 @@ export const profileAbout = pgTable('profile_about', {
   voicePromptKey: varchar('voice_prompt_key', { length: 40 }),
   voiceAudioId: uuid('voice_audio_id').references(() => audioClips.id, { onDelete: 'set null' }),
   ...timestamps,
+  /**
+   * Phase 66b, Match Note: what the member wants a match to know before meeting (e.g. a disability,
+   * their identity, how they live), shown only to people they matched with.
+   */
+  matchNote: varchar('match_note', { length: 500 }),
 });
 
 export const preferences = pgTable(

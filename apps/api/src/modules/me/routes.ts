@@ -5,6 +5,7 @@ import {
   appealInputSchema,
   decisionsSchema,
   identityInputSchema,
+  matchNoteInputSchema,
   faithInputSchema,
   consentsInputSchema,
   meResponseSchema,
@@ -162,6 +163,19 @@ export const meRoutes: FastifyPluginAsyncZod<{
     },
     async (request) => {
       await me.setIdentity(currentUser(request).id, request.body);
+      return { ok: true as const };
+    },
+  );
+
+  // Phase 66b: a note only matches see.
+  app.put(
+    '/v1/me/match-note',
+    {
+      schema: { body: matchNoteInputSchema, response: { 200: ok } },
+      config: perUserLimit(60, 60 * 60 * 1000),
+    },
+    async (request) => {
+      await me.setMatchNote(currentUser(request).id, request.body.note);
       return { ok: true as const };
     },
   );

@@ -108,6 +108,11 @@ export const publicProfileSchema = z.object({
    */
   identity: publicIdentitySchema.nullable().optional(),
   /**
+   * Phase 66b: the Match Note, only for a viewer with an open match (never strangers, previews or
+   * partner communities).
+   */
+  matchNote: z.string().nullable().optional(),
+  /**
    * Faith, stream and observance (phase 62b): only while the community's faith module is on.
    * Optional: partner cards never carry it.
    */
