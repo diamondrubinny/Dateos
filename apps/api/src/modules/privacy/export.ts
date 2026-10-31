@@ -337,6 +337,18 @@ export async function exportMemberData(
     .leftJoin(t.profiles, eq(t.profiles.userId, t.eventPicks.targetId))
     .where(eq(t.eventPicks.userId, userId))
     .orderBy(asc(t.eventPicks.createdAt));
+  // Events you proposed as a community organizer (phase 71e).
+  const proposalRows = await db
+    .select({
+      title: t.eventProposals.title,
+      startsAt: t.eventProposals.startsAt,
+      status: t.eventProposals.status,
+      reason: t.eventProposals.reason,
+      at: t.eventProposals.createdAt,
+    })
+    .from(t.eventProposals)
+    .where(eq(t.eventProposals.organizerId, userId))
+    .orderBy(asc(t.eventProposals.createdAt));
   // Your questions to event organizers (phase 27), with their answers.
   const questionRows = await db
     .select({
@@ -719,6 +731,11 @@ export async function exportMemberData(
       excusedAt: iso(r.excusedAt),
     })),
     meetAgainChoices: pickRows.map((p) => ({ ...p, at: iso(p.at) })),
+    eventsYouProposed: proposalRows.map((p) => ({
+      ...p,
+      startsAt: iso(p.startsAt),
+      at: iso(p.at),
+    })),
     questionsToEventOrganizers: questionRows.map((q) => ({
       ...q,
       askedAt: iso(q.askedAt),

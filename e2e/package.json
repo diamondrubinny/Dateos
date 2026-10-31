@@ -84,7 +84,8 @@
     "meet-again": "tsx meet-again.ts",
     "event-groups": "tsx event-groups.ts",
     "event-help": "tsx event-help.ts",
-    "event-tables": "tsx event-tables.ts"
+    "event-tables": "tsx event-tables.ts",
+    "organizers": "tsx organizers.ts"
   },
   "dependencies": {
     "@axe-core/playwright": "4.14.0",

@@ -19,6 +19,7 @@ import { api } from '../api';
 import { useAsync } from '../hooks';
 import { format, useLocale } from '../i18n';
 import { Badge, ErrorBox, formatDate, Loading } from '../components/ui';
+import { EventOrganizers } from './EventOrganizers';
 
 type Form = {
   title: string;
@@ -523,6 +524,7 @@ export function Events({ isAdmin }: { isAdmin: boolean }) {
         <BoardPanel event={boardFor} isAdmin={isAdmin} onClose={() => setBoardFor(null)} />
       ) : null}
 
+      {isAdmin ? <EventOrganizers onPublished={list.reload} /> : null}
       <div className="grid venues-grid">
         <div>
           {list.loading && !list.data ? <Loading /> : null}

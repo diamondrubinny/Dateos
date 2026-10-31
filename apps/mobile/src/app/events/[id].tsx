@@ -154,6 +154,17 @@ function EventScreen() {
           ) : null}
         </View>
       ) : null}
+      {e.organizer ? (
+        // Phase 71e: a community organizer runs it.
+        <AppText variant="label" tone="primary" testID="event-organizer">
+          {e.organizer.events > 0
+            ? t('organize.byWithCount', {
+                name: e.organizer.displayName,
+                count: e.organizer.events,
+              })
+            : t('organize.by', { name: e.organizer.displayName })}
+        </AppText>
+      ) : null}
       {e.description ? (
         <AppText variant="body" userContent>
           {e.description}

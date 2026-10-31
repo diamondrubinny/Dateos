@@ -157,6 +157,7 @@ export async function buildApp(env: Env, deps: AppDependencies): Promise<Fastify
       compliance: services.compliance,
       introductions: services.introductions,
       profileReview: services.profileReview,
+      organizers: services.organizers,
     });
     await typed.register(chaperoneRoutes, { auth: services.auth, chaperones: services.chaperones });
     await typed.register(resumePublicRoutes, { resume: services.resume });
@@ -206,6 +207,7 @@ export async function buildApp(env: Env, deps: AppDependencies): Promise<Fastify
       events: services.events,
       meetAgain: services.meetAgain,
       tables: services.tables,
+      organizers: services.organizers,
     });
     await typed.register(speedRoutes, { auth: services.auth, speed: services.speed });
     await typed.register(travelRoutes, {

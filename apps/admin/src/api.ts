@@ -42,6 +42,8 @@ import type {
   SafetyOverview,
   IntroductionOrder,
   MatchmakerRow,
+  EventProposal,
+  OrganizerRow,
   PendingProfile,
   ReviewDecision,
 } from '@nexaheart/shared';
@@ -332,6 +334,19 @@ export const api = {
     request<{ userId: string }>('POST', '/v1/admin/matchmakers', { email }),
   revokeMatchmaker: (userId: string) =>
     request<{ ok: true }>('DELETE', `/v1/admin/matchmakers/${encodeURIComponent(userId)}`),
+  // Phase 71e: community organizers and their proposals (admins only).
+  organizers: () => request<{ organizers: OrganizerRow[] }>('GET', '/v1/admin/organizers'),
+  grantOrganizer: (email: string) =>
+    request<{ userId: string }>('POST', '/v1/admin/organizers', { email }),
+  revokeOrganizer: (userId: string) =>
+    request<{ ok: true }>('DELETE', `/v1/admin/organizers/${encodeURIComponent(userId)}`),
+  proposals: () => request<{ proposals: EventProposal[] }>('GET', '/v1/admin/event-proposals'),
+  approveProposal: (id: string) =>
+    request<EventProposal>('POST', `/v1/admin/event-proposals/${encodeURIComponent(id)}/approve`),
+  declineProposal: (id: string, reason: string) =>
+    request<{ ok: true }>('POST', `/v1/admin/event-proposals/${encodeURIComponent(id)}/decline`, {
+      reason,
+    }),
   // Phase 64: the compliance kit (admins only).
   transparency: (from: string, to: string) =>
     request<TransparencyReport>(

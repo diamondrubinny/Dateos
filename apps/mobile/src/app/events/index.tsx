@@ -9,16 +9,27 @@ import { EventMisses } from '../../components/EventMisses';
 import { Loading } from '../../components/Loading';
 import { RequireSession } from '../../components/RequireSession';
 import { Screen } from '../../components/Screen';
-import { useEvents } from '../../lib/event-queries';
+import { router } from 'expo-router';
+import { Button } from '../../components/Button';
+import { useEvents, useOrganizerHome } from '../../lib/event-queries';
 
 function EventsScreen() {
   const { t } = useTranslation();
   const events = useEvents();
+  const organizer = useOrganizerHome();
   if (events.isPending) return <Loading />;
   return (
     <Screen back title={t('events.title')}>
       <AppText variant="body">{t('events.intro')}</AppText>
       <EventMisses />
+      {organizer.data?.organizer ? (
+        // Phase 71e: community organizers propose and run events.
+        <Button
+          variant="secondary"
+          label={t('organize.open')}
+          onPress={() => router.push('/organize')}
+        />
+      ) : null}
       {events.error ? <Banner tone="error" message={t('common.genericError')} /> : null}
       {events.data && events.data.length === 0 ? (
         <AppText variant="body" tone="muted">

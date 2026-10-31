@@ -540,6 +540,13 @@
       "when": 1793432423407,
       "tag": "0076_event_tables",
       "breakpoints": true
+    },
+    {
+      "idx": 77,
+      "version": "7",
+      "when": 1793434270908,
+      "tag": "0077_organizers",
+      "breakpoints": true
     }
   ]
 }
