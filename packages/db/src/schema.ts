@@ -322,6 +322,8 @@ export const preferences = pgTable(
     openToMatchmakers: boolean('open_to_matchmakers').notNull().default(false),
     /** Phase 68c: friends here may suggest someone to me (on by default). */
     friendSuggestions: boolean('friend_suggestions').notNull().default(true),
+    /** Phase 72: a number on the installed app's icon (on by default; never when discreet). */
+    appBadge: boolean('app_badge').notNull().default(true),
     /** Receiver control: people can turn video and voice calls off (phase 15). */
     acceptCalls: boolean('accept_calls').notNull().default(true),
     /** Dealbreakers (phase 19): empty means any; a missing answer always passes. */

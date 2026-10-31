@@ -189,6 +189,24 @@ function SettingsContent() {
           }
         />
       ))}
+      {/* Phase 72: the number on the installed app's icon; never with discreet notifications. */}
+      {chatSettings.data?.discreetNotifications ? (
+        <AppText variant="caption" tone="muted" testID="app-badge-discreet">
+          {t('appBadge.discreet')}
+        </AppText>
+      ) : (
+        <Checkbox
+          label={t('appBadge.label')}
+          hint={t('appBadge.hint')}
+          checked={chatSettings.data?.appBadge ?? true}
+          onChange={(v) =>
+            setSetting.mutate(
+              { appBadge: v },
+              { onError: () => setError(t('common.genericError')) },
+            )
+          }
+        />
+      )}
       <QuietHours onError={() => setError(t('common.genericError'))} />
       <AppText variant="caption" tone="muted">
         {t('notifyChoice.always')}

@@ -593,6 +593,7 @@ export async function exportMemberData(
           // Phase 67a.
           hideDistance: preferences.hideDistance,
           discreetNotifications: preferences.discreetNotifications,
+          appBadge: preferences.appBadge,
           openToMatchmakers: preferences.openToMatchmakers,
           friendSuggestions: preferences.friendSuggestions,
           showMetInPersonBadge: preferences.showMetBadge,

@@ -302,6 +302,8 @@ export const chatSettingsSchema = z.object({
   openToMatchmakers: z.boolean(),
   /** Phase 68c: friends here may suggest someone to me. */
   friendSuggestions: z.boolean(),
+  /** Phase 72: a number on the installed app's icon (never with discreet notifications). */
+  appBadge: z.boolean(),
 });
 export const chatSettingsInputSchema = chatSettingsSchema
   .partial()

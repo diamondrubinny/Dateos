@@ -1,0 +1,1 @@
+ALTER TABLE "preferences" ADD COLUMN "app_badge" boolean DEFAULT true NOT NULL;

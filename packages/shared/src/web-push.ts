@@ -75,4 +75,45 @@ export interface WebPushPayload {
   body: string;
   kind: string;
   id: string;
+  /**
+   * Phase 72: chats with unread messages, for the number on the app's icon; absent when the
+   * member turned it off or uses discreet notifications.
+   */
+  badge?: number;
+  /** Phase 72: a button on the notification (the check-in's "I'm OK"). */
+  actions?: { action: string; title: string }[];
+  /**
+   * Phase 72: the same notification in the declarative form (📘 WebKit's Declarative Web Push),
+   * shown by browsers that support it even when the service worker isn't running.
+   */
+  web_push?: 8030;
+  notification?: {
+    title: string;
+    body: string;
+    navigate: string;
+    lang: string;
+    app_badge?: string;
+    actions?: { action: string; title: string; navigate: string }[];
+  };
+}
+
+/** Phase 72: the screen a notification opens (the service worker has the same mapping). */
+export function pushScreen(kind: string, id: string): string {
+  const uuid = /^[0-9a-f-]{36}$/.test(id) ? id : null;
+  switch (kind) {
+    case 'message':
+    case 'match':
+    case 'call':
+      return uuid ? `/chat/${uuid}` : '/matches';
+    case 'partner_message':
+      return uuid ? `/partner-chat/${uuid}` : '/matches';
+    case 'checkin':
+      return '/checkin';
+    case 'event':
+      return uuid ? `/events/${uuid}` : '/';
+    case 'visible':
+      return '/profile';
+    default:
+      return '/';
+  }
 }

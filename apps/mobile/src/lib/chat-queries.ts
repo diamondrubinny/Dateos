@@ -222,6 +222,7 @@ export function useChatSettings() {
         discreetNotifications: boolean;
         openToMatchmakers: boolean;
         friendSuggestions: boolean;
+        appBadge: boolean;
         pushDevices: number;
       }>('/v1/me/settings'),
   });
