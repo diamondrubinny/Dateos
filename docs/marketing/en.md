@@ -1,4 +1,4 @@
-# NexaHeart: dating that respects you
+# NexaHeart: your people, your server, your someone
 
 **English** · [עברית](he.md) · [العربية](ar.md) · [Русский](ru.md)
 

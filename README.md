@@ -4,7 +4,8 @@
 
 # NexaHeart
 
-**The free, open-source dating platform anyone can run.**
+**Your people. Your server. Your someone.**
+The free, open-source dating platform anyone can run.
 Native iOS & Android plus web from one codebase, privacy by design, and safety built in from day one.
 <sub>Formerly called Dateos.</sub>
 

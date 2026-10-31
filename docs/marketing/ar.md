@@ -1,6 +1,6 @@
 <div dir="rtl">
 
-# NexaHeart: تعارف يحترمك
+# NexaHeart: ناسك، خادمك، نصفك الآخر
 
 [English](en.md) · [עברית](he.md) · **العربية** · [Русский](ru.md)
 
