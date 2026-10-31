@@ -118,6 +118,11 @@ function ProfileContent() {
             label={t('identity.title')}
             onPress={() => router.push('/edit-identity')}
           />
+          <Button
+            variant="secondary"
+            label={t('matchNote.title')}
+            onPress={() => router.push('/edit-match-note')}
+          />
           {faithModule ? (
             <Button
               variant="secondary"

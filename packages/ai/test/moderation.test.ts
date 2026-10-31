@@ -162,3 +162,11 @@ describe('phase 65: extortion and local scam phrases', () => {
     expect(detectScamSignals('Посылка застряла на таможне', 40)).toEqual(['money']);
   });
 });
+
+describe('English plurals', () => {
+  it('catches plural insults, and leaves words that merely start the same alone', () => {
+    expect(checkHarm('You are all idiots').categories).toContain('insult');
+    expect(checkHarm('stupid bitches').categories).toContain('insult');
+    expect(checkHarm('The idiomatic phrase was lovely').flagged).toBe(false);
+  });
+});

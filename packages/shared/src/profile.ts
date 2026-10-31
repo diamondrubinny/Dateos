@@ -220,6 +220,8 @@ export const meResponseSchema = z.object({
   accessNeeds: accessNeedsSchema,
   /** Gender identity and pronouns (phase 62a), with who may see them. */
   identity: myIdentitySchema,
+  /** Phase 66b: shown only to matches; null when not written. */
+  matchNote: z.string().nullable(),
   /** Faith, stream and observance (phase 62b), with the `religion` consent. */
   faith: faithSchema,
   voicePrompt: myVoicePromptSchema.nullable(),
@@ -336,3 +338,18 @@ export const coachResponseSchema = z.object({
 export type CoachResponse = z.infer<typeof coachResponseSchema>;
 
 export const bioIdeasSchema = z.object({ ideas: z.array(z.string()) });
+
+/** Phase 66b: the longest Match Note. */
+export const MAX_MATCH_NOTE = 500;
+
+/** A Match Note: plain text, line breaks allowed; null deletes it. */
+export const matchNoteInputSchema = z.object({
+  note: z
+    .string()
+    .trim()
+    .min(1)
+    .max(MAX_MATCH_NOTE)
+    // eslint-disable-next-line no-control-regex -- matching control characters is the point
+    .refine((v) => !/[\u0000-\u0009\u000B\u000C\u000E-\u001F\u007F<>]/.test(v), 'Plain text only')
+    .nullable(),
+});

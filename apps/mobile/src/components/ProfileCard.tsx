@@ -229,6 +229,17 @@ export function ProfileCard({ profile, onLikeItem }: ProfileCardProps) {
             {identityLine}
           </AppText>
         ) : null}
+        {profile.matchNote ? (
+          // Phase 66b: only sent to someone the member matched with.
+          <View style={[styles.take, { backgroundColor: colors.primarySoft }]} testID="match-note">
+            <AppText variant="label" tone="primary">
+              {t('matchNote.cardTitle', { name: profile.displayName })}
+            </AppText>
+            <AppText variant="body" userContent>
+              {profile.matchNote}
+            </AppText>
+          </View>
+        ) : null}
         {profile.accessNeeds.length > 0 ? (
           // Phase 25: only needs the member chose to show; one sentence for screen readers.
           <AppText variant="body" testID="access-needs">

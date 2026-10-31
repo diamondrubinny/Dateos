@@ -6,6 +6,10 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Added
 
+- **Match Note**: a short note only matches see (a disability or access need, identity, children,
+  how you live), on the profile card once you match; never strangers, the preview or partner
+  communities. Also: the hurtful-words filter now catches English plurals ("idiots").
+
 - **Blurred profile photos**: members can blur their photos for everyone and show them to one
   match at a time from the chat (and take that back); communities can show photos only after a
   match. The blur is made on the server, never by hiding the real photo in the app, and such

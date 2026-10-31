@@ -81,7 +81,8 @@ function lexicon(
       for (const word of phrase.split(' ')) if (word.length >= 3) HARM_WORDS.add(word);
   }
   const part = (words: string[]) => words.map((w) => w.replace(/ /g, '\\s+')).join('|');
-  const alternatives = [`(?:${part(en)})`, `${HE_PREFIX}(?:${part(he)})`];
+  // English plurals too ("idiots", "bitches"): the word must still end there.
+  const alternatives = [`(?:${part(en)})(?:e?s)?`, `${HE_PREFIX}(?:${part(he)})`];
   if (ar.length) alternatives.push(`${AR_PREFIX}(?:${part(ar)})`);
   if (ru.length) alternatives.push(`(?:${part(ru)})`);
   return new RegExp(`(?<![\\p{L}])(?:${alternatives.join('|')})(?![\\p{L}])`, 'u');

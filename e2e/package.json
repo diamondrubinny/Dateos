@@ -70,7 +70,8 @@
     "age-check": "tsx age-check.ts",
     "compliance": "tsx compliance.ts",
     "receiver-protection": "tsx receiver-protection.ts",
-    "photo-blur": "tsx photo-blur.ts"
+    "photo-blur": "tsx photo-blur.ts",
+    "match-note": "tsx match-note.ts"
   },
   "dependencies": {
     "@axe-core/playwright": "4.14.0",
