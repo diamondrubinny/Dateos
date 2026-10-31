@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
+import { GHOSTING_REMINDER_DAYS } from '@nexaheart/shared';
 import { createHash } from 'node:crypto';
 import { PgDialect } from 'drizzle-orm/pg-core';
 import type { QueryConfig } from 'pg';
@@ -52,6 +53,30 @@ export interface CandidateRow {
   liked_viewer: boolean;
   impressions_24h: number;
   shared_interests: number;
+  /** Phase 70. */
+  waiting_on_candidate: number;
+  showed_up: boolean;
+}
+
+/**
+ * Phase 70: matches who wrote last and have been waiting at least GHOSTING_REMINDER_DAYS for
+ * `member`'s reply (only matches: the member liked them too). Aliases unique to this helper.
+ */
+export function waitingOn(member: SQL): SQL {
+  return sql`(SELECT count(*) FROM matches wo_m
+      JOIN LATERAL (SELECT sender_id, created_at FROM messages
+                    WHERE match_id = wo_m.id ORDER BY created_at DESC LIMIT 1) wo_last ON true
+      WHERE wo_m.unmatched_at IS NULL AND (wo_m.user_a = ${member} OR wo_m.user_b = ${member})
+        AND wo_last.sender_id <> ${member}
+        AND wo_last.created_at < now() - make_interval(days => ${GHOSTING_REMINDER_DAYS}))::int`;
+}
+
+/** Phase 70: met a match in person, both confirmed, in the last 180 days. */
+function showedUp(member: SQL): SQL {
+  return sql`EXISTS (SELECT 1 FROM date_plans su_d JOIN matches su_m ON su_m.id = su_d.match_id
+      WHERE su_d.status = 'accepted' AND su_d.proposer_met AND su_d.receiver_met
+        AND su_d.starts_at > now() - interval '180 days'
+        AND (su_m.user_a = ${member} OR su_m.user_b = ${member}))`;
 }
 
 /**
@@ -194,7 +219,9 @@ export function candidateSql(q: CandidateQuery): SQL {
         WHERE i.actor_id = c.user_id AND i.created_at > now() - interval '30 days')::int AS decisions_30d,
       EXISTS (SELECT 1 FROM interactions i WHERE i.actor_id = c.user_id AND i.target_id = me.user_id AND i.kind = 'like') AS liked_viewer,
       (SELECT count(*) FROM impressions im WHERE im.candidate_id = c.user_id AND im.created_at > now() - interval '24 hours')::int AS impressions_24h,
-      cardinality(ARRAY(SELECT unnest(me.interests) INTERSECT SELECT unnest(ca.interests)))::int AS shared_interests
+      cardinality(ARRAY(SELECT unnest(me.interests) INTERSECT SELECT unnest(ca.interests)))::int AS shared_interests,
+      ${waitingOn(sql`c.user_id`)} AS waiting_on_candidate,
+      ${showedUp(sql`c.user_id`)} AS showed_up
     FROM me
     JOIN profiles c ON c.user_id <> me.user_id AND c.review_status = 'approved'
     JOIN "user" u ON u.id = c.user_id AND u.status = 'active' AND ${notOnBreak('u')}

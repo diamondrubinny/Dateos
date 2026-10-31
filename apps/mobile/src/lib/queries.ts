@@ -31,6 +31,7 @@ import type {
   YourTurn,
   UndoPassResult,
   BlockedPerson,
+  MyVisibility,
 } from '@nexaheart/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Platform } from 'react-native';
@@ -353,6 +354,15 @@ export function useProfilePreview() {
     queryFn: () => apiFetch<ProfilePreview>('/v1/me/preview'),
     staleTime: 0,
     gcTime: 0,
+  });
+}
+
+/** "My visibility" (phase 70): everything that limits who can find me, and why. */
+export function useMyVisibility() {
+  return useQuery({
+    queryKey: ['myVisibility'],
+    queryFn: () => apiFetch<MyVisibility>('/v1/me/visibility'),
+    staleTime: 0,
   });
 }
 

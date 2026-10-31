@@ -56,7 +56,6 @@ export default function Discover() {
       <Screen title={t('discover.title')}>
         <AccountNotices />
         <ReviewBanner />
-        <ReviewBanner />
         <OnBreak />
       </Screen>
     );
@@ -95,7 +94,6 @@ export default function Discover() {
     return (
       <Screen title={t('discover.title')}>
         <AccountNotices />
-        <ReviewBanner />
         <ReviewBanner />
         {deckSwitch}
         {deck === 'friend' ? (

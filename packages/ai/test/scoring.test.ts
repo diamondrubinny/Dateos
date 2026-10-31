@@ -107,3 +107,21 @@ describe('shared interests (phase 19)', () => {
     expect(two.reasons).toContain('shared_interests');
   });
 });
+
+describe('accountability (phase 70)', () => {
+  it('5+ matches waiting on them lowers the score; 4 does not', () => {
+    const plain = scoreCandidate(base).score;
+    expect(scoreCandidate({ ...base, waitingOnCandidate: 4 }).score).toBe(plain);
+    const waiting = scoreCandidate({ ...base, waitingOnCandidate: 5 });
+    expect(waiting.parts.fairness).toBeCloseTo(scoreCandidate(base).parts.fairness * 0.6);
+    expect(waiting.score).toBeLessThan(plain);
+    // Never hidden: still ranked, just lower.
+    expect(waiting.score).toBeGreaterThan(0);
+  });
+
+  it('showing up to a date helps a little, and is never a reason shown', () => {
+    const showed = scoreCandidate({ ...base, showedUp: true });
+    expect(showed.parts.fairness).toBeCloseTo(scoreCandidate(base).parts.fairness * 1.05);
+    expect(showed.reasons).toEqual(scoreCandidate(base).reasons);
+  });
+});

@@ -101,6 +101,11 @@ function ProfileContent() {
           label={t('preview.open')}
           onPress={() => router.push('/preview')}
         />
+        <Button
+          variant="secondary"
+          label={t('myVisibility.open')}
+          onPress={() => router.push('/visibility')}
+        />
       </View>
       <MoreOptions>
         <Button label={`✨ ${t('coach.open')}`} onPress={() => router.push('/coach')} />
