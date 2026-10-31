@@ -77,7 +77,8 @@
     "hostile": "tsx hostile.ts",
     "introductions": "tsx introductions.ts",
     "resume": "tsx resume.ts",
-    "friend-suggestions": "tsx friend-suggestions.ts"
+    "friend-suggestions": "tsx friend-suggestions.ts",
+    "chaperone": "tsx chaperone.ts"
   },
   "dependencies": {
     "@axe-core/playwright": "4.14.0",

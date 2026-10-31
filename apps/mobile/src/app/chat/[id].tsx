@@ -595,6 +595,36 @@ function ChatScreen() {
           </View>
         ) : null}
 
+        {/* Phase 68d: a chaperone sees this chat; both sides always know. */}
+        {!closed && newest && (newest.chaperones.mine || newest.chaperones.theirs) ? (
+          <View style={styles.pad} testID="chaperone-notice">
+            {newest.chaperones.theirs ? (
+              <Banner
+                tone="info"
+                message={t('chaperone.theirs', {
+                  name,
+                  chaperone: newest.chaperones.theirs.displayName,
+                  date: new Date(newest.chaperones.theirs.since).toLocaleDateString(locale, {
+                    day: 'numeric',
+                    month: 'long',
+                  }),
+                })}
+              />
+            ) : null}
+            {newest.chaperones.mine ? (
+              <Banner
+                tone="info"
+                message={t('chaperone.mine', {
+                  chaperone: newest.chaperones.mine.displayName,
+                  date: new Date(newest.chaperones.mine.since).toLocaleDateString(locale, {
+                    day: 'numeric',
+                    month: 'long',
+                  }),
+                })}
+              />
+            ) : null}
+          </View>
+        ) : null}
         {/* Phase 66a: my photos are blurred for them until I show them here. */}
         {!closed && newest && newest.myPhotosShown !== null ? (
           <View style={[styles.pad, styles.photosRow]} testID="photos-shown">

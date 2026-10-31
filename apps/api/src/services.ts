@@ -47,6 +47,7 @@ import { AlbumService } from './modules/photos/album.js';
 import { IntroductionService } from './modules/introductions/service.js';
 import { ResumeService } from './modules/resume/service.js';
 import { ProfileReviewService } from './modules/admin/review.js';
+import { ChaperoneService } from './modules/chaperone/service.js';
 import { ComplianceService } from './modules/compliance/service.js';
 import { AgeCheckService } from './modules/age-check/service.js';
 import { ReportService } from './modules/safety/reports.js';
@@ -96,6 +97,7 @@ export interface Services {
   introductions: IntroductionService;
   resume: ResumeService;
   profileReview: ProfileReviewService;
+  chaperones: ChaperoneService;
   ageCheck: AgeCheckService;
   updates: UpdateService;
   trust: TrustService;
@@ -260,6 +262,9 @@ export function createServices(
   // Phase 66c: private albums, shared in chats.
   const album = new AlbumService(dbHandle.db, photos);
   chat.useAlbum(album);
+  // Phase 68d: chaperones, with a notice both sides of a chat see.
+  const chaperones = new ChaperoneService(dbHandle.db, overrides.now);
+  chat.useChaperones(chaperones);
   // Phase 68b: the matchmaking résumé, shared by short-lived links.
   const resume = new ResumeService(dbHandle.db, {
     ownCard: (userId) => discovery.ownCard(userId),
@@ -436,6 +441,7 @@ export function createServices(
     introductions,
     resume,
     profileReview: new ProfileReviewService(dbHandle.db),
+    chaperones,
     ageCheck,
     updates,
     instance,

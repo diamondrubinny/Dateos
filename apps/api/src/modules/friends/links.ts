@@ -15,7 +15,7 @@ export const hashToken = (token: string) => createHash('sha256').update(token).d
 export async function createLink(
   db: Database,
   ownerId: string,
-  kind: 'take' | 'pair',
+  kind: 'take' | 'pair' | 'wali',
   days: number,
   now: number,
 ): Promise<{ token: string; expiresAt: string }> {
@@ -29,7 +29,7 @@ export async function createLink(
 export async function linkOwner(
   db: Database,
   token: string,
-  kind: 'take' | 'pair',
+  kind: 'take' | 'pair' | 'wali',
   now: number,
 ): Promise<string | null> {
   const [row] = await db
@@ -50,7 +50,7 @@ export async function linkOwner(
 export async function useLink(
   db: Pick<Database, 'update'>,
   token: string,
-  kind: 'take' | 'pair',
+  kind: 'take' | 'pair' | 'wali',
   now: number,
 ): Promise<string | null> {
   const [row] = await db

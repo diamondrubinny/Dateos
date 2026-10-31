@@ -213,3 +213,59 @@ never expire and can't be taken back.
   `169-friend-suggestion` (en, he).
 - Matchmakers' consoles and introductions never include profiles that are waiting.
 - Docs: PRIVACY.md, CHANGELOG, README.
+
+---
+
+# Phase 68d: A chaperone (wali) the member chooses, with a notice the other side sees (v1.48)
+
+> Status: ✅ done (2026-10-31). ⚖️
+
+## The gap
+
+In observant Muslim communities (Muzz's Chaperone Mode, with weekly transcripts) and some Haredi
+and accessibility settings (Inbar's six-month human escort), a member wants someone they trust to
+see their conversations. Today the only way is handing over the phone or screenshots, which the
+other side never knows about.
+
+## What changes
+
+| Part                        | Change                                                                                                                                                                                                                                                                          |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Invite (member)             | Settings → "A chaperone": a one-time link (7 days) for one person who has an account here. One chaperone at a time; the member can remove them at any moment, and the chaperone can step down.                                                                                  |
+| What the chaperone sees     | "Chats I chaperone": the member's dating chats, **read-only**, and only messages sent **after** the chaperone joined. Text only: photos, voice and albums show as "[a photo]", "[a voice message]". Never the member's other data, partner chats or friends chats. Can't write. |
+| The other side always knows | In every chat with that member, a notice: "{name}'s messages are seen by a chaperone {name} chose, since {date}." It's there before the first message they send after it started; they can end the match at any time.                                                           |
+| The member                  | Their own chats show "Your chaperone {name} sees this chat (since {date})".                                                                                                                                                                                                     |
+
+## Security and privacy ⚖️
+
+- Only what the other side was told about: messages after the start, with the notice in place.
+- Every opening of a chat by a chaperone is audited (`chaperone.viewed`), and the member sees in
+  Settings when the chaperone last looked.
+- Removing the chaperone ends access at once; nothing is copied or emailed out of the app.
+- New data: who chaperones whom and since when; deleted with either account; in "Download my data".
+
+## Tests
+
+- Integration: invite link (one use, 7 days, not for oneself); one chaperone; read-only, only
+  after the start, text only; the other side sees the notice, the member too; dating chats only;
+  remove and step down end access; a stranger never; audit; export.
+- e2e (en, he): a member invites a chaperone; the chaperone joins; the match sees the notice; the
+  chaperone reads a new message, not an older one; the member removes the chaperone. axe 0.
+
+## Done (68d)
+
+- **Integration** (4, `chaperone.test.ts`): a one-time link, never for oneself, never twice; the
+  chaperone reads only messages after joining, text only, and can't write (not a participant);
+  others never; the member sees when the chaperone last looked; audited (`chaperone.viewed`);
+  both sides of the chat get the notice; one chaperone at a time; removing, stepping down and an
+  ended match all end access at once; in "Download my data" for both.
+- **e2e** `pnpm --dir e2e chaperone` (en, he): invite from Settings; the chaperone accepts; the
+  match sees "Your chat with Amira is also read by a chaperone they chose, Fatima"; the chaperone
+  reads the new message and not the earlier one, with nowhere to write; the member removes the
+  chaperone and access ends. axe 0. Screenshots `170-chaperone-settings`,
+  `171-chaperone-notice`, `172-chaperone-transcript` (en, he).
+- Found on the way: the first notice said "{name}'s messages are read", but the chaperone reads the
+  whole conversation; it now tells the other side that their own messages are read too.
+- The chaperone's start time comes from the database's clock, like the messages', so "from
+  today on" can't drift.
+- Docs: PRIVACY.md, CHANGELOG, README.

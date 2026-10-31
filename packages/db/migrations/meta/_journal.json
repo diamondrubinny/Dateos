@@ -498,6 +498,13 @@
       "when": 1793416217604,
       "tag": "0070_friend_suggestions_review",
       "breakpoints": true
+    },
+    {
+      "idx": 71,
+      "version": "7",
+      "when": 1793418692677,
+      "tag": "0071_chaperones",
+      "breakpoints": true
     }
   ]
 }
