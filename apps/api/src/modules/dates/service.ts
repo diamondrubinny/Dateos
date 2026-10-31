@@ -12,6 +12,10 @@ import {
   ErrorCode,
   FEEDBACK_AFTER_MINUTES,
   parseSlot,
+  STEP_FREE_NEEDS,
+  SUGGESTED_CATEGORIES,
+  type AccessNeed,
+  type DateSuggestion,
   type Availability,
   type DateFeedbackInput,
   type MessageView,
@@ -348,6 +352,56 @@ export class DateService {
       theyShared: theirs.length > 0,
       // Only the overlap: the other person's other times stay private.
       overlap: mine.filter((s) => theirs.includes(s)),
+    };
+  }
+
+  /**
+   * Phase 75a: the earliest time both are free, and a calm public place for it: step-free when
+   * either needs it (the other's need only if shown), never closed on Shabbat for a Saturday.
+   * Plain logic over what both already shared; nothing goes to a model.
+   */
+  async suggestion(matchId: string, userId: string): Promise<DateSuggestion> {
+    const { otherId } = await this.chat.participant(matchId, userId);
+    const { overlap } = await this.availability(matchId, userId);
+    const today = new Date(this.now()).toISOString().slice(0, 10);
+    const slot = overlap.find((s) => parseSlot(s).date >= today);
+    if (!slot) return { suggestion: null };
+    const { rows } = await this.db.execute<{ user_id: string; needs: string[]; shown: boolean }>(
+      sql`SELECT user_id, access_needs AS needs, show_access_needs AS shown FROM profile_about
+          WHERE user_id IN (${userId}, ${otherId})`,
+    );
+    const stepFree = rows.some(
+      (r) =>
+        (r.user_id === userId || r.shown) &&
+        (r.needs ?? []).some((n) => STEP_FREE_NEEDS.includes(n as AccessNeed)),
+    );
+    const saturday = new Date(`${parseSlot(slot).date}T12:00:00Z`).getUTCDay() === 6;
+    const rank = (category: string) => {
+      const i = (SUGGESTED_CATEGORIES as readonly string[]).indexOf(category);
+      return i === -1 ? SUGGESTED_CATEGORIES.length : i;
+    };
+    const places = (await this.venues.listActive())
+      .filter((v) => !stepFree || v.stepFree)
+      .filter((v) => !saturday || !v.shabbatClosed);
+    if (places.length === 0) return { suggestion: null };
+    const best = Math.min(...places.map((v) => rank(v.category)));
+    const top = places.filter((v) => rank(v.category) === best);
+    // The same choice for both people in this match.
+    const seed = [...matchId].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7);
+    const v = top[seed % top.length]!;
+    return {
+      suggestion: {
+        slot,
+        venue: {
+          id: v.id,
+          name: v.name,
+          area: v.area,
+          category: v.category,
+          stepFree: v.stepFree,
+          kosher: v.kosher,
+          shabbatClosed: v.shabbatClosed,
+        },
+      },
     };
   }
 

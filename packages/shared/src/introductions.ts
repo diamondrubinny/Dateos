@@ -15,6 +15,12 @@ export const MAX_INTRODUCTION_NOTE = 300;
 export const INTRODUCTIONS_DAILY = 20;
 /** Days to answer (counted again for the second side when the first said yes). */
 export const INTRODUCTION_DAYS = 14;
+/**
+ * Phase 75a: how long members have to answer an introduction, as the community chooses (hours;
+ * 14 days by default, counted again for the second side once the first said yes).
+ */
+export const introductionWindows = [24, 48, 72, 168, 336] as const;
+export const DEFAULT_INTRODUCTION_HOURS = 336;
 /** Phase 68c: suggestions one member may send their friends in 24 hours. */
 export const FRIEND_SUGGESTIONS_DAILY = 3;
 

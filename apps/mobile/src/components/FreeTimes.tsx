@@ -6,7 +6,7 @@ import { router } from 'expo-router';
 import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { useAvailability } from '../lib/date-queries';
+import { useAvailability, useDateSuggestion } from '../lib/date-queries';
 import { useLocale } from '../lib/locale';
 import { MIN_TOUCH, radius, spacing, useColors } from '../lib/theme';
 import { AppText } from './AppText';
@@ -44,17 +44,24 @@ export function FreeTimes({ matchId, name }: { matchId: string; name: string }) 
   const colors = useColors();
   const availability = useAvailability(matchId);
   const data = availability.data;
+  const suggestion = useDateSuggestion(matchId, (data?.overlap.length ?? 0) > 0).data?.suggestion;
   if (!data) return null;
   // The server keeps a day of slack for time zones; days already over here aren't offered.
   const today = localDay(0);
   const overlap = data.overlap.filter((slot) => parseSlot(slot).date >= today);
 
   const edit = () => router.push({ pathname: '/free/[id]', params: { id: matchId, name } });
-  const plan = (slot: string) => {
+  const plan = (slot: string, venue?: string) => {
     const { date, part } = parseSlot(slot);
     router.push({
       pathname: '/date/[id]',
-      params: { id: matchId, name, day: date, hour: String(DAY_PART_HOUR[part as DayPart]) },
+      params: {
+        id: matchId,
+        name,
+        day: date,
+        hour: String(DAY_PART_HOUR[part as DayPart]),
+        ...(venue ? { venue } : {}),
+      },
     });
   };
 
@@ -68,6 +75,27 @@ export function FreeTimes({ matchId, name }: { matchId: string; name: string }) 
           <AppText variant="label" tone="success">
             {t('free.overlap')}
           </AppText>
+          {/* Phase 75a: a time and a place, from what both shared (no AI). */}
+          {suggestion && parseSlot(suggestion.slot).date >= today ? (
+            <View testID="date-suggestion" style={styles.suggestion}>
+              <AppText variant="body">
+                {t('free.suggestion', {
+                  when: slotLabel(suggestion.slot, locale, t),
+                  place: suggestion.venue.name,
+                })}
+              </AppText>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityHint={t('free.suggestionHint')}
+                onPress={() => plan(suggestion.slot, suggestion.venue.id)}
+                style={[styles.chip, { borderColor: colors.primary }]}
+              >
+                <AppText variant="label" tone="primary">
+                  {t('free.planIt')}
+                </AppText>
+              </Pressable>
+            </View>
+          ) : null}
           <View style={styles.chips} role="list" accessibilityLabel={t('free.overlap')}>
             {overlap.map((slot) => (
               <View key={slot} role="listitem">
@@ -113,6 +141,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  suggestion: { gap: spacing.xs, alignItems: 'flex-start' },
   chip: {
     borderWidth: 1.5,
     borderRadius: radius.lg,

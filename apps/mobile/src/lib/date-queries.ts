@@ -3,6 +3,7 @@
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 import type {
   Availability,
+  DateSuggestion,
   DateFeedbackInput,
   MessageView,
   ProposeDateInput,
@@ -77,6 +78,18 @@ export function useSetAvailability(matchId: string) {
         method: 'PUT',
         body: json({ slots }),
       }),
-    onSuccess: (data) => client.setQueryData(availabilityKey(matchId), data),
+    onSuccess: async (data) => {
+      client.setQueryData(availabilityKey(matchId), data);
+      await client.invalidateQueries({ queryKey: [...availabilityKey(matchId), 'suggestion'] });
+    },
+  });
+}
+
+/** Phase 75a: a time and a place for the two of us (refreshed with the free times). */
+export function useDateSuggestion(matchId: string, enabled = true) {
+  return useQuery({
+    queryKey: [...availabilityKey(matchId), 'suggestion'],
+    queryFn: () => apiFetch<DateSuggestion>(`/v1/matches/${matchId}/date-suggestion`),
+    enabled,
   });
 }

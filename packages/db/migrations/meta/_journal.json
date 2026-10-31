@@ -582,6 +582,13 @@
       "when": 1793446440353,
       "tag": "0082_venue_kosher",
       "breakpoints": true
+    },
+    {
+      "idx": 83,
+      "version": "7",
+      "when": 1793448572181,
+      "tag": "0083_introduction_hours",
+      "breakpoints": true
     }
   ]
 }

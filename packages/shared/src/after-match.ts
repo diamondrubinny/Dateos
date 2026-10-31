@@ -33,6 +33,39 @@ export const availabilitySchema = z.object({
 });
 export type Availability = z.infer<typeof availabilitySchema>;
 
+/**
+ * Phase 75a: a time and a place for the two of us, from the shared free times and the community's
+ * places (no AI). Null until there's an overlap.
+ */
+export const dateSuggestionSchema = z.object({
+  suggestion: z
+    .object({
+      slot: slotSchema,
+      venue: z.object({
+        id: z.uuid(),
+        name: z.string(),
+        area: z.string(),
+        category: z.string(),
+        stepFree: z.boolean(),
+        kosher: z.boolean(),
+        shabbatClosed: z.boolean(),
+      }),
+    })
+    .nullable(),
+});
+export type DateSuggestion = z.infer<typeof dateSuggestionSchema>;
+
+/** First dates in calm public places: the order places are suggested in. */
+export const SUGGESTED_CATEGORIES = [
+  'cafe',
+  'park',
+  'museum',
+  'activity',
+  'restaurant',
+  'bar',
+  'other',
+] as const;
+
 export function parseSlot(slot: string): { date: string; part: DayPart } {
   const [date, part] = slot.split(':') as [string, DayPart];
   return { date, part };

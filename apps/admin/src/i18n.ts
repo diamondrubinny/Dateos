@@ -594,6 +594,11 @@ const en = {
     grant: 'Name as matchmaker',
     granted: 'Done. They’ll find the matchmaker console in the app.',
     orderTitle: 'Who hears first',
+    windowLabel: 'Time to answer an introduction',
+    windowHours: '{{n}} hours',
+    windowDays: '{{n}} days',
+    windowHelp:
+      'After this, an introduction nobody answered closes as "didn’t go ahead". The second person gets the same time again once the first said yes. A short window suits a community that wants quick answers.',
     orders: {
       together: 'Both together',
       women_first:
@@ -1720,6 +1725,11 @@ const he: Messages = {
     grant: 'מינוי',
     granted: 'בוצע. מסך השדכנות יופיע באפליקציה.',
     orderTitle: 'מי שומע ראשון',
+    windowLabel: 'זמן למענה על הצעת היכרות',
+    windowHours: '{{n}} שעות',
+    windowDays: '{{n}} ימים',
+    windowHelp:
+      'אחרי הזמן הזה, הצעה שלא נענתה נסגרת כ"לא יצאה לפועל". הצד השני מקבל את אותו זמן מחדש אחרי שהצד הראשון ענה כן. חלון קצר מתאים לקהילה שרוצה תשובות מהירות.',
     orders: {
       together: 'שני הצדדים יחד',
       women_first:

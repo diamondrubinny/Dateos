@@ -211,6 +211,54 @@ describe.skipIf(!integrationEnabled)('date planner (integration)', () => {
     expect((await api(ctx, noa, 'GET', '/v1/venues')).json().venues[0].kosher).toBe(false);
   });
 
+  it('phase 75a: a time and a place from the shared free times, the same for both', async () => {
+    const suggest = async (m: Member) =>
+      (await api(ctx, m, 'GET', `/v1/matches/${matchId}/date-suggestion`)).json().suggestion;
+    const bar = await addVenue({ name: 'Night Bar', category: 'bar', stepFree: true });
+    const cafe = await addVenue({ name: 'Quiet Café', category: 'cafe', stepFree: false });
+    expect(await suggest(noa)).toBeNull(); // nothing shared yet
+    // Days from the test clock (2026-10-20, a Tuesday): Thursday, Saturday.
+    const thursday = '2026-10-22';
+    const saturday = '2026-10-24';
+    await api(ctx, noa, 'PUT', `/v1/matches/${matchId}/availability`, {
+      slots: [`${saturday}:evening`, `${thursday}:evening`],
+    });
+    expect(await suggest(noa)).toBeNull(); // only one side
+    await api(ctx, dan, 'PUT', `/v1/matches/${matchId}/availability`, {
+      slots: [`${thursday}:evening`, `${saturday}:evening`],
+    });
+    // The earliest shared time, a café before a bar, the same for both.
+    expect(await suggest(noa)).toMatchObject({
+      slot: `${thursday}:evening`,
+      venue: { id: cafe, name: 'Quiet Café' },
+    });
+    expect(await suggest(dan)).toEqual(await suggest(noa));
+    // Step-free when either needs it (the other's need only when shown).
+    await q(
+      `INSERT INTO profile_about (user_id, access_needs, show_access_needs)
+       VALUES ($1, '{wheelchair}', false)
+       ON CONFLICT (user_id) DO UPDATE SET access_needs = '{wheelchair}', show_access_needs = false`,
+      [dan.id],
+    );
+    expect((await suggest(noa)).venue.id).toBe(cafe); // not shown: not used for Noa
+    expect((await suggest(dan)).venue.id).toBe(bar); // his own need
+    await q(`UPDATE profile_about SET show_access_needs = true WHERE user_id = $1`, [dan.id]);
+    expect((await suggest(noa)).venue.id).toBe(bar);
+    await q(`UPDATE profile_about SET access_needs = '{}' WHERE user_id = $1`, [dan.id]);
+    // Never closed on Shabbat for a Saturday.
+    const admin = await staff('admin');
+    await asStaff(admin, 'PATCH', `/v1/admin/venues/${cafe}`, { shabbatClosed: true });
+    await api(ctx, noa, 'PUT', `/v1/matches/${matchId}/availability`, {
+      slots: [`${saturday}:evening`],
+    });
+    expect(await suggest(noa)).toMatchObject({ slot: `${saturday}:evening`, venue: { id: bar } });
+    // Only the two of them.
+    const eve = await createMember(ctx, { name: 'Eve', gender: 'woman', interestedIn: ['man'] });
+    expect((await api(ctx, eve, 'GET', `/v1/matches/${matchId}/date-suggestion`)).statusCode).toBe(
+      404,
+    );
+  });
+
   it('enforces the rules: participants only, active place, time window, kind note, one open idea', async () => {
     const venueId = await addVenue();
     const eve = await createMember(ctx, { name: 'Eve', gender: 'woman', interestedIn: ['man'] });

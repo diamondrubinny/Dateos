@@ -67,6 +67,7 @@ export interface AdminInstanceSettings {
   shareTrustSignals: boolean;
   communityCountry: string | null;
   introductionOrder: IntroductionOrder;
+  introductionHours: number;
   profileApproval: boolean;
   joinMinAge: number;
   joinMaxAge: number | null;
@@ -234,6 +235,7 @@ export class InstanceService {
       shareTrustSignals: row?.shareTrustSignals ?? false,
       communityCountry: row?.communityCountry ?? null,
       introductionOrder: row?.introductionOrder === 'women_first' ? 'women_first' : 'together',
+      introductionHours: row?.introductionHours ?? 336,
       profileApproval: row?.profileApproval ?? false,
       joinMinAge: info.community.join.minAge,
       joinMaxAge: info.community.join.maxAge,
