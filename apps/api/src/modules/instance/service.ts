@@ -17,6 +17,7 @@ import {
   intentions,
   MIN_AGE,
   type Gender,
+  type IntroductionOrder,
 } from '@nexaheart/shared';
 import type { StoredObject } from '@nexaheart/storage';
 import { and, eq, sql } from 'drizzle-orm';
@@ -61,6 +62,7 @@ export interface AdminInstanceSettings {
   safetyResources: string | null;
   discreetName: string | null;
   riskCountries: string[];
+  introductionOrder: IntroductionOrder;
   joinMinAge: number;
   joinMaxAge: number | null;
   joinGenders: Gender[];
@@ -223,6 +225,7 @@ export class InstanceService {
       safetyResources: info.community.safetyResources,
       discreetName: info.discreetName,
       riskCountries: info.community.riskCountries,
+      introductionOrder: row?.introductionOrder === 'women_first' ? 'women_first' : 'together',
       joinMinAge: info.community.join.minAge,
       joinMaxAge: info.community.join.maxAge,
       joinGenders: info.community.join.genders,
@@ -233,6 +236,12 @@ export class InstanceService {
   }
 
   /** Read fresh (not cached): who may sign up is checked on every new account. */
+  /** Phase 68a: who hears about an introduction first (read fresh). */
+  async introductionOrder(): Promise<IntroductionOrder> {
+    const row = await this.row();
+    return row?.introductionOrder === 'women_first' ? 'women_first' : 'together';
+  }
+
   async signupSettings(): Promise<{ mode: SignupMode; memberInvites: boolean }> {
     const row = await this.row();
     return {

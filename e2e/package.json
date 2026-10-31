@@ -74,7 +74,8 @@
     "match-note": "tsx match-note.ts",
     "album": "tsx album.ts",
     "discretion": "tsx discretion.ts",
-    "hostile": "tsx hostile.ts"
+    "hostile": "tsx hostile.ts",
+    "introductions": "tsx introductions.ts"
   },
   "dependencies": {
     "@axe-core/playwright": "4.14.0",

@@ -31,6 +31,7 @@ export * from './after-match.js';
 export * from './trust.js';
 export * from './friends.js';
 export * from './matchmaker.js';
+export * from './introductions.js';
 export * from './integrations.js';
 export * from './transcripts.js';
 export * from './federation.js';

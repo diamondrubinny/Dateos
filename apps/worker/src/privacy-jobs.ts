@@ -2,7 +2,12 @@
 // Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 import { schema, type Database } from '@nexaheart/db';
-import { AUDIT_LOG_RETENTION_DAYS, creditLine, INACTIVITY_NOTICE_DAYS } from '@nexaheart/shared';
+import {
+  AUDIT_LOG_RETENTION_DAYS,
+  creditLine,
+  INACTIVITY_NOTICE_DAYS,
+  INTRODUCTION_RETENTION_DAYS,
+} from '@nexaheart/shared';
 import type { Storage } from '@nexaheart/storage';
 import { eq, inArray, sql } from 'drizzle-orm';
 
@@ -12,6 +17,7 @@ export async function cleanupPrivacy(db: Database): Promise<{
   sessions: number;
   verificationTokens: number;
   rateLimits: number;
+  introductions: number;
 }> {
   const days = sql.raw(String(AUDIT_LOG_RETENTION_DAYS));
   const auditLogs = await db.execute(
@@ -29,7 +35,13 @@ export async function cleanupPrivacy(db: Database): Promise<{
   const rateLimits = await db.execute(
     sql`DELETE FROM rate_limit WHERE last_request < (extract(epoch FROM now()) * 1000 - 86400000)`,
   );
+  // Phase 68a: introductions that didn't go ahead, a year after they closed. Matched ones stay
+  // (the matchmaker's credit) until either member deletes their account.
+  const introductions = await db.execute(sql`
+    DELETE FROM introductions WHERE matched_at IS NULL
+      AND COALESCE(closed_at, expires_at) < now() - make_interval(days => ${INTRODUCTION_RETENTION_DAYS})`);
   return {
+    introductions: introductions.rowCount ?? 0,
     auditLogs: auditLogs.rowCount ?? 0,
     sessions: sessions.rowCount ?? 0,
     verificationTokens: verificationTokens.rowCount ?? 0,

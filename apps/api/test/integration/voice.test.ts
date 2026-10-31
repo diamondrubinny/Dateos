@@ -133,6 +133,7 @@ describe.skipIf(!integrationEnabled)('voice messages & push (integration)', () =
       blurPhotos: false,
       hideDistance: false,
       discreetNotifications: false,
+      openToMatchmakers: false,
       pushDevices: 0,
     });
   });

@@ -49,6 +49,7 @@ import { TakeABreak } from '../components/TakeABreak';
 import { TravelMode } from '../components/TravelMode';
 import { SecuritySettings } from '../components/SecuritySettings';
 import { WhoCanReachMe } from '../components/WhoCanReachMe';
+import { OpenToMatchmakers } from '../components/Introductions';
 import { Discretion } from '../components/Discretion';
 
 function SettingsContent() {
@@ -235,6 +236,8 @@ function SettingsContent() {
         onError={() => setError(t('common.genericError'))}
         hasResources={Boolean(instance.data?.community.safetyResources)}
       />
+      {/* Phase 68a: introductions by the community's matchmakers. */}
+      <OpenToMatchmakers onError={() => setError(t('common.genericError'))} />
 
       <MoreOptions>
         <AppText variant="heading">{t('visibility.title')}</AppText>

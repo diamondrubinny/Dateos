@@ -58,6 +58,7 @@ export const notificationRoutes: FastifyPluginAsyncZod<{
           blurPhotos: preferences.blurPhotos,
           hideDistance: preferences.hideDistance,
           discreetNotifications: preferences.discreetNotifications,
+          openToMatchmakers: preferences.openToMatchmakers,
         })
         .from(preferences)
         .where(eq(preferences.userId, userId));
@@ -87,6 +88,7 @@ export const notificationRoutes: FastifyPluginAsyncZod<{
         blurPhotos: prefs?.blurPhotos ?? false,
         hideDistance: prefs?.hideDistance ?? false,
         discreetNotifications: prefs?.discreetNotifications ?? false,
+        openToMatchmakers: prefs?.openToMatchmakers ?? false,
         pushDevices: devices.length + browsers.length,
       };
     },

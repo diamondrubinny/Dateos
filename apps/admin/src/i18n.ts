@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
-import type { ComplianceTemplate } from '@nexaheart/shared';
+import type { ComplianceTemplate, IntroductionOrder } from '@nexaheart/shared';
 import { createContext, useContext } from 'react';
 
 export type Locale = 'he' | 'en';
@@ -553,6 +553,50 @@ const en = {
     } as Record<ComplianceTemplate, { title: string; help: string }>,
     downloadEn: 'English',
     downloadHe: 'Hebrew',
+  },
+  matchmakers: {
+    nav: 'Matchmakers',
+    title: 'Community matchmakers',
+    intro:
+      'Members you name can introduce two members who turned on “Open to matchmakers”. Each answers privately and nobody is told about a no. Their profile shows “Community matchmaker”, so members can check who really is one.',
+    grantTitle: 'Name a matchmaker',
+    grantHelp:
+      'A matchmaker sees only members open to matchmakers, as any member would, and can send up to 20 introductions a day. It isn’t a staff role: no dashboard, no moderation. Everything they do is in the audit log.',
+    email: 'The member’s email',
+    grant: 'Name as matchmaker',
+    granted: 'Done. They’ll find the matchmaker console in the app.',
+    orderTitle: 'Who hears first',
+    orders: {
+      together: 'Both together',
+      women_first:
+        'Women first: when one of the two is a woman, she hears first, and the other only if she says yes',
+    } as Record<IntroductionOrder, string>,
+    save: 'Save',
+    saved: 'Saved.',
+    reportTitle: 'Matchmakers and their introductions',
+    reportIntro:
+      'Introductions sent in the period and how they went, as the members told the matchmaker: for thanking or rewarding matchmakers. Counts only, no names of the members introduced. ⚖️',
+    from: 'From',
+    to: 'To',
+    show: 'Show',
+    csv: 'Download CSV',
+    none: 'No matchmakers yet.',
+    cols: {
+      name: 'Matchmaker',
+      since: 'Since',
+      introductions: 'Introductions',
+      matches: 'Matches',
+      met: 'Met',
+      engaged: 'Engaged',
+      married: 'Married',
+      actions: 'Actions',
+    },
+    revokeShort: 'Take back',
+    revoke: (name: string) => `Take back the matchmaker role from ${name}`,
+    revokeConfirm: (name: string) =>
+      `Take the role back from ${name}? Their open introductions close at once.`,
+    revokeYes: 'Take back',
+    cancel: 'Cancel',
   },
   categories: {
     underage: 'Possibly under 18',
@@ -1511,6 +1555,49 @@ const he: Messages = {
     } as Record<ComplianceTemplate, { title: string; help: string }>,
     downloadEn: 'אנגלית',
     downloadHe: 'עברית',
+  },
+  matchmakers: {
+    nav: 'שדכנות',
+    title: 'שדכנות בקהילה',
+    intro:
+      'מי שתמנו יוכלו להכיר בין שני אנשים שהפעילו "לקבל הצעות משדכנות בקהילה". כל צד עונה בפרטיות, ואף אחד לא שומע על סירוב. בפרופיל שלהם מופיע "שדכנות בקהילה", כך שאפשר לבדוק מי באמת ממונים לכך.',
+    grantTitle: 'מינוי לשדכנות',
+    grantHelp:
+      'בתפקיד השדכנות רואים רק את מי שפתוחים להצעות, כמו כל מי שבקהילה, ואפשר לשלוח עד 20 הצעות ביום. זה לא תפקיד צוות: אין גישה ללוח הבקרה ולכלי הניהול. כל פעולה נרשמת ביומן.',
+    email: 'האימייל של מי שממנים',
+    grant: 'מינוי',
+    granted: 'בוצע. מסך השדכנות יופיע באפליקציה.',
+    orderTitle: 'מי שומע ראשון',
+    orders: {
+      together: 'שני הצדדים יחד',
+      women_first:
+        'קודם האישה: כשאחד הצדדים הוא אישה, היא שומעת ראשונה, והצד השני רק אם היא מסכימה',
+    } as Record<IntroductionOrder, string>,
+    save: 'שמירה',
+    saved: 'נשמר.',
+    reportTitle: 'שדכנות והצעות',
+    reportIntro:
+      'ההצעות שנשלחו בתקופה ומה יצא מהן, כפי שהצדדים סיפרו: כדי להודות או לתגמל. ספירות בלבד, בלי שמות של מי שהוצעו. ⚖️',
+    from: 'מתאריך',
+    to: 'עד תאריך',
+    show: 'הצגה',
+    csv: 'הורדת CSV',
+    none: 'עדיין אין מינויים לשדכנות.',
+    cols: {
+      name: 'שם',
+      since: 'מתאריך',
+      introductions: 'הצעות',
+      matches: 'התאמות',
+      met: 'נפגשו',
+      engaged: 'התארסו',
+      married: 'נישאו',
+      actions: 'פעולות',
+    },
+    revokeShort: 'ביטול מינוי',
+    revoke: (name: string) => `ביטול מינוי לשדכנות: ${name}`,
+    revokeConfirm: (name: string) => `לבטל את המינוי של ${name}? ההצעות הפתוחות ייסגרו מיד.`,
+    revokeYes: 'ביטול מינוי',
+    cancel: 'חזרה',
   },
   categories: {
     underage: 'ייתכן שמתחת לגיל 18',

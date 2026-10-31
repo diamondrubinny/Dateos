@@ -44,6 +44,7 @@ import { StaffMfaService } from './modules/admin/mfa.js';
 import { ModerationService } from './modules/admin/moderation.js';
 import { AppealService } from './modules/safety/appeals.js';
 import { AlbumService } from './modules/photos/album.js';
+import { IntroductionService } from './modules/introductions/service.js';
 import { ComplianceService } from './modules/compliance/service.js';
 import { AgeCheckService } from './modules/age-check/service.js';
 import { ReportService } from './modules/safety/reports.js';
@@ -90,6 +91,7 @@ export interface Services {
   compliance: ComplianceService;
   /** Phase 66c. */
   album: AlbumService;
+  introductions: IntroductionService;
   ageCheck: AgeCheckService;
   updates: UpdateService;
   trust: TrustService;
@@ -254,6 +256,15 @@ export function createServices(
   // Phase 66c: private albums, shared in chats.
   const album = new AlbumService(dbHandle.db, photos);
   chat.useAlbum(album);
+  // Phase 68a: introductions by community matchmakers.
+  const introductions = new IntroductionService(dbHandle.db, {
+    isCandidate: (a, b) => discovery.isCandidate(a, b),
+    match: (a, b) => discovery.matchFromSpeedDate(a, b),
+    order: () => instance.introductionOrder(),
+    notify: (userId, id) => {
+      notifyQueue.push({ userId, kind: 'introduction', matchId: id }).catch(() => undefined);
+    },
+  });
 
   const callMedia = () => integrations.media();
   const calls = new CallService(
@@ -411,6 +422,7 @@ export function createServices(
     appeals,
     compliance,
     album,
+    introductions,
     ageCheck,
     updates,
     instance,

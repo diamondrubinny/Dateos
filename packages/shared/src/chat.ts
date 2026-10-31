@@ -292,6 +292,8 @@ export const chatSettingsSchema = z.object({
   hideDistance: z.boolean(),
   /** Phase 67a: notifications without the community's name or what happened. */
   discreetNotifications: z.boolean(),
+  /** Phase 68a: community matchmakers may find me in their console and introduce me. */
+  openToMatchmakers: z.boolean(),
 });
 export const chatSettingsInputSchema = chatSettingsSchema
   .partial()

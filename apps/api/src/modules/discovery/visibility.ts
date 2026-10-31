@@ -74,6 +74,19 @@ export function notContactHidden(a: SQL, b: SQL): SQL {
 }
 
 /** Both users are active and not separated by a block or an unmatch. */
+/**
+ * Phase 68a, for an introduction aliased `it`: open, between these two, and it reached the viewer
+ * (women first: the other side only once she said yes), unless the viewer said no.
+ */
+export function introductionReached(viewer: SQL, other: SQL): SQL {
+  return sql`it.match_id IS NULL AND it.closed_at IS NULL AND it.expires_at > now()
+    AND ((it.a_id = ${viewer} AND it.b_id = ${other} AND it.a_answer IS DISTINCT FROM 'no')
+      OR (it.b_id = ${viewer} AND it.a_id = ${other} AND it.b_answer IS DISTINCT FROM 'no'))
+    AND (it.first_id IS NULL OR it.first_id = ${viewer}
+      OR (it.first_id = it.a_id AND it.a_answer = 'yes')
+      OR (it.first_id = it.b_id AND it.b_answer = 'yes'))`;
+}
+
 export function notSeparated(a: SQL, b: SQL): SQL {
   // Aliases unique to this helper: callers pass columns like `m.user_a`, which an inner `m` would
   // shadow (the check then matched any unmatched pair at all).

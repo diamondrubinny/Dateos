@@ -44,6 +44,7 @@ const texts = {
     event: 'Update about a community event you are going to',
     call: 'You have an incoming call',
     visible: 'Your break is over: new people can see your profile again',
+    introduction: 'You have a new introduction from a community matchmaker',
   },
   he: {
     message: 'יש לך הודעה חדשה',
@@ -52,6 +53,7 @@ const texts = {
     event: 'עדכון על אירוע קהילה שנרשמת אליו',
     call: 'יש לך שיחה נכנסת',
     visible: 'ההפסקה הסתיימה: אנשים חדשים יכולים לראות שוב את הפרופיל שלך',
+    introduction: 'יש לך הצעת היכרות חדשה משדכנות הקהילה',
   },
   ar: {
     message: 'لديك رسالة جديدة',
@@ -60,6 +62,7 @@ const texts = {
     event: 'تحديث حول فعالية مجتمعية سجّلت حضورك فيها',
     call: 'لديك مكالمة واردة',
     visible: 'انتهت الاستراحة: يمكن لأشخاص جدد رؤية ملفك الشخصي مرة أخرى',
+    introduction: 'لديك اقتراح تعارف جديد في المجتمع',
   },
   ru: {
     message: 'У вас новое сообщение',
@@ -68,6 +71,7 @@ const texts = {
     event: 'Новости о мероприятии сообщества, на которое вы идёте',
     call: 'Вам звонят',
     visible: 'Перерыв закончился: новые люди снова видят ваш профиль',
+    introduction: 'Вам предложили новое знакомство в сообществе',
   },
 } as const;
 
@@ -130,7 +134,7 @@ export async function sendPush(ctx: PushContext, job: PushJob): Promise<PushResu
   if (ctx.provider === 'disabled' && !ctx.webPush) return 'disabled';
   // Notifications the member turned off (phase 33). Calls and safety check-ins are always on.
   const choice =
-    job.kind === 'match'
+    job.kind === 'match' || job.kind === 'introduction'
       ? 'notify_matches'
       : job.kind === 'message' || job.kind === 'partner_message'
         ? 'notify_messages'
@@ -150,6 +154,7 @@ export async function sendPush(ctx: PushContext, job: PushJob): Promise<PushResu
   if (job.kind === 'checkin') return sendToDevices(ctx, job); // safety: no match or presence check
   if (job.kind === 'event') return sendToDevices(ctx, job); // not about a conversation
   if (job.kind === 'visible') return sendToDevices(ctx, job); // about the member's own profile
+  if (job.kind === 'introduction') return sendToDevices(ctx, job); // not a conversation yet
   if (job.kind === 'partner_message') {
     // Still a match across communities, and the member still active?
     const live = await ctx.db.execute<{ ok: boolean }>(sql`

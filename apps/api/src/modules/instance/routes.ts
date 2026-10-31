@@ -14,6 +14,7 @@ import {
   localeSchema,
   setupClaimSchema,
   signupModes,
+  introductionOrders,
   webManifest,
   webPushConfigSchema,
 } from '@nexaheart/shared';
@@ -184,6 +185,7 @@ export const adminSettingsSchema = z.object({
   safetyResources: z.string().nullable(),
   discreetName: z.string().nullable(),
   riskCountries: z.array(z.string()),
+  introductionOrder: z.enum(introductionOrders),
   joinMinAge: z.number().int(),
   joinMaxAge: z.number().int().nullable(),
   joinGenders: z.array(genderSchema),

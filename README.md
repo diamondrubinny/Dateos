@@ -103,6 +103,7 @@ NexaHeart is in active development. Here is what works today and what comes next
 | Private album shared with one match: once, 10 minutes or no limit, checked on the server                                                                                                                                          | ✅ Available |
 | Discretion: hidden distance, discreet notifications, an app lock code, local help listed by the community                                                                                                                         | ✅ Available |
 | A discreet installed app (neutral name, plain icons) and countries at risk with a travel warning and automatic hiding                                                                                                             | ✅ Available |
+| Community matchmakers named by the admins: private introductions (women first, if chosen), credit when it works out                                                                                                               | ✅ Available |
 
 ## Screenshots
 
