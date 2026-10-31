@@ -6,6 +6,10 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Added
 
+- **Kosher and "closed on Shabbat" places**: admins mark places in the dashboard (kosher only with
+  a valid certificate); the date planner shows the tags and can keep to kosher places only, and
+  dates and events show them, as the place was when the date was proposed.
+
 - **Shabbat and holiday mode** (Settings → Shabbat and holidays, with its own consent): no
   notifications from candle lighting to nightfall on Shabbat and holidays, by your approximate
   location and the Hebrew calendar (candle-lighting minutes and a second day of holidays as

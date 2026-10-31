@@ -15,6 +15,8 @@ type Form = {
   address: string;
   note: string;
   stepFree: boolean;
+  kosher: boolean;
+  shabbatClosed: boolean;
 };
 
 const empty: Form = {
@@ -24,6 +26,8 @@ const empty: Form = {
   address: '',
   note: '',
   stepFree: false,
+  kosher: false,
+  shabbatClosed: false,
 };
 
 const toForm = (v: AdminVenue): Form => ({
@@ -33,6 +37,8 @@ const toForm = (v: AdminVenue): Form => ({
   address: v.address,
   note: v.note ?? '',
   stepFree: v.stepFree,
+  kosher: v.kosher,
+  shabbatClosed: v.shabbatClosed,
 });
 
 /**
@@ -67,6 +73,8 @@ export function Venues({ isAdmin }: { isAdmin: boolean }) {
       address: form.address.trim(),
       note: form.note.trim() ? form.note.trim() : null,
       stepFree: form.stepFree,
+      kosher: form.kosher,
+      shabbatClosed: form.shabbatClosed,
     };
     try {
       if (editing) await api.updateVenue(editing, input);
@@ -166,6 +174,18 @@ export function Venues({ isAdmin }: { isAdmin: boolean }) {
                             <Badge tone="ok">♿ {t.venues.stepFree}</Badge>
                           </>
                         ) : null}
+                        {v.kosher ? (
+                          <>
+                            {' '}
+                            <Badge tone="normal">{t.venues.kosher}</Badge>
+                          </>
+                        ) : null}
+                        {v.shabbatClosed ? (
+                          <>
+                            {' '}
+                            <Badge tone="muted">{t.venues.shabbatClosed}</Badge>
+                          </>
+                        ) : null}
                       </td>
                       <td>
                         <Badge tone={v.active ? 'ok' : 'muted'}>
@@ -236,6 +256,28 @@ export function Venues({ isAdmin }: { isAdmin: boolean }) {
                 onChange={(e) => set('stepFree', e.target.checked)}
               />
               <label htmlFor="venue-stepfree">{t.venues.stepFreeLabel}</label>
+            </div>
+            <div className="checkbox">
+              <input
+                id="venue-kosher"
+                type="checkbox"
+                checked={form.kosher}
+                aria-describedby="venue-kosher-help"
+                onChange={(e) => set('kosher', e.target.checked)}
+              />
+              <label htmlFor="venue-kosher">{t.venues.kosherLabel}</label>
+            </div>
+            <p id="venue-kosher-help" className="help">
+              {t.venues.kosherHelp}
+            </p>
+            <div className="checkbox">
+              <input
+                id="venue-shabbat-closed"
+                type="checkbox"
+                checked={form.shabbatClosed}
+                onChange={(e) => set('shabbatClosed', e.target.checked)}
+              />
+              <label htmlFor="venue-shabbat-closed">{t.venues.shabbatClosedLabel}</label>
             </div>
             <div className="actions">
               <button type="submit" className="button primary" disabled={busy}>

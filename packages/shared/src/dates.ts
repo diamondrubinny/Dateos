@@ -42,6 +42,9 @@ export const venueInputSchema = z
     address: line(160),
     note: z.string().trim().max(300).nullable().default(null),
     stepFree: z.boolean().default(false),
+    /** Phase 74b: kosher (staff mark it only with a valid certificate ⚖️), closed on Shabbat. */
+    kosher: z.boolean().default(false),
+    shabbatClosed: z.boolean().default(false),
     active: z.boolean().default(true),
   })
   .strict();
@@ -55,6 +58,8 @@ export const venueUpdateSchema = z
     address: line(160),
     note: z.string().trim().max(300).nullable(),
     stepFree: z.boolean(),
+    kosher: z.boolean(),
+    shabbatClosed: z.boolean(),
     active: z.boolean(),
   })
   .partial()
@@ -71,6 +76,9 @@ export const venueSchema = z.object({
   address: z.string(),
   note: z.string().nullable(),
   stepFree: z.boolean(),
+  /** Phase 74b. */
+  kosher: z.boolean(),
+  shabbatClosed: z.boolean(),
 });
 export type Venue = z.infer<typeof venueSchema>;
 

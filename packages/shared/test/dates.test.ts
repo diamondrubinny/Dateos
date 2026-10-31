@@ -22,6 +22,8 @@ describe('venue input', () => {
       ...place,
       note: null,
       stepFree: false,
+      kosher: false,
+      shabbatClosed: false,
       active: true,
     });
   });
