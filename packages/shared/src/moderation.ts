@@ -401,8 +401,8 @@ export const reviewDecisionSchema = z.discriminatedUnion('decision', [
         .trim()
         .min(1)
         .max(MAX_REVIEW_NOTE)
-        // eslint-disable-next-line no-control-regex -- matching control characters is the point
         .refine(
+          // eslint-disable-next-line no-control-regex -- matching control characters is the point
           (v) => !/[\u0000-\u0009\u000B\u000C\u000E-\u001F\u007F<>]/.test(v),
           'Plain text only',
         )
