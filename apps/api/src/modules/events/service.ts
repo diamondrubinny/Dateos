@@ -35,6 +35,7 @@ import { checkHarm } from '@nexaheart/ai';
 import { and, asc, desc, eq, gt, inArray, isNull, or, sql } from 'drizzle-orm';
 import { audit } from '../../lib/audit.js';
 import { readCommunitySettings } from '../../lib/community-settings.js';
+import { setTablesIfDue } from './tables.js';
 import { HttpError } from '../../plugins/error-handler.js';
 import type { AppEvents } from '../../lib/app-events.js';
 import { noEvents } from '../../lib/app-events.js';
@@ -82,7 +83,10 @@ function baseView(
   going: number,
   waitingCount: number,
   poolCounts: PoolCounts = {},
-): Omit<CommunityEvent, 'mine' | 'waitingAhead' | 'checkedIn' | 'meetAgainUntil' | 'notForYou'> {
+): Omit<
+  CommunityEvent,
+  'mine' | 'waitingAhead' | 'checkedIn' | 'meetAgainUntil' | 'notForYou' | 'placeHidden'
+> {
   return {
     id: e.id,
     title: e.title,
@@ -120,8 +124,17 @@ function baseView(
           waiting: poolCounts[p.gender]?.waiting ?? 0,
         }))
       : null,
+    placeRevealAt: placeRevealAt(e)?.toISOString() ?? null,
+    tableSize: e.tableSize,
   };
 }
+
+/** Phase 71d: when the place is revealed to members, or null when it's shown from the start. */
+export const placeRevealAt = (e: EventRow): Date | null =>
+  e.revealHours ? new Date(e.startsAt.getTime() - e.revealHours * 3_600_000) : null;
+
+/** Phase 71d: when the tables are set: the reveal, or the start. */
+export const tablesAt = (e: EventRow): Date => placeRevealAt(e) ?? e.startsAt;
 
 /**
  * The 6-digit check-in code for one 30-second window: HMAC-SHA256 of the event's secret and the
@@ -142,6 +155,7 @@ interface Row {
   checkedIn: boolean;
   checkedInCount: number;
   poolCounts: PoolCounts;
+  tableSizes: number[] | null;
 }
 
 const toQuestion = (q: typeof eventQuestions.$inferSelect): EventQuestion => ({
@@ -168,8 +182,13 @@ const toView = (r: Row, now: number, facts: ViewerFacts | null): CommunityEvent 
   // Phase 71b: with places by gender, "full" is about the viewer's own group.
   const pool = poolOf(r.event, facts);
   const mine = pool ? base.pools?.find((p) => p.gender === pool) : undefined;
+  // Phase 71d: until the reveal, members see the area only.
+  const reveal = placeRevealAt(r.event);
+  const hidden = reveal !== null && now < reveal.getTime() && base.venue !== null;
   return {
     ...base,
+    venue: hidden && base.venue ? { ...base.venue, name: '', address: '', note: null } : base.venue,
+    placeHidden: hidden,
     full: mine ? mine.going >= mine.capacity : base.full,
     mine: r.mine,
     waitingAhead: r.waitingAhead,
@@ -247,6 +266,11 @@ export class EventService {
                    count(*) FILTER (WHERE r.status = 'waiting')::int AS waiting
             FROM event_rsvps r WHERE r.event_id = ${events.id} AND r.pool IS NOT NULL
             GROUP BY r.pool) x)`;
+    // Phase 71d: people at each table, in table order (counts only).
+    const tableSizes = sql<number[] | null>`(SELECT array_agg(x.n ORDER BY x.table_no)
+      FROM (SELECT r.table_no, count(*)::int AS n FROM event_rsvps r
+            WHERE r.event_id = ${events.id} AND r.table_no IS NOT NULL AND r.status = 'going'
+            GROUP BY r.table_no) x)`;
     return this.db
       .select({
         event: events,
@@ -258,6 +282,7 @@ export class EventService {
         checkedIn,
         checkedInCount,
         poolCounts,
+        tableSizes,
       })
       .from(events)
       .leftJoin(venues, eq(venues.id, events.venueId));
@@ -545,6 +570,19 @@ export class EventService {
   // ------------------------------------------------------------------ staff
 
   async listForStaff(): Promise<AdminEvent[]> {
+    // Phase 71d: tables that are due are set now, so staff see their counts.
+    const due = await this.db
+      .select()
+      .from(events)
+      .where(
+        and(
+          sql`${events.tableSize} IS NOT NULL`,
+          isNull(events.tablesSetAt),
+          eq(events.status, 'scheduled'),
+          gt(events.endsAt, new Date(this.now())),
+        ),
+      );
+    for (const e of due) await setTablesIfDue(this.db, e, this.now());
     const rows = await this.query(null)
       .where(gt(events.endsAt, new Date(this.now() - 30 * 86_400_000)))
       .orderBy(desc(events.startsAt))
@@ -558,6 +596,7 @@ export class EventService {
       venueId: r.event.venueId,
       createdAt: r.event.createdAt.toISOString(),
       checkedInCount: r.checkedInCount,
+      tables: r.event.tablesSetAt ? (r.tableSizes ?? []) : null,
     };
   }
 
@@ -635,6 +674,8 @@ export class EventService {
         roundMinutes: speed ? (input.roundMinutes ?? SPEED_ROUND_DEFAULT) : null,
         ...audience,
         pools,
+        revealHours: input.revealHours ?? null,
+        tableSize: input.tableSize ?? null,
       })
       .returning({ id: events.id });
     await audit(this.db, {
@@ -684,6 +725,8 @@ export class EventService {
           ...(patch.capacity !== undefined || patch.pools !== undefined ? { capacity } : {}),
           ...(patch.roundMinutes !== undefined ? { roundMinutes: patch.roundMinutes } : {}),
           ...(patch.pools !== undefined ? { pools } : {}),
+          ...(patch.revealHours !== undefined ? { revealHours: patch.revealHours } : {}),
+          ...(patch.tableSize !== undefined ? { tableSize: patch.tableSize } : {}),
           ...audience,
           startsAt,
           endsAt,
@@ -739,6 +782,8 @@ export class EventService {
       ageMax: current.ageMax,
       faithStreams: current.faithStreams,
       pools: current.pools,
+      revealHours: current.revealHours,
+      tableSize: current.tableSize,
     }));
     const rows = await this.db.insert(events).values(copies).returning({ id: events.id });
     await audit(this.db, {

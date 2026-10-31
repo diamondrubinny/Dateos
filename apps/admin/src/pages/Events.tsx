@@ -37,6 +37,9 @@ type Form = {
   streams: string[];
   byGender: boolean;
   pools: Record<Gender, string>;
+  /** Phase 71d: reveal the place N hours before; tables of N. */
+  revealHours: string;
+  tableSize: string;
 };
 
 const noPools = (): Record<Gender, string> => ({ woman: '', man: '', nonbinary: '', other: '' });
@@ -63,6 +66,8 @@ function emptyForm(): Form {
     streams: [],
     byGender: false,
     pools: noPools(),
+    revealHours: '',
+    tableSize: '',
   };
 }
 
@@ -85,6 +90,10 @@ const toForm = (e: AdminEvent): Form => ({
     ...noPools(),
     ...Object.fromEntries((e.pools ?? []).map((p) => [p.gender, String(p.capacity)])),
   },
+  revealHours: e.placeRevealAt
+    ? String(Math.round((Date.parse(e.startsAt) - Date.parse(e.placeRevealAt)) / 3_600_000))
+    : '',
+  tableSize: e.tableSize === null ? '' : String(e.tableSize),
 });
 
 /** Phase 71b: the audience and the places by gender, as the API takes them. */
@@ -443,6 +452,8 @@ export function Events({ isAdmin }: { isAdmin: boolean }) {
       ...times(form),
       capacity: form.capacity ? Number(form.capacity) : null,
       ...groupInput(form),
+      revealHours: form.revealHours.trim() === '' ? null : Number(form.revealHours),
+      tableSize: form.tableSize.trim() === '' ? null : Number(form.tableSize),
     };
     const speed = form.kind === 'speed' ? { roundMinutes: Number(form.roundMinutes) } : {};
     try {
@@ -575,6 +586,18 @@ export function Events({ isAdmin }: { isAdmin: boolean }) {
                             })}
                           </span>
                         ))}
+                        {e.tables ? (
+                          <span className="muted block cell-detail">
+                            {format(t.events.tablesLine, {
+                              n: e.tables.length,
+                              sizes: e.tables.join(', '),
+                            })}
+                          </span>
+                        ) : e.tableSize ? (
+                          <span className="muted block cell-detail">
+                            {format(t.events.tablesOf, { n: e.tableSize })}
+                          </span>
+                        ) : null}
                         {audienceText(e) ? (
                           <span className="muted block cell-detail">{audienceText(e)}</span>
                         ) : null}
@@ -794,6 +817,36 @@ export function Events({ isAdmin }: { isAdmin: boolean }) {
             />
             <p id="event-capacity-help" className="help">
               {t.events.capacityHelp}
+            </p>
+            <label htmlFor="event-reveal">{t.events.revealHours}</label>
+            <input
+              id="event-reveal"
+              type="number"
+              min={1}
+              max={72}
+              inputMode="numeric"
+              dir="ltr"
+              value={form.revealHours}
+              aria-describedby="event-reveal-help"
+              onChange={(e) => set('revealHours', e.target.value)}
+            />
+            <p id="event-reveal-help" className="help">
+              {t.events.revealHelp}
+            </p>
+            <label htmlFor="event-tables">{t.events.tableSize}</label>
+            <input
+              id="event-tables"
+              type="number"
+              min={4}
+              max={10}
+              inputMode="numeric"
+              dir="ltr"
+              value={form.tableSize}
+              aria-describedby="event-tables-help"
+              onChange={(e) => set('tableSize', e.target.value)}
+            />
+            <p id="event-tables-help" className="help">
+              {t.events.tableHelp}
             </p>
             <fieldset aria-describedby="event-audience-help">
               <legend>{t.events.audienceTitle}</legend>

@@ -1241,6 +1241,28 @@ export const en = {
       unanswered: 'Open my chats',
     },
   },
+  eventTable: {
+    title: 'Your table',
+    intro:
+      'This evening has tables. Answer three quick questions to join one; you’ll see your table and the first names at it {{when}}.',
+    pace: 'The evening’s pace',
+    paces: { calm: 'Calm', lively: 'Lively' },
+    talk: 'Conversation',
+    talks: { deep: 'Deep', light: 'Light' },
+    drinks: 'Drinks',
+    drinkOptions: { alcohol: 'With alcohol', no_alcohol: 'Without alcohol', either: 'Either' },
+    consent: 'Joining shares your first name with the people at your table, and only with them.',
+    join: 'Join a table',
+    save: 'Save',
+    joined: 'You’re in. Your table and the first names at it appear {{when}}.',
+    change: 'Change my answers',
+    leave: 'Leave the table',
+    yourTable: 'Table {{n}}',
+    with: 'With: {{names}}',
+    alone: 'Just you for now. Others may still join.',
+    setWithoutYou: 'The tables are set; you can still join one.',
+    placeLater: 'The exact place is revealed {{when}}.',
+  },
   eventHelp: {
     title: 'Need help now?',
     intro:

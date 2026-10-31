@@ -93,7 +93,9 @@ export function EventCard({ event }: { event: CommunityEvent }) {
       <AppText variant="body">{formatEventTime(event, locale)}</AppText>
       {event.venue ? (
         <AppText variant="body" tone="muted" userContent>
-          {t('datePlan.placeWithArea', { name: event.venue.name, area: event.venue.area })}
+          {event.placeHidden
+            ? event.venue.area
+            : t('datePlan.placeWithArea', { name: event.venue.name, area: event.venue.area })}
           {event.venue.stepFree ? ` · ♿ ${t('datePlan.stepFree')}` : ''}
         </AppText>
       ) : null}

@@ -1211,6 +1211,10 @@ export const events = pgTable(
       .notNull()
       .default(sql`'{}'::text[]`),
     pools: jsonb('pools').$type<{ gender: string; capacity: number }[]>(),
+    /** Phase 71d: reveal the place this many hours before (null: shown); tables of this size. */
+    revealHours: smallint('reveal_hours'),
+    tableSize: smallint('table_size'),
+    tablesSetAt: timestamp('tables_set_at', { withTimezone: true }),
     ...timestamps,
   },
   (t) => [index('events_upcoming_idx').on(t.status, t.endsAt)],
@@ -1233,6 +1237,9 @@ export const eventRsvps = pgTable(
     checkedInAt: timestamp('checked_in_at', { withTimezone: true }),
     /** Phase 71b: the group (gender) the place was taken in, when the event has places by gender. */
     pool: varchar('pool', { length: 16 }),
+    /** Phase 71d: answers to join a table (consent to share a first name with it), and the table. */
+    tableAnswers: jsonb('table_answers').$type<{ pace: string; talk: string; drinks: string }>(),
+    tableNo: smallint('table_no'),
     /** Phase 71a: when a place from the waiting list was given (late places never count as missed). */
     promotedAt: timestamp('promoted_at', { withTimezone: true }),
     /** Phase 71a: joined "Meet again" after the event (only then listed to the others). */

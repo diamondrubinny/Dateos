@@ -7,6 +7,8 @@ import type {
   EventQuestion,
   MeetAgain,
   MyNoShows,
+  MyTable,
+  TableAnswers,
   SpeedDate,
   SpeedJoin,
   SpeedState,
@@ -189,5 +191,31 @@ export function useExcuseMiss() {
     mutationFn: (eventId: string) =>
       apiFetch<MyNoShows>(`/v1/me/event-misses/${eventId}/excuse`, { method: 'POST' }),
     onSuccess: (state) => client.setQueryData(missesKey, state),
+  });
+}
+
+// ---------------------------------------------------------------- phase 71d
+
+const tableKey = (id: string) => ['events', id, 'table'] as const;
+
+/** My table at an event with tables (only for people going). */
+export function useMyTable(id: string, enabled: boolean) {
+  return useQuery({
+    queryKey: tableKey(id),
+    queryFn: () => apiFetch<MyTable>(`/v1/events/${id}/table`),
+    enabled,
+    retry: false,
+  });
+}
+
+/** Join a table (or change my answers), or leave it (null). */
+export function useTableAction(id: string) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (answers: TableAnswers | null) =>
+      answers
+        ? apiFetch<MyTable>(`/v1/events/${id}/table`, { method: 'PUT', body: json(answers) })
+        : apiFetch<MyTable>(`/v1/events/${id}/table`, { method: 'DELETE' }),
+    onSuccess: (state) => client.setQueryData(tableKey(id), state),
   });
 }

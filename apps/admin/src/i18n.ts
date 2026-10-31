@@ -747,6 +747,14 @@ const en = {
     answerSent: 'Answer sent.',
     repeat: 'Repeat weekly',
     urgent: 'Needs help now',
+    revealHours: 'Reveal the place … hours before (optional)',
+    revealHelp:
+      'Until then members see the area only; the name, address and note appear at that time. 1 to 72 hours.',
+    tableSize: 'Tables of (optional)',
+    tableHelp:
+      'People going may join a table by answering three quick questions. At the reveal (or the start), tables of about this size are set, mixing genders and grouping similar answers; each person sees only their own table’s first names. 4 to 10.',
+    tablesOf: 'Tables of {{n}}',
+    tablesLine: 'Tables: {{n}} (people: {{sizes}})',
     repeatWeeks: 'How many more weeks',
     repeatYes: 'Make copies',
     repeated: 'Made {{n}} weekly copies of “{{title}}”.',
@@ -1559,8 +1567,8 @@ const he: Messages = {
     appeals: 'ערעורים שהתקבלו',
     open: 'עדיין פתוחים',
     medianDays: 'חציון הימים עד החלטה בערעור',
-    underage: 'חשבונות שהושעו אחרי שבדיקת גיל העלתה גיל מתחת ל־18',
-    active: 'חברים שהיו פעילים ב־30 הימים האחרונים (נכון לעכשיו, לא ממוצע)',
+    underage: 'חשבונות שהושעו אחרי שבדיקת גיל העלתה גיל מתחת לגיל 18',
+    active: 'חברים שהיו פעילים בשלושים הימים האחרונים (נכון לעכשיו, לא ממוצע)',
     retention:
       'החלטות נמחקות בתום תקופת השמירה ויחד עם החשבון שהן נוגעות לו, ולכן בתקופות ישנות הספירה עשויה להיות נמוכה יותר.',
     incidentsTitle: 'אירועי אבטחה',
@@ -1812,6 +1820,14 @@ const he: Messages = {
     answerSent: 'התשובה נשלחה.',
     repeat: 'חזרה שבועית',
     urgent: 'בקשת עזרה דחופה',
+    revealHours: 'חשיפת המקום כמה שעות לפני (לא חובה)',
+    revealHelp:
+      'עד אז חברי הקהילה רואים רק את האזור; שם המקום, הכתובת וההערה מופיעים בזמן הזה. אפשר לבחור 1 עד 72 שעות.',
+    tableSize: 'גודל שולחן (לא חובה)',
+    tableHelp:
+      'מי שמגיעים יכולים להצטרף לשולחן אחרי שלוש שאלות קצרות. בזמן החשיפה (או בתחילת האירוע) נקבעים שולחנות בערך בגודל הזה, עם שילוב מגדרים ותשובות דומות; כל אחד רואה רק את השמות הפרטיים בשולחן שלו. אפשר לבחור 4 עד 10.',
+    tablesOf: 'שולחנות בגודל {{n}}',
+    tablesLine: 'שולחנות: {{n}} (אנשים: {{sizes}})',
     repeatWeeks: 'כמה שבועות נוספים',
     repeatYes: 'יצירת עותקים',
     repeated: 'נוצרו {{n}} עותקים שבועיים של "{{title}}".',

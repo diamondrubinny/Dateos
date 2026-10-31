@@ -314,6 +314,9 @@ export async function exportMemberData(
       // Phase 71a: a place from the waiting list, joining "Meet again", a missed event excused.
       // Phase 71b: the group (gender) the place was taken in, for events with places by gender.
       group: t.eventRsvps.pool,
+      // Phase 71d: answers to join a table, and the table.
+      tableAnswers: t.eventRsvps.tableAnswers,
+      table: t.eventRsvps.tableNo,
       placeFromWaitingListAt: t.eventRsvps.promotedAt,
       joinedMeetAgainAt: t.eventRsvps.meetAgainAt,
       excusedAt: t.eventRsvps.excusedAt,

@@ -83,7 +83,8 @@
     "accountability": "tsx accountability.ts",
     "meet-again": "tsx meet-again.ts",
     "event-groups": "tsx event-groups.ts",
-    "event-help": "tsx event-help.ts"
+    "event-help": "tsx event-help.ts",
+    "event-tables": "tsx event-tables.ts"
   },
   "dependencies": {
     "@axe-core/playwright": "4.14.0",

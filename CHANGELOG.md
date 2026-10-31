@@ -6,6 +6,12 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Added
 
+- **Tables at events**: staff can set tables of 4 to 10. People going may join one with three
+  quick questions about the evening; at the reveal (or the start) tables are set, mixing genders
+  and grouping similar answers, and each person sees their table's first names only.
+- **The place revealed later**: staff can reveal an event's place 1 to 72 hours before; until then
+  members see the area only.
+
 - **Help during an event**: people going can send the organizers an urgent "I need help now" from
   30 minutes before the start to the end; staff see it first and highlighted, every admin gets a
   content-free push, and it stays anonymous. The screen points to emergency services first.
@@ -37,6 +43,7 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Fixed
 
+- Hebrew texts no longer put a maqaf right before a number (four older strings).
 - A video-call test waited a fixed 50 ms for hang-up listeners; it now waits for them.
 - Leaving an event after it ended is refused (it could erase a check-in).
 - The approval banner showed twice in Discover while on a break or with nobody to show.
