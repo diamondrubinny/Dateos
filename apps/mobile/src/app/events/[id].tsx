@@ -10,13 +10,14 @@ import { AppText } from '../../components/AppText';
 import { Banner } from '../../components/Banner';
 import { Button } from '../../components/Button';
 import { EventBoard } from '../../components/EventBoard';
+import { EventMisses } from '../../components/EventMisses';
 import { eventStatus, formatEventTime } from '../../components/EventCard';
 import { Loading } from '../../components/Loading';
 import { RequireSession } from '../../components/RequireSession';
 import { Screen } from '../../components/Screen';
 import { ApiRequestError } from '../../lib/api';
 import { addToCalendar } from '../../lib/calendar';
-import { useCheckIn, useEvent, useRsvp } from '../../lib/event-queries';
+import { useCheckIn, useEvent, useEventMisses, useRsvp } from '../../lib/event-queries';
 import { useLocale } from '../../lib/locale';
 import { radius, spacing, useColors } from '../../lib/theme';
 
@@ -28,6 +29,7 @@ function EventScreen() {
   const event = useEvent(id);
   const rsvp = useRsvp(id);
   const checkIn = useCheckIn(id);
+  const misses = useEventMisses();
   const [error, setError] = useState<string>();
   // The QR code at the venue opens this page with its code: it's filled in, not sent by itself.
   const [code, setCode] = useState(/^\d{6}$/.test(linkCode ?? '') ? linkCode! : '');
@@ -52,12 +54,18 @@ function EventScreen() {
   const answer = (action: 'going' | 'waitlist' | 'leave') => {
     setError(undefined);
     rsvp.mutate(action, {
-      onError: (err) =>
-        setError(
-          err instanceof ApiRequestError && err.status === 409
-            ? t('events.fullNow')
-            : t('common.genericError'),
-        ),
+      onError: (err) => {
+        // Phase 71a: a 409 is either a full event or new places paused after missed events.
+        if (err instanceof ApiRequestError && err.status === 409) {
+          void misses
+            .refetch()
+            .then((r) =>
+              setError(r.data?.pausedUntil ? t('eventMisses.refused') : t('events.fullNow')),
+            );
+          return;
+        }
+        setError(t('common.genericError'));
+      },
     });
   };
 
@@ -125,6 +133,7 @@ function EventScreen() {
         {eventStatus(e, t)}
       </AppText>
       {error ? <Banner tone="error" message={error} /> : null}
+      {!e.mine && !waiting && now < end ? <EventMisses /> : null}
       {!cancelled && !e.mine && !waiting && !e.full ? (
         <Button
           label={t('events.going')}
@@ -176,7 +185,7 @@ function EventScreen() {
           }
         />
       ) : null}
-      {!cancelled && e.mine ? (
+      {!cancelled && e.mine && now < end ? (
         <Button
           variant="secondary"
           label={t('events.notGoing')}
@@ -244,6 +253,19 @@ function EventScreen() {
             disabled={code.length !== 6}
             loading={checkIn.isPending}
             onPress={submitCheckIn}
+          />
+        </View>
+      ) : null}
+      {e.meetAgainUntil ? (
+        // Phase 71a: after an in-person event I checked in at.
+        <View style={[styles.card, { backgroundColor: colors.primarySoft }]} testID="meet-again">
+          <AppText variant="heading" accessibilityRole="header">
+            {t('meetAgain.title')}
+          </AppText>
+          <AppText variant="body">{t('meetAgain.teaser')}</AppText>
+          <Button
+            label={t('meetAgain.open')}
+            onPress={() => router.push({ pathname: '/events/meet-again/[id]', params: { id } })}
           />
         </View>
       ) : null}

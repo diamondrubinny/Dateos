@@ -19,6 +19,12 @@ import {
   MAX_OPEN_EVENT_QUESTIONS,
   type EventBoard,
   type EventQuestion,
+  MEET_AGAIN_HOURS,
+  type MyNoShows,
+  NO_SHOW_LATE_PLACE_HOURS,
+  NO_SHOW_LIMIT,
+  NO_SHOW_PAUSE_DAYS,
+  NO_SHOW_WINDOW_DAYS,
 } from '@nexaheart/shared';
 import { checkHarm } from '@nexaheart/ai';
 import { and, asc, desc, eq, gt, inArray, isNull, or, sql } from 'drizzle-orm';
@@ -43,7 +49,7 @@ function baseView(
   v: VenueRow | null,
   going: number,
   waitingCount: number,
-): Omit<CommunityEvent, 'mine' | 'waitingAhead' | 'checkedIn'> {
+): Omit<CommunityEvent, 'mine' | 'waitingAhead' | 'checkedIn' | 'meetAgainUntil'> {
   return {
     id: e.id,
     title: e.title,
@@ -98,12 +104,41 @@ const toQuestion = (q: typeof eventQuestions.$inferSelect): EventQuestion => ({
   createdAt: q.createdAt.toISOString(),
 });
 
-const toView = (r: Row): CommunityEvent => ({
+/**
+ * Phase 71a: until when "Meet again" is open for someone who checked in at an in-person event, or
+ * null (not checked in, video speed dating, cancelled, not ended yet, or closed).
+ */
+export function meetAgainUntil(e: EventRow, checkedIn: boolean, now: number): Date | null {
+  if (!checkedIn || e.kind === 'speed' || e.status !== 'scheduled') return null;
+  const until = e.endsAt.getTime() + MEET_AGAIN_HOURS * 3_600_000;
+  return now >= e.endsAt.getTime() && now < until ? new Date(until) : null;
+}
+
+const toView = (r: Row, now: number): CommunityEvent => ({
   ...baseView(r.event, r.venue, r.going, r.waitingCount),
   mine: r.mine,
   waitingAhead: r.waitingAhead,
   checkedIn: r.checkedIn,
+  meetAgainUntil: meetAgainUntil(r.event, r.checkedIn, now)?.toISOString() ?? null,
 });
+
+/**
+ * Phase 71a: the member's missed events in the window, newest first: "going", didn't check in,
+ * at an ended in-person event where someone did check in (so check-in was used), and not a place
+ * given from the waiting list in the last hours before the start.
+ */
+function missedSql(userId: string, since: Date, now: Date) {
+  return sql`
+    SELECT e.id AS event_id, e.title, e.ends_at, r.excused_at
+    FROM event_rsvps r JOIN events e ON e.id = r.event_id
+    WHERE r.user_id = ${userId} AND r.status = 'going' AND r.checked_in_at IS NULL
+      AND e.status = 'scheduled' AND e.kind = 'standard'
+      AND e.ends_at <= ${now.toISOString()}::timestamptz AND e.ends_at > ${since.toISOString()}::timestamptz
+      AND (r.promoted_at IS NULL
+           OR r.promoted_at < e.starts_at - make_interval(hours => ${NO_SHOW_LATE_PLACE_HOURS}))
+      AND EXISTS (SELECT 1 FROM event_rsvps c WHERE c.event_id = e.id AND c.checked_in_at IS NOT NULL)
+    ORDER BY e.ends_at DESC`;
+}
 
 export interface EventOptions {
   /** The web app's address, for the link in the check-in QR code. */
@@ -166,7 +201,15 @@ export class EventService {
     const rows = await this.query(viewerId)
       .where(
         and(
-          gt(events.endsAt, new Date(this.now())),
+          or(
+            gt(events.endsAt, new Date(this.now())),
+            // Phase 71a: an event I checked in at, while "Meet again" is open.
+            and(
+              gt(events.endsAt, new Date(this.now() - MEET_AGAIN_HOURS * 3_600_000)),
+              eq(events.kind, 'standard'),
+              sql`EXISTS (SELECT 1 FROM event_rsvps r WHERE r.event_id = ${events.id} AND r.user_id = ${viewerId} AND r.checked_in_at IS NOT NULL)`,
+            ),
+          ),
           or(
             eq(events.status, 'scheduled'),
             sql`EXISTS (SELECT 1 FROM event_rsvps r WHERE r.event_id = ${events.id} AND r.user_id = ${viewerId})`,
@@ -175,7 +218,7 @@ export class EventService {
       )
       .orderBy(asc(events.startsAt))
       .limit(50);
-    return rows.map(toView);
+    return rows.map((r) => toView(r, this.now()));
   }
 
   async get(id: string, viewerId: string): Promise<CommunityEvent> {
@@ -183,7 +226,7 @@ export class EventService {
     if (!row || (row.event.status === 'cancelled' && !row.mine && row.waitingAhead === null)) {
       throw notFound();
     }
-    return toView(row);
+    return toView(row, this.now());
   }
 
   /**
@@ -219,6 +262,14 @@ export class EventService {
           FROM event_rsvps WHERE event_id = ${id}`)
       ).rows as [{ going: number; waiting: number; mine: string | null }];
       if (mine === 'going' || (mine === 'waiting' && wait)) return;
+      const paused = await this.pausedUntil(userId);
+      if (paused) {
+        throw new HttpError(
+          409,
+          ErrorCode.Conflict,
+          `New places are paused until ${paused.toISOString()} after missed events.`,
+        );
+      }
       const full = event.capacity !== null && going >= event.capacity;
       if (!full) {
         await tx
@@ -248,6 +299,10 @@ export class EventService {
     const promoted = await this.db.transaction(async (tx) => {
       const [event] = await tx.select().from(events).where(eq(events.id, id)).for('update');
       if (!event) throw notFound();
+      // Phase 71a: once it ended there's nothing to leave (and a miss or a check-in stays as it is).
+      if (event.status === 'scheduled' && event.endsAt.getTime() <= this.now()) {
+        throw new HttpError(409, ErrorCode.Conflict, 'This event has ended.');
+      }
       const removed = await tx
         .delete(eventRsvps)
         .where(and(eq(eventRsvps.eventId, id), eq(eventRsvps.userId, userId)))
@@ -281,7 +336,7 @@ export class EventService {
     const ids = next.map((n) => n.userId);
     await tx
       .update(eventRsvps)
-      .set({ status: 'going' })
+      .set({ status: 'going', promotedAt: new Date(this.now()) })
       .where(and(eq(eventRsvps.eventId, event.id), inArray(eventRsvps.userId, ids)));
     return ids;
   }
@@ -289,6 +344,85 @@ export class EventService {
   /** A content-free push: "Update about a community event you are going to". */
   private async tellPromoted(eventId: string, userIds: string[]): Promise<void> {
     for (const userId of userIds) await this.notify(userId, eventId).catch(() => undefined);
+  }
+
+  // ------------------------------------------------------------------ no-shows (phase 71a)
+
+  private async missed(userId: string) {
+    const since = new Date(this.now() - NO_SHOW_WINDOW_DAYS * 86_400_000);
+    const { rows } = await this.db.execute<{
+      event_id: string;
+      title: string;
+      ends_at: string | Date;
+      excused_at: string | Date | null;
+    }>(missedSql(userId, since, new Date(this.now())));
+    return rows.map((r) => ({
+      eventId: r.event_id,
+      title: r.title,
+      endedAt: new Date(r.ends_at),
+      excused: r.excused_at !== null,
+      excusedAt: r.excused_at === null ? null : new Date(r.excused_at),
+    }));
+  }
+
+  /**
+   * NO_SHOW_LIMIT misses (not excused) in the window pause new places and waiting lists for
+   * NO_SHOW_PAUSE_DAYS from the latest; null when not paused.
+   */
+  private async pausedUntil(userId: string): Promise<Date | null> {
+    const counted = (await this.missed(userId)).filter((m) => !m.excused);
+    if (counted.length < NO_SHOW_LIMIT) return null;
+    const until = counted[0]!.endedAt.getTime() + NO_SHOW_PAUSE_DAYS * 86_400_000;
+    return until > this.now() ? new Date(until) : null;
+  }
+
+  /** The member's own misses, whether places are paused, and whether they can excuse one. */
+  async myNoShows(userId: string): Promise<MyNoShows> {
+    const missed = await this.missed(userId);
+    const paused = await this.pausedUntil(userId);
+    const excusedRecently = await this.excusedRecently(userId);
+    return {
+      noShows: missed.map((m) => ({
+        eventId: m.eventId,
+        title: m.title,
+        endedAt: m.endedAt.toISOString(),
+        excused: m.excused,
+      })),
+      pausedUntil: paused?.toISOString() ?? null,
+      canExcuse: !excusedRecently && missed.some((m) => !m.excused),
+    };
+  }
+
+  /** Excused anything in the last NO_SHOW_WINDOW_DAYS days (kept on the RSVP, so within it). */
+  private async excusedRecently(userId: string): Promise<boolean> {
+    const since = new Date(this.now() - NO_SHOW_WINDOW_DAYS * 86_400_000);
+    const { rows } = await this.db.execute(sql`
+      SELECT 1 FROM event_rsvps
+      WHERE user_id = ${userId} AND excused_at > ${since.toISOString()}::timestamptz LIMIT 1`);
+    return rows.length > 0;
+  }
+
+  /**
+   * "I was there, or something came up": no questions asked, once in NO_SHOW_WINDOW_DAYS days.
+   * Only the member's own miss; staff never see who missed.
+   */
+  async excuse(userId: string, eventId: string): Promise<MyNoShows> {
+    const miss = (await this.missed(userId)).find((m) => m.eventId === eventId);
+    if (!miss) throw notFound();
+    if (!miss.excused) {
+      if (await this.excusedRecently(userId)) {
+        throw new HttpError(
+          409,
+          ErrorCode.Conflict,
+          'You can excuse one missed event a month. This one still counts.',
+        );
+      }
+      await this.db
+        .update(eventRsvps)
+        .set({ excusedAt: new Date(this.now()) })
+        .where(and(eq(eventRsvps.eventId, eventId), eq(eventRsvps.userId, userId)));
+    }
+    return this.myNoShows(userId);
   }
 
   // ------------------------------------------------------------------ staff

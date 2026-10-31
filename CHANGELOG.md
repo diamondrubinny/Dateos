@@ -6,6 +6,13 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Added
 
+- **Meet again**: for 3 days after an in-person event, people who checked in can join Meet again
+  and privately choose whom they'd like to see again; only a mutual choice becomes a match and a
+  chat. Nobody learns a one-sided choice.
+- **Places for people who come**: at events where check-in was used, missing an event without
+  leaving it gets a private note; two misses in 30 days pause new places and waiting lists for 14
+  days. Members can excuse one miss a month, no questions asked; staff see nothing.
+
 - **My visibility**: Profile → My visibility says whether new people can find you and, if not
   fully, every reason and what lifts it (a break, incognito, no photo, no area, waiting for
   approval, the daily like limit, verified members only). Nothing limits a member's visibility
@@ -16,6 +23,7 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Fixed
 
+- Leaving an event after it ended is refused (it could erase a check-in).
 - The approval banner showed twice in Discover while on a break or with nobody to show.
 
 - **A live check**: with a provider the community chooses (`LIVENESS_URL`/`LIVENESS_SECRET`),

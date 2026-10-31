@@ -29,6 +29,7 @@ export function formatEventTime(
 /** The status line of an event: going, full, cancelled, or how many are going. */
 export function eventStatus(event: CommunityEvent, t: TFunction) {
   if (event.status === 'cancelled') return t('events.cancelled');
+  if (event.meetAgainUntil) return t('meetAgain.listStatus');
   if (event.mine) return t('events.youreGoing', { count: event.going });
   if (event.waitingAhead !== null) return t('events.waiting', { count: event.waitingAhead });
   if (event.full && event.waitingCount > 0)

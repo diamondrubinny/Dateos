@@ -5,6 +5,8 @@ import type {
   CommunityEvent,
   EventBoard,
   EventQuestion,
+  MeetAgain,
+  MyNoShows,
   SpeedDate,
   SpeedJoin,
   SpeedState,
@@ -132,5 +134,59 @@ export function useDeleteQuestion(id: string) {
     mutationFn: (questionId: string) =>
       apiFetch(`/v1/events/${id}/questions/${questionId}`, { method: 'DELETE' }),
     onSuccess: () => client.invalidateQueries({ queryKey: eventKeys.board(id) }),
+  });
+}
+
+// ---------------------------------------------------------------- phase 71a
+
+const meetAgainKey = (id: string) => ['events', id, 'meet-again'] as const;
+const missesKey = ['event-misses'] as const;
+
+/** "Meet again" after an in-person event I checked in at. */
+export function useMeetAgain(id: string, enabled = true) {
+  return useQuery({
+    queryKey: meetAgainKey(id),
+    queryFn: () => apiFetch<MeetAgain>(`/v1/events/${id}/meet-again`),
+    enabled,
+    retry: false,
+  });
+}
+
+/** Join "Meet again", or choose someone (or take it back). */
+export function useMeetAgainAction(id: string) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (action: { join: true } | { userId: string; yes: boolean }) =>
+      'join' in action
+        ? apiFetch<MeetAgain>(`/v1/events/${id}/meet-again`, { method: 'POST' })
+        : apiFetch<MeetAgain>(`/v1/events/${id}/meet-again/${encodeURIComponent(action.userId)}`, {
+            method: 'PUT',
+            body: json({ yes: action.yes }),
+          }),
+    onSuccess: (state) => {
+      client.setQueryData(meetAgainKey(id), state);
+      if (state.people.some((p) => p.matchId)) {
+        return client.invalidateQueries({ queryKey: ['matches'] });
+      }
+      return undefined;
+    },
+  });
+}
+
+/** My missed events, whether new places are paused, and whether I can excuse one. */
+export function useEventMisses() {
+  return useQuery({
+    queryKey: missesKey,
+    queryFn: () => apiFetch<MyNoShows>('/v1/me/event-misses'),
+    staleTime: 60_000,
+  });
+}
+
+export function useExcuseMiss() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (eventId: string) =>
+      apiFetch<MyNoShows>(`/v1/me/event-misses/${eventId}/excuse`, { method: 'POST' }),
+    onSuccess: (state) => client.setQueryData(missesKey, state),
   });
 }
