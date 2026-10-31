@@ -8,6 +8,7 @@ import {
   INACTIVITY_NOTICE_DAYS,
   INTRODUCTION_RETENTION_DAYS,
   RESUME_RETENTION_DAYS,
+  SIGNAL_RETENTION_DAYS,
 } from '@nexaheart/shared';
 import type { Storage } from '@nexaheart/storage';
 import { eq, inArray, sql } from 'drizzle-orm';
@@ -20,6 +21,7 @@ export async function cleanupPrivacy(db: Database): Promise<{
   rateLimits: number;
   introductions: number;
   resumeLinks: number;
+  trustSignals: number;
 }> {
   const days = sql.raw(String(AUDIT_LOG_RETENTION_DAYS));
   const auditLogs = await db.execute(
@@ -46,7 +48,17 @@ export async function cleanupPrivacy(db: Database): Promise<{
   const resumeLinks = await db.execute(sql`
     DELETE FROM resume_links
     WHERE COALESCE(ended_at, expires_at) < now() - make_interval(days => ${RESUME_RETENTION_DAYS})`);
+  // Phase 73b: partners' trust signals after 2 years, or all of them once sharing is off; and
+  // what we track to withdraw ours.
+  const trustSignals = await db.execute(sql`
+    DELETE FROM federation_signals_in
+    WHERE created_at < now() - make_interval(days => ${SIGNAL_RETENTION_DAYS})
+      OR NOT COALESCE((SELECT share_trust_signals FROM instance_settings WHERE id = 1), false)`);
+  await db.execute(sql`
+    DELETE FROM federation_signals_out
+    WHERE created_at < now() - make_interval(days => ${SIGNAL_RETENTION_DAYS})`);
   return {
+    trustSignals: trustSignals.rowCount ?? 0,
     resumeLinks: resumeLinks.rowCount ?? 0,
     introductions: introductions.rowCount ?? 0,
     auditLogs: auditLogs.rowCount ?? 0,

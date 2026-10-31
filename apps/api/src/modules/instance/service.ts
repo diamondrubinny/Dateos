@@ -64,6 +64,7 @@ export interface AdminInstanceSettings {
   discreetName: string | null;
   riskCountries: string[];
   partnerCards: PartnerCardMode;
+  shareTrustSignals: boolean;
   communityCountry: string | null;
   introductionOrder: IntroductionOrder;
   profileApproval: boolean;
@@ -230,6 +231,7 @@ export class InstanceService {
       discreetName: info.discreetName,
       riskCountries: info.community.riskCountries,
       partnerCards: row?.partnerCards === 'minimal' ? 'minimal' : 'full',
+      shareTrustSignals: row?.shareTrustSignals ?? false,
       communityCountry: row?.communityCountry ?? null,
       introductionOrder: row?.introductionOrder === 'women_first' ? 'women_first' : 'together',
       profileApproval: row?.profileApproval ?? false,
@@ -304,6 +306,9 @@ export class InstanceService {
             setupCompletedAt: sql`COALESCE(${instanceSettings.setupCompletedAt}, now())`,
           },
         });
+      // Phase 73b: turning trust signals off forgets every partner's signal at once.
+      if (input.shareTrustSignals === false)
+        await tx.execute(sql`DELETE FROM federation_signals_in`);
       await audit(tx, {
         actorId: staff.id,
         action: 'instance.updated',

@@ -171,6 +171,7 @@ export async function buildApp(env: Env, deps: AppDependencies): Promise<Fastify
       members: services.federated,
       chat: services.federatedChat,
       safety: services.federatedSafety,
+      signals: services.federatedSignals,
     });
     await typed.register(federatedRoutes, {
       auth: services.auth,

@@ -8,8 +8,9 @@ import type {
   ProcessPhotoJob,
   RealtimeEvent,
 } from '@nexaheart/shared';
+import { SIGNAL_PHOTO_DISTANCE, SIGNAL_REPORT_PREFIX } from '@nexaheart/shared';
 import { audioMediaKey, mediaKey, type Storage } from '@nexaheart/storage';
-import { and, eq, sql } from 'drizzle-orm';
+import { and, eq, like, notLike, sql } from 'drizzle-orm';
 import type { Logger } from 'pino';
 import type { Scanner } from './clamav.js';
 import { InvalidAudioError, transcodeVoice } from './audio.js';
@@ -153,6 +154,19 @@ export async function processPhoto(ctx: JobContext, { photoId }: ProcessPhotoJob
   }
   await ctx.storage.delete(ctx.storage.buckets.quarantine, [row.quarantineKey]);
   if (updated.length > 0) await notifyChatImage(ctx, photoId);
+  // Phase 73b: a photo like one a partner community banned: a review here, never a rejection.
+  if (updated.length > 0 && phash !== null) {
+    const signal = await partnerSignal(ctx, phash);
+    if (signal) {
+      await autoReport(
+        ctx,
+        row.userId,
+        'high',
+        `${SIGNAL_REPORT_PREFIX} “${signal.name}” banned (${signal.category}). Not proof: it may be a shared or copied photo. Please review before acting.`,
+        'partner_signal',
+      );
+    }
+  }
   if (updated.length > 0 && phash !== null) {
     const others = await sameProfilePhotoOwners(ctx, row.userId, phash);
     if (others.length > 0) {
@@ -178,6 +192,19 @@ async function matchesBannedPhoto(ctx: JobContext, hash: bigint): Promise<boolea
   return rows.length > 0;
 }
 
+/** Phase 73b: a partner's trust signal this photo matches, where the community accepts them. */
+async function partnerSignal(
+  ctx: JobContext,
+  hash: bigint,
+): Promise<{ name: string; category: string } | null> {
+  const { rows } = await ctx.db.execute<{ name: string; category: string }>(sql`
+    SELECT p.name, s.category FROM federation_signals_in s
+    JOIN federation_partners p ON p.id = s.partner_id
+    WHERE COALESCE((SELECT share_trust_signals FROM instance_settings WHERE id = 1), false)
+      AND ${distance(sql`s.hash`, hash)} <= ${SIGNAL_PHOTO_DISTANCE} LIMIT 1`);
+  return rows[0] ?? null;
+}
+
 /** Other accounts with a clean profile photo that looks the same (at most five, for the case). */
 async function sameProfilePhotoOwners(
   ctx: JobContext,
@@ -201,6 +228,7 @@ async function autoReport(
   reportedId: string,
   priority: 'high' | 'normal',
   details: string,
+  reason?: 'partner_signal',
 ): Promise<void> {
   const [open] = await ctx.db
     .select({ id: reports.id })
@@ -211,6 +239,10 @@ async function autoReport(
         eq(reports.status, 'open'),
         eq(reports.automatic, true),
         eq(reports.category, 'fake_profile'),
+        // Phase 73b: a partner's signal has its own case, not hidden by another kind.
+        reason === 'partner_signal'
+          ? like(reports.details, `${SIGNAL_REPORT_PREFIX}%`)
+          : notLike(reports.details, `${SIGNAL_REPORT_PREFIX}%`),
       ),
     );
   if (open) return;
@@ -227,7 +259,7 @@ async function autoReport(
     action: 'report.automatic',
     targetType: 'user',
     targetId: reportedId,
-    meta: { reason: priority === 'high' ? 'banned_photo' : 'same_photo' },
+    meta: { reason: reason ?? (priority === 'high' ? 'banned_photo' : 'same_photo') },
   });
 }
 

@@ -177,6 +177,59 @@ describe.skipIf(!integrationEnabled)('trust and safety (integration)', () => {
     expect((await q(`SELECT 1 FROM banned_photo_hashes`)).rows).toHaveLength(0);
   });
 
+  it('phase 73b: a photo like one a partner banned is published and reviewed, never rejected', async () => {
+    // The hash a partner would send: of a photo nobody here uses any more.
+    const source = await woman('Source');
+    const image = await photo(31);
+    expect(await uploadAndProcess(source, image)).toBe('clean');
+    const hash = (
+      await q(`SELECT phash::text AS h FROM photos WHERE user_id = $1 AND phash IS NOT NULL`, [
+        source.id,
+      ])
+    ).rows[0].h as string;
+    await q(`DELETE FROM photos WHERE user_id = $1`, [source.id]);
+    const partner = (
+      await q(`INSERT INTO federation_partners (url, name, public_key, status)
+        VALUES ('https://api.partner.example.test', 'Rainbow Haifa', 'k', 'active') RETURNING id`)
+    ).rows[0].id;
+    await q(
+      `INSERT INTO federation_signals_in (partner_id, signal_id, hash, category)
+       VALUES ($1, gen_random_uuid(), $2::bigint, 'scam')`,
+      [partner, hash],
+    );
+    const copy = await sharp(image).modulate({ brightness: 1.1 }).jpeg().toBuffer();
+
+    // Sharing off here: the signal isn't used (and the nightly cleanup would delete it).
+    const first = await man('First');
+    expect(await uploadAndProcess(first, copy)).toBe('clean');
+    expect((await q(`SELECT 1 FROM reports WHERE reported_id = $1`, [first.id])).rows).toEqual([]);
+
+    // Sharing on: the photo is still published, and moderators get a case to review.
+    await q(`INSERT INTO instance_settings (id, share_trust_signals) VALUES (1, true)
+      ON CONFLICT (id) DO UPDATE SET share_trust_signals = true`);
+    const second = await man('Second');
+    expect(await uploadAndProcess(second, copy)).toBe('clean');
+    const { rows } = await q(
+      `SELECT priority, automatic, details FROM reports WHERE reported_id = $1`,
+      [second.id],
+    );
+    // Two separate cases: the copy of First's photo (as before), and the partner's signal, which
+    // another kind of automatic case doesn't hide.
+    expect(rows).toHaveLength(2);
+    const signal = rows.find((r) => String(r.details).includes('partner community'))!;
+    expect(signal).toMatchObject({ priority: 'high', automatic: true });
+    expect(signal.details).toContain('“Rainbow Haifa” banned (scam)');
+    expect(rows.find((r) => r !== signal)!.priority).toBe('normal');
+    expect(
+      (
+        await q(
+          `SELECT meta FROM audit_logs WHERE action = 'report.automatic' AND target_id = $1`,
+          [second.id],
+        )
+      ).rows[0].meta,
+    ).toEqual({ reason: 'partner_signal' });
+  });
+
   it('gives a flat image no hash, so it never matches anything', async () => {
     const noa = await woman();
     const flat = await sharp({

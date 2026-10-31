@@ -873,6 +873,11 @@ const en = {
     country: 'Country: {{country}}',
     atRisk:
       'It says it’s in a country on your list of countries at risk. Consider suspending or ending the partnership.',
+    signalsTitle: 'Trust signals',
+    signalsLabel: 'Share trust signals with partner communities, and accept theirs',
+    signalsHelp:
+      'When an admin bans someone here, a fingerprint (hash) of each of their photos and the report’s category go to connected partners; never a name, account or photo. A partner’s signal only opens a report here for a moderator to review when someone’s photo looks the same: nothing is hidden or banned automatically. Lifting the ban, or an accepted appeal, withdraws it everywhere. Both communities must turn this on, and your agreement must cover it ⚖️.',
+    signals: '{{n}} trust signals kept',
     suspendedNote:
       'Suspended: nothing crosses either way and their members don’t appear here, but nothing is deleted. Deletions you owe them are still sent.',
     counts: 'Reports: {{sent}} sent ({{reviewed}} reviewed) · {{received}} received',
@@ -1985,6 +1990,11 @@ const he: Messages = {
     country: 'מדינה: {{country}}',
     atRisk:
       'הקהילה מצהירה שהיא במדינה שברשימת המדינות בסיכון. כדאי לשקול להשהות או לסיים את השותפות.',
+    signalsTitle: 'אותות אמון',
+    signalsLabel: 'שיתוף אותות אמון עם קהילות שותפות, וקבלת האותות שלהן',
+    signalsHelp:
+      'כשחשבון נחסם כאן, טביעת אצבע (hash) של כל תמונה בו וקטגוריית הדיווח נשלחות לשותפים המחוברים, אף פעם לא שם, חשבון או תמונה. אות של שותף רק פותח כאן דיווח לבדיקה של צוות המודרציה כשתמונה בפרופיל נראית אותו דבר: שום דבר לא מוסתר או נחסם אוטומטית. ביטול החסימה, או ערעור שהתקבל, מבטלים את האות אצל כולם. שתי הקהילות צריכות להפעיל את זה, וההסכם ביניהן צריך לכסות את זה ⚖️.',
+    signals: 'אותות אמון שנשמרו: {{n}}',
     suspendedNote:
       'מושהית: שום דבר לא עובר לשום כיוון וחברי הקהילה שלהם לא מופיעים כאן, אבל שום דבר לא נמחק. בקשות מחיקה שאתם חייבים להם עדיין נשלחות.',
     counts: 'דיווחים: {{sent}} נשלחו ({{reviewed}} נבדקו) · {{received}} התקבלו',

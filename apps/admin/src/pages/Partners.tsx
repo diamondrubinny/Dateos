@@ -25,6 +25,7 @@ function BeforeAMatch() {
   const [settings, setSettings] = useState<AdminInstanceSettings>();
   const [cards, setCards] = useState<'full' | 'minimal'>('full');
   const [country, setCountry] = useState('');
+  const [signals, setSignals] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<Error>();
   const [saved, setSaved] = useState(false);
@@ -35,6 +36,7 @@ function BeforeAMatch() {
         setSettings(s);
         setCards(s.partnerCards);
         setCountry(s.communityCountry ?? '');
+        setSignals(s.shareTrustSignals);
       },
       (err: Error) => setError(err),
     );
@@ -50,6 +52,7 @@ function BeforeAMatch() {
         await api.saveSettings({
           partnerCards: cards,
           communityCountry: country.trim().toUpperCase() || null,
+          shareTrustSignals: signals,
         }),
       );
       setSaved(true);
@@ -94,6 +97,19 @@ function BeforeAMatch() {
       />
       <p id="community-country-help" className="help">
         {p.countryHelp}
+      </p>
+      <h3>{p.signalsTitle}</h3>
+      <label className="checkbox">
+        <input
+          type="checkbox"
+          checked={signals}
+          onChange={(e) => setSignals(e.target.checked)}
+          aria-describedby="trust-signals-help"
+        />
+        {p.signalsLabel}
+      </label>
+      <p id="trust-signals-help" className="help">
+        {p.signalsHelp}
       </p>
       {error ? <ErrorBox error={error} /> : null}
       <p role="status" className={saved ? 'alert alert-ok' : 'visually-hidden'}>
@@ -192,6 +208,7 @@ export function Partners({ isAdmin }: { isAdmin: boolean }) {
             received: x.reports.received,
           })}
           {x.outbox > 0 ? ` · ${format(p.outbox, { n: x.outbox })}` : ''}
+          {x.signals > 0 ? ` · ${format(p.signals, { n: x.signals })}` : ''}
         </p>
       ) : null}
       {x.country ? <p className="muted">{format(p.country, { country: x.country })}</p> : null}

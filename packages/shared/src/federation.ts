@@ -91,6 +91,8 @@ export const partnerSchema = z.object({
     reviewed: z.number().int(),
     received: z.number().int(),
   }),
+  /** Phase 73b: trust signals this partner sent us that we keep (withdrawn ones are deleted). */
+  signals: z.number().int(),
   /** 28d: messages waiting in the outbox for this partner. */
   outbox: z.number().int(),
 });
@@ -380,3 +382,43 @@ export type FederatedWireReport = z.infer<typeof federatedWireReportSchema>;
 export const federatedReportOutcomeSchema = z
   .object({ reportId: z.uuid(), outcome: z.literal('reviewed') })
   .strict();
+
+// ---------------------------------------------------------------------------------------------
+// Phase 73b: trust signals. When an admin bans a member, the perceptual hashes of their photos go
+// to partners that opted in, for human review there, never an automatic block. Nothing else: no
+// name, alias, account, photo or text. Lifting the ban withdraws the signal everywhere.
+// ---------------------------------------------------------------------------------------------
+
+export const FEDERATION_SIGNALS_PATH = '/v1/federation/signals';
+export const FEDERATION_SIGNALS_REVOKE_PATH = '/v1/federation/signals/revoke';
+/** Hashes per signal, at most (a banned member's photos). */
+export const MAX_SIGNAL_HASHES = 20;
+/** Bits two 64-bit photo hashes may differ by and still count as the same photo (as phase 21). */
+export const SIGNAL_PHOTO_DISTANCE = 6;
+/** How automatic reports from a partner's signal begin (staff-facing, like other automatic ones). */
+export const SIGNAL_REPORT_PREFIX =
+  'Automatic: a profile photo matches a photo of an account the partner community';
+/** How long a signal is kept, here and by partners, at most. */
+export const SIGNAL_RETENTION_DAYS = 730;
+
+/** A signed 64-bit integer, in decimal (JSON can't carry it as a number). */
+const int64Schema = z
+  .string()
+  .regex(/^-?\d{1,19}$/)
+  // zod runs this even when the pattern failed: never throw on what isn't a number.
+  .refine((v) => {
+    if (!/^-?\d{1,19}$/.test(v)) return false;
+    const n = BigInt(v);
+    return n >= -(2n ** 63n) && n < 2n ** 63n;
+  });
+
+export const federatedSignalSchema = z
+  .object({
+    id: z.uuid(),
+    hashes: z.array(int64Schema).min(1).max(MAX_SIGNAL_HASHES),
+    category: z.enum(reportCategories),
+  })
+  .strict();
+export type FederatedSignal = z.infer<typeof federatedSignalSchema>;
+
+export const federatedSignalRevokeSchema = z.object({ id: z.uuid() }).strict();

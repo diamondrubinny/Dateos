@@ -284,6 +284,140 @@ describe.skipIf(!integrationEnabled)('partner communities: safety (integration)'
     expect((await qa('SELECT count(*)::int AS n FROM federation_outbox')).rows[0].n).toBe(0);
   });
 
+  it('phase 73b: trust signals are opt-in, carry only hashes, lead to a review, and are withdrawn', async () => {
+    const share = (ctx: TestContext, who: { cookie: string }, on: boolean) =>
+      ctx.app.inject({
+        method: 'PATCH',
+        url: '/v1/admin/instance',
+        headers: { cookie: who.cookie },
+        payload: { shareTrustSignals: on },
+      });
+    const signalsAtB = async () =>
+      (await qb('SELECT count(*)::int AS n FROM federation_signals_in')).rows[0].n as number;
+    /** Bans a member of A for scam, through a member's report and an admin's decision. */
+    async function banAtA(name: string, phash: string) {
+      const m = await createMember(a, { name, gender: 'man', interestedIn: ['woman'] });
+      await qa('UPDATE photos SET phash = $2 WHERE user_id = $1', [m.id, phash]);
+      const { reportId } = (
+        await api(a, noa, 'POST', '/v1/reports', { targetId: m.id, category: 'scam', block: false })
+      ).json();
+      const res = await asAdmin(a, adminA, 'POST', `/v1/admin/reports/${reportId}/resolve`, {
+        action: 'ban',
+        reason: 'scam',
+        explanation: 'Messages you sent broke the community guidelines.',
+      });
+      expect(res.statusCode, res.body).toBe(200);
+      return m;
+    }
+    /** Delivers what's queued (rows are due by the database's clock; tests run on their own). */
+    const drain = async () => {
+      await qa(`UPDATE federation_outbox SET next_attempt_at = 'epoch'`);
+      await a.services.federation.drainOutbox();
+    };
+    const outboxPaths = async () =>
+      (await qa('SELECT path, payload FROM federation_outbox ORDER BY created_at')).rows;
+
+    // Off by default: a ban sends nothing.
+    await banAtA('Max', '1000');
+    expect(await outboxPaths()).toEqual([]);
+
+    // On at A only: the signal goes, B (off) keeps nothing.
+    expect((await share(a, adminA, true)).statusCode).toBe(200);
+    await banAtA('Leo', '2000');
+    const [queued] = await outboxPaths();
+    expect(queued.path).toBe('/v1/federation/signals');
+    // Only an id, the hashes and the category: nothing that names anyone.
+    expect(Object.keys(queued.payload).sort()).toEqual(['category', 'hashes', 'id']);
+    expect(queued.payload).toMatchObject({ hashes: ['2000'], category: 'scam' });
+    await drain();
+    expect(await outboxPaths()).toEqual([]);
+    expect(await signalsAtB()).toBe(0);
+
+    // On at both: Kim at B, with a photo one bit away, gets a review; nothing else happens to her.
+    expect((await share(b, adminB, true)).statusCode).toBe(200);
+    const kim = await createMember(b, { name: 'Kim', gender: 'woman', interestedIn: ['man'] });
+    await qb('UPDATE photos SET phash = 3001 WHERE user_id = $1', [kim.id]);
+    const ari = await banAtA('Ari', '3000');
+    await drain();
+    expect(await signalsAtB()).toBe(1);
+    const reports = (
+      await qb(
+        `SELECT category, priority, automatic, details FROM reports WHERE reported_id = $1`,
+        [kim.id],
+      )
+    ).rows;
+    expect(reports).toHaveLength(1);
+    expect(reports[0]).toMatchObject({
+      category: 'fake_profile',
+      priority: 'high',
+      automatic: true,
+    });
+    expect(reports[0].details).toContain('banned (scam)');
+    expect(reports[0].details).toContain('Not proof');
+    const kimNow = (
+      await qb(
+        `SELECT u.status, ph.status AS photo FROM "user" u JOIN photos ph ON ph.user_id = u.id WHERE u.id = $1`,
+        [kim.id],
+      )
+    ).rows[0];
+    expect(kimNow).toEqual({ status: 'active', photo: 'clean' });
+    // Dan's photo isn't like it: no report on him.
+    expect(
+      (await qb(`SELECT count(*)::int AS n FROM reports WHERE reported_id = $1`, [dan.id])).rows[0]
+        .n,
+    ).toBe(0);
+    // The partner list says how many are kept.
+    const atB = (await asAdmin(b, adminB, 'GET', '/v1/admin/partners')).json();
+    expect(atB.partners[0].signals).toBe(1);
+
+    // Lifting the ban withdraws it from B.
+    const lifted = await asAdmin(a, adminA, 'POST', `/v1/admin/users/${ari.id}/unsuspend`, {
+      reason: 'Appeal accepted',
+    });
+    expect(lifted.statusCode, lifted.body).toBe(200);
+    expect((await outboxPaths()).map((r) => r.path)).toEqual(['/v1/federation/signals/revoke']);
+    await drain();
+    expect(await signalsAtB()).toBe(0);
+    expect((await qa('SELECT count(*)::int AS n FROM federation_signals_out')).rows[0].n).toBe(1);
+
+    // Malformed signals are refused.
+    for (const bad of [
+      { id: 'x', hashes: ['1'], category: 'scam' },
+      { id: crypto.randomUUID(), hashes: ['1e5'], category: 'scam' },
+      { id: crypto.randomUUID(), hashes: ['9223372036854775808'], category: 'scam' },
+      {
+        id: crypto.randomUUID(),
+        hashes: Array.from({ length: 21 }, (_, i) => String(i)),
+        category: 'scam',
+      },
+      { id: crypto.randomUUID(), hashes: ['1'], category: 'scam', name: 'Ari' },
+    ]) {
+      await expect(
+        a.services.federation.send(B_URL, 'POST', '/v1/federation/signals', bad),
+      ).rejects.toThrow(/400/);
+    }
+    // Strangers can't send or withdraw them.
+    const unsigned = await b.app.inject({
+      method: 'POST',
+      url: '/v1/federation/signals',
+      payload: { id: crypto.randomUUID(), hashes: ['1'], category: 'scam' },
+    });
+    expect(unsigned.statusCode).toBe(401);
+
+    // Turning it off at B forgets every signal at once; ending a partnership does too.
+    await banAtA('Ben', '4000');
+    await drain();
+    expect(await signalsAtB()).toBe(1);
+    await share(b, adminB, false);
+    expect(await signalsAtB()).toBe(0);
+    await share(b, adminB, true);
+    await banAtA('Gil', '5000');
+    await drain();
+    expect(await signalsAtB()).toBe(1);
+    await b.services.federation.end(adminB.id, partnerAtB);
+    expect(await signalsAtB()).toBe(0);
+  }, 30_000);
+
   it('refuses reports from strangers and malformed reports', async () => {
     const unsigned = await b.app.inject({
       method: 'POST',

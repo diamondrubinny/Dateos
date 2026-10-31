@@ -156,6 +156,8 @@ export const instanceSettingsInputSchema = z
       .refine((l) => new Set(l).size === l.length),
     /** Phase 73a: before a match, partner communities get the full card or a short one. */
     partnerCards: z.enum(partnerCardModes),
+    /** Phase 73b: share banned photos' hashes with partners, and accept theirs (for review). */
+    shareTrustSignals: z.boolean(),
     /** Phase 73a: this community's country (ISO 3166-1 alpha-2), told to partners; optional. */
     communityCountry: z
       .string()

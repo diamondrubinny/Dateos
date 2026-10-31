@@ -1014,6 +1014,8 @@ export const instanceSettings = pgTable(
       .default(sql`'{}'::text[]`),
     /** Phase 73a: what partners see before a match (`full` or `minimal`), and our country. */
     partnerCards: varchar('partner_cards', { length: 10 }).notNull().default('full'),
+    /** Phase 73b: share banned photos' hashes with partners, and accept theirs (off). */
+    shareTrustSignals: boolean('share_trust_signals').notNull().default(false),
     communityCountry: varchar('community_country', { length: 2 }),
     /** Phase 62c: who may join (ages, genders: empty means everyone) and a declaration. */
     joinMinAge: smallint('join_min_age').notNull().default(18),
@@ -1878,6 +1880,40 @@ export const federationOutbox = pgTable(
     signWithPrevious: boolean('sign_with_previous').notNull().default(false),
   },
   (t) => [index('federation_outbox_due_idx').on(t.nextAttemptAt)],
+);
+
+/**
+ * Phase 73b: trust signals partners sent us: photo hashes of a member they banned, and the
+ * report's category. Nothing else about that person. Kept for human review, until withdrawn, the
+ * partnership ends, or 2 years.
+ */
+export const federationSignalsIn = pgTable(
+  'federation_signals_in',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    partnerId: uuid('partner_id')
+      .notNull()
+      .references(() => federationPartners.id, { onDelete: 'cascade' }),
+    signalId: uuid('signal_id').notNull(),
+    hash: bigint('hash', { mode: 'bigint' }).notNull(),
+    category: varchar('category', { length: 32 }).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex('federation_signals_in_uq').on(t.partnerId, t.signalId, t.hash),
+    index('federation_signals_in_created_idx').on(t.createdAt),
+  ],
+);
+
+/** Phase 73b: signals we sent, by whom they're about, so lifting the ban can withdraw them. */
+export const federationSignalsOut = pgTable(
+  'federation_signals_out',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: ownerId(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index('federation_signals_out_user_idx').on(t.userId)],
 );
 
 // ---------------------------------------------------------------------------
