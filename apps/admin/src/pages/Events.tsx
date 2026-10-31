@@ -7,7 +7,11 @@ import {
   type EventBoard,
   MAX_EVENT_ANSWER_LENGTH,
   MAX_EVENT_UPDATE_LENGTH,
+  MAX_EVENT_REPEAT_WEEKS,
   SPEED_ROUND_DEFAULT,
+  allStreams,
+  genders,
+  type Gender,
 } from '@nexaheart/shared';
 import QRCode from 'qrcode';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
@@ -26,7 +30,16 @@ type Form = {
   capacity: string;
   kind: 'standard' | 'speed';
   roundMinutes: string;
+  /** Phase 71b: who it's for, and places by gender. */
+  audienceGenders: Gender[];
+  ageMin: string;
+  ageMax: string;
+  streams: string[];
+  byGender: boolean;
+  pools: Record<Gender, string>;
 };
+
+const noPools = (): Record<Gender, string> => ({ woman: '', man: '', nonbinary: '', other: '' });
 
 const pad = (n: number) => String(n).padStart(2, '0');
 const localDate = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
@@ -44,6 +57,12 @@ function emptyForm(): Form {
     capacity: '',
     kind: 'standard',
     roundMinutes: String(SPEED_ROUND_DEFAULT),
+    audienceGenders: [],
+    ageMin: '',
+    ageMax: '',
+    streams: [],
+    byGender: false,
+    pools: noPools(),
   };
 }
 
@@ -57,7 +76,87 @@ const toForm = (e: AdminEvent): Form => ({
   capacity: e.capacity === null ? '' : String(e.capacity),
   kind: e.kind,
   roundMinutes: String(e.roundMinutes ?? SPEED_ROUND_DEFAULT),
+  audienceGenders: e.audience.genders,
+  ageMin: e.audience.ageMin === null ? '' : String(e.audience.ageMin),
+  ageMax: e.audience.ageMax === null ? '' : String(e.audience.ageMax),
+  streams: e.audience.faithStreams,
+  byGender: e.pools !== null,
+  pools: {
+    ...noPools(),
+    ...Object.fromEntries((e.pools ?? []).map((p) => [p.gender, String(p.capacity)])),
+  },
 });
+
+/** Phase 71b: the audience and the places by gender, as the API takes them. */
+function groupInput(form: Form) {
+  const pools = form.byGender
+    ? genders
+        .filter((g) => form.pools[g].trim() !== '')
+        .map((g) => ({ gender: g, capacity: Number(form.pools[g]) }))
+    : null;
+  return {
+    audience: {
+      genders: form.byGender ? [] : form.audienceGenders,
+      ageMin: form.ageMin.trim() === '' ? null : Number(form.ageMin),
+      ageMax: form.ageMax.trim() === '' ? null : Number(form.ageMax),
+      faithStreams: form.streams as (typeof allStreams)[number][],
+    },
+    pools,
+  };
+}
+
+/** "Repeat weekly" (phase 71b): 1 to 12 copies a week apart. */
+function RepeatControl({ event, onDone }: { event: AdminEvent; onDone: (n: number) => void }) {
+  const { t } = useLocale();
+  const [open, setOpen] = useState(false);
+  const [weeks, setWeeks] = useState('4');
+  const [error, setError] = useState<Error>();
+  const [busy, setBusy] = useState(false);
+  if (!open) {
+    return (
+      <button type="button" className="button small" onClick={() => setOpen(true)}>
+        {t.events.repeat}
+        <span className="visually-hidden"> {event.title}</span>
+      </button>
+    );
+  }
+  const id = `repeat-${event.id}`;
+  return (
+    <span className="inline-form">
+      <label htmlFor={id}>{t.events.repeatWeeks}</label>
+      <select id={id} value={weeks} onChange={(e) => setWeeks(e.target.value)}>
+        {Array.from({ length: MAX_EVENT_REPEAT_WEEKS }, (_, i) => (
+          <option key={i + 1} value={String(i + 1)}>
+            {i + 1}
+          </option>
+        ))}
+      </select>
+      <button
+        type="button"
+        className="button small primary"
+        disabled={busy}
+        onClick={() => {
+          setBusy(true);
+          setError(undefined);
+          api
+            .repeatEvent(event.id, Number(weeks))
+            .then((r) => {
+              setOpen(false);
+              onDone(r.events.length);
+            })
+            .catch((err: Error) => setError(err))
+            .finally(() => setBusy(false));
+        }}
+      >
+        {t.events.repeatYes}
+      </button>
+      <button type="button" className="button small" onClick={() => setOpen(false)}>
+        {t.events.confirmNo}
+      </button>
+      {error ? <ErrorBox error={error} /> : null}
+    </span>
+  );
+}
 
 /**
  * The check-in code to show on a screen at the venue (phase 23): a QR code that opens the event in
@@ -303,6 +402,9 @@ export function Events({ isAdmin }: { isAdmin: boolean }) {
   const { t, locale } = useLocale();
   const list = useAsync(() => api.events(), []);
   const venues = useAsync(() => api.venues(), []);
+  // Phase 71b: streams are offered only with the faith module on.
+  const settings = useAsync(() => (isAdmin ? api.settings() : Promise.resolve(null)), [isAdmin]);
+  const faithOn = settings.data?.faithModule ?? false;
   const [form, setForm] = useState<Form>(emptyForm);
   const [editing, setEditing] = useState<string | null>(null);
   const [confirmCancel, setConfirmCancel] = useState<string | null>(null);
@@ -332,6 +434,7 @@ export function Events({ isAdmin }: { isAdmin: boolean }) {
       venueId: form.venueId,
       ...times(form),
       capacity: form.capacity ? Number(form.capacity) : null,
+      ...groupInput(form),
     };
     const speed = form.kind === 'speed' ? { roundMinutes: Number(form.roundMinutes) } : {};
     try {
@@ -361,6 +464,27 @@ export function Events({ isAdmin }: { isAdmin: boolean }) {
   }
 
   const events = list.data?.events ?? [];
+  /** "For women · 25–35", or nothing for everyone. */
+  const audienceText = (e: AdminEvent) => {
+    const parts: string[] = [];
+    if (e.audience.genders.length > 0) {
+      parts.push(e.audience.genders.map((g) => t.branding.genders[g]).join(', '));
+    }
+    if (e.audience.ageMin !== null || e.audience.ageMax !== null) {
+      // Isolated left to right, so a range reads 25–40 in Hebrew too.
+      parts.push(`\u2066${e.audience.ageMin ?? 18}–${e.audience.ageMax ?? 99}\u2069`);
+    }
+    if (e.audience.faithStreams.length > 0) {
+      parts.push(
+        e.audience.faithStreams
+          .map((s) => t.events.streams[s as keyof typeof t.events.streams] ?? s)
+          .join(', '),
+      );
+    }
+    return parts.length > 0 ? format(t.events.audienceLine, { who: parts.join(' · ') }) : '';
+  };
+  const setPool = (g: Gender, value: string) =>
+    setForm({ ...form, pools: { ...form.pools, [g]: value } });
   const upcoming = (e: AdminEvent) => Date.parse(e.endsAt) > Date.now();
   return (
     <section aria-labelledby="events-title">
@@ -433,6 +557,19 @@ export function Events({ isAdmin }: { isAdmin: boolean }) {
                             {format(t.events.checkedInCount, { n: e.checkedInCount })}
                           </span>
                         ) : null}
+                        {e.pools?.map((p) => (
+                          <span key={p.gender} className="muted block cell-detail">
+                            {format(t.events.poolLine, {
+                              group: t.branding.genders[p.gender],
+                              n: p.going,
+                              capacity: p.capacity,
+                              waiting: p.waiting,
+                            })}
+                          </span>
+                        ))}
+                        {audienceText(e) ? (
+                          <span className="muted block cell-detail">{audienceText(e)}</span>
+                        ) : null}
                       </td>
                       <td>
                         <Badge
@@ -498,6 +635,13 @@ export function Events({ isAdmin }: { isAdmin: boolean }) {
                                   {t.venues.edit}
                                   <span className="visually-hidden"> {e.title}</span>
                                 </button>
+                                <RepeatControl
+                                  event={e}
+                                  onDone={(n) => {
+                                    announce(format(t.events.repeated, { title: e.title, n }));
+                                    list.reload();
+                                  }}
+                                />
                                 <button
                                   type="button"
                                   className="button small"
@@ -633,7 +777,8 @@ export function Events({ isAdmin }: { isAdmin: boolean }) {
               type="number"
               min={2}
               max={form.kind === 'speed' ? 40 : 10000}
-              required={form.kind === 'speed'}
+              required={form.kind === 'speed' && !form.byGender}
+              disabled={form.byGender}
               inputMode="numeric"
               value={form.capacity}
               aria-describedby="event-capacity-help"
@@ -642,6 +787,116 @@ export function Events({ isAdmin }: { isAdmin: boolean }) {
             <p id="event-capacity-help" className="help">
               {t.events.capacityHelp}
             </p>
+            <fieldset aria-describedby="event-audience-help">
+              <legend>{t.events.audienceTitle}</legend>
+              <p id="event-audience-help" className="help">
+                {t.events.audienceHelp}
+              </p>
+              <div className="checkbox">
+                <input
+                  id="event-by-gender"
+                  type="checkbox"
+                  checked={form.byGender}
+                  aria-describedby="event-by-gender-help"
+                  onChange={(e) => set('byGender', e.target.checked)}
+                />
+                <label htmlFor="event-by-gender">{t.events.byGender}</label>
+              </div>
+              <p id="event-by-gender-help" className="help">
+                {t.events.byGenderHelp}
+              </p>
+              {form.byGender ? (
+                genders.map((g) => (
+                  <div key={g}>
+                    <label htmlFor={`event-pool-${g}`}>
+                      {format(t.events.poolPlaces, { group: t.branding.genders[g] })}
+                    </label>
+                    <input
+                      id={`event-pool-${g}`}
+                      type="number"
+                      min={1}
+                      inputMode="numeric"
+                      dir="ltr"
+                      value={form.pools[g]}
+                      onChange={(e) => setPool(g, e.target.value)}
+                    />
+                  </div>
+                ))
+              ) : (
+                <fieldset>
+                  <legend>{t.events.onlyGenders}</legend>
+                  {genders.map((g) => (
+                    <div key={g} className="checkbox">
+                      <input
+                        id={`event-gender-${g}`}
+                        type="checkbox"
+                        checked={form.audienceGenders.includes(g)}
+                        onChange={(e) =>
+                          set(
+                            'audienceGenders',
+                            e.target.checked
+                              ? genders.filter((x) => x === g || form.audienceGenders.includes(x))
+                              : form.audienceGenders.filter((x) => x !== g),
+                          )
+                        }
+                      />
+                      <label htmlFor={`event-gender-${g}`}>{t.branding.genders[g]}</label>
+                    </div>
+                  ))}
+                </fieldset>
+              )}
+              <div className="time-row">
+                <div>
+                  <label htmlFor="event-age-min">{t.events.ageMin}</label>
+                  <input
+                    id="event-age-min"
+                    type="number"
+                    min={18}
+                    max={99}
+                    inputMode="numeric"
+                    dir="ltr"
+                    value={form.ageMin}
+                    onChange={(e) => set('ageMin', e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="event-age-max">{t.events.ageMax}</label>
+                  <input
+                    id="event-age-max"
+                    type="number"
+                    min={18}
+                    max={99}
+                    inputMode="numeric"
+                    dir="ltr"
+                    value={form.ageMax}
+                    onChange={(e) => set('ageMax', e.target.value)}
+                  />
+                </div>
+              </div>
+              {faithOn ? (
+                <fieldset>
+                  <legend>{t.events.onlyStreams}</legend>
+                  {allStreams.map((st) => (
+                    <div key={st} className="checkbox">
+                      <input
+                        id={`event-stream-${st}`}
+                        type="checkbox"
+                        checked={form.streams.includes(st)}
+                        onChange={(e) =>
+                          set(
+                            'streams',
+                            e.target.checked
+                              ? [...form.streams, st]
+                              : form.streams.filter((x) => x !== st),
+                          )
+                        }
+                      />
+                      <label htmlFor={`event-stream-${st}`}>{t.events.streams[st]}</label>
+                    </div>
+                  ))}
+                </fieldset>
+              ) : null}
+            </fieldset>
             <div className="actions">
               <button type="submit" className="button primary" disabled={busy}>
                 {editing ? t.venues.save : t.events.publish}

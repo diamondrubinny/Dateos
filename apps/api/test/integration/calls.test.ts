@@ -381,7 +381,10 @@ describe.skipIf(!integrationEnabled)('video dates (integration)', () => {
     ctx.clock.value += 1000;
     const blocked = await live();
     await api(ctx, noa, 'POST', '/v1/blocks', { userId: dan.id });
-    await new Promise((r) => setTimeout(r, 50)); // listeners run after the response
+    // Listeners run after the response: wait for them (up to 2 s) rather than a fixed delay.
+    for (let i = 0; i < 40 && (await callRow(blocked)).status !== 'ended'; i += 1) {
+      await new Promise((r) => setTimeout(r, 50));
+    }
     expect((await callRow(blocked)).status).toBe('ended');
     expect(
       (await api(ctx, dan, 'POST', `/v1/calls/${blocked}/join`, { publicKey: PK })).statusCode,
@@ -423,7 +426,9 @@ describe.skipIf(!integrationEnabled)('video dates (integration)', () => {
       },
     });
     expect(resolved.statusCode).toBe(200);
-    await new Promise((r) => setTimeout(r, 50));
+    for (let i = 0; i < 40 && (await callRow(again.id)).status !== 'ended'; i += 1) {
+      await new Promise((r) => setTimeout(r, 50));
+    }
     expect((await callRow(again.id)).status).toBe('ended');
   });
 

@@ -38,6 +38,32 @@ export function eventStatus(event: CommunityEvent, t: TFunction) {
   return t('events.goingCount', { count: event.going });
 }
 
+/** Phase 71b: "For women · 25–35", or null for everyone. */
+export function eventAudience(event: CommunityEvent, t: TFunction): string | null {
+  const { genders, ageMin, ageMax, faithStreams } = event.audience;
+  const groups = event.pools ? event.pools.map((p) => p.gender) : genders;
+  const parts: string[] = [];
+  if (groups.length > 0) parts.push(groups.map((g) => t(`eventGroups.genders.${g}`)).join(', '));
+  if (ageMin !== null || ageMax !== null) {
+    parts.push(t('eventGroups.ages', { min: ageMin ?? 18, max: ageMax ?? 99 }));
+  }
+  if (faithStreams.length > 0) {
+    parts.push(faithStreams.map((s) => t(`faith.streams.${s}`, { defaultValue: s })).join(', '));
+  }
+  return parts.length > 0 ? t('eventGroups.audience', { who: parts.join(' · ') }) : null;
+}
+
+/** Phase 71b: places left in each group ("Women: 3 places left", "Men: full"). */
+export function eventPools(event: CommunityEvent, t: TFunction): string[] {
+  return (event.pools ?? []).map((p) => {
+    const group = t(`eventGroups.groups.${p.gender}`);
+    const left = p.capacity - p.going;
+    return left > 0
+      ? t('eventGroups.placesLeft', { group, count: left })
+      : t('eventGroups.groupFull', { group });
+  });
+}
+
 export function EventCard({ event }: { event: CommunityEvent }) {
   const { t } = useTranslation();
   const { locale } = useLocale();
@@ -69,6 +95,11 @@ export function EventCard({ event }: { event: CommunityEvent }) {
         <AppText variant="body" tone="muted" userContent>
           {t('datePlan.placeWithArea', { name: event.venue.name, area: event.venue.area })}
           {event.venue.stepFree ? ` · ♿ ${t('datePlan.stepFree')}` : ''}
+        </AppText>
+      ) : null}
+      {eventAudience(event, t) ? (
+        <AppText variant="caption" tone="muted">
+          {eventAudience(event, t)}
         </AppText>
       ) : null}
       <AppText variant="label" tone={cancelled ? 'danger' : event.mine ? 'primary' : 'default'}>

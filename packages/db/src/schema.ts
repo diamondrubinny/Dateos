@@ -1199,6 +1199,18 @@ export const events = pgTable(
     roundMinutes: smallint('round_minutes'),
     /** Phase 23: the secret behind the rotating check-in code; made when first shown. */
     checkInSecret: varchar('check_in_secret', { length: 64 }),
+    /** Phase 71b: who may take a place (empty: everyone) and places by gender (null: one list). */
+    audienceGenders: text('audience_genders')
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
+    ageMin: smallint('age_min'),
+    ageMax: smallint('age_max'),
+    faithStreams: text('faith_streams')
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
+    pools: jsonb('pools').$type<{ gender: string; capacity: number }[]>(),
     ...timestamps,
   },
   (t) => [index('events_upcoming_idx').on(t.status, t.endsAt)],
@@ -1219,6 +1231,8 @@ export const eventRsvps = pgTable(
     remindedAt: timestamp('reminded_at', { withTimezone: true }),
     /** Phase 23: checked in at the venue with the code shown there. */
     checkedInAt: timestamp('checked_in_at', { withTimezone: true }),
+    /** Phase 71b: the group (gender) the place was taken in, when the event has places by gender. */
+    pool: varchar('pool', { length: 16 }),
     /** Phase 71a: when a place from the waiting list was given (late places never count as missed). */
     promotedAt: timestamp('promoted_at', { withTimezone: true }),
     /** Phase 71a: joined "Meet again" after the event (only then listed to the others). */

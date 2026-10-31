@@ -42,6 +42,7 @@ import {
   adminEventSchema,
   eventInputSchema,
   eventUpdateSchema,
+  eventRepeatSchema,
   createInviteSchema,
   inviteSchema,
   waitlistEntrySchema,
@@ -708,6 +709,25 @@ export const adminRoutes: FastifyPluginAsyncZod<{
       const staff = currentUser(request);
       adminOnly(staff.role);
       return events.cancel(staff.id, request.params.id);
+    },
+  );
+  // Phase 71b: "Repeat weekly" (1 to 12 copies, a week apart).
+  app.post(
+    '/v1/admin/events/:id/repeat',
+    {
+      config: perUserLimit(30, 60 * 60 * 1000),
+      schema: {
+        params: idParams,
+        body: eventRepeatSchema,
+        response: { 201: z.object({ events: z.array(adminEventSchema) }) },
+      },
+    },
+    async (request, reply) => {
+      const staff = currentUser(request);
+      adminOnly(staff.role);
+      return reply
+        .status(201)
+        .send({ events: await events.repeat(staff.id, request.params.id, request.body.weeks) });
     },
   );
   // The rotating check-in code to show at the venue (phase 23).

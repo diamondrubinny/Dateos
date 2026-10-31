@@ -3,6 +3,8 @@
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 import { z } from 'zod';
 import { venueSchema } from './dates.js';
+import { allStreams } from './faith.js';
+import { genders } from './profile.js';
 
 /** Community events (phase 14): see docs/phases/PHASE-14.md. */
 export const eventStatuses = ['scheduled', 'cancelled'] as const;
@@ -51,6 +53,52 @@ const windowMessage = {
   path: ['endsAt'],
 };
 
+// ---------------------------------------------------------------------------
+// Phase 71b: who an event is for, and places by gender
+// ---------------------------------------------------------------------------
+
+export const EVENT_AGE_MIN = 18;
+export const EVENT_AGE_MAX = 99;
+export const MAX_EVENT_REPEAT_WEEKS = 12;
+
+/** Who may take a place (all optional; empty means everyone). */
+export const eventAudienceSchema = z
+  .object({
+    genders: z.array(z.enum(genders)).max(genders.length).default([]),
+    ageMin: z.number().int().min(EVENT_AGE_MIN).max(EVENT_AGE_MAX).nullable().default(null),
+    ageMax: z.number().int().min(EVENT_AGE_MIN).max(EVENT_AGE_MAX).nullable().default(null),
+    /** Only with the faith module on; matched against a stream given with the religion consent. */
+    faithStreams: z.array(z.enum(allStreams)).max(allStreams.length).default([]),
+  })
+  .strict()
+  .refine((a) => a.ageMin === null || a.ageMax === null || a.ageMin <= a.ageMax, {
+    message: 'The youngest age must not be above the oldest.',
+    path: ['ageMax'],
+  });
+export type EventAudience = z.output<typeof eventAudienceSchema>;
+
+/** Places by gender, e.g. 12 women and 12 men; each with its own waiting list. */
+export const eventPoolSchema = z
+  .object({ gender: z.enum(genders), capacity: z.number().int().min(1).max(MAX_EVENT_CAPACITY) })
+  .strict();
+export const eventPoolsSchema = z
+  .array(eventPoolSchema)
+  .min(2)
+  .max(genders.length)
+  .refine((pools) => new Set(pools.map((p) => p.gender)).size === pools.length, {
+    message: 'Each gender once.',
+  })
+  .nullable();
+export type EventPool = z.infer<typeof eventPoolSchema>;
+
+/** Why the viewer can't take a place, if they can't. */
+export const notForYouReasons = ['gender', 'age', 'faith'] as const;
+export type NotForYouReason = (typeof notForYouReasons)[number];
+
+export const eventRepeatSchema = z
+  .object({ weeks: z.number().int().min(1).max(MAX_EVENT_REPEAT_WEEKS) })
+  .strict();
+
 export const eventInputSchema = z
   .object({
     title,
@@ -61,13 +109,23 @@ export const eventInputSchema = z
     capacity: capacity.default(null),
     kind: z.enum(eventKinds).default('standard'),
     roundMinutes: roundMinutes.nullable().default(null),
+    audience: eventAudienceSchema.optional(),
+    pools: eventPoolsSchema.default(null),
   })
   .strict()
   .refine(window, windowMessage)
-  .refine((v) => v.kind !== 'speed' || (v.capacity !== null && v.capacity <= MAX_SPEED_CAPACITY), {
-    message: `Speed dating needs a capacity of at most ${MAX_SPEED_CAPACITY}.`,
-    path: ['capacity'],
-  });
+  .refine(
+    (v) => {
+      if (v.kind !== 'speed') return true;
+      // Phase 71b: with places by gender, the capacity is their sum.
+      const total = v.pools ? v.pools.reduce((n, p) => n + p.capacity, 0) : v.capacity;
+      return total !== null && total <= MAX_SPEED_CAPACITY;
+    },
+    {
+      message: `Speed dating needs a capacity of at most ${MAX_SPEED_CAPACITY}.`,
+      path: ['capacity'],
+    },
+  );
 export type EventInput = z.input<typeof eventInputSchema>;
 
 export const eventUpdateSchema = z
@@ -79,6 +137,8 @@ export const eventUpdateSchema = z
     endsAt: z.iso.datetime(),
     capacity,
     roundMinutes,
+    audience: eventAudienceSchema,
+    pools: eventPoolsSchema,
   })
   .partial()
   .strict()
@@ -110,6 +170,26 @@ export const eventSchema = z.object({
   roundMinutes: z.number().int().nullable(),
   /** Whether the viewer checked in at the venue (phase 23). */
   checkedIn: z.boolean(),
+  /** Phase 71b: who it's for (empty lists and nulls: everyone). */
+  audience: z.object({
+    genders: z.array(z.enum(genders)),
+    ageMin: z.number().int().nullable(),
+    ageMax: z.number().int().nullable(),
+    faithStreams: z.array(z.string()),
+  }),
+  /** Phase 71b: places by gender, with counts (never who). */
+  pools: z
+    .array(
+      z.object({
+        gender: z.enum(genders),
+        capacity: z.number().int(),
+        going: z.number().int(),
+        waiting: z.number().int(),
+      }),
+    )
+    .nullable(),
+  /** Phase 71b: why the viewer can't take a place, or null if they can. */
+  notForYou: z.enum(notForYouReasons).nullable(),
   /**
    * Phase 71a: "Meet again" is open for the viewer until this time (they checked in at an
    * in-person event that ended less than MEET_AGAIN_HOURS ago), else null.
@@ -120,7 +200,13 @@ export type CommunityEvent = z.infer<typeof eventSchema>;
 
 /** Staff view: the venue id for editing, and when it was created. Still no attendee identities. */
 export const adminEventSchema = eventSchema
-  .omit({ mine: true, waitingAhead: true, checkedIn: true, meetAgainUntil: true })
+  .omit({
+    mine: true,
+    waitingAhead: true,
+    checkedIn: true,
+    meetAgainUntil: true,
+    notForYou: true,
+  })
   .extend({
     venueId: z.uuid().nullable(),
     createdAt: z.string(),

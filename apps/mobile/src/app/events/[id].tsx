@@ -11,7 +11,12 @@ import { Banner } from '../../components/Banner';
 import { Button } from '../../components/Button';
 import { EventBoard } from '../../components/EventBoard';
 import { EventMisses } from '../../components/EventMisses';
-import { eventStatus, formatEventTime } from '../../components/EventCard';
+import {
+  eventAudience,
+  eventPools,
+  eventStatus,
+  formatEventTime,
+} from '../../components/EventCard';
 import { Loading } from '../../components/Loading';
 import { RequireSession } from '../../components/RequireSession';
 import { Screen } from '../../components/Screen';
@@ -132,16 +137,37 @@ function EventScreen() {
       >
         {eventStatus(e, t)}
       </AppText>
+      {eventAudience(e, t) ? (
+        <AppText variant="body" testID="event-audience">
+          {eventAudience(e, t)}
+        </AppText>
+      ) : null}
+      {eventPools(e, t).map((line) => (
+        <AppText key={line} variant="caption" tone="muted">
+          {line}
+        </AppText>
+      ))}
+      {e.notForYou && !e.mine && !waiting && !cancelled ? (
+        <View testID="not-for-you">
+          <Banner
+            tone="info"
+            message={t(`eventGroups.notForYou.${e.notForYou}`, {
+              min: e.audience.ageMin ?? 18,
+              max: e.audience.ageMax ?? 99,
+            })}
+          />
+        </View>
+      ) : null}
       {error ? <Banner tone="error" message={error} /> : null}
       {!e.mine && !waiting && now < end ? <EventMisses /> : null}
-      {!cancelled && !e.mine && !waiting && !e.full ? (
+      {!cancelled && !e.notForYou && !e.mine && !waiting && !e.full ? (
         <Button
           label={t('events.going')}
           loading={rsvp.isPending}
           onPress={() => answer('going')}
         />
       ) : null}
-      {!cancelled && !e.mine && !waiting && e.full ? (
+      {!cancelled && !e.notForYou && !e.mine && !waiting && e.full ? (
         <Button
           label={t('events.waitlistJoin')}
           hint={t('events.waitlistHint')}
@@ -149,7 +175,7 @@ function EventScreen() {
           onPress={() => answer('waitlist')}
         />
       ) : null}
-      {!cancelled && (e.full || waiting) && !e.mine ? (
+      {!cancelled && !e.notForYou && (e.full || waiting) && !e.mine ? (
         <AppText variant="caption" tone="muted">
           {t('events.waitlistHint')}
         </AppText>
