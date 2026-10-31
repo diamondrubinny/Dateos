@@ -2065,3 +2065,37 @@ export const chaperones = pgTable(
     check('chaperones_not_self', sql`${t.userId} <> ${t.chaperoneId}`),
   ],
 );
+
+/** Phase 69: one-time sessions at the live-check provider (15 minutes, bound to the member). */
+export const livenessSessions = pgTable('liveness_sessions', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: ownerId(),
+  /** The member's first profile photo when the session started (the only one the provider gets). */
+  photoId: uuid('photo_id').references(() => photos.id, { onDelete: 'set null' }),
+  photoFetchedAt: timestamp('photo_fetched_at', { withTimezone: true }),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  usedAt: timestamp('used_at', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+/** Phase 69: the last live-check result (never a selfie or a face template). */
+export const livenessChecks = pgTable('liveness_checks', {
+  userId: ownerId().primaryKey(),
+  result: varchar('result', { length: 10 }).notNull(),
+  method: varchar('method', { length: 40 }).notNull(),
+  checkedAt: timestamp('checked_at', { withTimezone: true }).notNull(),
+});
+
+/** Phase 69: "would you verify your photos?", once per chat and asker. */
+export const verifyRequests = pgTable(
+  'verify_requests',
+  {
+    matchId: uuid('match_id')
+      .notNull()
+      .references(() => matches.id, { onDelete: 'cascade' }),
+    /** Who asked (the column is `user_id`, like other per-member rows). */
+    requesterId: ownerId(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.matchId, t.requesterId] })],
+);

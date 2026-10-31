@@ -124,6 +124,16 @@ export const envSchema = z.object({
     .min(32)
     .optional()
     .or(z.literal('').transform(() => undefined)),
+  /**
+   * Phase 69: a live-check provider (both or neither), signed like the age check. Never sent to
+   * clients or logged.
+   */
+  LIVENESS_URL: optionalString.pipe(z.url({ protocol: /^https?$/ }).optional()),
+  LIVENESS_SECRET: z
+    .string()
+    .min(32)
+    .optional()
+    .or(z.literal('').transform(() => undefined)),
   // Updates from GitHub (phase 53). The commit is baked into the image at build time.
   APP_COMMIT: z
     .string()

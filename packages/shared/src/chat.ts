@@ -2,6 +2,7 @@
 // Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 import { chatChaperonesSchema } from './chaperone.js';
+import { verifyRequestStateSchema } from './liveness.js';
 import { matchModeSchema } from './friends.js';
 import { z } from 'zod';
 import { albumShareStateSchema } from './profile.js';
@@ -148,6 +149,8 @@ export const messagesPageSchema = z.object({
   theirAlbum: albumShareStateSchema.nullable(),
   /** Phase 68d: chaperones who see this chat (mine, the other person's), shown to both. */
   chaperones: chatChaperonesSchema,
+  /** Phase 69: asking each other kindly to verify. */
+  verifyRequest: verifyRequestStateSchema,
 });
 export type MessagesPage = z.infer<typeof messagesPageSchema>;
 

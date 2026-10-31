@@ -1534,6 +1534,27 @@ export const en = {
       'Your chat with {{name}} is also read by a chaperone they chose, {{chaperone}}, since {{date}}: your messages too.',
     mine: 'Your chaperone {{chaperone}} reads this chat (since {{date}}). The other person sees this too.',
   },
+  liveness: {
+    title: 'A quick live check',
+    intro:
+      'A short live check at the provider your community chose. It compares your face, live, with your first profile photo. If they match, your photos get the verified badge at once.',
+    privacy:
+      'The provider gets the live check and your first photo; this community gets back only the result. No selfie or face data is kept here.',
+    start: 'Start the live check',
+    result: {
+      failed:
+        'The last live check didn’t work. You can try again, or ask a moderator to check a selfie.',
+      no_match:
+        'The last live check didn’t match your first photo. Check that it shows your face clearly, then try again.',
+    },
+  },
+  askVerify: {
+    ask: 'Ask {{name}} to verify their photos',
+    asked: 'You asked {{name}} to verify. Nothing more will be sent.',
+    askedMe:
+      '{{name}} would feel more at ease if you verified your photos. It takes a minute and helps everyone here feel safe.',
+    goVerify: 'Verify my photos',
+  },
   album: {
     title: 'Private album',
     intro:
