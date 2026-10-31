@@ -18,7 +18,7 @@
     "reembed": "node --env-file-if-exists=../../.env dist/reembed.js"
   },
   "dependencies": {
-    "@huggingface/transformers": "3.8.1",
+    "@huggingface/transformers": "4.3.2",
     "@nexaheart/ai": "workspace:*",
     "@nexaheart/db": "workspace:*",
     "@nexaheart/integrations": "workspace:*",
