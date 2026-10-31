@@ -142,6 +142,7 @@ export interface AdminInstanceSettings {
   discreetName: string | null;
   riskCountries: string[];
   partnerCards: 'full' | 'minimal';
+  shareTrustSignals: boolean;
   communityCountry: string | null;
   introductionOrder: IntroductionOrder;
   profileApproval: boolean;

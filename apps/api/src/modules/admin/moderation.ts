@@ -6,6 +6,9 @@ import {
   ageOn,
   BACKUP_STALE_HOURS,
   ErrorCode,
+  FEDERATION_SIGNALS_PATH,
+  FEDERATION_SIGNALS_REVOKE_PATH,
+  MAX_SIGNAL_HASHES,
   STAFF_ACCESS_ACTIONS,
   type SystemStatus,
   type AuditEntry,
@@ -39,7 +42,7 @@ const {
   auditLogs,
 } = schema;
 
-type Tx = Pick<Database, 'insert' | 'update' | 'delete'>;
+type Tx = Pick<Database, 'insert' | 'update' | 'delete' | 'execute'>;
 
 /**
  * Lifts a moderation suspension or ban, inside the caller's transaction: by an admin from the
@@ -54,6 +57,13 @@ export async function liftModeration(
   await tx.update(user).set({ status: 'active', suspendedReason: null }).where(eq(user.id, userId));
   await tx.delete(bannedEmails).where(eq(bannedEmails.userId, userId));
   await tx.delete(bannedPhotoHashes).where(eq(bannedPhotoHashes.userId, userId));
+  // Phase 73b: withdraw the trust signals sent about them, from every partner.
+  await tx.execute(sql`
+    INSERT INTO federation_outbox (partner_id, path, payload)
+    SELECT p.id, ${FEDERATION_SIGNALS_REVOKE_PATH}, jsonb_build_object('id', s.id)
+    FROM federation_signals_out s, federation_partners p
+    WHERE s.user_id = ${userId} AND p.status IN ('active', 'suspended')`);
+  await tx.execute(sql`DELETE FROM federation_signals_out WHERE user_id = ${userId}`);
   await tx.insert(moderationLog).values({ targetId: userId, staffId, action: 'unsuspend', reason });
   await audit(tx, {
     actorId: staffId,
@@ -346,6 +356,25 @@ export class ModerationService {
           INSERT INTO banned_photo_hashes (hash, user_id)
           SELECT DISTINCT phash, user_id FROM photos
           WHERE user_id = ${report.reportedId} AND phash IS NOT NULL`);
+        // Phase 73b: where the community shares trust signals, the hashes (only) go to every
+        // connected partner, through the outbox, for review there.
+        await tx.execute(sql`
+          WITH hashes AS (
+            SELECT jsonb_agg(h::text) AS list FROM (
+              SELECT DISTINCT phash AS h FROM photos
+              WHERE user_id = ${report.reportedId} AND phash IS NOT NULL
+              LIMIT ${MAX_SIGNAL_HASHES}) x),
+          signal AS (
+            INSERT INTO federation_signals_out (user_id)
+            SELECT ${report.reportedId}
+            WHERE COALESCE((SELECT share_trust_signals FROM instance_settings WHERE id = 1), false)
+              AND (SELECT list FROM hashes) IS NOT NULL
+              AND EXISTS (SELECT 1 FROM federation_partners WHERE status = 'active')
+            RETURNING id)
+          INSERT INTO federation_outbox (partner_id, path, payload)
+          SELECT p.id, ${FEDERATION_SIGNALS_PATH}, jsonb_build_object(
+            'id', signal.id, 'hashes', (SELECT list FROM hashes), 'category', ${report.category}::text)
+          FROM signal, federation_partners p WHERE p.status = 'active'`);
       }
       await audit(tx, {
         actorId: staff.id,

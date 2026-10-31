@@ -561,6 +561,13 @@
       "when": 1793438557224,
       "tag": "0079_federation_privacy",
       "breakpoints": true
+    },
+    {
+      "idx": 80,
+      "version": "7",
+      "when": 1793441352669,
+      "tag": "0080_trust_signals",
+      "breakpoints": true
     }
   ]
 }

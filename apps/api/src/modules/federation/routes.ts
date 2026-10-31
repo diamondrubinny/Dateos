@@ -2,6 +2,8 @@
 // Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 import {
+  FEDERATION_SIGNALS_PATH,
+  FEDERATION_SIGNALS_REVOKE_PATH,
   ErrorCode,
   FEDERATION_WELL_KNOWN,
   federatedDeliveryResponseSchema,
@@ -16,6 +18,7 @@ import { z } from 'zod';
 import type { FederatedChat } from './chat.js';
 import type { FederatedMembers } from './members.js';
 import type { FederatedSafety } from './safety.js';
+import type { FederatedSignals } from './signals.js';
 import type { FederationService, IncomingSigned } from './service.js';
 
 const ok = z.object({ ok: z.literal(true) });
@@ -36,7 +39,8 @@ export const federationRoutes: FastifyPluginAsyncZod<{
   members: FederatedMembers;
   chat: FederatedChat;
   safety: FederatedSafety;
-}> = async (app, { federation, members, chat, safety }) => {
+  signals: FederatedSignals;
+}> = async (app, { federation, members, chat, safety, signals }) => {
   // Keep the raw body: the signature covers the exact bytes that were sent.
   app.addContentTypeParser(
     'application/json',
@@ -177,6 +181,21 @@ export const federationRoutes: FastifyPluginAsyncZod<{
     { config: limit, schema: { response: { 200: ok } } },
     async (request) => {
       await safety.receiveOutcome(incoming(request));
+      return { ok: true as const };
+    },
+  );
+
+  // ---------------------------------------------------------------- 73b: trust signals
+  app.post(
+    FEDERATION_SIGNALS_PATH,
+    { config: limit, schema: { response: { 200: z.object({ kept: z.boolean() }) } } },
+    async (request) => signals.receive(incoming(request)),
+  );
+  app.post(
+    FEDERATION_SIGNALS_REVOKE_PATH,
+    { config: limit, schema: { response: { 200: ok } } },
+    async (request) => {
+      await signals.revoke(incoming(request));
       return { ok: true as const };
     },
   );

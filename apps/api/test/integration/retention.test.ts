@@ -67,6 +67,25 @@ describe.skipIf(!integrationEnabled)('retention jobs (integration)', () => {
       [Date.now() - 2 * 86_400_000, Date.now()],
     );
 
+    // Phase 73b: partners' trust signals, kept 2 years while sharing is on.
+    await q(`INSERT INTO instance_settings (id, share_trust_signals) VALUES (1, true)
+      ON CONFLICT (id) DO UPDATE SET share_trust_signals = true`);
+    const partner = (
+      await q(`INSERT INTO federation_partners (url, name, public_key, status)
+        VALUES ('https://api.partner.example.test', 'P', 'k', 'active') RETURNING id`)
+    ).rows[0].id;
+    await q(
+      `INSERT INTO federation_signals_in (partner_id, signal_id, hash, category, created_at) VALUES
+        ($1, gen_random_uuid(), 1, 'scam', now() - interval '731 days'),
+        ($1, gen_random_uuid(), 2, 'scam', now() - interval '10 days')`,
+      [partner],
+    );
+    await q(
+      `INSERT INTO federation_signals_out (user_id, created_at) VALUES
+        ($1, now() - interval '731 days'), ($1, now())`,
+      [noa.id],
+    );
+
     const result = await cleanupPrivacy(ctx.services.dbHandle.db);
     expect(result.auditLogs).toBe(1);
     expect(result.sessions).toBeGreaterThanOrEqual(1);
@@ -86,6 +105,13 @@ describe.skipIf(!integrationEnabled)('retention jobs (integration)', () => {
     const limits = (await q('SELECT id FROM rate_limit')).rows.map((r) => r.id);
     expect(limits).toContain('r-new');
     expect(limits).not.toContain('r-old');
+    expect(result.trustSignals).toBe(1);
+    expect((await q('SELECT hash::int AS h FROM federation_signals_in')).rows).toEqual([{ h: 2 }]);
+    expect((await q('SELECT 1 FROM federation_signals_out')).rowCount).toBe(1);
+    // Sharing turned off: every partner signal goes at the next cleanup.
+    await q('UPDATE instance_settings SET share_trust_signals = false');
+    await cleanupPrivacy(ctx.services.dbHandle.db);
+    expect((await q('SELECT 1 FROM federation_signals_in')).rowCount).toBe(0);
   });
 
   it('sessions do not store IP addresses or browser strings', async () => {

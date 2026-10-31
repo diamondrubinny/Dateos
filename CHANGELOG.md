@@ -6,6 +6,11 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Added
 
+- **Trust signals between partner communities** (off by default, both sides opt in): banning a
+  member sends partners only fingerprints of their photos and the report's category. At a partner,
+  a member with a photo that looks the same gets a report for moderators to review, never an
+  automatic block. Lifting the ban, or an accepted appeal, withdraws the signal everywhere.
+
 - **Less before a match, and no partners where it's dangerous**: members can show partner
   communities only a short card (first name, age, first photo...) until they match, and admins can
   choose it for everyone; other photos can't be fetched before a match. Communities can say which

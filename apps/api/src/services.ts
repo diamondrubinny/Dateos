@@ -28,6 +28,7 @@ import {
 import { AudioService } from './modules/chat/audio.js';
 import { FederatedChat } from './modules/federation/chat.js';
 import { FederatedMembers } from './modules/federation/members.js';
+import { FederatedSignals } from './modules/federation/signals.js';
 import { FederatedSafety } from './modules/federation/safety.js';
 import { FederationService } from './modules/federation/service.js';
 import { llmIcebreakers, templateIcebreakers, type TextModel } from '@nexaheart/ai';
@@ -83,6 +84,7 @@ export interface Services {
   federated: FederatedMembers;
   federatedChat: FederatedChat;
   federatedSafety: FederatedSafety;
+  federatedSignals: FederatedSignals;
   discovery: DiscoveryService;
   realtime: Realtime;
   chat: ChatService;
@@ -409,6 +411,8 @@ export function createServices(
     reports.alertStaff(),
   );
   moderation.usePartnerOutcomes((settled) => federatedSafety.sendOutcomes(settled));
+  // 73b: trust signals from partners.
+  const federatedSignals = new FederatedSignals(dbHandle.db, federation, overrides.now);
   me.beforeDelete((userId) => federated.forgetEverywhere(userId));
 
   const events = new EventService(
@@ -435,6 +439,7 @@ export function createServices(
     federated,
     federatedChat,
     federatedSafety,
+    federatedSignals,
     discovery,
     mailer,
     me,

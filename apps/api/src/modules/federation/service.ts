@@ -43,6 +43,7 @@ const {
   federationKeys,
   federationMatches,
   federationOutbox,
+  federationSignalsIn,
   federationPartners,
   federationReportsOut,
   reports,
@@ -685,6 +686,10 @@ export class FederationService {
       .select({ id: federationOutbox.partnerId, n: sql<number>`count(*)::int` })
       .from(federationOutbox)
       .groupBy(federationOutbox.partnerId);
+    const signals = await this.db
+      .select({ id: federationSignalsIn.partnerId, n: sql<number>`count(DISTINCT signal_id)::int` })
+      .from(federationSignalsIn)
+      .groupBy(federationSignalsIn.partnerId);
     const counts = (id: string) => {
       const s = sent.find((x) => x.id === id);
       return {
@@ -694,6 +699,7 @@ export class FederationService {
           received: received.find((x) => x.id === id)?.n ?? 0,
         },
         outbox: waiting.find((x) => x.id === id)?.n ?? 0,
+        signals: signals.find((x) => x.id === id)?.n ?? 0,
       };
     };
     const self = reason === null ? await this.identity() : null;
@@ -918,11 +924,13 @@ export class FederationService {
       await tx.delete(federationMatches).where(eq(federationMatches.partnerId, id));
       await tx.delete(federationOutbox).where(eq(federationOutbox.partnerId, id));
       await tx.delete(federationReportsOut).where(eq(federationReportsOut.partnerId, id));
+      // Phase 73b: their trust signals are forgotten with the partnership.
+      await tx.delete(federationSignalsIn).where(eq(federationSignalsIn.partnerId, id));
     });
   }
 }
 
-function toPartner(r: PartnerRow): Omit<Partner, 'reports' | 'outbox' | 'atRisk'> {
+function toPartner(r: PartnerRow): Omit<Partner, 'reports' | 'outbox' | 'atRisk' | 'signals'> {
   return {
     id: r.id,
     url: r.url,
