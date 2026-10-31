@@ -2,7 +2,10 @@
 // Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 import type {
+  AdminCheckIn,
   CommunityEvent,
+  EventProposalInput,
+  OrganizerHome,
   EventBoard,
   EventQuestion,
   MeetAgain,
@@ -217,5 +220,71 @@ export function useTableAction(id: string) {
         ? apiFetch<MyTable>(`/v1/events/${id}/table`, { method: 'PUT', body: json(answers) })
         : apiFetch<MyTable>(`/v1/events/${id}/table`, { method: 'DELETE' }),
     onSuccess: (state) => client.setQueryData(tableKey(id), state),
+  });
+}
+
+// ---------------------------------------------------------------- phase 71e
+
+const organizerKey = ['organizer'] as const;
+
+/** Community organizers: my proposals and my events (organizer: false for everyone else). */
+export function useOrganizerHome() {
+  return useQuery({
+    queryKey: organizerKey,
+    queryFn: () => apiFetch<OrganizerHome>('/v1/organizer'),
+    staleTime: 30_000,
+  });
+}
+
+export function useProposalAction() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (action: { propose: EventProposalInput } | { withdraw: string }) =>
+      'propose' in action
+        ? apiFetch<OrganizerHome>('/v1/organizer/proposals', {
+            method: 'POST',
+            body: json(action.propose),
+          })
+        : apiFetch<OrganizerHome>(`/v1/organizer/proposals/${action.withdraw}`, {
+            method: 'DELETE',
+          }),
+    onSuccess: (home) => client.setQueryData(organizerKey, home),
+  });
+}
+
+const organizerBoardKey = (id: string) => ['organizer', id, 'board'] as const;
+
+/** The board of my own event (updates and anonymous questions). */
+export function useOrganizerBoard(id: string) {
+  return useQuery({
+    queryKey: organizerBoardKey(id),
+    queryFn: () => apiFetch<EventBoard>(`/v1/organizer/events/${id}/board`),
+  });
+}
+
+export function useOrganizerBoardAction(id: string) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (action: { update: string } | { questionId: string; answer: string }) =>
+      'update' in action
+        ? apiFetch<EventBoard>(`/v1/organizer/events/${id}/updates`, {
+            method: 'POST',
+            body: json({ body: action.update }),
+          })
+        : apiFetch<EventBoard>(`/v1/organizer/events/${id}/questions/${action.questionId}/answer`, {
+            method: 'POST',
+            body: json({ answer: action.answer }),
+          }),
+    onSuccess: (board) => client.setQueryData(organizerBoardKey(id), board),
+  });
+}
+
+/** The check-in code to show at the door of my own event. */
+export function useOrganizerCheckIn(id: string, enabled: boolean) {
+  return useQuery({
+    queryKey: ['organizer', id, 'check-in'],
+    queryFn: () => apiFetch<AdminCheckIn>(`/v1/organizer/events/${id}/check-in`),
+    enabled,
+    refetchInterval: 15_000,
   });
 }

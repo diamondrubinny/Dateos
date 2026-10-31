@@ -83,6 +83,7 @@ function baseView(
   going: number,
   waitingCount: number,
   poolCounts: PoolCounts = {},
+  organizer: CommunityEvent['organizer'] = null,
 ): Omit<
   CommunityEvent,
   'mine' | 'waitingAhead' | 'checkedIn' | 'meetAgainUntil' | 'notForYou' | 'placeHidden'
@@ -126,8 +127,15 @@ function baseView(
       : null,
     placeRevealAt: placeRevealAt(e)?.toISOString() ?? null,
     tableSize: e.tableSize,
+    organizer,
   };
 }
+
+/** Phase 71e: the organizer on an event (first name, events already held), or null. */
+const organizerOf = (r: Row): CommunityEvent['organizer'] =>
+  r.event.organizerId && r.organizerName
+    ? { displayName: r.organizerName, events: r.organizerEvents }
+    : null;
 
 /** Phase 71d: when the place is revealed to members, or null when it's shown from the start. */
 export const placeRevealAt = (e: EventRow): Date | null =>
@@ -156,6 +164,8 @@ interface Row {
   checkedInCount: number;
   poolCounts: PoolCounts;
   tableSizes: number[] | null;
+  organizerName: string | null;
+  organizerEvents: number;
 }
 
 const toQuestion = (q: typeof eventQuestions.$inferSelect): EventQuestion => ({
@@ -178,7 +188,7 @@ export function meetAgainUntil(e: EventRow, checkedIn: boolean, now: number): Da
 }
 
 const toView = (r: Row, now: number, facts: ViewerFacts | null): CommunityEvent => {
-  const base = baseView(r.event, r.venue, r.going, r.waitingCount, r.poolCounts);
+  const base = baseView(r.event, r.venue, r.going, r.waitingCount, r.poolCounts, organizerOf(r));
   // Phase 71b: with places by gender, "full" is about the viewer's own group.
   const pool = poolOf(r.event, facts);
   const mine = pool ? base.pools?.find((p) => p.gender === pool) : undefined;
@@ -271,6 +281,13 @@ export class EventService {
       FROM (SELECT r.table_no, count(*)::int AS n FROM event_rsvps r
             WHERE r.event_id = ${events.id} AND r.table_no IS NOT NULL AND r.status = 'going'
             GROUP BY r.table_no) x)`;
+    // Phase 71e: the organizer's first name, and how many of their events already took place.
+    const organizerName = sql<
+      string | null
+    >`(SELECT p.display_name FROM profiles p WHERE p.user_id = ${events.organizerId})`;
+    const organizerEvents = sql<number>`(SELECT count(*)::int FROM events o
+      WHERE o.organizer_id = ${events.organizerId} AND o.status = 'scheduled'
+        AND o.ends_at < ${new Date(this.now()).toISOString()}::timestamptz)`;
     return this.db
       .select({
         event: events,
@@ -283,6 +300,8 @@ export class EventService {
         checkedInCount,
         poolCounts,
         tableSizes,
+        organizerName,
+        organizerEvents,
       })
       .from(events)
       .leftJoin(venues, eq(venues.id, events.venueId));
@@ -569,6 +588,20 @@ export class EventService {
 
   // ------------------------------------------------------------------ staff
 
+  /** Phase 71e: an organizer's own events (upcoming and the last 30 days), as members see them. */
+  async listForOrganizer(userId: string): Promise<CommunityEvent[]> {
+    const rows = await this.query(userId)
+      .where(
+        and(
+          eq(events.organizerId, userId),
+          gt(events.endsAt, new Date(this.now() - 30 * 86_400_000)),
+        ),
+      )
+      .orderBy(asc(events.startsAt));
+    const facts = await this.facts(userId);
+    return rows.map((r) => toView(r, this.now(), facts));
+  }
+
   async listForStaff(): Promise<AdminEvent[]> {
     // Phase 71d: tables that are due are set now, so staff see their counts.
     const due = await this.db
@@ -592,7 +625,7 @@ export class EventService {
 
   private toAdmin(r: Row): AdminEvent {
     return {
-      ...baseView(r.event, r.venue, r.going, r.waitingCount, r.poolCounts),
+      ...baseView(r.event, r.venue, r.going, r.waitingCount, r.poolCounts, organizerOf(r)),
       venueId: r.event.venueId,
       createdAt: r.event.createdAt.toISOString(),
       checkedInCount: r.checkedInCount,

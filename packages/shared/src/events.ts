@@ -238,6 +238,8 @@ export const eventSchema = z.object({
   placeHidden: z.boolean(),
   /** Phase 71d: tables of this size, or null. */
   tableSize: z.number().int().nullable(),
+  /** Phase 71e: the community organizer running it (first name, events already held), or null. */
+  organizer: z.object({ displayName: z.string(), events: z.number().int() }).nullable(),
   /**
    * Phase 71a: "Meet again" is open for the viewer until this time (they checked in at an
    * in-person event that ended less than MEET_AGAIN_HOURS ago), else null.
@@ -443,3 +445,67 @@ export const myNoShowsSchema = z.object({
   canExcuse: z.boolean(),
 });
 export type MyNoShows = z.infer<typeof myNoShowsSchema>;
+
+// ---------------------------------------------------------------------------
+// Phase 71e: community organizers
+// ---------------------------------------------------------------------------
+
+/** Proposals waiting for an admin, per organizer. */
+export const MAX_PENDING_PROPOSALS = 5;
+export const proposalStatuses = ['pending', 'approved', 'declined'] as const;
+export type ProposalStatus = (typeof proposalStatuses)[number];
+
+/** What an organizer proposes: an in-person event at one of the community's places. */
+export const eventProposalInputSchema = z
+  .object({
+    title,
+    description: description.default(''),
+    venueId: z.uuid(),
+    startsAt: z.iso.datetime(),
+    endsAt: z.iso.datetime(),
+    capacity: capacity.default(null),
+  })
+  .strict()
+  .refine(window, windowMessage);
+export type EventProposalInput = z.input<typeof eventProposalInputSchema>;
+
+export const eventProposalSchema = z.object({
+  id: z.uuid(),
+  title: z.string(),
+  description: z.string(),
+  venueId: z.uuid().nullable(),
+  venue: venueSchema.omit({ id: true }).nullable(),
+  startsAt: z.string(),
+  endsAt: z.string(),
+  capacity: z.number().int().nullable(),
+  status: z.enum(proposalStatuses),
+  /** Why it was declined (shown to the organizer). */
+  reason: z.string().nullable(),
+  /** The published event, once approved. */
+  eventId: z.uuid().nullable(),
+  createdAt: z.string(),
+  /** Staff only: who proposed it. */
+  organizer: z.object({ userId: z.string(), displayName: z.string() }).optional(),
+});
+export type EventProposal = z.infer<typeof eventProposalSchema>;
+
+export const organizerHomeSchema = z.object({
+  organizer: z.boolean(),
+  proposals: z.array(eventProposalSchema),
+  /** My events (upcoming and the last 30 days). */
+  events: z.array(eventSchema),
+});
+export type OrganizerHome = z.infer<typeof organizerHomeSchema>;
+
+export const declineProposalSchema = z
+  .object({ reason: z.string().trim().min(3).max(500) })
+  .strict();
+export const grantOrganizerSchema = z.object({ email: z.email() }).strict();
+export const organizerRowSchema = z.object({
+  userId: z.string(),
+  displayName: z.string(),
+  since: z.string(),
+  /** Their events already held. */
+  events: z.number().int(),
+});
+export type OrganizerRow = z.infer<typeof organizerRowSchema>;

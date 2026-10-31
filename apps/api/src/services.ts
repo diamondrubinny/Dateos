@@ -39,6 +39,7 @@ import { MeService, todayUtc } from './modules/me/service.js';
 import { SpeedService } from './modules/speed/service.js';
 import { MeetAgainService } from './modules/events/meet-again.js';
 import { TableService } from './modules/events/tables.js';
+import { OrganizerService } from './modules/events/organizers.js';
 import { PhotoService } from './modules/photos/service.js';
 import { createEmailHasher } from './lib/banned.js';
 import { EmailChangeService } from './modules/account/email-change.js';
@@ -118,6 +119,7 @@ export interface Services {
   speed: SpeedService;
   meetAgain: MeetAgainService;
   tables: TableService;
+  organizers: OrganizerService;
   ai: AiGate;
   integrations: IntegrationService;
   outboundQueue: OutboundQueue;
@@ -404,6 +406,17 @@ export function createServices(
   moderation.usePartnerOutcomes((settled) => federatedSafety.sendOutcomes(settled));
   me.beforeDelete((userId) => federated.forgetEverywhere(userId));
 
+  const events = new EventService(
+    dbHandle.db,
+    (userId, eventId) => notifyQueue.push({ userId, kind: 'event', matchId: eventId }),
+    overrides.now,
+    {
+      appUrl: appUrl(env),
+      speedAvailable: async () => (await calls.enabled()) !== null,
+      helpPush: (adminId, eventId) =>
+        notifyQueue.push({ userId: adminId, kind: 'event_help', matchId: eventId }),
+    },
+  );
   const services: Services = {
     dbHandle,
     redis,
@@ -439,17 +452,8 @@ export function createServices(
     travel: new TravelService(dbHandle.db, cities),
     meetAgain: new MeetAgainService(dbHandle.db, discovery, overrides.now),
     tables: new TableService(dbHandle.db, overrides.now),
-    events: new EventService(
-      dbHandle.db,
-      (userId, eventId) => notifyQueue.push({ userId, kind: 'event', matchId: eventId }),
-      overrides.now,
-      {
-        appUrl: appUrl(env),
-        speedAvailable: async () => (await calls.enabled()) !== null,
-        helpPush: (adminId, eventId) =>
-          notifyQueue.push({ userId: adminId, kind: 'event_help', matchId: eventId }),
-      },
-    ),
+    events,
+    organizers: new OrganizerService(dbHandle.db, events, overrides.now),
     reports,
     verification,
     staffMfa: new StaffMfaService(

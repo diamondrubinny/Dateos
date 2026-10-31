@@ -60,6 +60,10 @@ export async function processEvents(ctx: EventJobContext): Promise<{
     DELETE FROM speed_dates d USING events e
     WHERE e.id = d.event_id
       AND e.ends_at < ${new Date(now.getTime() - RSVP_RETENTION_DAYS * 86_400_000)}`);
+  // Phase 71e: declined proposals from organizers, after 90 days.
+  await ctx.db.execute(sql`
+    DELETE FROM event_proposals
+    WHERE status = 'declined' AND decided_at < ${new Date(now.getTime() - 90 * 86_400_000)}`);
   const ended = await ctx.db.execute(sql`
     DELETE FROM events
     WHERE ends_at < ${new Date(now.getTime() - EVENT_RETENTION_DAYS * 86_400_000)}`);

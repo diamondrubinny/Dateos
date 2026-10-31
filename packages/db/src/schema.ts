@@ -1215,6 +1215,8 @@ export const events = pgTable(
     revealHours: smallint('reveal_hours'),
     tableSize: smallint('table_size'),
     tablesSetAt: timestamp('tables_set_at', { withTimezone: true }),
+    /** Phase 71e: the community organizer running it (null: staff). */
+    organizerId: text('organizer_id').references(() => user.id, { onDelete: 'set null' }),
     ...timestamps,
   },
   (t) => [index('events_upcoming_idx').on(t.status, t.endsAt)],
@@ -1253,6 +1255,45 @@ export const eventRsvps = pgTable(
     index('event_rsvps_user_idx').on(t.userId),
     // The waiting list, in order.
     index('event_rsvps_waiting_idx').on(t.eventId, t.status, t.createdAt),
+  ],
+);
+
+/** Phase 71e: members an admin made community organizers (they propose events). */
+export const eventOrganizers = pgTable('event_organizers', {
+  userId: text('user_id')
+    .primaryKey()
+    .references(() => user.id, { onDelete: 'cascade' }),
+  grantedBy: text('granted_by').references(() => user.id, { onDelete: 'set null' }),
+  grantedAt: timestamp('granted_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+/**
+ * Phase 71e: an organizer's proposed event, waiting for an admin. Approved ones point at the event;
+ * declined ones are deleted after 90 days, all of them with the organizer's account.
+ */
+export const eventProposals = pgTable(
+  'event_proposals',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    organizerId: text('organizer_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    title: varchar('title', { length: 80 }).notNull(),
+    description: varchar('description', { length: 1000 }).notNull().default(''),
+    venueId: uuid('venue_id').references(() => venues.id, { onDelete: 'set null' }),
+    startsAt: timestamp('starts_at', { withTimezone: true }).notNull(),
+    endsAt: timestamp('ends_at', { withTimezone: true }).notNull(),
+    capacity: integer('capacity'),
+    status: varchar('status', { length: 10 }).notNull().default('pending'),
+    reason: varchar('reason', { length: 500 }),
+    eventId: uuid('event_id').references(() => events.id, { onDelete: 'set null' }),
+    decidedBy: text('decided_by').references(() => user.id, { onDelete: 'set null' }),
+    decidedAt: timestamp('decided_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index('event_proposals_organizer_idx').on(t.organizerId, t.createdAt),
+    index('event_proposals_status_idx').on(t.status, t.createdAt),
   ],
 );
 

@@ -43,6 +43,11 @@ import {
   eventInputSchema,
   eventUpdateSchema,
   eventRepeatSchema,
+  declineProposalSchema,
+  eventProposalSchema,
+  grantOrganizerSchema,
+  organizerRowSchema,
+  proposalStatuses,
   createInviteSchema,
   inviteSchema,
   waitlistEntrySchema,
@@ -75,6 +80,7 @@ import type { InstanceService } from '../instance/service.js';
 import type { PhotoService } from '../photos/service.js';
 import type { VerificationService } from '../safety/verification.js';
 import type { VenueService } from '../dates/venues.js';
+import type { OrganizerService } from '../events/organizers.js';
 import type { EventService } from '../events/service.js';
 import type { FederationService } from '../federation/service.js';
 import type { TrustService } from '../trust/service.js';
@@ -121,6 +127,8 @@ export const adminRoutes: FastifyPluginAsyncZod<{
   introductions?: IntroductionService;
   /** Phase 68c. */
   profileReview?: ProfileReviewService;
+  /** Phase 71e. */
+  organizers?: OrganizerService;
 }> = async (
   app,
   {
@@ -142,6 +150,7 @@ export const adminRoutes: FastifyPluginAsyncZod<{
     compliance,
     introductions,
     profileReview,
+    organizers,
   },
 ) => {
   await app.register(multipart, {
@@ -479,6 +488,84 @@ export const adminRoutes: FastifyPluginAsyncZod<{
         const staff = currentUser(request);
         adminOnly(staff.role);
         await introductions.revoke(staff.id, request.params.userId);
+        return { ok: true as const };
+      },
+    );
+  }
+
+  // ---------------------------------------------------------------- organizers (phase 71e, admins)
+
+  if (organizers) {
+    app.get(
+      '/v1/admin/organizers',
+      { schema: { response: { 200: z.object({ organizers: z.array(organizerRowSchema) }) } } },
+      async (request) => {
+        adminOnly(currentUser(request).role);
+        return { organizers: await organizers.list() };
+      },
+    );
+    app.post(
+      '/v1/admin/organizers',
+      {
+        schema: { body: grantOrganizerSchema, response: { 200: z.object({ userId: z.string() }) } },
+        config: perUserLimit(30, 60 * 60_000),
+      },
+      async (request) => {
+        const staff = currentUser(request);
+        adminOnly(staff.role);
+        return organizers.grant(staff.id, request.body.email);
+      },
+    );
+    app.delete(
+      '/v1/admin/organizers/:userId',
+      {
+        schema: {
+          params: z.object({ userId: z.string().min(1).max(64) }),
+          response: { 200: ok },
+        },
+      },
+      async (request) => {
+        const staff = currentUser(request);
+        adminOnly(staff.role);
+        await organizers.revoke(staff.id, request.params.userId);
+        return { ok: true as const };
+      },
+    );
+    app.get(
+      '/v1/admin/event-proposals',
+      {
+        schema: {
+          querystring: z.object({ status: z.enum(proposalStatuses).default('pending') }),
+          response: { 200: z.object({ proposals: z.array(eventProposalSchema) }) },
+        },
+      },
+      async (request) => {
+        adminOnly(currentUser(request).role);
+        return { proposals: await organizers.proposals(request.query.status) };
+      },
+    );
+    app.post(
+      '/v1/admin/event-proposals/:id/approve',
+      {
+        schema: { params: idParams, response: { 200: eventProposalSchema } },
+        config: perUserLimit(100, 60 * 60_000),
+      },
+      async (request) => {
+        const staff = currentUser(request);
+        adminOnly(staff.role);
+        return organizers.approve(staff.id, request.params.id);
+      },
+    );
+    app.post(
+      '/v1/admin/event-proposals/:id/decline',
+      {
+        schema: { params: idParams, body: declineProposalSchema, response: { 200: ok } },
+        config: perUserLimit(100, 60 * 60_000),
+      },
+      async (request) => {
+        const staff = currentUser(request);
+        adminOnly(staff.role);
+        await organizers.decline(staff.id, request.params.id, request.body.reason);
         return { ok: true as const };
       },
     );

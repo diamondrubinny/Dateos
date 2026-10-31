@@ -12,6 +12,11 @@ import {
   myNoShowsSchema,
   myTableSchema,
   tableAnswersSchema,
+  adminCheckInSchema,
+  eventAnswerInputSchema,
+  eventNoticeInputSchema,
+  eventProposalInputSchema,
+  organizerHomeSchema,
 } from '@nexaheart/shared';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';
@@ -20,6 +25,7 @@ import { currentUser, requireUser } from '../../auth/session.js';
 import { perUserLimit } from '../../plugins/security.js';
 import type { MeetAgainService } from './meet-again.js';
 import type { EventService } from './service.js';
+import type { OrganizerService } from './organizers.js';
 import type { TableService } from './tables.js';
 
 const params = z.object({ id: z.uuid() });
@@ -30,7 +36,8 @@ export const eventRoutes: FastifyPluginAsyncZod<{
   events: EventService;
   meetAgain: MeetAgainService;
   tables: TableService;
-}> = async (app, { auth, events, meetAgain, tables }) => {
+  organizers: OrganizerService;
+}> = async (app, { auth, events, meetAgain, tables, organizers }) => {
   // An active account: suspended members can't say they're going.
   app.addHook('preHandler', requireUser(auth));
 
@@ -169,5 +176,61 @@ export const eventRoutes: FastifyPluginAsyncZod<{
     '/v1/events/:id/table',
     { config: limit, schema: { params, response: { 200: myTableSchema } } },
     async (request) => tables.leave(request.params.id, currentUser(request).id),
+  );
+  // Community organizers (phase 71e): proposals, and running their own events.
+  app.get(
+    '/v1/organizer',
+    { schema: { response: { 200: organizerHomeSchema } } },
+    async (request) => organizers.home(currentUser(request).id),
+  );
+  app.post(
+    '/v1/organizer/proposals',
+    {
+      config: perUserLimit(20, 60 * 60_000),
+      schema: { body: eventProposalInputSchema, response: { 200: organizerHomeSchema } },
+    },
+    async (request) => organizers.propose(currentUser(request).id, request.body),
+  );
+  app.delete(
+    '/v1/organizer/proposals/:id',
+    { config: limit, schema: { params, response: { 200: organizerHomeSchema } } },
+    async (request) => organizers.withdraw(currentUser(request).id, request.params.id),
+  );
+  app.get(
+    '/v1/organizer/events/:id/board',
+    { schema: { params, response: { 200: eventBoardSchema } } },
+    async (request) => organizers.board(currentUser(request).id, request.params.id),
+  );
+  app.post(
+    '/v1/organizer/events/:id/updates',
+    {
+      config: perUserLimit(30, 60 * 60_000),
+      schema: { params, body: eventNoticeInputSchema, response: { 200: eventBoardSchema } },
+    },
+    async (request) =>
+      organizers.postUpdate(currentUser(request).id, request.params.id, request.body.body),
+  );
+  app.post(
+    '/v1/organizer/events/:id/questions/:questionId/answer',
+    {
+      config: perUserLimit(100, 60 * 60_000),
+      schema: {
+        params: params.extend({ questionId: z.uuid() }),
+        body: eventAnswerInputSchema,
+        response: { 200: eventBoardSchema },
+      },
+    },
+    async (request) =>
+      organizers.answer(
+        currentUser(request).id,
+        request.params.id,
+        request.params.questionId,
+        request.body.answer,
+      ),
+  );
+  app.get(
+    '/v1/organizer/events/:id/check-in',
+    { schema: { params, response: { 200: adminCheckInSchema } } },
+    async (request) => organizers.checkIn(currentUser(request).id, request.params.id),
   );
 };

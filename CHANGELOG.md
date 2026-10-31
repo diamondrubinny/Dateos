@@ -6,6 +6,11 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Added
 
+- **Community organizers**: admins can make trusted members organizers. They propose events at the
+  community's places from the app; an admin approves (the event is published with their first
+  name) or declines with a reason. On their own events they post updates, answer questions
+  (without seeing who asked) and show the check-in code. Events show how many of theirs took place.
+
 - **Tables at events**: staff can set tables of 4 to 10. People going may join one with three
   quick questions about the evening; at the reveal (or the start) tables are set, mixing genders
   and grouping similar answers, and each person sees their table's first names only.
