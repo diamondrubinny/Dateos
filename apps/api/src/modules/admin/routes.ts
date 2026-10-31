@@ -53,6 +53,9 @@ import {
   incidentUpdateSchema,
   templateParamsSchema,
   templateQuerySchema,
+  grantMatchmakerSchema,
+  matchmakerReportQuerySchema,
+  matchmakersReportSchema,
 } from '@nexaheart/shared';
 import type { Storage, StoredObject } from '@nexaheart/storage';
 import type { FastifyReply } from 'fastify';
@@ -77,6 +80,7 @@ import { isStaffRole, type StaffMfaService } from './mfa.js';
 import type { ModerationService } from './moderation.js';
 import type { AppealService } from '../safety/appeals.js';
 import type { ComplianceService } from '../compliance/service.js';
+import type { IntroductionService } from '../introductions/service.js';
 
 const ok = z.object({ ok: z.literal(true) });
 const idParams = z.object({ id: z.uuid() });
@@ -109,6 +113,8 @@ export const adminRoutes: FastifyPluginAsyncZod<{
   appeals?: AppealService;
   /** Phase 64. */
   compliance?: ComplianceService;
+  /** Phase 68a. */
+  introductions?: IntroductionService;
 }> = async (
   app,
   {
@@ -128,6 +134,7 @@ export const adminRoutes: FastifyPluginAsyncZod<{
     dependencies,
     appeals,
     compliance,
+    introductions,
   },
 ) => {
   await app.register(multipart, {
@@ -395,6 +402,56 @@ export const adminRoutes: FastifyPluginAsyncZod<{
       return { entries: await moderation.auditLog(before, limit, only) };
     },
   );
+
+  // ---------------------------------------------------------------- matchmakers (phase 68a, admins)
+
+  if (introductions) {
+    app.get(
+      '/v1/admin/matchmakers',
+      {
+        schema: {
+          querystring: matchmakerReportQuerySchema,
+          response: { 200: matchmakersReportSchema },
+        },
+      },
+      async (request) => {
+        adminOnly(currentUser(request).role);
+        return { matchmakers: await introductions.report(request.query) };
+      },
+    );
+
+    app.post(
+      '/v1/admin/matchmakers',
+      {
+        schema: {
+          body: grantMatchmakerSchema,
+          response: { 200: z.object({ userId: z.string() }) },
+        },
+        config: perUserLimit(30, 60 * 60_000),
+      },
+      async (request) => {
+        const staff = currentUser(request);
+        adminOnly(staff.role);
+        return introductions.grant(staff.id, request.body.email);
+      },
+    );
+
+    app.delete(
+      '/v1/admin/matchmakers/:userId',
+      {
+        schema: {
+          params: z.object({ userId: z.string().min(1).max(64) }),
+          response: { 200: ok },
+        },
+      },
+      async (request) => {
+        const staff = currentUser(request);
+        adminOnly(staff.role);
+        await introductions.revoke(staff.id, request.params.userId);
+        return { ok: true as const };
+      },
+    );
+  }
 
   // ---------------------------------------------------------------- compliance kit (phase 64, admins)
 

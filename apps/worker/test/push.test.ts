@@ -17,6 +17,11 @@ describe('push content', () => {
     expect(pushContent('message', 'ar', 'Ahava').body).toBe('لديك رسالة جديدة');
     expect(pushContent('match', 'ru', 'Ahava').body).toBe('Это взаимно! Напишите привет');
     expect(pushContent('message', 'fr', 'Ahava').body).toBe('You have a new message');
+    // Phase 68a: an introduction, without anyone's name.
+    expect(pushContent('introduction', 'he', 'Ahava')).toEqual({
+      title: 'Ahava',
+      body: 'יש לך הצעת היכרות חדשה משדכנות הקהילה',
+    });
     expect(pushContent('message', 'toString', 'Ahava').body).toBe('You have a new message');
   });
 });

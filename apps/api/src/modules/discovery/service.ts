@@ -53,6 +53,7 @@ const BLOCKED_LIST_MAX = 200;
 import { photoUrl } from '../me/service.js';
 import type { CityIndex } from '../places/cities.js';
 import {
+  introductionReached,
   notContactHidden,
   notOnBreak,
   notSeparated,
@@ -395,6 +396,13 @@ export class DiscoveryService {
                        AND ((pa.user_a = ${viewerId} AND pa.user_b = ${targetId}) OR (pa.user_a = ${targetId} AND pa.user_b = ${viewerId})))
             OR EXISTS (SELECT 1 FROM double_matches dm WHERE dm.closed_at IS NULL
                        AND dm.members @> ARRAY[${viewerId}, ${targetId}]::text[])
+            -- Phase 68a: a community matchmaker sees members open to matchmakers.
+            OR (EXISTS (SELECT 1 FROM matchmakers mk WHERE mk.user_id = ${viewerId})
+                AND EXISTS (SELECT 1 FROM preferences pf WHERE pf.user_id = ${targetId} AND pf.open_to_matchmakers)
+                AND ${notOnBreak('u')})
+            -- ... and the two sides of an open introduction, once it reached the viewer.
+            OR EXISTS (SELECT 1 FROM introductions it
+                       WHERE ${introductionReached(sql`${viewerId}`, sql`${targetId}`)})
           )
       ) AS ok`);
     if (relation.rows[0]?.ok) return true;
@@ -1100,6 +1108,15 @@ export class DiscoveryService {
         .map((r) => r.userId)
         .filter((id) => id !== viewerId),
     );
+    // Phase 68a: community matchmakers (a public badge, so members can check who really is one).
+    const matchmakerSince = new Map(
+      (
+        await this.db
+          .select({ userId: schema.matchmakers.userId, at: schema.matchmakers.grantedAt })
+          .from(schema.matchmakers)
+          .where(inArray(schema.matchmakers.userId, ids))
+      ).map((r) => [r.userId, r.at.toISOString()]),
+    );
     // Phase 66a: photos blurred for this viewer; my own preview shows what strangers see.
     const blurred = includeViewer
       ? new Set((await photosMayBlur(this.db, viewerId)) ? [viewerId] : [])
@@ -1142,6 +1159,7 @@ export class DiscoveryService {
           // Phase 66b: matches only (not the member's own preview, which shows what strangers see).
           matchNote: matched.has(p.userId) ? (aboutById.get(p.userId)?.matchNote ?? null) : null,
           faith: faithModule ? faithFor(aboutById.get(p.userId)) : null,
+          matchmakerSince: matchmakerSince.get(p.userId) ?? null,
           metInPerson: metIds.has(p.userId),
           atEvent: atEventIds.has(p.userId),
           friendTakes: takesById.get(p.userId) ?? [],

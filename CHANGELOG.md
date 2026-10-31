@@ -6,6 +6,12 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Added
 
+- **Community matchmakers**: admins name members as community matchmakers (shown on their profile,
+  so members can check who really is one). A matchmaker introduces two members who turned on
+  "Open to matchmakers"; each answers privately, two yeses open a chat, and nobody is told about a
+  no. Communities can choose "women first". Either of the two can tell the matchmaker how it went
+  (met, engaged, married); the dashboard counts it per matchmaker, with a CSV.
+
 - **A discreet app and countries at risk**: communities can give the installed app a neutral name
   (with plain grey icons, never the logo, also in the browser tab and notifications) and list
   countries they consider dangerous; travelling to one warns the member and hides them from new

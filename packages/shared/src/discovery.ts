@@ -117,6 +117,8 @@ export const publicProfileSchema = z.object({
    * Optional: partner cards never carry it.
    */
   faith: faithSchema.nullable().optional(),
+  /** Phase 68a: a community matchmaker since this date (named by the admins), or null. */
+  matchmakerSince: z.string().nullable().optional(),
   /** Opt-in badge: met someone from this community in person, both confirmed (phase 20). */
   metInPerson: z.boolean(),
   /** Opt-in badge: checked in at one of this community's events in the last year (phase 23). */

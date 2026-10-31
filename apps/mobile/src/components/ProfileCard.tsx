@@ -56,7 +56,7 @@ function IconButton({
 }
 
 export function ProfileCard({ profile, onLikeItem }: ProfileCardProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const colors = useColors();
   const { direction, locale } = useLocale();
   const mine = useMe().data?.about.interests;
@@ -181,6 +181,24 @@ export function ProfileCard({ profile, onLikeItem }: ProfileCardProps) {
             >
               <AppText variant="label" tone="success">
                 🤝 {t('badge.met')}
+              </AppText>
+            </View>
+          ) : null}
+          {profile.matchmakerSince ? (
+            // Phase 68a: named by the community's admins, so members can check who really is one.
+            <View
+              testID="matchmaker-badge"
+              style={[styles.verified, { backgroundColor: colors.primarySoft }]}
+              accessible
+              accessibilityLabel={t('intro.badgeLabel', {
+                date: new Date(profile.matchmakerSince).toLocaleDateString(i18n.language, {
+                  year: 'numeric',
+                  month: 'long',
+                }),
+              })}
+            >
+              <AppText variant="label" tone="primary">
+                💌 {t('intro.badge')}
               </AppText>
             </View>
           ) : null}

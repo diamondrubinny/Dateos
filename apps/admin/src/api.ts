@@ -40,6 +40,8 @@ import type {
   EventBoard,
   PartnersResponse,
   SafetyOverview,
+  IntroductionOrder,
+  MatchmakerRow,
 } from '@nexaheart/shared';
 
 export const API_URL: string = import.meta.env.VITE_API_URL ?? 'http://localhost:4000';
@@ -135,6 +137,7 @@ export interface AdminInstanceSettings {
   safetyResources: string | null;
   discreetName: string | null;
   riskCountries: string[];
+  introductionOrder: IntroductionOrder;
   joinMinAge: number;
   joinMaxAge: number | null;
   joinGenders: Gender[];
@@ -304,6 +307,16 @@ export const api = {
         only ? `&only=${only}` : ''
       }`,
     ),
+  // Phase 68a: community matchmakers (admins only).
+  matchmakers: (from: string, to: string) =>
+    request<{ matchmakers: MatchmakerRow[] }>(
+      'GET',
+      `/v1/admin/matchmakers?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
+    ),
+  grantMatchmaker: (email: string) =>
+    request<{ userId: string }>('POST', '/v1/admin/matchmakers', { email }),
+  revokeMatchmaker: (userId: string) =>
+    request<{ ok: true }>('DELETE', `/v1/admin/matchmakers/${encodeURIComponent(userId)}`),
   // Phase 64: the compliance kit (admins only).
   transparency: (from: string, to: string) =>
     request<TransparencyReport>(

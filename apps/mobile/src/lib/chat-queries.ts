@@ -220,6 +220,7 @@ export function useChatSettings() {
         blurPhotos: boolean;
         hideDistance: boolean;
         discreetNotifications: boolean;
+        openToMatchmakers: boolean;
         pushDevices: number;
       }>('/v1/me/settings'),
   });

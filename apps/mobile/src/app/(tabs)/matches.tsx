@@ -16,6 +16,7 @@ import { Button } from '../../components/Button';
 import { CheckinEntry } from '../../components/CheckinEntry';
 import { EventsEntry } from '../../components/EventCard';
 import { DoubleChats } from '../../components/DoubleChats';
+import { IntroductionsEntry } from '../../components/Introductions';
 import { PartnerMatches } from '../../components/PartnerMatches';
 import { useConversations } from '../../lib/chat-queries';
 import { useClosedConversations, useDismissClosed } from '../../lib/checkin-queries';
@@ -85,6 +86,7 @@ export default function Matches() {
       {conversations.error ? <Banner tone="error" message={t('common.genericError')} /> : null}
       <CheckinEntry />
       <EventsEntry />
+      <IntroductionsEntry />
       {closed.data?.map((c) => (
         <View key={c.matchId} style={[styles.closed, { backgroundColor: colors.surface }]}>
           <AppText variant="label" userContent>

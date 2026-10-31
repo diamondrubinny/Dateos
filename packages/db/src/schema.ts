@@ -307,6 +307,8 @@ export const preferences = pgTable(
     hideDistance: boolean('hide_distance').notNull().default(false),
     /** Phase 67a: notifications without the community's name or what happened. */
     discreetNotifications: boolean('discreet_notifications').notNull().default(false),
+    /** Phase 68a: community matchmakers may find me in their console (off by default). */
+    openToMatchmakers: boolean('open_to_matchmakers').notNull().default(false),
     /** Receiver control: people can turn video and voice calls off (phase 15). */
     acceptCalls: boolean('accept_calls').notNull().default(true),
     /** Dealbreakers (phase 19): empty means any; a missing answer always passes. */
@@ -984,6 +986,8 @@ export const instanceSettings = pgTable(
     safetyResources: varchar('safety_resources', { length: 2000 }),
     /** Phase 67b: a neutral name for the installed app; with it, plain icons, never the logo. */
     discreetName: varchar('discreet_name', { length: 30 }),
+    /** Phase 68a: who hears about an introduction first ('together' or 'women_first'). */
+    introductionOrder: varchar('introduction_order', { length: 12 }).notNull().default('together'),
     /** Phase 67b: ISO 3166-1 alpha-2 codes the operator considers dangerous (no default). */
     riskCountries: text('risk_countries')
       .array()
@@ -1940,5 +1944,57 @@ export const albumShares = pgTable(
   (t) => [
     primaryKey({ columns: [t.matchId, t.userId] }),
     check('album_shares_mode', sql`${t.mode} IN ('once', 'ten_minutes', 'unlimited')`),
+  ],
+);
+
+/** Phase 68a: members the admins named as community matchmakers (shown on their profile). */
+export const matchmakers = pgTable('matchmakers', {
+  userId: text('user_id')
+    .primaryKey()
+    .references(() => user.id, { onDelete: 'cascade' }),
+  grantedBy: text('granted_by').references(() => user.id, { onDelete: 'set null' }),
+  grantedAt: timestamp('granted_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+/**
+ * Phase 68a: a matchmaker introduces two members. Each answers privately; the answers are never
+ * shown to the other side or the matchmaker. Deleted with either member's account.
+ */
+export const introductions = pgTable(
+  'introductions',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    /** Kept when the matchmaker leaves (null), so the two still see their introduction. */
+    matchmakerId: text('matchmaker_id').references(() => user.id, { onDelete: 'set null' }),
+    aId: text('a_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    bId: text('b_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    note: varchar('note', { length: 300 }).notNull(),
+    /** Who hears first (women first); null: both together. */
+    firstId: text('first_id'),
+    aAnswer: varchar('a_answer', { length: 3 }),
+    bAnswer: varchar('b_answer', { length: 3 }),
+    aAnsweredAt: timestamp('a_answered_at', { withTimezone: true }),
+    bAnsweredAt: timestamp('b_answered_at', { withTimezone: true }),
+    matchId: uuid('match_id').references(() => matches.id, { onDelete: 'set null' }),
+    matchedAt: timestamp('matched_at', { withTimezone: true }),
+    outcome: varchar('outcome', { length: 8 }),
+    outcomeAt: timestamp('outcome_at', { withTimezone: true }),
+    /** Closed early (the matchmaker's role taken back). */
+    closedAt: timestamp('closed_at', { withTimezone: true }),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index('introductions_matchmaker_idx').on(t.matchmakerId, t.createdAt),
+    index('introductions_a_idx').on(t.aId),
+    index('introductions_b_idx').on(t.bId),
+    check('introductions_two', sql`${t.aId} <> ${t.bId}`),
+    check('introductions_a_answer', sql`${t.aAnswer} IN ('yes', 'no')`),
+    check('introductions_b_answer', sql`${t.bAnswer} IN ('yes', 'no')`),
+    check('introductions_outcome', sql`${t.outcome} IN ('met', 'engaged', 'married')`),
   ],
 );

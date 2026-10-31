@@ -126,6 +126,30 @@ export async function exportMemberData(
     })
     .from(t.albumShares)
     .where(eq(t.albumShares.userId, userId));
+  // Phase 68a: introductions to me (with my own answer, never the other's) and, as a community
+  // matchmaker, the ones I sent (their state, never the answers).
+  const introductionsReceived = (
+    await db.execute<Record<string, unknown>>(sql`
+      SELECT it.id, it.note, it.created_at AS "at", it.expires_at AS "expiresAt",
+        CASE WHEN it.a_id = ${userId} THEN it.a_answer ELSE it.b_answer END AS "yourAnswer",
+        CASE WHEN it.a_id = ${userId} THEN it.a_answered_at ELSE it.b_answered_at END AS "answeredAt",
+        it.matched_at AS "matchedAt", it.outcome
+      FROM introductions it
+      WHERE (it.a_id = ${userId} OR it.b_id = ${userId})
+        AND (it.first_id IS NULL OR it.first_id = ${userId}
+             OR (it.first_id = it.a_id AND it.a_answer = 'yes')
+             OR (it.first_id = it.b_id AND it.b_answer = 'yes'))
+      ORDER BY it.created_at`)
+  ).rows;
+  const introductionsSent = (
+    await db.execute<Record<string, unknown>>(sql`
+      SELECT it.id, it.note, it.created_at AS "at", it.matched_at AS "matchedAt", it.outcome
+      FROM introductions it WHERE it.matchmaker_id = ${userId} ORDER BY it.created_at`)
+  ).rows;
+  const [matchmakerRole] = await db
+    .select({ since: t.matchmakers.grantedAt })
+    .from(t.matchmakers)
+    .where(eq(t.matchmakers.userId, userId));
   // Partner communities (phase 28b): your alias there, your decisions and matches.
   const partnerName = t.federationPartners.name;
   const federatedAliases = await db
@@ -504,6 +528,7 @@ export async function exportMemberData(
           // Phase 67a.
           hideDistance: preferences.hideDistance,
           discreetNotifications: preferences.discreetNotifications,
+          openToMatchmakers: preferences.openToMatchmakers,
           showMetInPersonBadge: preferences.showMetBadge,
           showCheckedInAtEventBadge: preferences.showEventBadge,
           friendsMode: {
@@ -593,6 +618,11 @@ export async function exportMemberData(
         sharedAt: iso(a.sharedAt),
         firstViewedAt: iso(a.firstViewedAt),
       })),
+    },
+    introductions: {
+      matchmakerSince: matchmakerRole ? iso(matchmakerRole.since) : null,
+      received: introductionsReceived,
+      sentAsMatchmaker: introductionsSent,
     },
     messagesYouSent: sent.map((m) => ({ ...m, at: iso(m.at), unsentAt: iso(m.unsentAt) })),
     blocks: blocks.map((b) => ({ ...b, at: iso(b.at) })),
