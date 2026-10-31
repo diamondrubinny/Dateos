@@ -6,6 +6,14 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Added
 
+- **Help during an event**: people going can send the organizers an urgent "I need help now" from
+  30 minutes before the start to the end; staff see it first and highlighted, every admin gets a
+  content-free push, and it stays anonymous. The screen points to emergency services first.
+- **Hebrew date**: in Hebrew, events show the Hebrew calendar date in Hebrew letters
+  (e.g. כ׳ בחשוון תשפ״ז).
+- **Share an event**: to WhatsApp and other apps: the title, the time and a link only members can
+  open.
+
 - **Events for a group**: staff can set who an event is for (genders, an age range, and with the
   faith module, streams). Everyone sees it; people outside it are told why and can't take a place.
 - **Places by gender**: e.g. 12 women and 12 men, each with its own places and waiting list; a

@@ -119,10 +119,11 @@ export function useEventBoard(id: string, enabled: boolean) {
 export function useAskOrganizers(id: string) {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (body: string) =>
+    // Phase 71c: { urgent: true } is "I need help now", during the event.
+    mutationFn: (input: string | { body: string; urgent: true }) =>
       apiFetch<EventQuestion>(`/v1/events/${id}/questions`, {
         method: 'POST',
-        body: json({ body }),
+        body: json(typeof input === 'string' ? { body: input } : input),
       }),
     onSuccess: () => client.invalidateQueries({ queryKey: eventKeys.board(id) }),
   });

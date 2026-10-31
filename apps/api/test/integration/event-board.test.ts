@@ -268,4 +268,51 @@ describe.skipIf(!integrationEnabled)('event updates and questions (integration)'
     );
     expect(left.rows[0]).toEqual({ updates: 0, questions: 0 });
   });
+
+  it('phase 71c: "I need help now" during the event, first for staff, a push to admins only', async () => {
+    const id = await publish({ startsAt: inHours(1), endsAt: inHours(3) });
+    await api(ctx, noa, 'POST', `/v1/events/${id}/rsvp`);
+    const help = (m: Member, text: string) =>
+      api(ctx, m, 'POST', `/v1/events/${id}/questions`, { body: text, urgent: true });
+    // Not before it starts (check-in time, 30 minutes before).
+    expect((await help(noa, 'Where is the entrance?')).statusCode).toBe(409);
+    expect((await ask(noa, id, 'Is there parking?')).statusCode).toBe(200);
+    ctx.clock.value += 40 * 60_000;
+    // Only people going.
+    expect((await help(dan, 'Help')).statusCode).toBe(404);
+    ctx.jobs.push.length = 0;
+    const sent = await help(noa, 'Someone keeps following me, I am near the bar');
+    expect(sent.statusCode).toBe(200);
+    expect(sent.json()).toMatchObject({ urgent: true, answer: null });
+    // Every admin gets a content-free push; nobody else does.
+    const adminId = (await q(`SELECT id FROM "user" WHERE role = 'admin' LIMIT 1`)).rows[0]
+      .id as string;
+    expect(ctx.jobs.push).toEqual([{ userId: adminId, kind: 'event_help', matchId: id }]);
+
+    // Staff see it first (asked later than the other question), highlighted, without who asked.
+    const staffBoard = (await asStaff(admin, 'GET', `/v1/admin/events/${id}/board`)).json();
+    expect(staffBoard.questions.map((x: { urgent: boolean }) => x.urgent)).toEqual([true, false]);
+    expect(JSON.stringify(staffBoard)).not.toContain(noa.id);
+    const answered = await asStaff(
+      admin,
+      'POST',
+      `/v1/admin/events/${id}/questions/${staffBoard.questions[0].id}/answer`,
+      { answer: 'A host is on the way to the bar now.' },
+    );
+    expect(answered.statusCode).toBe(200);
+    const mine = (await board(noa, id)).json().questions;
+    expect(mine.find((x: { urgent: boolean }) => x.urgent)).toMatchObject({
+      answer: 'A host is on the way to the bar now.',
+    });
+    // Answered, it no longer jumps the queue.
+    const after = (await asStaff(admin, 'GET', `/v1/admin/events/${id}/board`)).json();
+    expect(after.questions.map((x: { urgent: boolean }) => x.urgent)).toEqual([false, true]);
+
+    // At most 3 urgent messages per member per event; none after the end.
+    expect((await help(noa, 'Still here')).statusCode).toBe(200);
+    expect((await help(noa, 'Still here 2')).statusCode).toBe(200);
+    expect((await help(noa, 'Still here 3')).statusCode).toBe(429);
+    ctx.clock.value += 3 * 3_600_000;
+    expect((await help(noa, 'After')).statusCode).toBe(409);
+  });
 });

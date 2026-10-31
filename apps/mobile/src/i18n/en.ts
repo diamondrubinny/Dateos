@@ -1241,6 +1241,24 @@ export const en = {
       unanswered: 'Open my chats',
     },
   },
+  eventHelp: {
+    title: 'Need help now?',
+    intro:
+      'Something wrong at the event? Write to the organizers: they see it first and are told at once. They don’t see who wrote, so say where you are if you’d like someone to come.',
+    emergency: 'In danger or a medical emergency, call the emergency services first.',
+    resources: 'Help near you',
+    label: 'What’s happening, and where you are',
+    hint: 'e.g. “Someone keeps following me. I’m by the bar, blue shirt.”',
+    send: 'Send to the organizers now',
+    sent: 'Sent. The organizers have been told; their answer will appear under “Ask the organizers”.',
+    tooMany:
+      'The organizers already have your messages. If it’s urgent, ask someone at the event or call the emergency services.',
+    badge: 'Urgent',
+  },
+  eventShare: {
+    share: 'Share',
+    hint: 'Shares the title, the time and a link; only members can open it.',
+  },
   eventGroups: {
     audience: 'For: {{who}}',
     ages: 'ages {{min}}–{{max}}',

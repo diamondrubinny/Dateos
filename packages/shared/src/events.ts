@@ -316,6 +316,8 @@ export type EventNotice = z.infer<typeof eventNoticeSchema>;
 export const eventQuestionSchema = z.object({
   id: z.uuid(),
   body: z.string(),
+  /** Phase 71c: "I need help now", during the event. */
+  urgent: z.boolean(),
   answer: z.string().nullable(),
   answeredAt: z.string().nullable(),
   createdAt: z.string(),
@@ -331,8 +333,10 @@ export type EventBoard = z.infer<typeof eventBoardSchema>;
 
 export const eventNoticeInputSchema = z.object({ body: text(MAX_EVENT_UPDATE_LENGTH) }).strict();
 export const eventQuestionInputSchema = z
-  .object({ body: text(MAX_EVENT_QUESTION_LENGTH) })
+  .object({ body: text(MAX_EVENT_QUESTION_LENGTH), urgent: z.boolean().default(false) })
   .strict();
+/** Phase 71c: urgent messages per member per event. */
+export const MAX_URGENT_EVENT_QUESTIONS = 3;
 export const eventAnswerInputSchema = z.object({ answer: text(MAX_EVENT_ANSWER_LENGTH) }).strict();
 
 // ---------------------------------------------------------------------------

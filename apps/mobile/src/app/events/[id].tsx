@@ -10,6 +10,7 @@ import { AppText } from '../../components/AppText';
 import { Banner } from '../../components/Banner';
 import { Button } from '../../components/Button';
 import { EventBoard } from '../../components/EventBoard';
+import { EventHelp } from '../../components/EventHelp';
 import { EventMisses } from '../../components/EventMisses';
 import {
   eventAudience,
@@ -22,6 +23,7 @@ import { RequireSession } from '../../components/RequireSession';
 import { Screen } from '../../components/Screen';
 import { ApiRequestError } from '../../lib/api';
 import { addToCalendar } from '../../lib/calendar';
+import { eventShareText, eventUrl, hebrewDate, shareEvent } from '../../lib/event-share';
 import { useCheckIn, useEvent, useEventMisses, useRsvp } from '../../lib/event-queries';
 import { useLocale } from '../../lib/locale';
 import { radius, spacing, useColors } from '../../lib/theme';
@@ -105,6 +107,12 @@ function EventScreen() {
         </AppText>
       ) : null}
       <AppText variant="heading">{formatEventTime(e, locale)}</AppText>
+      {locale === 'he' && hebrewDate(e.startsAt) ? (
+        // Phase 71c: the Hebrew calendar date beside the Gregorian one.
+        <AppText variant="body" tone="muted" testID="hebrew-date">
+          {hebrewDate(e.startsAt)}
+        </AppText>
+      ) : null}
       {e.venue ? (
         <View style={[styles.card, { backgroundColor: colors.surface }]}>
           <AppText variant="label" userContent>
@@ -187,6 +195,22 @@ function EventScreen() {
           loading={rsvp.isPending}
           onPress={() => answer('leave')}
         />
+      ) : null}
+      {!cancelled && now < end ? (
+        // Phase 71c: the title, when and a link (which needs signing in); never who's going.
+        <Button
+          variant="secondary"
+          label={t('eventShare.share')}
+          hint={t('eventShare.hint')}
+          onPress={() =>
+            void shareEvent(
+              eventShareText(e.title, formatEventTime(e, locale), eventUrl(e.id)),
+            ).then((r) => (r === 'failed' ? setError(t('common.genericError')) : undefined))
+          }
+        />
+      ) : null}
+      {!cancelled && e.mine && now >= start - CHECK_IN_EARLY_MINUTES * 60_000 && now <= end ? (
+        <EventHelp eventId={id} />
       ) : null}
       {!cancelled && e.mine && now < end ? (
         <Button

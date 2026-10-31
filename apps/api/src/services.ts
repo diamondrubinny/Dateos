@@ -440,7 +440,12 @@ export function createServices(
       dbHandle.db,
       (userId, eventId) => notifyQueue.push({ userId, kind: 'event', matchId: eventId }),
       overrides.now,
-      { appUrl: appUrl(env), speedAvailable: async () => (await calls.enabled()) !== null },
+      {
+        appUrl: appUrl(env),
+        speedAvailable: async () => (await calls.enabled()) !== null,
+        helpPush: (adminId, eventId) =>
+          notifyQueue.push({ userId: adminId, kind: 'event_help', matchId: eventId }),
+      },
     ),
     reports,
     verification,
