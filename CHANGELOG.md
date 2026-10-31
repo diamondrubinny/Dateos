@@ -6,6 +6,11 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Added
 
+- **Matchmaking résumé**: a read-only page about you for one person (a parent, a matchmaker), by a
+  link that works for a day, three days or a week and can be ended any time. You choose what it
+  shows (photo, about me, answers, faith); the page and a watermark burned into the photo say whom
+  it was shared with and until when. Printable as PDF; never indexed or cached.
+
 - **Community matchmakers**: admins name members as community matchmakers (shown on their profile,
   so members can check who really is one). A matchmaker introduces two members who turned on
   "Open to matchmakers"; each answers privately, two yeses open a chat, and nobody is told about a

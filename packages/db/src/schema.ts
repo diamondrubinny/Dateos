@@ -1998,3 +1998,31 @@ export const introductions = pgTable(
     check('introductions_outcome', sql`${t.outcome} IN ('met', 'engaged', 'married')`),
   ],
 );
+
+/**
+ * Phase 68b: links to a member's "matchmaking résumé", for one person each. Only the token's hash
+ * is kept; a link works until it expires or the member ends it.
+ */
+export const resumeLinks = pgTable(
+  'resume_links',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    ownerId: ownerId(),
+    tokenHash: varchar('token_hash', { length: 64 }).notNull(),
+    /** Who it's for, in the member's words ("Mom"); on the page and the photo's watermark. */
+    label: varchar('label', { length: 40 }).notNull(),
+    sections: text('sections')
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
+    views: integer('views').notNull().default(0),
+    lastViewedAt: timestamp('last_viewed_at', { withTimezone: true }),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    endedAt: timestamp('ended_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex('resume_links_token_uq').on(t.tokenHash),
+    index('resume_links_owner_idx').on(t.ownerId),
+  ],
+);

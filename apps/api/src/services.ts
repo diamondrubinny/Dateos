@@ -45,6 +45,7 @@ import { ModerationService } from './modules/admin/moderation.js';
 import { AppealService } from './modules/safety/appeals.js';
 import { AlbumService } from './modules/photos/album.js';
 import { IntroductionService } from './modules/introductions/service.js';
+import { ResumeService } from './modules/resume/service.js';
 import { ComplianceService } from './modules/compliance/service.js';
 import { AgeCheckService } from './modules/age-check/service.js';
 import { ReportService } from './modules/safety/reports.js';
@@ -92,6 +93,7 @@ export interface Services {
   /** Phase 66c. */
   album: AlbumService;
   introductions: IntroductionService;
+  resume: ResumeService;
   ageCheck: AgeCheckService;
   updates: UpdateService;
   trust: TrustService;
@@ -256,6 +258,13 @@ export function createServices(
   // Phase 66c: private albums, shared in chats.
   const album = new AlbumService(dbHandle.db, photos);
   chat.useAlbum(album);
+  // Phase 68b: the matchmaking résumé, shared by short-lived links.
+  const resume = new ResumeService(dbHandle.db, {
+    ownCard: (userId) => discovery.ownCard(userId),
+    openPhoto: (photoId, ownerId) => photos.openForStaff(photoId, 'profile', ownerId),
+    communityName: async () => (await instance.info()).name,
+    ...(overrides.now ? { now: overrides.now } : {}),
+  });
   // Phase 68a: introductions by community matchmakers.
   const introductions = new IntroductionService(dbHandle.db, {
     isCandidate: (a, b) => discovery.isCandidate(a, b),
@@ -423,6 +432,7 @@ export function createServices(
     compliance,
     album,
     introductions,
+    resume,
     ageCheck,
     updates,
     instance,

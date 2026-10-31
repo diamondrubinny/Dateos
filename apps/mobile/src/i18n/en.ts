@@ -1425,6 +1425,46 @@ export const en = {
     noneSent: 'None yet.',
     state: { open: 'Waiting for answers', matched: 'Both said yes', closed: 'Didn’t go ahead' },
   },
+  resume: {
+    title: 'Matchmaking résumé',
+    intro:
+      'A read-only page about you for one person, such as a parent or a matchmaker. It ends by itself, and you can end it sooner.',
+    warning:
+      'Whoever has the link can pass it on or take a screenshot. The page and the photo say whom it was shared with.',
+    shareMessage: 'My matchmaking résumé:',
+    made: {
+      shared: 'Shared. The link works until it ends.',
+      copied: 'The link is copied. Send it to one person.',
+      shown: 'Here’s the link. Send it to one person.',
+    },
+    full: 'You have {{count}} links already. End one to make another.',
+    newTitle: 'A new link',
+    label: 'Who is it for?',
+    labelHint: 'Shown on the page and on the photo, e.g. “Mom” or “Rivka the matchmaker”.',
+    days: 'Works for',
+    dayOptions: { 1: 'One day', 3: 'Three days', 7: 'A week' },
+    sections: 'What it shows',
+    section: {
+      photo: 'My first photo (with a watermark)',
+      about: 'About me',
+      prompts: 'My answers',
+      faith: 'Faith (if filled in)',
+    },
+    always:
+      'Your name, age and what you’re looking for are always shown. Never your email or where you live.',
+    create: 'Create and share the link',
+    activeTitle: 'Links that work now',
+    none: 'No links right now.',
+    until: 'Until {{date}}',
+    views: 'Opened: {{count}}',
+    end: 'Stop sharing with {{label}}',
+    pageTitle: 'Matchmaking résumé',
+    invalid: 'This link isn’t valid. It may have ended; ask for a new one.',
+    banner: 'From {{community}}. Shared with {{label}} on {{shared}}, until {{ends}}.',
+    bannerHint: 'Please don’t pass it on.',
+    photoOf: 'Photo of {{name}}',
+    print: 'Print or save as PDF',
+  },
   album: {
     title: 'Private album',
     intro:

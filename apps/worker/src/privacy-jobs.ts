@@ -7,6 +7,7 @@ import {
   creditLine,
   INACTIVITY_NOTICE_DAYS,
   INTRODUCTION_RETENTION_DAYS,
+  RESUME_RETENTION_DAYS,
 } from '@nexaheart/shared';
 import type { Storage } from '@nexaheart/storage';
 import { eq, inArray, sql } from 'drizzle-orm';
@@ -18,6 +19,7 @@ export async function cleanupPrivacy(db: Database): Promise<{
   verificationTokens: number;
   rateLimits: number;
   introductions: number;
+  resumeLinks: number;
 }> {
   const days = sql.raw(String(AUDIT_LOG_RETENTION_DAYS));
   const auditLogs = await db.execute(
@@ -40,7 +42,12 @@ export async function cleanupPrivacy(db: Database): Promise<{
   const introductions = await db.execute(sql`
     DELETE FROM introductions WHERE matched_at IS NULL
       AND COALESCE(closed_at, expires_at) < now() - make_interval(days => ${INTRODUCTION_RETENTION_DAYS})`);
+  // Phase 68b: résumé links, 30 days after they ended.
+  const resumeLinks = await db.execute(sql`
+    DELETE FROM resume_links
+    WHERE COALESCE(ended_at, expires_at) < now() - make_interval(days => ${RESUME_RETENTION_DAYS})`);
   return {
+    resumeLinks: resumeLinks.rowCount ?? 0,
     introductions: introductions.rowCount ?? 0,
     auditLogs: auditLogs.rowCount ?? 0,
     sessions: sessions.rowCount ?? 0,

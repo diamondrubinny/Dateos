@@ -41,6 +41,7 @@ import { notificationRoutes } from './modules/notifications/routes.js';
 import { coachRoutes } from './modules/coach/routes.js';
 import { matchmakerRoutes } from './modules/matchmaker/routes.js';
 import { introductionRoutes } from './modules/introductions/routes.js';
+import { resumePublicRoutes, resumeRoutes } from './modules/resume/routes.js';
 import { signupRoutes, trustRoutes } from './modules/trust/routes.js';
 import { friendRoutes, takePublicRoutes } from './modules/friends/routes.js';
 import { clientErrorRoutes, registerCaptcha } from './modules/integrations/routes.js';
@@ -153,6 +154,8 @@ export async function buildApp(env: Env, deps: AppDependencies): Promise<Fastify
       compliance: services.compliance,
       introductions: services.introductions,
     });
+    await typed.register(resumePublicRoutes, { resume: services.resume });
+    await typed.register(resumeRoutes, { auth: services.auth, resume: services.resume });
     await typed.register(introductionRoutes, {
       auth: services.auth,
       introductions: services.introductions,

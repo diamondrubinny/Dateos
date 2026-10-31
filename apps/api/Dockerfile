@@ -15,6 +15,9 @@ RUN pnpm install --frozen-lockfile \
 
 FROM node:22-trixie-slim AS runtime
 ENV NODE_ENV=production
+# Phase 68b: a font with Hebrew, Arabic and Cyrillic for the résumé photo's watermark.
+RUN apt-get update && apt-get install -y --no-install-recommends fonts-dejavu-core \
+  && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 COPY --from=build --chown=node:node /out ./
 # The license and its additional terms (the "Powered by NexaHeart" credit) travel with the image.
