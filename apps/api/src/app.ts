@@ -201,7 +201,11 @@ export async function buildApp(env: Env, deps: AppDependencies): Promise<Fastify
       dates: services.dates,
       venues: services.venues,
     });
-    await typed.register(eventRoutes, { auth: services.auth, events: services.events });
+    await typed.register(eventRoutes, {
+      auth: services.auth,
+      events: services.events,
+      meetAgain: services.meetAgain,
+    });
     await typed.register(speedRoutes, { auth: services.auth, speed: services.speed });
     await typed.register(travelRoutes, {
       auth: services.auth,

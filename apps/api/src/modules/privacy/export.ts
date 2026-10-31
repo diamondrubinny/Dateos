@@ -311,11 +311,27 @@ export async function exportMemberData(
       you: t.eventRsvps.status,
       at: t.eventRsvps.createdAt,
       checkedInAt: t.eventRsvps.checkedInAt,
+      // Phase 71a: a place from the waiting list, joining "Meet again", a missed event excused.
+      placeFromWaitingListAt: t.eventRsvps.promotedAt,
+      joinedMeetAgainAt: t.eventRsvps.meetAgainAt,
+      excusedAt: t.eventRsvps.excusedAt,
     })
     .from(t.eventRsvps)
     .innerJoin(t.events, eq(t.events.id, t.eventRsvps.eventId))
     .where(eq(t.eventRsvps.userId, userId))
     .orderBy(asc(t.eventRsvps.createdAt));
+  // "Meet again" (phase 71a): whom you chose, never who chose you.
+  const pickRows = await db
+    .select({
+      event: t.events.title,
+      chose: t.profiles.displayName,
+      at: t.eventPicks.createdAt,
+    })
+    .from(t.eventPicks)
+    .innerJoin(t.events, eq(t.events.id, t.eventPicks.eventId))
+    .leftJoin(t.profiles, eq(t.profiles.userId, t.eventPicks.targetId))
+    .where(eq(t.eventPicks.userId, userId))
+    .orderBy(asc(t.eventPicks.createdAt));
   // Your questions to event organizers (phase 27), with their answers.
   const questionRows = await db
     .select({
@@ -692,7 +708,11 @@ export async function exportMemberData(
       startsAt: iso(r.startsAt),
       at: iso(r.at),
       checkedInAt: iso(r.checkedInAt),
+      placeFromWaitingListAt: iso(r.placeFromWaitingListAt),
+      joinedMeetAgainAt: iso(r.joinedMeetAgainAt),
+      excusedAt: iso(r.excusedAt),
     })),
+    meetAgainChoices: pickRows.map((p) => ({ ...p, at: iso(p.at) })),
     questionsToEventOrganizers: questionRows.map((q) => ({
       ...q,
       askedAt: iso(q.askedAt),

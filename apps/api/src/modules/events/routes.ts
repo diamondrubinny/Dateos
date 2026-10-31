@@ -7,21 +7,26 @@ import {
   eventQuestionInputSchema,
   eventQuestionSchema,
   eventSchema,
+  meetAgainPickSchema,
+  meetAgainSchema,
+  myNoShowsSchema,
 } from '@nexaheart/shared';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import type { Auth } from '../../auth/auth.js';
 import { currentUser, requireUser } from '../../auth/session.js';
 import { perUserLimit } from '../../plugins/security.js';
+import type { MeetAgainService } from './meet-again.js';
 import type { EventService } from './service.js';
 
 const params = z.object({ id: z.uuid() });
 
 /** Community events for members (phase 14). Staff manage them under /v1/admin/events. */
-export const eventRoutes: FastifyPluginAsyncZod<{ auth: Auth; events: EventService }> = async (
-  app,
-  { auth, events },
-) => {
+export const eventRoutes: FastifyPluginAsyncZod<{
+  auth: Auth;
+  events: EventService;
+  meetAgain: MeetAgainService;
+}> = async (app, { auth, events, meetAgain }) => {
   // An active account: suspended members can't say they're going.
   app.addHook('preHandler', requireUser(auth));
 
@@ -94,5 +99,46 @@ export const eventRoutes: FastifyPluginAsyncZod<{ auth: Auth; events: EventServi
     },
     async (request) =>
       events.checkIn(request.params.id, currentUser(request).id, request.body.code),
+  );
+
+  // "Meet again" after an in-person event (phase 71a): only for people who checked in.
+  app.get(
+    '/v1/events/:id/meet-again',
+    { schema: { params, response: { 200: meetAgainSchema } } },
+    async (request) => meetAgain.state(request.params.id, currentUser(request).id),
+  );
+  app.post(
+    '/v1/events/:id/meet-again',
+    { config: limit, schema: { params, response: { 200: meetAgainSchema } } },
+    async (request) => meetAgain.join(request.params.id, currentUser(request).id),
+  );
+  app.put(
+    '/v1/events/:id/meet-again/:userId',
+    {
+      config: perUserLimit(120, 60 * 60_000),
+      schema: {
+        params: params.extend({ userId: z.string().min(1).max(64) }),
+        body: meetAgainPickSchema,
+        response: { 200: meetAgainSchema },
+      },
+    },
+    async (request) =>
+      meetAgain.pick(
+        request.params.id,
+        currentUser(request).id,
+        request.params.userId,
+        request.body.yes,
+      ),
+  );
+  // Missed events (phase 71a): private to the member, with one excuse a month.
+  app.get(
+    '/v1/me/event-misses',
+    { schema: { response: { 200: myNoShowsSchema } } },
+    async (request) => events.myNoShows(currentUser(request).id),
+  );
+  app.post(
+    '/v1/me/event-misses/:id/excuse',
+    { config: limit, schema: { params, response: { 200: myNoShowsSchema } } },
+    async (request) => events.excuse(currentUser(request).id, request.params.id),
   );
 };

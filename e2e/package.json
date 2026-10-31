@@ -80,7 +80,8 @@
     "friend-suggestions": "tsx friend-suggestions.ts",
     "chaperone": "tsx chaperone.ts",
     "liveness": "tsx liveness.ts",
-    "accountability": "tsx accountability.ts"
+    "accountability": "tsx accountability.ts",
+    "meet-again": "tsx meet-again.ts"
   },
   "dependencies": {
     "@axe-core/playwright": "4.14.0",

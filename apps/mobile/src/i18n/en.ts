@@ -1241,6 +1241,40 @@ export const en = {
       unanswered: 'Open my chats',
     },
   },
+  meetAgain: {
+    title: 'Meet again',
+    teaser:
+      'Who would you like to see again from this event? Only a choice you both make becomes a match.',
+    open: 'Open Meet again',
+    listStatus: 'Ended · Meet again is open',
+    intro:
+      'People who checked in at this event and joined Meet again. Choose whom you’d like to see again: if they choose you too, you’ll both get a match and a chat.',
+    closes: 'Open until {{when}}.',
+    closed: 'Meet again is open for 3 days after an event, only for people who checked in there.',
+    joinHint: 'Join to see the others who joined. Until you do, nobody sees you here.',
+    join: 'Join Meet again',
+    empty: 'Nobody else has joined yet. Come back later: it’s open for 3 days.',
+    profile: 'See {{name}}’s profile',
+    choose: 'I’d like to meet {{name}} again',
+    chosen: 'You chose them. If they choose you too, you’ll both hear.',
+    undo: 'Take it back',
+    undoHint: 'They never knew you chose {{name}}.',
+    mutual: 'You and {{name}} both want to meet again!',
+    openChat: 'Open the chat',
+    privacy:
+      'Nobody ever learns whom you chose unless they chose you too. Your choices are deleted 30 days after the event.',
+  },
+  eventMisses: {
+    title: 'We missed you',
+    pausedTitle: 'New places are paused for now',
+    first:
+      'We missed you at “{{event}}”. If you can’t come, leave the event so someone on the waiting list gets the place.',
+    paused:
+      'You missed two events in the last 30 days without leaving them, so you can’t take new places or join waiting lists until {{date}}. Places you already have stay yours.',
+    excuseHint: 'Were you there, or did something come up? You can say so for one event a month.',
+    excuse: 'I was at “{{event}}”, or something came up',
+    refused: 'New places are paused for now after missed events. See the note on the Events page.',
+  },
   preview: {
     open: 'See my profile as others do',
     title: 'Your profile, as others see it',

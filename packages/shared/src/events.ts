@@ -110,12 +110,17 @@ export const eventSchema = z.object({
   roundMinutes: z.number().int().nullable(),
   /** Whether the viewer checked in at the venue (phase 23). */
   checkedIn: z.boolean(),
+  /**
+   * Phase 71a: "Meet again" is open for the viewer until this time (they checked in at an
+   * in-person event that ended less than MEET_AGAIN_HOURS ago), else null.
+   */
+  meetAgainUntil: z.string().nullable(),
 });
 export type CommunityEvent = z.infer<typeof eventSchema>;
 
 /** Staff view: the venue id for editing, and when it was created. Still no attendee identities. */
 export const adminEventSchema = eventSchema
-  .omit({ mine: true, waitingAhead: true, checkedIn: true })
+  .omit({ mine: true, waitingAhead: true, checkedIn: true, meetAgainUntil: true })
   .extend({
     venueId: z.uuid().nullable(),
     createdAt: z.string(),
@@ -243,3 +248,57 @@ export const eventQuestionInputSchema = z
   .object({ body: text(MAX_EVENT_QUESTION_LENGTH) })
   .strict();
 export const eventAnswerInputSchema = z.object({ answer: text(MAX_EVENT_ANSWER_LENGTH) }).strict();
+
+// ---------------------------------------------------------------------------
+// Phase 71a: "Meet again" after an in-person event, and no-shows
+// ---------------------------------------------------------------------------
+
+/** "Meet again" stays open this long after an in-person event ends. */
+export const MEET_AGAIN_HOURS = 72;
+
+export const meetAgainPersonSchema = z.object({
+  userId: z.string(),
+  displayName: z.string(),
+  /** Whether I chose them (only ever shown to me). */
+  picked: z.boolean(),
+  /** Set when we both chose each other. */
+  matchId: z.uuid().nullable(),
+});
+export type MeetAgainPerson = z.infer<typeof meetAgainPersonSchema>;
+
+export const meetAgainSchema = z.object({
+  /** Whether I joined: only then am I listed to the others, and they to me. */
+  joined: z.boolean(),
+  closesAt: z.string(),
+  people: z.array(meetAgainPersonSchema),
+});
+export type MeetAgain = z.infer<typeof meetAgainSchema>;
+
+export const meetAgainPickSchema = z.object({ yes: z.boolean() }).strict();
+
+/** Misses counted within this many days (as long as RSVPs are kept). */
+export const NO_SHOW_WINDOW_DAYS = RSVP_RETENTION_DAYS;
+/** This many misses in the window pause new places... */
+export const NO_SHOW_LIMIT = 2;
+/** ...for this many days from the latest miss. */
+export const NO_SHOW_PAUSE_DAYS = 14;
+/** A place from the waiting list given less than this long before the start never counts. */
+export const NO_SHOW_LATE_PLACE_HOURS = 24;
+
+export const noShowSchema = z.object({
+  eventId: z.uuid(),
+  title: z.string(),
+  endedAt: z.string(),
+  excused: z.boolean(),
+});
+export type NoShow = z.infer<typeof noShowSchema>;
+
+export const myNoShowsSchema = z.object({
+  /** Missed events in the last NO_SHOW_WINDOW_DAYS days, newest first. */
+  noShows: z.array(noShowSchema),
+  /** New places and waiting lists are paused until then, or null. */
+  pausedUntil: z.string().nullable(),
+  /** Whether I can still excuse a miss (once in NO_SHOW_WINDOW_DAYS days). */
+  canExcuse: z.boolean(),
+});
+export type MyNoShows = z.infer<typeof myNoShowsSchema>;

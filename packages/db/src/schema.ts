@@ -1219,6 +1219,12 @@ export const eventRsvps = pgTable(
     remindedAt: timestamp('reminded_at', { withTimezone: true }),
     /** Phase 23: checked in at the venue with the code shown there. */
     checkedInAt: timestamp('checked_in_at', { withTimezone: true }),
+    /** Phase 71a: when a place from the waiting list was given (late places never count as missed). */
+    promotedAt: timestamp('promoted_at', { withTimezone: true }),
+    /** Phase 71a: joined "Meet again" after the event (only then listed to the others). */
+    meetAgainAt: timestamp('meet_again_at', { withTimezone: true }),
+    /** Phase 71a: the member said they were there or something came up; not a miss. */
+    excusedAt: timestamp('excused_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
@@ -1226,6 +1232,28 @@ export const eventRsvps = pgTable(
     index('event_rsvps_user_idx').on(t.userId),
     // The waiting list, in order.
     index('event_rsvps_waiting_idx').on(t.eventId, t.status, t.createdAt),
+  ],
+);
+
+/**
+ * Phase 71a: "I'd like to meet again" after an in-person event, private to who chose. Deleted with
+ * the RSVPs (30 days after the event), the event or either account.
+ */
+export const eventPicks = pgTable(
+  'event_picks',
+  {
+    eventId: uuid('event_id')
+      .notNull()
+      .references(() => events.id, { onDelete: 'cascade' }),
+    userId: ownerId(),
+    targetId: text('target_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex('event_picks_uq').on(t.eventId, t.userId, t.targetId),
+    index('event_picks_target_idx').on(t.eventId, t.targetId),
   ],
 );
 
