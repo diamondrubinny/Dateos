@@ -218,6 +218,8 @@ export function useChatSettings() {
         dailyLikeLimit: number | null;
         verifiedContactOnly: boolean;
         blurPhotos: boolean;
+        hideDistance: boolean;
+        discreetNotifications: boolean;
         pushDevices: number;
       }>('/v1/me/settings'),
   });
@@ -260,6 +262,8 @@ export function useSetReach() {
       dailyLikeLimit?: number | null;
       verifiedContactOnly?: boolean;
       blurPhotos?: boolean;
+      hideDistance?: boolean;
+      discreetNotifications?: boolean;
     }) => apiFetch('/v1/me/settings', { method: 'PUT', body: json(input) }),
     onSuccess: () => client.invalidateQueries({ queryKey: settingsKey }),
   });

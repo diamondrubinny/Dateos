@@ -291,6 +291,8 @@ export const instanceSchema = z.object({
     faith: z.boolean(),
     /** Phase 66a: photos are blurred until two people match. */
     photosAfterMatch: z.boolean(),
+    /** Phase 67a: local help the operator lists; null when none. */
+    safetyResources: z.string().nullable(),
     /** Phase 62c: who may join (checked when the profile is created). */
     /** Phase 63: an age check is required (and a provider is configured). */
     ageCheck: z.boolean(),

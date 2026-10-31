@@ -5,6 +5,7 @@ import { SENSITIVE_CONSENT_VERSION } from '@nexaheart/shared';
 import { Link, router } from 'expo-router';
 import { ApiRequestError } from '../lib/api';
 import { clearDrafts } from '../lib/drafts';
+import { clearLock } from '../lib/app-lock';
 import { QuietHours } from '../components/QuietHours';
 import { ReauthNotice } from '../components/ReauthNotice';
 import * as WebBrowser from 'expo-web-browser';
@@ -48,6 +49,7 @@ import { TakeABreak } from '../components/TakeABreak';
 import { TravelMode } from '../components/TravelMode';
 import { SecuritySettings } from '../components/SecuritySettings';
 import { WhoCanReachMe } from '../components/WhoCanReachMe';
+import { Discretion } from '../components/Discretion';
 
 function SettingsContent() {
   const { t } = useTranslation();
@@ -101,6 +103,7 @@ function SettingsContent() {
   const signOut = async () => {
     await disablePush(); // this device should stop receiving this account's notifications
     await clearDrafts(); // a shared device keeps no drafts (phase 38)
+    await clearLock(); // the next person's lock code is their own (phase 67a)
     await authClient.signOut();
     router.replace('/welcome');
   };
@@ -109,6 +112,7 @@ function SettingsContent() {
     try {
       await deleteAccount.mutateAsync();
       await clearDrafts(); // a shared device keeps no drafts (phase 38)
+      await clearLock();
       await authClient.signOut().catch(() => undefined);
       router.replace('/welcome');
     } catch (e) {
@@ -226,6 +230,11 @@ function SettingsContent() {
 
       {/* Phase 65: limits set by the person receiving likes and messages. */}
       <WhoCanReachMe onError={() => setError(t('common.genericError'))} />
+      {/* Phase 67a: for places where being seen here is dangerous. */}
+      <Discretion
+        onError={() => setError(t('common.genericError'))}
+        hasResources={Boolean(instance.data?.community.safetyResources)}
+      />
 
       <MoreOptions>
         <AppText variant="heading">{t('visibility.title')}</AppText>

@@ -288,6 +288,10 @@ export const chatSettingsSchema = z.object({
   verifiedContactOnly: z.boolean(),
   /** Phase 66a: others see my photos blurred until I show them to a match. */
   blurPhotos: z.boolean(),
+  /** Phase 67a: others see no distance, "near you" or "visiting" for me. */
+  hideDistance: z.boolean(),
+  /** Phase 67a: notifications without the community's name or what happened. */
+  discreetNotifications: z.boolean(),
 });
 export const chatSettingsInputSchema = chatSettingsSchema
   .partial()

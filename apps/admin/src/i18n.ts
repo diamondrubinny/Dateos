@@ -124,6 +124,9 @@ const en = {
     photosAfterMatch: 'Photos only after a match',
     photosAfterMatchHelp:
       'Everyone’s photos are blurred (on the server) until two people match; profiles lead with words. Members can also blur their own photos in any community.',
+    safetyResources: 'Help near you (optional)',
+    safetyResourcesHelp:
+      'Local help members can find in Settings: legal aid, emergency lines, LGBTQ+ or women’s organisations. Plain text, up to 2000 characters. Check the numbers before publishing.',
     communitySave: 'Save community profile',
     communitySaved: 'Community profile saved.',
     presetsTitle: 'Start from a preset',
@@ -1085,6 +1088,9 @@ const he: Messages = {
     photosAfterMatch: 'תמונות רק אחרי התאמה',
     photosAfterMatchHelp:
       'התמונות של כולם מטושטשות (בשרת) עד ששני אנשים מתאימים, והפרופילים מתחילים במילים. חברי הקהילה יכולים גם לטשטש את התמונות שלהם בכל קהילה.',
+    safetyResources: 'עזרה בסביבה (לא חובה)',
+    safetyResourcesHelp:
+      'עזרה מקומית שחברי הקהילה ימצאו בהגדרות: סיוע משפטי, קווי חירום, ארגוני להט"ב או ארגוני נשים. טקסט פשוט, עד 2000 תווים. כדאי לבדוק את המספרים לפני הפרסום.',
     communitySave: 'שמירת פרופיל הקהילה',
     communitySaved: 'פרופיל הקהילה נשמר.',
     presetsTitle: 'התחלה מתבנית',

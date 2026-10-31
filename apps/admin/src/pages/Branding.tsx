@@ -2,6 +2,7 @@
 // Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 import {
+  MAX_SAFETY_RESOURCES,
   contrastRatio,
   identityVocabularies,
   intentions,
@@ -496,6 +497,7 @@ function CommunityProfile({
   const [offered, setOffered] = useState<Intention[]>(settings.intentionsOffered);
   const [faith, setFaith] = useState(settings.faithModule);
   const [afterMatch, setAfterMatch] = useState(settings.photosAfterMatch);
+  const [resources, setResources] = useState(settings.safetyResources ?? '');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<Error>();
   const [saved, setSaved] = useState(false);
@@ -511,6 +513,7 @@ function CommunityProfile({
         intentionsOffered: offered,
         faithModule: faith,
         photosAfterMatch: afterMatch,
+        safetyResources: resources.trim() || null,
       });
       setSaved(true);
       onSaved();
@@ -574,6 +577,20 @@ function CommunityProfile({
       </div>
       <p id="photos-after-match-help" className="help">
         {t.branding.photosAfterMatchHelp}
+      </p>
+      {/* Phase 67a: local help members find under Settings → "Help near you". */}
+      <label htmlFor="safety-resources">{t.branding.safetyResources}</label>
+      <textarea
+        id="safety-resources"
+        rows={5}
+        maxLength={MAX_SAFETY_RESOURCES}
+        dir="auto"
+        aria-describedby="safety-resources-help"
+        value={resources}
+        onChange={(e) => setResources(e.target.value)}
+      />
+      <p id="safety-resources-help" className="help">
+        {t.branding.safetyResourcesHelp}
       </p>
       <p role="status" className={saved ? 'alert alert-ok' : 'visually-hidden'}>
         {saved ? t.branding.communitySaved : ''}

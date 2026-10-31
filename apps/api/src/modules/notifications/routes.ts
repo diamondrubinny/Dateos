@@ -56,6 +56,8 @@ export const notificationRoutes: FastifyPluginAsyncZod<{
           dailyLikeLimit: preferences.dailyLikeLimit,
           verifiedContactOnly: preferences.verifiedContactOnly,
           blurPhotos: preferences.blurPhotos,
+          hideDistance: preferences.hideDistance,
+          discreetNotifications: preferences.discreetNotifications,
         })
         .from(preferences)
         .where(eq(preferences.userId, userId));
@@ -83,6 +85,8 @@ export const notificationRoutes: FastifyPluginAsyncZod<{
         dailyLikeLimit: prefs?.dailyLikeLimit ?? null,
         verifiedContactOnly: prefs?.verifiedContactOnly ?? false,
         blurPhotos: prefs?.blurPhotos ?? false,
+        hideDistance: prefs?.hideDistance ?? false,
+        discreetNotifications: prefs?.discreetNotifications ?? false,
         pushDevices: devices.length + browsers.length,
       };
     },

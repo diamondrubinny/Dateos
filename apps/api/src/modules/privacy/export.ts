@@ -501,6 +501,9 @@ export async function exportMemberData(
           verifiedContactOnly: preferences.verifiedContactOnly,
           // Phase 66a.
           blurPhotos: preferences.blurPhotos,
+          // Phase 67a.
+          hideDistance: preferences.hideDistance,
+          discreetNotifications: preferences.discreetNotifications,
           showMetInPersonBadge: preferences.showMetBadge,
           showCheckedInAtEventBadge: preferences.showEventBadge,
           friendsMode: {

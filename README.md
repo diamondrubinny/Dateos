@@ -101,6 +101,7 @@ NexaHeart is in active development. Here is what works today and what comes next
 | Blurred profile photos, shown to one match at a time by choice; communities can show photos only after a match                                                                                                                    | ✅ Available |
 | Match Note: what a match should know before meeting, shown only to matches                                                                                                                                                        | ✅ Available |
 | Private album shared with one match: once, 10 minutes or no limit, checked on the server                                                                                                                                          | ✅ Available |
+| Discretion: hidden distance, discreet notifications, an app lock code, local help listed by the community                                                                                                                         | ✅ Available |
 
 ## Screenshots
 

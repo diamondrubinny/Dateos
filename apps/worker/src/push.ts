@@ -71,12 +71,27 @@ const texts = {
   },
 } as const;
 
+/** Phase 67a: discreet notifications say nothing about the community or what happened. */
+const discreetTexts = {
+  en: { title: 'New notification', body: 'You have something new' },
+  he: { title: 'התראה חדשה', body: 'יש משהו חדש' },
+  ar: { title: 'إشعار جديد', body: 'لديك شيء جديد' },
+  ru: { title: 'Новое уведомление', body: 'У вас что-то новое' },
+} as const;
+
 /**
  * Notifications pass through Expo, Apple and Google, so they never contain names, message text
- * or photos: only the community name and a generic sentence.
+ * or photos: only the community name and a generic sentence. Phase 67a: discreet ones not even
+ * that, for a lock screen someone else may see.
  */
-export function pushContent(kind: PushJob['kind'], locale: string, instanceName: string) {
+export function pushContent(
+  kind: PushJob['kind'],
+  locale: string,
+  instanceName: string,
+  discreet = false,
+) {
   const lang = Object.hasOwn(texts, locale) ? (locale as keyof typeof texts) : 'en';
+  if (discreet) return { ...discreetTexts[lang] };
   // A message from a partner community (phase 28c) reads like any other message.
   return { title: instanceName, body: texts[lang][kind === 'partner_message' ? 'message' : kind] };
 }
@@ -192,10 +207,16 @@ async function sendToDevices(ctx: PushContext, job: PushJob): Promise<PushResult
     .execute<{ name: string | null }>(sql`SELECT name FROM instance_settings WHERE id = 1`)
     .then((r) => r.rows);
   const instanceName = settings?.name ?? process.env.INSTANCE_NAME ?? 'NexaHeart';
+  const discreet =
+    (
+      await ctx.db.execute<{ yes: boolean }>(
+        sql`SELECT discreet_notifications AS yes FROM preferences WHERE user_id = ${job.userId}`,
+      )
+    ).rows[0]?.yes ?? false;
   // Browsers first: a failure there never makes the queue retry (and repeat) the phones.
   if (browsers.length > 0 && ctx.webPush)
-    await sendToBrowsers(ctx, ctx.webPush, browsers, job, instanceName);
-  if (tokens.length > 0) await sendToPhones(ctx, tokens, job, instanceName);
+    await sendToBrowsers(ctx, ctx.webPush, browsers, job, instanceName, discreet);
+  if (tokens.length > 0) await sendToPhones(ctx, tokens, job, instanceName, discreet);
   return 'sent';
 }
 
@@ -210,6 +231,7 @@ async function sendToBrowsers(
   browsers: (typeof webPushSubscriptions.$inferSelect)[],
   job: PushJob,
   instanceName: string,
+  discreet: boolean,
 ): Promise<void> {
   const send = settings.send ?? webpush.sendNotification.bind(webpush);
   const gone: string[] = [];
@@ -221,7 +243,7 @@ async function sendToBrowsers(
       continue;
     }
     const payload: WebPushPayload = {
-      ...pushContent(job.kind, b.locale, instanceName),
+      ...pushContent(job.kind, b.locale, instanceName, discreet),
       kind: job.kind,
       id: job.matchId,
     };
@@ -268,10 +290,11 @@ async function sendToPhones(
   tokens: (typeof pushTokens.$inferSelect)[],
   job: PushJob,
   instanceName: string,
+  discreet: boolean,
 ): Promise<void> {
   const messages = tokens.map((t) => ({
     to: t.token,
-    ...pushContent(job.kind, t.locale, instanceName),
+    ...pushContent(job.kind, t.locale, instanceName, discreet),
     sound: 'default',
     priority: 'high',
     // Only an opaque id, so the app can open the right chat.

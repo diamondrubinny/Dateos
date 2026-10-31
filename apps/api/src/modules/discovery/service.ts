@@ -1089,6 +1089,17 @@ export class DiscoveryService {
       }),
     );
 
+    // Phase 67a: members who hide their distance from others (never from themselves).
+    const hidesDistance = new Set(
+      (
+        await this.db
+          .select({ userId: preferences.userId })
+          .from(preferences)
+          .where(and(inArray(preferences.userId, ids), eq(preferences.hideDistance, true)))
+      )
+        .map((r) => r.userId)
+        .filter((id) => id !== viewerId),
+    );
     // Phase 66a: photos blurred for this viewer; my own preview shows what strangers see.
     const blurred = includeViewer
       ? new Set((await photosMayBlur(this.db, viewerId)) ? [viewerId] : [])
@@ -1120,8 +1131,10 @@ export class DiscoveryService {
               ...(blurred.has(p.userId) ? { blurred: true } : {}),
             })),
           distance:
-            Number.isFinite(item.km) && !visiting.has(p.userId) ? distanceBucket(item.km) : null,
-          visiting: visiting.get(p.userId) ?? null,
+            Number.isFinite(item.km) && !visiting.has(p.userId) && !hidesDistance.has(p.userId)
+              ? distanceBucket(item.km)
+              : null,
+          visiting: hidesDistance.has(p.userId) ? null : (visiting.get(p.userId) ?? null),
           about: toAbout(aboutById.get(p.userId)),
           voicePrompt: toVoicePrompt(aboutById.get(p.userId), cleanVoice),
           accessNeeds: shownAccessNeeds(aboutById.get(p.userId)),
@@ -1133,7 +1146,9 @@ export class DiscoveryService {
           atEvent: atEventIds.has(p.userId),
           friendTakes: takesById.get(p.userId) ?? [],
           verified: p.verifiedAt !== null,
-          reasons: item.result?.reasons ?? [],
+          reasons: (item.result?.reasons ?? []).filter(
+            (r) => r !== 'nearby' || !hidesDistance.has(p.userId),
+          ),
         },
       ];
     });

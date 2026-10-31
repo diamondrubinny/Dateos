@@ -131,6 +131,8 @@ describe.skipIf(!integrationEnabled)('voice messages & push (integration)', () =
       dailyLikeLimit: null,
       verifiedContactOnly: false,
       blurPhotos: false,
+      hideDistance: false,
+      discreetNotifications: false,
       pushDevices: 0,
     });
   });

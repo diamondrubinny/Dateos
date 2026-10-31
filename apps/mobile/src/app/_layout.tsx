@@ -18,6 +18,7 @@ import { registerServiceWorker } from '../lib/pwa';
 import { RealtimeProvider } from '../lib/realtime';
 import { WebIntegrations } from '../components/WebIntegrations';
 import { IncomingCall } from '../components/IncomingCall';
+import { AppLockGate } from '../components/AppLockGate';
 import { ServerStatusBanner } from '../components/ServerStatusBanner';
 import { useInstance } from '../lib/queries';
 import { useColors } from '../lib/theme';
@@ -69,14 +70,17 @@ function Navigator() {
         {/* On the web `textAlign: start` follows the nearest `dir`: set it once for every screen
             (chat and call screens don't use <Screen>). Native direction comes from I18nManager. */}
         <View style={styles.root} {...webDir}>
-          {/* Signed out or not yet known, the session gates show the full "can't be reached". */}
-          {session.data ? <ServerStatusBanner /> : null}
-          <Stack
-            screenOptions={{
-              headerShown: false,
-              contentStyle: { backgroundColor: colors.background },
-            }}
-          />
+          {/* Phase 67a: a lock code set on this device hides everything until it's entered. */}
+          <AppLockGate>
+            {/* Signed out or not yet known, the session gates show the full "can't be reached". */}
+            {session.data ? <ServerStatusBanner /> : null}
+            <Stack
+              screenOptions={{
+                headerShown: false,
+                contentStyle: { backgroundColor: colors.background },
+              }}
+            />
+          </AppLockGate>
         </View>
       </RealtimeProvider>
     </RouterLocaleProvider>
