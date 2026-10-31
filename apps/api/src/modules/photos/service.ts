@@ -3,13 +3,20 @@
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 import { checkHarm } from '@nexaheart/ai';
 import { schema, type Database } from '@nexaheart/db';
-import { allowedPhotoMimeTypes, ErrorCode, MAX_PHOTOS, type Photo } from '@nexaheart/shared';
+import {
+  allowedPhotoMimeTypes,
+  ErrorCode,
+  MAX_ALBUM_PHOTOS,
+  MAX_PHOTOS,
+  type Photo,
+} from '@nexaheart/shared';
 import { mediaKey, quarantineKey, type Storage, type StoredObject } from '@nexaheart/storage';
 import { and, asc, eq, ne, sql } from 'drizzle-orm';
 import { fileTypeFromBuffer } from 'file-type';
 import { HttpError } from '../../plugins/error-handler.js';
 import type { MediaQueue } from '../../lib/queue.js';
 import { blurredCopy, blurredOwners, photosMayBlur } from '../../lib/photo-blur.js';
+import { mayViewAlbum } from './album.js';
 
 const { photos } = schema;
 const allowed = new Set<string>(allowedPhotoMimeTypes);
@@ -37,7 +44,7 @@ export class PhotoService {
   async upload(
     userId: string,
     buffer: Buffer,
-    purpose: 'profile' | 'chat' | 'verification' | 'branding' = 'profile',
+    purpose: 'profile' | 'chat' | 'verification' | 'branding' | 'album' = 'profile',
   ): Promise<Photo> {
     const mime = await sniffImageType(buffer);
     if (!mime) {
@@ -58,11 +65,19 @@ export class PhotoService {
           and(
             eq(photos.userId, userId),
             ne(photos.status, 'rejected'),
-            eq(photos.purpose, 'profile'),
+            eq(photos.purpose, purpose === 'album' ? 'album' : 'profile'),
           ),
         );
       if (purpose === 'profile' && existing.length >= MAX_PHOTOS) {
         throw new HttpError(409, ErrorCode.Conflict, `You can upload up to ${MAX_PHOTOS} photos.`);
+      }
+      // Phase 66c: a private album has its own limit.
+      if (purpose === 'album' && existing.length >= MAX_ALBUM_PHOTOS) {
+        throw new HttpError(
+          409,
+          ErrorCode.Conflict,
+          `Your private album holds up to ${MAX_ALBUM_PHOTOS} photos.`,
+        );
       }
       const position =
         purpose !== 'profile' ? 0 : existing.reduce((max, p) => Math.max(max, p.position + 1), 0);
@@ -122,9 +137,13 @@ export class PhotoService {
     const allowed =
       row.purpose === 'chat'
         ? await this.canViewChatImage(viewerId, photoId)
-        : await this.canView(viewerId, row.userId);
+        : row.purpose === 'album'
+          ? // Phase 66c: the owner, or a match within an open share; checked on every request.
+            row.userId === viewerId || (await mayViewAlbum(this.db, viewerId, row.userId))
+          : await this.canView(viewerId, row.userId);
     if (!allowed) throw notFound();
     const object = await this.storage.get(this.storage.buckets.media, row.mediaKey);
+    if (row.purpose === 'album') return { body: object.body, noStore: true };
     if (row.purpose !== 'profile' || row.userId === viewerId) {
       return { body: object.body, noStore: false };
     }

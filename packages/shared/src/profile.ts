@@ -353,3 +353,43 @@ export const matchNoteInputSchema = z.object({
     .refine((v) => !/[\u0000-\u0009\u000B\u000C\u000E-\u001F\u007F<>]/.test(v), 'Plain text only')
     .nullable(),
 });
+
+/** Phase 66c: a private album, shared with one match at a time. */
+export const MAX_ALBUM_PHOTOS = 6;
+export const albumShareModes = ['once', 'ten_minutes', 'unlimited'] as const;
+export type AlbumShareMode = (typeof albumShareModes)[number];
+/** How long a share stays open after the first look (null: no limit). */
+export const ALBUM_WINDOW_SECONDS: Record<AlbumShareMode, number | null> = {
+  once: 60,
+  ten_minutes: 600,
+  unlimited: null,
+};
+
+export const albumShareInputSchema = z.object({ mode: z.enum(albumShareModes) });
+
+export const albumPhotoSchema = z.object({
+  id: z.uuid(),
+  status: z.enum(['quarantine', 'processing', 'clean', 'rejected']),
+  url: z.string().nullable(),
+});
+export const myAlbumSchema = z.object({ photos: z.array(albumPhotoSchema) });
+export type MyAlbum = z.infer<typeof myAlbumSchema>;
+
+/** One side of a chat's album share. */
+export const albumShareStateSchema = z.object({
+  mode: z.enum(albumShareModes),
+  /** First looked at (the window starts then). */
+  openedAt: z.string().nullable(),
+  /** Whether the other person can open it now. */
+  open: z.boolean(),
+});
+export type AlbumShareState = z.infer<typeof albumShareStateSchema>;
+
+/** The other person's album in this chat; opening it starts the window. */
+export const sharedAlbumSchema = z.object({
+  share: albumShareStateSchema.nullable(),
+  /** Only while the share is open. */
+  photos: z.array(z.object({ id: z.uuid(), url: z.string() })),
+  expiresAt: z.string().nullable(),
+});
+export type SharedAlbum = z.infer<typeof sharedAlbumSchema>;

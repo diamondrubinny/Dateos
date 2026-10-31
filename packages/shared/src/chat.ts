@@ -3,6 +3,7 @@
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 import { matchModeSchema } from './friends.js';
 import { z } from 'zod';
+import { albumShareStateSchema } from './profile.js';
 import { publicProfileSchema } from './discovery.js';
 import { deviceSecretSchema } from './account.js';
 import { localeSchema } from './common.js';
@@ -140,6 +141,10 @@ export const messagesPageSchema = z.object({
    * null when they aren't blurred for them.
    */
   myPhotosShown: z.boolean().nullable(),
+  /** Phase 66c: my private album in this chat (null when I have no album photos). */
+  myAlbum: z.object({ share: albumShareStateSchema.nullable() }).nullable(),
+  /** Phase 66c: the other person shared their album with me. */
+  theirAlbum: albumShareStateSchema.nullable(),
 });
 export type MessagesPage = z.infer<typeof messagesPageSchema>;
 

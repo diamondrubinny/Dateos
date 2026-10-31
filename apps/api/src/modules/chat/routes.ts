@@ -3,6 +3,8 @@
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 import multipart from '@fastify/multipart';
 import {
+  albumShareInputSchema,
+  sharedAlbumSchema,
   clientEventSchema,
   conversationSchema,
   ErrorCode,
@@ -33,6 +35,7 @@ import type { Auth } from '../../auth/auth.js';
 import { currentUser, requireUser } from '../../auth/session.js';
 import type { Realtime } from '../../lib/realtime.js';
 import { HttpError } from '../../plugins/error-handler.js';
+import type { AlbumService } from '../photos/album.js';
 import type { AudioService } from './audio.js';
 import type { ChatService } from './service.js';
 
@@ -51,11 +54,13 @@ export interface ChatRouteOptions {
   heartbeatMs: number;
   /** Voice prompts on profiles (phase 19). */
   audio?: AudioService;
+  /** Phase 66c: private albums shared in chats. */
+  album?: AlbumService;
 }
 
 export const chatRoutes: FastifyPluginAsyncZod<ChatRouteOptions> = async (
   app,
-  { auth, chat, realtime, allowedOrigins, heartbeatMs, audio },
+  { auth, chat, realtime, allowedOrigins, heartbeatMs, audio, album },
 ) => {
   await app.register(multipart, {
     limits: { fileSize: MAX_PHOTO_BYTES, files: 1, fields: 0, parts: 1 },
@@ -87,6 +92,47 @@ export const chatRoutes: FastifyPluginAsyncZod<ChatRouteOptions> = async (
         request.query.limit,
       ),
   );
+
+  // Phase 66c: share my private album with this match (once, 10 minutes, no limit), or stop.
+  if (album) {
+    app.put(
+      '/v1/matches/:id/album-share',
+      {
+        schema: {
+          params: matchParams,
+          body: albumShareInputSchema,
+          response: { 200: z.object({ ok: z.literal(true) }) },
+        },
+        config: perUserLimit(30, 60_000),
+      },
+      async (request) => {
+        await album.share(request.params.id, currentUser(request).id, request.body.mode);
+        return { ok: true as const };
+      },
+    );
+    app.delete(
+      '/v1/matches/:id/album-share',
+      {
+        schema: { params: matchParams, response: { 200: z.object({ ok: z.literal(true) }) } },
+      },
+      async (request) => {
+        await album.unshare(request.params.id, currentUser(request).id);
+        return { ok: true as const };
+      },
+    );
+    // The other person's album; the first look starts the window.
+    app.get(
+      '/v1/matches/:id/album',
+      {
+        schema: { params: matchParams, response: { 200: sharedAlbumSchema } },
+        config: perUserLimit(60, 60_000),
+      },
+      async (request, reply) => {
+        reply.header('cache-control', 'no-store');
+        return album.theirs(request.params.id, currentUser(request).id);
+      },
+    );
+  }
 
   // Phase 66a: show my blurred photos to this match, or take it back.
   app.put(

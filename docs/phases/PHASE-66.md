@@ -109,3 +109,57 @@ company) and Dateability's "Deets" fill this gap.
 - Found on the way: the hurtful-words filter caught "you idiot" but not "you are all idiots";
   English words now match with plural endings (unit test; "idiomatic" still passes).
 - Docs: PRIVACY.md, CHANGELOG, README.
+
+---
+
+# Phase 66c: A private album, shared with one match for once, 10 minutes or without a limit (v1.42)
+
+> Status: ✅ done (2026-10-31).
+
+## The gap
+
+Photos a member doesn't want on their profile (a face for someone who blurs, a body-positive photo,
+a photo with their kids) can only be sent in a chat, where they stay. Grindr and Archer let
+members keep a private album and share it with one person for a set time.
+
+## What changes
+
+| Part               | Change                                                                                                                                                                                                         |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| My private album   | Profile → "Private album": up to 6 photos, scanned like any photo, never on the profile, in Discover or with partners.                                                                                         |
+| Share with a match | In a chat: "Share my private album" for **once** (open for one minute from the first look), **10 minutes** from the first look, or **no limit**. "Stop sharing" ends it at once; ending the match ends it too. |
+| The match          | Sees "Noa shared a private album (once)" in the chat and opens it; afterwards "already viewed". The photos are served only while the share is open, never cached.                                              |
+| Data               | The photos and which matches they were shared with (and when first viewed): deleted with the photo, the match or the account; in "Download my data".                                                           |
+
+## Security and privacy ⚖️
+
+- The server decides who may get each album photo on every request, so "once" and "10 minutes" end
+  on time even if the app is changed. `no-store`; the PWA never caches API responses.
+- ⚠️ A screenshot is still possible in any browser or app; the app says so before sharing. 📘
+- A one-time view conflicts with keeping evidence (phase 65): the share's time and mode are kept, the
+  photos stay with the owner (a moderator can't open an album). ⚖️
+
+## Tests
+
+- Integration: upload (up to 6), not on the profile or Discover; nobody but the owner can open a
+  photo until shared; shared with one match only; once closes a minute after the first look; 10
+  minutes from the first look; no limit; stop sharing and ending the match close it; a stranger
+  never; export.
+- e2e (en, he): a member adds an album photo, shares it once with a match; the match opens it, then
+  sees "already viewed". axe 0. Screenshots.
+
+## Done (66c)
+
+- **Integration** (7, `album.test.ts`): never on the profile or in `/v1/me`; only the owner gets the
+  photos before sharing (`no-store`); up to 6; once: closed until opened, open for a minute from the
+  first look, only for that match, then 404 and "closed" for both sides, sharing again starts over;
+  10 minutes from the first look; no limit stays open; stopping and ending the match close it at
+  once; only in my own matches, only with a photo ready, unknown modes refused; in "Download my
+  data".
+- **e2e** `pnpm --dir e2e album` (en, he): the member's album (a scanned photo); shares once from
+  the chat; the match opens it; after the minute it's closed. axe 0. Screenshots `155-my-album`,
+  `156-share-album`, `157-album-once` (en, he).
+- Found on the way: Hebrew strings from phases 65–66 had a maqaf before digits ("ב־24", "ל־10") and
+  "מי שרואה … יכול" (masculine); reworded. Older strings with the same maqaf pattern (e.g. "כ־5
+  ק״מ", "מ־{{name}}") predate these phases and are listed for a separate sweep.
+- Docs: PRIVACY.md, CHANGELOG, README.

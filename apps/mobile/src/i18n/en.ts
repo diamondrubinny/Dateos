@@ -1326,6 +1326,40 @@ export const en = {
     showArchived: 'Archived chats ({{count}})',
     hideArchived: 'Hide archived chats ({{count}})',
   },
+  album: {
+    title: 'Private album',
+    intro:
+      'Up to 6 photos that are never on your profile. In a chat you can share them with one match: once, for 10 minutes or without a limit, and stop at any time. Anyone who sees them could still take a screenshot.',
+    empty: 'No photos yet.',
+    checking: 'Checking photo…',
+    photoOf: 'Album photo {{n}} of {{total}}',
+    remove: 'Remove photo {{n}}',
+    add: 'Add a photo',
+    full: 'Your album holds up to {{count}} photos.',
+    theirTitle: 'Private album of {{name}}',
+    window: {
+      once: 'You can see this once: it closes a minute after you opened it.',
+      ten_minutes: 'Open for 10 minutes from when you first opened it.',
+      unlimited: 'Open until {{name}} stops sharing it.',
+    },
+    viewed: 'The private album of {{name}} is closed.',
+    notShared: '{{name}} hasn’t shared a private album with you.',
+    sharedWithYou: {
+      once: '{{name}} shared a private album with you (once).',
+      ten_minutes: '{{name}} shared a private album with you (10 minutes).',
+      unlimited: '{{name}} shared a private album with you.',
+    },
+    open: 'Open the album of {{name}}',
+    sharedBy: {
+      once: 'Your private album is shared with {{name}} (once).',
+      ten_minutes: 'Your private album is shared with {{name}} (10 minutes).',
+      unlimited: 'Your private album is shared with {{name}}.',
+    },
+    theyViewed: '{{name}} has viewed your private album; it’s closed.',
+    stop: 'Stop sharing',
+    shareWith: 'Share your private album with {{name}}:',
+    mode: { once: 'Once', ten_minutes: '10 minutes', unlimited: 'No limit' },
+  },
   matchNote: {
     title: 'Note for matches',
     intro:

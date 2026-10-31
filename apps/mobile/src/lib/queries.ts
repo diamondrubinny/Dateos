@@ -3,6 +3,7 @@
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 import { intentions, type Intention, type Locale } from '@nexaheart/shared';
 import type {
+  MyAlbum,
   CoachResponse,
   ConsentInput,
   InstanceInfo,
@@ -245,6 +246,58 @@ export const useUploadPhoto = () =>
     }
     return apiFetch<Photo>('/v1/me/photos', { method: 'POST', body: form });
   });
+
+// ---------------------------------------------------------------- private album (phase 66c)
+
+export const albumKey = ['my-album'] as const;
+
+export function useMyAlbum() {
+  return useQuery({
+    queryKey: albumKey,
+    queryFn: () => apiFetch<MyAlbum>('/v1/me/album'),
+    // While a new photo is being scanned, refresh until it settles.
+    refetchInterval: (query) =>
+      query.state.data?.photos.some((p) => p.status === 'quarantine' || p.status === 'processing')
+        ? 1500
+        : false,
+  });
+}
+
+function imageForm(image: PickedImage): FormData {
+  const form = new FormData();
+  if (Platform.OS === 'web') {
+    form.append('file', image.file as Blob, image.fileName ?? 'photo.jpg');
+  } else {
+    form.append('file', {
+      uri: image.uri,
+      name: image.fileName ?? 'photo.jpg',
+      type: image.mimeType ?? 'image/jpeg',
+    } as unknown as Blob);
+  }
+  return form;
+}
+
+export function useAddAlbumPhoto() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: async (image: PickedImage) => {
+      if (Platform.OS === 'web' && !image.file) {
+        image = { ...image, file: (await (await fetch(image.uri)).blob()) as File };
+      }
+      return apiFetch<Photo>('/v1/me/album/photos', { method: 'POST', body: imageForm(image) });
+    },
+    onSuccess: () => client.invalidateQueries({ queryKey: albumKey }),
+  });
+}
+
+export function useRemoveAlbumPhoto() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) =>
+      apiFetch(`/v1/me/photos/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+    onSuccess: () => client.invalidateQueries({ queryKey: albumKey }),
+  });
+}
 
 // ---------------------------------------------------------------- discovery
 

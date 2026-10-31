@@ -112,6 +112,20 @@ export async function exportMemberData(
         .where(eq(t.photoReveals.userId, userId))
     ).map((r) => r.matchId),
   );
+  // Phase 66c: your private album and the matches you shared it with.
+  const albumPhotos = await db
+    .select({ id: t.photos.id, status: t.photos.status, at: t.photos.createdAt })
+    .from(t.photos)
+    .where(and(eq(t.photos.userId, userId), eq(t.photos.purpose, 'album')));
+  const albumShares = await db
+    .select({
+      matchId: t.albumShares.matchId,
+      mode: t.albumShares.mode,
+      sharedAt: t.albumShares.createdAt,
+      firstViewedAt: t.albumShares.openedAt,
+    })
+    .from(t.albumShares)
+    .where(eq(t.albumShares.userId, userId));
   // Partner communities (phase 28b): your alias there, your decisions and matches.
   const partnerName = t.federationPartners.name;
   const federatedAliases = await db
@@ -569,6 +583,14 @@ export async function exportMemberData(
       unmatchedAt: iso(m.unmatchedAt),
       youShowedYourPhotos: shown.has(m.id),
     })),
+    privateAlbum: {
+      photos: albumPhotos.map((p) => ({ ...p, at: iso(p.at) })),
+      sharedWith: albumShares.map((a) => ({
+        ...a,
+        sharedAt: iso(a.sharedAt),
+        firstViewedAt: iso(a.firstViewedAt),
+      })),
+    },
     messagesYouSent: sent.map((m) => ({ ...m, at: iso(m.at), unsentAt: iso(m.unsentAt) })),
     blocks: blocks.map((b) => ({ ...b, at: iso(b.at) })),
     reportsYouFiled: reportsFiled.map((r) => ({ ...r, at: iso(r.at) })),

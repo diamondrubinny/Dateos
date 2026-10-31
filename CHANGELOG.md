@@ -6,6 +6,10 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Added
 
+- **Private album**: up to 6 photos never on the profile, shared from a chat with one match for one
+  look (a minute), 10 minutes from the first look, or without a limit; stopping or ending the match
+  closes it at once. The server checks the share on every photo request.
+
 - **Match Note**: a short note only matches see (a disability or access need, identity, children,
   how you live), on the profile card once you match; never strangers, the preview or partner
   communities. Also: the hurtful-words filter now catches English plurals ("idiots").

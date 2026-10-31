@@ -100,6 +100,7 @@ NexaHeart is in active development. Here is what works today and what comes next
 | Who can reach me: a limit on new likes a day, first messages from verified members only, an urgent banner for extortion threats (4 languages)                                                                                     | ✅ Available |
 | Blurred profile photos, shown to one match at a time by choice; communities can show photos only after a match                                                                                                                    | ✅ Available |
 | Match Note: what a match should know before meeting, shown only to matches                                                                                                                                                        | ✅ Available |
+| Private album shared with one match: once, 10 minutes or no limit, checked on the server                                                                                                                                          | ✅ Available |
 
 ## Screenshots
 

@@ -2,6 +2,7 @@
 // Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 import {
+  albumShareModes,
   MAX_PINNED_CHATS,
   MESSAGES_BEFORE_IMAGES,
   NEW_ACCOUNT_CHAT_STARTS,
@@ -43,6 +44,7 @@ import {
   useIcebreakers,
   useMessages,
   useShowPhotos,
+  useAlbumShare,
   useReact,
   useUnsend,
   useChatPrefs,
@@ -68,6 +70,7 @@ function ChatScreen() {
   const conversation = conversations.data?.find((c) => c.matchId === matchId);
   const messages = useMessages(matchId);
   const showPhotos = useShowPhotos(matchId);
+  const albumShare = useAlbumShare(matchId);
   const send = useSendMessage(matchId);
   const react = useReact(matchId);
   const unsend = useUnsend(matchId);
@@ -611,6 +614,68 @@ function ChatScreen() {
           </View>
         ) : null}
 
+        {/* Phase 66c: my private album, shared with this match; theirs, shared with me. */}
+        {!closed && newest?.theirAlbum ? (
+          <View style={[styles.pad, styles.photosRow]} testID="their-album">
+            <AppText variant="caption" tone="muted">
+              {newest.theirAlbum.open
+                ? t(`album.sharedWithYou.${newest.theirAlbum.mode}`, { name })
+                : t('album.viewed', { name })}
+            </AppText>
+            {newest.theirAlbum.open ? (
+              <Button
+                variant="secondary"
+                label={t('album.open', { name })}
+                onPress={() =>
+                  router.push({ pathname: '/album/[matchId]', params: { matchId, name } })
+                }
+              />
+            ) : null}
+          </View>
+        ) : null}
+        {!closed && newest?.myAlbum ? (
+          <View style={[styles.pad, styles.photosRow]} testID="my-album">
+            {newest.myAlbum.share ? (
+              <>
+                <AppText variant="caption" tone="muted">
+                  {newest.myAlbum.share.open
+                    ? t(`album.sharedBy.${newest.myAlbum.share.mode}`, { name })
+                    : t('album.theyViewed', { name })}
+                </AppText>
+                <Button
+                  variant="dangerGhost"
+                  label={t('album.stop')}
+                  loading={albumShare.isPending}
+                  onPress={() =>
+                    albumShare.mutate(null, { onError: () => setError(t('common.genericError')) })
+                  }
+                />
+              </>
+            ) : (
+              <>
+                <AppText variant="caption" tone="muted">
+                  {t('album.shareWith', { name })}
+                </AppText>
+                <View style={styles.albumModes}>
+                  {albumShareModes.map((mode) => (
+                    <Button
+                      key={mode}
+                      variant="secondary"
+                      label={t(`album.mode.${mode}`)}
+                      loading={albumShare.isPending && albumShare.variables === mode}
+                      onPress={() =>
+                        albumShare.mutate(mode, {
+                          onError: () => setError(t('common.genericError')),
+                        })
+                      }
+                    />
+                  ))}
+                </View>
+              </>
+            )}
+          </View>
+        ) : null}
+
         {!closed && needsVerification ? (
           <View style={styles.pad} testID="verified-only">
             <Banner tone="info" message={t('reach.chatNotice', { name })} />
@@ -797,6 +862,7 @@ const styles = StyleSheet.create({
   replyText: { flex: 1 },
   // Stacked, so long sentences and 200% text are never squeezed beside the button.
   photosRow: { gap: 8 },
+  albumModes: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   composer: {
     flexDirection: 'row',
     alignItems: 'flex-end',

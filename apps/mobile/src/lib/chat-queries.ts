@@ -2,6 +2,8 @@
 // Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 import type {
+  AlbumShareMode,
+  SharedAlbum,
   Conversation,
   MatchPrefs,
   QuietHours,
@@ -270,6 +272,28 @@ export function useShowPhotos(matchId: string) {
     mutationFn: (shown: boolean) =>
       apiFetch(`/v1/matches/${matchId}/photos-shown`, { method: 'PUT', body: json({ shown }) }),
     onSuccess: () => client.invalidateQueries({ queryKey: chatKeys.messages(matchId) }),
+  });
+}
+
+/** Phase 66c: share my private album in this chat (once, 10 minutes, no limit), or stop. */
+export function useAlbumShare(matchId: string) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (mode: AlbumShareMode | null) =>
+      mode
+        ? apiFetch(`/v1/matches/${matchId}/album-share`, { method: 'PUT', body: json({ mode }) })
+        : apiFetch(`/v1/matches/${matchId}/album-share`, { method: 'DELETE' }),
+    onSuccess: () => client.invalidateQueries({ queryKey: chatKeys.messages(matchId) }),
+  });
+}
+
+/** Phase 66c: the other person's album; fetching it starts the window, so only on purpose. */
+export function useSharedAlbum(matchId: string) {
+  return useQuery({
+    queryKey: ['shared-album', matchId],
+    queryFn: () => apiFetch<SharedAlbum>(`/v1/matches/${matchId}/album`),
+    gcTime: 0,
+    staleTime: Infinity,
   });
 }
 

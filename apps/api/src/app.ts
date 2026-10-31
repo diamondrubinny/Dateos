@@ -121,7 +121,11 @@ export async function buildApp(env: Env, deps: AppDependencies): Promise<Fastify
         return zip;
       },
     });
-    await typed.register(photoRoutes, { auth: services.auth, photos: services.photos });
+    await typed.register(photoRoutes, {
+      auth: services.auth,
+      photos: services.photos,
+      album: services.album,
+    });
     await typed.register(discoveryRoutes, { auth: services.auth, discovery: services.discovery });
     await typed.register(safetyRoutes, {
       auth: services.auth,
@@ -208,6 +212,7 @@ export async function buildApp(env: Env, deps: AppDependencies): Promise<Fastify
       allowedOrigins: env.CORS_ORIGINS,
       heartbeatMs: env.WS_HEARTBEAT_MS,
       audio: services.audio,
+      album: services.album,
     });
   }
 

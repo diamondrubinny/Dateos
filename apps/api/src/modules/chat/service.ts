@@ -37,6 +37,7 @@ import type { DiscoveryService } from '../discovery/service.js';
 import { photoUrl } from '../me/service.js';
 import type { PhotoService } from '../photos/service.js';
 import type { AudioService } from './audio.js';
+import type { AlbumService } from '../photos/album.js';
 
 const {
   messages,
@@ -326,6 +327,12 @@ export class ChatService {
     return rows[0]?.blur ? rows[0].shown : null;
   }
 
+  /** Phase 66c: album shares shown in the chat. */
+  private album: AlbumService | undefined;
+  useAlbum(album: AlbumService): void {
+    this.album = album;
+  }
+
   private rows(where: ReturnType<typeof and>) {
     return this.db
       .select({
@@ -464,6 +471,9 @@ export class ChatService {
       callsAvailable: await this.callsAvailable(matchId, viewerId, otherId),
       writeNeedsVerification: await this.writeNeedsVerification(matchId, viewerId, otherId),
       myPhotosShown: await this.myPhotosShown(matchId, viewerId),
+      ...(this.album
+        ? await this.album.chatState(matchId, viewerId, otherId)
+        : { myAlbum: null, theirAlbum: null }),
     };
   }
 
