@@ -93,8 +93,62 @@ hurtful): "an introduction", "someone thought of you", not "help for singles".
 
 ### Next
 
-- 68b: a shareable "matchmaking résumé" (a short-lived link or a PDF, with a watermark ⚖️), friends
-  who suggest a pair (phase 22 takes), a manual approval queue for new profiles.
-- 68c: a chaperone (wali) the member invites and can remove, with a visible notice to the other
+- 68b: a shareable "matchmaking résumé" (a short-lived link, printable as PDF, with a watermark ⚖️).
+- 68c: friends who suggest a pair; a manual approval queue for new profiles.
+- 68d: a chaperone (wali) the member invites and can remove, with a visible notice to the other
   side ⚖️.
 - Introductions between partner communities (federation).
+
+---
+
+# Phase 68b: A matchmaking résumé, shared by a short-lived link (v1.46)
+
+> Status: ✅ done (2026-10-31).
+
+## The gap
+
+Parents, a family matchmaker or a rabbi often ask for a "résumé" (Shabbat.com and Haredi
+matchmaking work this way). Today a member can only send screenshots, which carry everything,
+never expire and can't be taken back.
+
+## What changes
+
+| Part              | Change                                                                                                                                                                                                                                    |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| My résumé links   | Profile → "Matchmaking résumé": a link for one person ("Mom", "Rivka the matchmaker"), for 1, 3 or 7 days. The member picks what it shows: photo, about me, my answers (prompts), faith (only if filled in). Name, age, intention always. |
+| Up to 5 at a time | Each shows how many times it was opened and when it ends; "Stop sharing" ends it at once.                                                                                                                                                 |
+| The page          | No sign-in. Read-only, in the viewer's language, with a print button (save as PDF). A banner on the page and a watermark burned into the photo on the server: "Shared with {label} on {date} · ends {date}".                              |
+| Never             | Email, place, distance, the Match Note, the private album, other photos. Not indexed (`noindex`), not cached, no referrer.                                                                                                                |
+| An expired link   | Looks exactly like a wrong one ("This link isn't valid").                                                                                                                                                                                 |
+
+## Security and privacy ⚖️
+
+- The token (24 random bytes) is shown once and stored as a hash.
+- Rate-limited by IP; a suspended or paused account's links stop working.
+- ⚠️ Whoever has the link can pass it on or screenshot the page; the watermark names whom it was
+  for, and the screen says so before sharing.
+- Data: the label, what it shows, dates and an open count; deleted with the account, and 30 days
+  after it ended; in "Download my data" (never the token).
+
+## Tests
+
+- Integration: create (label, days, fields), up to 5; the public card shows only the chosen fields,
+  never email or place; the photo is a watermarked copy (not the original bytes), `no-store`,
+  `noindex`; opens counted; stop sharing, expiry, a suspended owner and a wrong token look the
+  same; export; only the owner manages links.
+- e2e (en, he): a member creates a link for "Mom" with the photo and answers; the page (signed
+  out) shows the banner, the card and the watermark; stop sharing; the page then says the link
+  isn't valid. axe 0. Screenshots.
+
+## Done (68b)
+
+- **Integration** (5, `resume.test.ts`): a link for one person shows only the chosen sections,
+  never email, place or the Match Note; `no-store`, `noindex`, `no-referrer`; opens counted for the
+  member, the token never listed again; the photo is a watermarked copy, not the original bytes;
+  stopping, expiry, a break and a suspension all look like a wrong link (and the photo too); up to
+  5 at a time, plain-text labels, 1/3/7 days only; in "Download my data" without the token.
+- **e2e** `pnpm --dir e2e resume` (en, he): the member makes a link for "Mom" with answers; signed
+  out, the page shows the banner, the card and the photo with "אמא · dates" burned in; after
+  stopping, "This link isn't valid". axe 0. Screenshots `165-resume-links`, `166-resume-page`.
+- The API image installs `fonts-dejavu-core` (Hebrew, Arabic and Cyrillic) for the watermark.
+- Docs: PRIVACY.md, CHANGELOG, README.

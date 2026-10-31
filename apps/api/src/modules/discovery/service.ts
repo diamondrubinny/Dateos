@@ -440,6 +440,16 @@ export class DiscoveryService {
    * My own card as others see it (phase 44): the same fields, built by the same code, with no
    * distance or reasons (those depend on who's looking). Says what currently keeps it out of decks.
    */
+  /** Phase 68b: my own card as strangers see it (the résumé picks from it). */
+  async ownCard(userId: string): Promise<PublicProfile | undefined> {
+    const [profile] = await this.toProfiles(
+      userId,
+      [{ userId, km: Number.NaN, result: undefined }],
+      { includeViewer: true },
+    );
+    return profile;
+  }
+
   async preview(userId: string): Promise<ProfilePreview> {
     const [profile] = await this.toProfiles(
       userId,

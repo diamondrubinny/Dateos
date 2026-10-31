@@ -128,6 +128,11 @@ function ProfileContent() {
             label={t('album.title')}
             onPress={() => router.push('/my-album')}
           />
+          <Button
+            variant="secondary"
+            label={t('resume.title')}
+            onPress={() => router.push('/resume')}
+          />
           {faithModule ? (
             <Button
               variant="secondary"

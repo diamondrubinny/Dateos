@@ -150,6 +150,18 @@ export async function exportMemberData(
     .select({ since: t.matchmakers.grantedAt })
     .from(t.matchmakers)
     .where(eq(t.matchmakers.userId, userId));
+  // Phase 68b: résumé links (never the token).
+  const resumeLinkRows = await db
+    .select({
+      label: t.resumeLinks.label,
+      sections: t.resumeLinks.sections,
+      views: t.resumeLinks.views,
+      at: t.resumeLinks.createdAt,
+      expiresAt: t.resumeLinks.expiresAt,
+      endedAt: t.resumeLinks.endedAt,
+    })
+    .from(t.resumeLinks)
+    .where(eq(t.resumeLinks.ownerId, userId));
   // Partner communities (phase 28b): your alias there, your decisions and matches.
   const partnerName = t.federationPartners.name;
   const federatedAliases = await db
@@ -624,6 +636,12 @@ export async function exportMemberData(
       received: introductionsReceived,
       sentAsMatchmaker: introductionsSent,
     },
+    resumeLinks: resumeLinkRows.map((r) => ({
+      ...r,
+      at: iso(r.at),
+      expiresAt: iso(r.expiresAt),
+      endedAt: iso(r.endedAt),
+    })),
     messagesYouSent: sent.map((m) => ({ ...m, at: iso(m.at), unsentAt: iso(m.unsentAt) })),
     blocks: blocks.map((b) => ({ ...b, at: iso(b.at) })),
     reportsYouFiled: reportsFiled.map((r) => ({ ...r, at: iso(r.at) })),

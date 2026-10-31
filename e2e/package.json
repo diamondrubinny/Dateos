@@ -75,7 +75,8 @@
     "album": "tsx album.ts",
     "discretion": "tsx discretion.ts",
     "hostile": "tsx hostile.ts",
-    "introductions": "tsx introductions.ts"
+    "introductions": "tsx introductions.ts",
+    "resume": "tsx resume.ts"
   },
   "dependencies": {
     "@axe-core/playwright": "4.14.0",
