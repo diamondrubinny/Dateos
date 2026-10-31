@@ -108,6 +108,7 @@ NexaHeart is in active development. Here is what works today and what comes next
 | A matchmaking résumé for one person: a short-lived, watermarked link you can end any time                                                                                                                                         | ✅ Available |
 | Friends who suggest a pair, and new profiles approved by a moderator (optional)                                                                                                                                                   | ✅ Available |
 | A chaperone (wali) the member chooses: read-only, from that day on, with a notice the other side sees                                                                                                                             | ✅ Available |
+| A live photo check through a provider you choose, and kindly asking a match to verify                                                                                                                                             | ✅ Available |
 
 ## Screenshots
 

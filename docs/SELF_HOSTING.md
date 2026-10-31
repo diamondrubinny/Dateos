@@ -289,6 +289,32 @@ NexaHeart doesn't check ages itself and keeps only the result.
 production. ⚖️ The provider processes what members show it (possibly biometric data): you need an
 agreement with it (DPA) and possibly a data protection impact assessment.
 
+## Live checks (optional)
+
+Members can verify their photos with a **live check at a provider of your choice**, instead of
+waiting for a moderator to compare a selfie (which stays available). NexaHeart keeps only the
+result; no selfie, video or face template ever reaches your server.
+
+1. Choose a provider that checks a live face and compares it with one photo, and agree on a shared
+   secret. 📘
+2. In `.env`: `LIVENESS_URL` (the provider's page) and `LIVENESS_SECRET` (32+ characters). Restart.
+3. The provider (or a small bridge in front of it) must:
+   - accept `?session=…&photo=…&return=…&callback=…` on `LIVENESS_URL`;
+   - fetch `photo` (the member's first profile photo) once, to compare with; it works only for
+     that session, before the result;
+   - when done, `POST` to `callback` this JSON: `{"session": "…", "result": "passed" | "failed" |
+"no_match", "method": "your_method_name", "ts": <unix seconds>}`, with the header
+     `x-nexaheart-signature: <hex HMAC-SHA256 of "liveness.session.result.method.ts" with the
+secret>`;
+   - send the member back to `return`.
+4. "passed" gives the verified badge (unless the profile photos changed meanwhile); changing photos
+   later removes it, as with the human check.
+
+`e2e/fake-liveness-provider.mjs` is a pretend provider for testing this locally; never use it in
+production. ⚖️ The provider processes biometric data: you need an agreement with it (DPA) that
+says it deletes the live check and any face template, and likely a data protection impact
+assessment.
+
 ## Passkeys
 
 Members can add a passkey in Settings and sign in with it on the web. The passkey belongs to the web

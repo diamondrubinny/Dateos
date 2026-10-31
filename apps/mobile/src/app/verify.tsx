@@ -9,10 +9,12 @@ import { Platform, StyleSheet, View } from 'react-native';
 import { AppText } from '../components/AppText';
 import { Banner } from '../components/Banner';
 import { Button } from '../components/Button';
+import { LiveCheck } from '../components/LiveCheck';
 import { Loading } from '../components/Loading';
 import { RequireSession } from '../components/RequireSession';
 import { Screen } from '../components/Screen';
 import { ApiRequestError } from '../lib/api';
+import { useMe } from '../lib/queries';
 import { useStartVerification, useSubmitSelfie, useVerification } from '../lib/safety-queries';
 import { radius, spacing, useColors } from '../lib/theme';
 
@@ -23,9 +25,12 @@ function VerifyScreen() {
   const start = useStartVerification();
   const submit = useSubmitSelfie();
   const [error, setError] = useState<string>();
+  // Phase 69: a live check can verify too (the badge is on the profile).
+  const verified = useMe().data?.verified ?? false;
 
   if (!state.data) return <Loading />;
-  const { status, pose, processing } = state.data;
+  const { pose, processing } = state.data;
+  const status = verified ? 'approved' : state.data.status;
 
   const begin = () => {
     setError(undefined);
@@ -89,8 +94,11 @@ function VerifyScreen() {
       ) : null}
       {status === 'rejected' ? <Banner tone="info" message={t('verify.rejected')} /> : null}
 
+      {/* Phase 69: the community's live check first, when it has a provider. */}
+      {status === 'none' || status === 'rejected' ? <LiveCheck /> : null}
       {status === 'none' || status === 'rejected' ? (
         <Button
+          variant="secondary"
           label={status === 'rejected' ? t('verify.retry') : t('verify.start')}
           loading={start.isPending}
           onPress={begin}

@@ -48,6 +48,7 @@ import { IntroductionService } from './modules/introductions/service.js';
 import { ResumeService } from './modules/resume/service.js';
 import { ProfileReviewService } from './modules/admin/review.js';
 import { ChaperoneService } from './modules/chaperone/service.js';
+import { LivenessService } from './modules/liveness/service.js';
 import { ComplianceService } from './modules/compliance/service.js';
 import { AgeCheckService } from './modules/age-check/service.js';
 import { ReportService } from './modules/safety/reports.js';
@@ -98,6 +99,7 @@ export interface Services {
   resume: ResumeService;
   profileReview: ProfileReviewService;
   chaperones: ChaperoneService;
+  liveness: LivenessService;
   ageCheck: AgeCheckService;
   updates: UpdateService;
   trust: TrustService;
@@ -360,6 +362,17 @@ export function createServices(
     { api: env.PUBLIC_API_URL.replace(/\/+$/, ''), app: appUrl(env) },
     overrides.now,
   );
+  // Phase 69: a live check through the community's provider, and asking a match to verify.
+  const liveness = new LivenessService(
+    dbHandle.db,
+    env.LIVENESS_URL && env.LIVENESS_SECRET
+      ? { url: env.LIVENESS_URL, secret: env.LIVENESS_SECRET }
+      : undefined,
+    { api: env.PUBLIC_API_URL.replace(/\/+$/, ''), app: appUrl(env) },
+    (photoId, ownerId) => photos.openForStaff(photoId, 'profile', ownerId),
+    overrides.now,
+  );
+  chat.useVerifyRequests(liveness);
   const compliance = new ComplianceService(
     dbHandle.db,
     {
@@ -442,6 +455,7 @@ export function createServices(
     resume,
     profileReview: new ProfileReviewService(dbHandle.db),
     chaperones,
+    liveness,
     ageCheck,
     updates,
     instance,
