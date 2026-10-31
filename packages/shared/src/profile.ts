@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
-import { accountNoticeSchema } from './moderation.js';
+import { accountNoticeSchema, profileReviewSchema } from './moderation.js';
 import { aboutSchema, accessNeedsSchema, dealbreakersSchema } from './about.js';
 import { identitySettingsSchema, myIdentitySchema } from './identity.js';
 import { faithSchema } from './faith.js';
@@ -247,6 +247,8 @@ export const meResponseSchema = z.object({
   consents: z.record(z.string(), z.boolean()),
   onboarding: z.object({ complete: z.boolean(), missing: z.array(z.enum(onboardingSteps)) }),
   verified: z.boolean(),
+  /** Phase 68c: approved, or waiting for a moderator (when the community asks for it). */
+  review: profileReviewSchema,
   notices: z.array(accountNoticeSchema),
 });
 export type MeResponse = z.infer<typeof meResponseSchema>;

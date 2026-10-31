@@ -491,6 +491,13 @@
       "when": 1793414968621,
       "tag": "0069_resume_links",
       "breakpoints": true
+    },
+    {
+      "idx": 70,
+      "version": "7",
+      "when": 1793416217604,
+      "tag": "0070_friend_suggestions_review",
+      "breakpoints": true
     }
   ]
 }

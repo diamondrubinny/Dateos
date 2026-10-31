@@ -46,6 +46,7 @@ import { AppealService } from './modules/safety/appeals.js';
 import { AlbumService } from './modules/photos/album.js';
 import { IntroductionService } from './modules/introductions/service.js';
 import { ResumeService } from './modules/resume/service.js';
+import { ProfileReviewService } from './modules/admin/review.js';
 import { ComplianceService } from './modules/compliance/service.js';
 import { AgeCheckService } from './modules/age-check/service.js';
 import { ReportService } from './modules/safety/reports.js';
@@ -94,6 +95,7 @@ export interface Services {
   album: AlbumService;
   introductions: IntroductionService;
   resume: ResumeService;
+  profileReview: ProfileReviewService;
   ageCheck: AgeCheckService;
   updates: UpdateService;
   trust: TrustService;
@@ -433,6 +435,7 @@ export function createServices(
     album,
     introductions,
     resume,
+    profileReview: new ProfileReviewService(dbHandle.db),
     ageCheck,
     updates,
     instance,

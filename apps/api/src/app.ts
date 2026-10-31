@@ -153,6 +153,7 @@ export async function buildApp(env: Env, deps: AppDependencies): Promise<Fastify
       appeals: services.appeals,
       compliance: services.compliance,
       introductions: services.introductions,
+      profileReview: services.profileReview,
     });
     await typed.register(resumePublicRoutes, { resume: services.resume });
     await typed.register(resumeRoutes, { auth: services.auth, resume: services.resume });

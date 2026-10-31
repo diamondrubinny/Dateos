@@ -4,6 +4,7 @@
 import {
   consoleQuerySchema,
   consoleSchema,
+  friendSuggestPageSchema,
   introductionAnswerSchema,
   introductionInputSchema,
   introductionOutcomeSchema,
@@ -82,5 +83,22 @@ export const introductionRoutes: FastifyPluginAsyncZod<{
       config: perUserLimit(40, 60 * 60_000),
     },
     async (request) => introductions.introduce(currentUser(request).id, request.body),
+  );
+
+  // ---------------------------------------------------------------- friends who suggest (68c)
+
+  app.get(
+    '/v1/friend-suggestions',
+    { schema: { response: { 200: friendSuggestPageSchema } } },
+    async (request) => introductions.friendPage(currentUser(request).id),
+  );
+
+  app.post(
+    '/v1/friend-suggestions',
+    {
+      schema: { body: introductionInputSchema, response: { 200: z.object({ id: z.uuid() }) } },
+      config: perUserLimit(10, 60 * 60_000),
+    },
+    async (request) => introductions.suggest(currentUser(request).id, request.body),
   );
 };

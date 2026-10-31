@@ -42,6 +42,8 @@ import type {
   SafetyOverview,
   IntroductionOrder,
   MatchmakerRow,
+  PendingProfile,
+  ReviewDecision,
 } from '@nexaheart/shared';
 
 export const API_URL: string = import.meta.env.VITE_API_URL ?? 'http://localhost:4000';
@@ -138,6 +140,7 @@ export interface AdminInstanceSettings {
   discreetName: string | null;
   riskCountries: string[];
   introductionOrder: IntroductionOrder;
+  profileApproval: boolean;
   joinMinAge: number;
   joinMaxAge: number | null;
   joinGenders: Gender[];
@@ -306,6 +309,14 @@ export const api = {
       `/v1/admin/audit?limit=50${before ? `&before=${encodeURIComponent(before)}` : ''}${
         only ? `&only=${only}` : ''
       }`,
+    ),
+  // Phase 68c: new profiles approved by hand (staff).
+  profileReviews: () => request<{ profiles: PendingProfile[] }>('GET', '/v1/admin/profile-reviews'),
+  decideReview: (userId: string, decision: ReviewDecision) =>
+    request<{ ok: true }>(
+      'POST',
+      `/v1/admin/profile-reviews/${encodeURIComponent(userId)}`,
+      decision,
     ),
   // Phase 68a: community matchmakers (admins only).
   matchmakers: (from: string, to: string) =>

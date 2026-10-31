@@ -20,6 +20,7 @@ import { UndoPass } from '../../components/UndoPass';
 import { MatchCelebration } from '../../components/MatchCelebration';
 import { Screen } from '../../components/Screen';
 import { OnBreak } from '../../components/OnBreak';
+import { ReviewBanner } from '../../components/ReviewBanner';
 import { travelLine } from '../../components/TravelMode';
 import { useDisplay } from '../../lib/display';
 import { useFederatedStatus } from '../../lib/federated-queries';
@@ -54,6 +55,8 @@ export default function Discover() {
     return (
       <Screen title={t('discover.title')}>
         <AccountNotices />
+        <ReviewBanner />
+        <ReviewBanner />
         <OnBreak />
       </Screen>
     );
@@ -92,6 +95,8 @@ export default function Discover() {
     return (
       <Screen title={t('discover.title')}>
         <AccountNotices />
+        <ReviewBanner />
+        <ReviewBanner />
         {deckSwitch}
         {deck === 'friend' ? (
           <FriendsDeck />
@@ -120,6 +125,7 @@ export default function Discover() {
   return (
     <Screen title={t('discover.title')}>
       <AccountNotices />
+      <ReviewBanner />
       {deckSwitch}
       {travel.data ? <Banner tone="info" message={travelLine(travel.data, locale, t)} /> : null}
       {feed.error ? <Banner tone="error" message={t('common.genericError')} /> : null}

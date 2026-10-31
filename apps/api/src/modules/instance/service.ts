@@ -63,6 +63,7 @@ export interface AdminInstanceSettings {
   discreetName: string | null;
   riskCountries: string[];
   introductionOrder: IntroductionOrder;
+  profileApproval: boolean;
   joinMinAge: number;
   joinMaxAge: number | null;
   joinGenders: Gender[];
@@ -226,6 +227,7 @@ export class InstanceService {
       discreetName: info.discreetName,
       riskCountries: info.community.riskCountries,
       introductionOrder: row?.introductionOrder === 'women_first' ? 'women_first' : 'together',
+      profileApproval: row?.profileApproval ?? false,
       joinMinAge: info.community.join.minAge,
       joinMaxAge: info.community.join.maxAge,
       joinGenders: info.community.join.genders,

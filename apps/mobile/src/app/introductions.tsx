@@ -39,6 +39,11 @@ function Introductions() {
       {matchmakerSince ? (
         <Button label={t('console.title')} onPress={() => router.push('/matchmaking')} />
       ) : null}
+      <Button
+        variant="secondary"
+        label={t('suggest.title')}
+        onPress={() => router.push('/suggest-friends')}
+      />
       {received.length === 0 ? (
         <AppText variant="body" tone="muted">
           {t('intro.empty')}
@@ -85,8 +90,13 @@ function IntroductionCard({
       style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}
     >
       <AppText variant="heading">{t('intro.cardTitle', { by, name })}</AppText>
-      <AppText variant="caption" tone={since ? 'primary' : 'muted'}>
-        {since ? `💌 ${t('intro.since', { date: since })}` : t('intro.notAnymore')}
+      {/* Phase 68c: a friend who knows both, never with a matchmaker's badge. */}
+      <AppText variant="caption" tone={since || intro.kind === 'friend' ? 'primary' : 'muted'}>
+        {intro.kind === 'friend'
+          ? `🤝 ${t('suggest.fromFriend', { name: by })}`
+          : since
+            ? `💌 ${t('intro.since', { date: since })}`
+            : t('intro.notAnymore')}
       </AppText>
       <View style={[styles.note, { backgroundColor: colors.primarySoft }]}>
         <AppText variant="body" userContent>

@@ -26,6 +26,7 @@ import { Verifications } from './pages/Verifications';
 import { Appeals } from './pages/Appeals';
 import { Compliance } from './pages/Compliance';
 import { Matchmakers } from './pages/Matchmakers';
+import { Reviews } from './pages/Reviews';
 
 const LOCALE_KEY = 'nexaheart-admin-locale';
 
@@ -94,29 +95,32 @@ function Shell({
       | 'partners'
       | 'compliance'
       | 'matchmakers'
+      | 'reviews'
       | 'system',
   ) => (
     <li>
       <a href={`#/${key}`} aria-current={current === key ? 'page' : undefined}>
         {key === 'system'
           ? t.system.nav
-          : key === 'matchmakers'
-            ? t.matchmakers.nav
-            : key === 'compliance'
-              ? t.compliance.nav
-              : key === 'partners'
-                ? t.partners.nav
-                : key === 'integrations'
-                  ? t.integrations.nav
-                  : key === 'branding'
-                    ? t.branding.nav
-                    : key === 'venues'
-                      ? t.venues.nav
-                      : key === 'events'
-                        ? t.events.nav
-                        : key === 'signup'
-                          ? t.signup.nav
-                          : t.nav[key]}
+          : key === 'reviews'
+            ? t.reviews.nav
+            : key === 'matchmakers'
+              ? t.matchmakers.nav
+              : key === 'compliance'
+                ? t.compliance.nav
+                : key === 'partners'
+                  ? t.partners.nav
+                  : key === 'integrations'
+                    ? t.integrations.nav
+                    : key === 'branding'
+                      ? t.branding.nav
+                      : key === 'venues'
+                        ? t.venues.nav
+                        : key === 'events'
+                          ? t.events.nav
+                          : key === 'signup'
+                            ? t.signup.nav
+                            : t.nav[key]}
       </a>
     </li>
   );
@@ -133,6 +137,7 @@ function Shell({
               {link('reports')}
               {link('overview')}
               {link('verifications')}
+              {link('reviews')}
               {link('appeals')}
               {link('venues')}
               {link('events')}
@@ -177,6 +182,7 @@ function Routes({ staff }: { staff: NonNullable<Awaited<ReturnType<typeof api.me
   if (route[0] === 'reports' && route[1]) return <ReportDetail id={route[1]} staff={staff} />;
   if (route[0] === 'overview') return <Overview />;
   if (route[0] === 'verifications') return <Verifications />;
+  if (route[0] === 'reviews') return <Reviews isAdmin={staff.role === 'admin'} />;
   if (route[0] === 'appeals') return <Appeals />;
   if (route[0] === 'venues') return <Venues isAdmin={staff.role === 'admin'} />;
   if (route[0] === 'events') return <Events isAdmin={staff.role === 'admin'} />;

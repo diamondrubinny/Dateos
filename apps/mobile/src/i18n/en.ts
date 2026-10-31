@@ -1381,7 +1381,7 @@ export const en = {
       'Matchmakers named by the community may find me and suggest someone. My answers stay private.',
     title: 'Introductions',
     intro:
-      'A community matchmaker thought two people might get along. Each of you answers privately: if you both say yes, a chat opens. Nobody is told about a no.',
+      'A community matchmaker or a friend here thought two people might get along. Each of you answers privately: if you both say yes, a chat opens. Nobody is told about a no.',
     empty: 'No introductions yet. To receive them, turn on “Open to matchmakers” in Settings.',
     someMatchmaker: 'A community matchmaker',
     cardTitle: '{{by}} suggests you meet {{name}}',
@@ -1464,6 +1464,33 @@ export const en = {
     bannerHint: 'Please don’t pass it on.',
     photoOf: 'Photo of {{name}}',
     print: 'Print or save as PDF',
+  },
+  suggest: {
+    title: 'Suggest two friends to each other',
+    intro:
+      'Know two of your friends here who might get along? Suggest they meet. Each answers privately; you only see whether it went ahead.',
+    friends: 'My friends here',
+    needTwo:
+      'Friends here are people you matched with in friends mode, or your double-date partner. You need at least two.',
+    limit: 'You’ve sent today’s suggestions. You can send more tomorrow.',
+    fromFriend: '{{name}} is your friend here',
+    settingLabel: 'Friends may suggest someone to me',
+    settingHint:
+      'Only friends you made here, and only people you could meet in Discover anyway. Your answers stay private.',
+  },
+  review: {
+    pendingTitle: 'Your profile is waiting for approval',
+    pendingBody:
+      'This community has a moderator look at each new profile. Until then, nobody sees it and Discover stays empty. You can keep editing it.',
+    changesTitle: 'Please change: {{reason}}',
+    changesHint: 'When you’re done, send it again.',
+    resubmit: 'Send it again',
+    reasons: {
+      photos: 'your photos',
+      about: 'about me',
+      answers: 'your answers',
+      other: 'something',
+    },
   },
   album: {
     title: 'Private album',

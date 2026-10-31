@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
-import type { ComplianceTemplate, IntroductionOrder } from '@nexaheart/shared';
+import type { ComplianceTemplate, IntroductionOrder, ProfileReviewReason } from '@nexaheart/shared';
 import { createContext, useContext } from 'react';
 
 export type Locale = 'he' | 'en';
@@ -553,6 +553,34 @@ const en = {
     } as Record<ComplianceTemplate, { title: string; help: string }>,
     downloadEn: 'English',
     downloadHe: 'Hebrew',
+  },
+  reviews: {
+    nav: 'New profiles',
+    title: 'New profiles',
+    intro:
+      'Where the community asks for it, a moderator approves each new profile before others see it. You see what any member would see: no email, no place.',
+    settingTitle: 'Approve new profiles',
+    settingLabel: 'A moderator approves each new profile before others see it',
+    settingHelp:
+      'New profiles wait here: nobody sees them, and they see nobody, until approved. Profiles made before you turn this on aren’t affected.',
+    save: 'Save',
+    saved: 'Saved.',
+    empty: 'No profiles are waiting.',
+    newProfile: 'New',
+    resubmitted: 'Sent again after changes',
+    answer: 'Answer',
+    approve: 'Approve {{name}}',
+    ask: 'Ask {{name}} for a change',
+    askTitle: 'What should change?',
+    reasons: {
+      photos: 'Photos',
+      about: 'About me',
+      answers: 'Answers',
+      other: 'Something else',
+    } as Record<ProfileReviewReason, string>,
+    note: 'A note the member will read (optional)',
+    send: 'Send to {{name}}',
+    cancel: 'Cancel',
   },
   matchmakers: {
     nav: 'Matchmakers',
@@ -1555,6 +1583,34 @@ const he: Messages = {
     } as Record<ComplianceTemplate, { title: string; help: string }>,
     downloadEn: 'אנגלית',
     downloadHe: 'עברית',
+  },
+  reviews: {
+    nav: 'פרופילים חדשים',
+    title: 'פרופילים חדשים',
+    intro:
+      'כשהקהילה מבקשת זאת, צוות הניהול מאשר כל פרופיל חדש לפני שאחרים רואים אותו. כאן מוצג רק מה שמופיע בפרופיל לכל הקהילה: בלי אימייל ובלי מקום.',
+    settingTitle: 'אישור פרופילים חדשים',
+    settingLabel: 'צוות הניהול מאשר כל פרופיל חדש לפני שאחרים רואים אותו',
+    settingHelp:
+      'פרופילים חדשים מחכים כאן: עד האישור אף אחד לא רואה אותם, וגם הם לא רואים אף אחד. פרופילים שנוצרו לפני ההפעלה לא מושפעים.',
+    save: 'שמירה',
+    saved: 'נשמר.',
+    empty: 'אין פרופילים שמחכים.',
+    newProfile: 'חדש',
+    resubmitted: 'נשלח שוב אחרי שינויים',
+    answer: 'תשובה',
+    approve: 'אישור של {{name}}',
+    ask: 'בקשת שינוי: {{name}}',
+    askTitle: 'מה צריך לשנות?',
+    reasons: {
+      photos: 'תמונות',
+      about: 'עליי',
+      answers: 'תשובות',
+      other: 'משהו אחר',
+    } as Record<ProfileReviewReason, string>,
+    note: 'הערה שתוצג יחד עם הבקשה (לא חובה)',
+    send: 'שליחה אל {{name}}',
+    cancel: 'חזרה',
   },
   matchmakers: {
     nav: 'שדכנות',

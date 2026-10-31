@@ -186,6 +186,7 @@ export const adminSettingsSchema = z.object({
   discreetName: z.string().nullable(),
   riskCountries: z.array(z.string()),
   introductionOrder: z.enum(introductionOrders),
+  profileApproval: z.boolean(),
   joinMinAge: z.number().int(),
   joinMaxAge: z.number().int().nullable(),
   joinGenders: z.array(genderSchema),

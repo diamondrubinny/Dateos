@@ -152,3 +152,64 @@ never expire and can't be taken back.
   stopping, "This link isn't valid". axe 0. Screenshots `165-resume-links`, `166-resume-page`.
 - The API image installs `fonts-dejavu-core` (Hebrew, Arabic and Cyrillic) for the watermark.
 - Docs: PRIVACY.md, CHANGELOG, README.
+
+---
+
+# Phase 68c: Friends who suggest a pair, and profiles approved by hand (v1.47)
+
+> Status: ✅ done (2026-10-31).
+
+## The gap
+
+- Many couples meet through a friend who knows both (Shlish Gan Eden is built on it). In the app,
+  only a named matchmaker (68a) can introduce two people.
+- Small, close communities (religious, accessibility organisations, invitation-only groups) want a
+  person to look at each new profile before others see it; today a new profile appears at once
+  (signup modes only decide who may open an account).
+
+## What changes
+
+| Part                               | Change                                                                                                                                                                                                                                                                                |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Suggest a pair (any member)        | Matches → "Suggest two friends to each other": choose two people I'm friends with here (a friends-mode match, or my double-date pair) and write why. It works like a matchmaker's introduction: each answers privately, two yeses open a chat, a no is never revealed. Up to 3 a day. |
+| Who may get one (member, on)       | Settings: "Friends may suggest someone to me" (on by default; it only ever comes from someone I'm already friends with here, and only for people I could meet in Discover anyway). Off: no friend suggestions.                                                                        |
+| The introduction says who          | "{name}, your friend here, suggests you meet {other}", not a community matchmaker; no badge; never counted in the matchmakers' report.                                                                                                                                                |
+| Approve new profiles (admins, off) | Dashboard → Branding: "A moderator approves each new profile". New profiles wait: nobody sees them, and they don't see Discover, until a moderator approves. Profiles made before it was turned on stay as they are.                                                                  |
+| The queue (moderators)             | Dashboard → New profiles: photos, name, age, about me and answers; "Approve" or "Ask for changes" with a reason the member sees (photos, about me, answers, other) and an optional note. Audited.                                                                                     |
+| The member                         | A banner: "Your profile is waiting for approval", or "Please change: {reason}" with the note; after editing, "Send again". Nobody else learns about it.                                                                                                                               |
+
+## Security and privacy ⚖️
+
+- A friend suggestion can only pair people the friend is connected with, both ways allowed by the
+  usual dating rules; the friend never learns the answers, only "didn't go ahead".
+- Moderators see only what any member would see on the profile (no email, no place), as they do
+  for reports; every decision is audited and in "Download my data".
+- New data: one setting; a profile's review state, reason and note.
+
+## Tests
+
+- Integration: friend suggestions only between my friends (friends-mode match, pair), never others;
+  the receiver's setting; 3 a day; private answers and a match; labelled as a friend; not in the
+  report. Approval: off by default; on, a new profile is hidden both ways until approved; existing
+  ones aren't affected; ask for changes (reason, note), resubmit, approve; members can't use the
+  queue; audited; export.
+- e2e (en, he): an admin turns approval on; a new member sees "waiting"; a moderator asks for
+  changes; the member sends again; approved; a friend suggests two friends. axe 0. Screenshots.
+
+## Done (68c)
+
+- **Integration** (3, `friend-suggestions.test.ts`): a friend suggests two friends (a friends-mode
+  match or a double-date pair), each answers privately, two yeses open a match, the friend sees
+  only states; labelled `friend`, with the friend's name and no matchmaker badge, no console and
+  never in the matchmakers' report; refused for non-friends and for members who turned suggestions
+  off; 3 a day. Approval: off by default; on, a new profile is hidden both ways (Discover, its
+  profile page) while existing ones aren't; the queue shows no email or place, members can't use
+  it; "ask for a change" with reason and note, resend once, approve; audited; in "Download my
+  data".
+- **e2e** `pnpm --dir e2e friend-suggestions` (en, he): an admin turns approval on; a new member
+  sees "waiting"; a moderator asks for a change; the member sees the reason and note and sends it
+  again; approved. A member suggests two friends; one sees it came from a friend. axe 0.
+  Screenshots `167-review-pending`, `admin-39-reviews`, `168-suggest-friends`,
+  `169-friend-suggestion` (en, he).
+- Matchmakers' consoles and introductions never include profiles that are waiting.
+- Docs: PRIVACY.md, CHANGELOG, README.

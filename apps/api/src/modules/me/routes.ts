@@ -108,6 +108,16 @@ export const meRoutes: FastifyPluginAsyncZod<{
     },
   );
 
+  // Phase 68c: after a moderator asked for changes, send the profile again.
+  app.post(
+    '/v1/me/review/resubmit',
+    { schema: { response: { 200: ok } }, config: perUserLimit(10, 60 * 60_000) },
+    async (request) => {
+      await me.resubmitForReview(currentUser(request).id);
+      return { ok: true as const };
+    },
+  );
+
   // Take a break (phase 18a). A small limit stops scripts from flickering a profile on and off.
   app.put(
     '/v1/me/pause',

@@ -40,6 +40,8 @@ import {
   type FriendMode,
   REPORT_OUTCOME_DAYS,
   type ReportCategory,
+  type ProfileReviewReason,
+  type ProfileReviewStatus,
 } from '@nexaheart/shared';
 import { checkHarm } from '@nexaheart/ai';
 import { readCommunitySettings, readIdentitySettings } from '../../lib/community-settings.js';
@@ -287,6 +289,12 @@ export class MeService {
       ),
       onboarding: { complete: missing.length === 0, missing },
       verified: Boolean(profile?.verifiedAt),
+      // Phase 68c: waiting for a moderator, or asked to change something (never the moderator).
+      review: {
+        status: (profile?.reviewStatus ?? 'approved') as ProfileReviewStatus,
+        reason: (profile?.reviewReason ?? null) as ProfileReviewReason | null,
+        note: profile?.reviewNote ?? null,
+      },
       // Members see the category of a warning, never the moderator's internal note.
       notices: [
         ...warnings.map((w) => ({
@@ -548,6 +556,17 @@ export class MeService {
   }
 
   /** Creates the profile. Birth date is final: an underage date suspends the account. */
+  /** Phase 68c: after changes were asked, the member sends the profile to the queue again. */
+  async resubmitForReview(userId: string): Promise<void> {
+    const updated = await this.db
+      .update(profiles)
+      .set({ reviewStatus: 'pending', resubmittedAt: new Date() })
+      .where(and(eq(profiles.userId, userId), eq(profiles.reviewStatus, 'changes')))
+      .returning({ userId: profiles.userId });
+    if (updated.length === 0)
+      throw new HttpError(409, ErrorCode.Conflict, 'Nothing to send again.');
+  }
+
   async createProfile(userId: string, input: ProfileInput): Promise<void> {
     await this.assertConsented(userId);
     const [existing] = await this.db
@@ -579,7 +598,7 @@ export class MeService {
       );
     }
     // Phase 62c: this community's rules for joining. Not a suspension: another community may fit.
-    const { join } = await readCommunitySettings(this.db);
+    const { join, profileApproval } = await readCommunitySettings(this.db);
     const notEligible = (message: string) => new HttpError(400, ErrorCode.NotEligible, message);
     if (age < join.minAge || (join.maxAge !== null && age > join.maxAge)) {
       throw notEligible('This community is for another age range.');
@@ -594,6 +613,8 @@ export class MeService {
     await this.db.transaction(async (tx) => {
       await tx.insert(profiles).values({
         declarationAcceptedAt: join.declaration ? new Date() : null,
+        // Phase 68c: where a moderator approves new profiles, nobody sees this one until then.
+        reviewStatus: profileApproval ? 'pending' : 'approved',
         userId,
         displayName: input.displayName,
         birthDate: input.birthDate,

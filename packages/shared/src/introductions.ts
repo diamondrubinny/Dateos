@@ -15,6 +15,12 @@ export const MAX_INTRODUCTION_NOTE = 300;
 export const INTRODUCTIONS_DAILY = 20;
 /** Days to answer (counted again for the second side when the first said yes). */
 export const INTRODUCTION_DAYS = 14;
+/** Phase 68c: suggestions one member may send their friends in 24 hours. */
+export const FRIEND_SUGGESTIONS_DAILY = 3;
+
+/** Phase 68c: by a community matchmaker, or by a friend who knows both. */
+export const introductionKinds = ['matchmaker', 'friend'] as const;
+export type IntroductionKind = (typeof introductionKinds)[number];
 /** Closed introductions are deleted after this many days (the worker's retention job). */
 export const INTRODUCTION_RETENTION_DAYS = 365;
 
@@ -89,6 +95,8 @@ export const introducerSchema = z.object({
 /** An introduction I received (never the other side's answer). */
 export const receivedIntroductionSchema = z.object({
   id: z.uuid(),
+  /** Phase 68c: a friend's suggestion carries no matchmaker badge. */
+  kind: z.enum(introductionKinds),
   matchmaker: introducerSchema.nullable(),
   note: z.string(),
   other: personSchema.extend({ photoUrl: z.string().nullable() }),
@@ -127,6 +135,14 @@ export const consoleSchema = z.object({
   left: z.number().int(),
 });
 export type MatchmakerConsole = z.infer<typeof consoleSchema>;
+
+/** Phase 68c: the people I may suggest to each other (my friends here) and what I suggested. */
+export const friendSuggestPageSchema = z.object({
+  friends: z.array(personSchema.extend({ photoUrl: z.string().nullable() })),
+  sent: z.array(sentIntroductionSchema),
+  left: z.number().int(),
+});
+export type FriendSuggestPage = z.infer<typeof friendSuggestPageSchema>;
 
 // ---------------------------------------------------------------- dashboard
 

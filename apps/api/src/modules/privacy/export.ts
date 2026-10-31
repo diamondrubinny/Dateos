@@ -150,6 +150,16 @@ export async function exportMemberData(
     .select({ since: t.matchmakers.grantedAt })
     .from(t.matchmakers)
     .where(eq(t.matchmakers.userId, userId));
+  // Phase 68c: the profile's review, where a moderator approves new profiles (never who).
+  const [review] = await db
+    .select({
+      status: t.profiles.reviewStatus,
+      reason: t.profiles.reviewReason,
+      note: t.profiles.reviewNote,
+      reviewedAt: t.profiles.reviewedAt,
+    })
+    .from(t.profiles)
+    .where(eq(t.profiles.userId, userId));
   // Phase 68b: résumé links (never the token).
   const resumeLinkRows = await db
     .select({
@@ -541,6 +551,7 @@ export async function exportMemberData(
           hideDistance: preferences.hideDistance,
           discreetNotifications: preferences.discreetNotifications,
           openToMatchmakers: preferences.openToMatchmakers,
+          friendSuggestions: preferences.friendSuggestions,
           showMetInPersonBadge: preferences.showMetBadge,
           showCheckedInAtEventBadge: preferences.showEventBadge,
           friendsMode: {
@@ -636,6 +647,7 @@ export async function exportMemberData(
       received: introductionsReceived,
       sentAsMatchmaker: introductionsSent,
     },
+    profileReview: review ? { ...review, reviewedAt: iso(review.reviewedAt) } : null,
     resumeLinks: resumeLinkRows.map((r) => ({
       ...r,
       at: iso(r.at),

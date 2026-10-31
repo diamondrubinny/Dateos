@@ -134,6 +134,7 @@ describe.skipIf(!integrationEnabled)('voice messages & push (integration)', () =
       hideDistance: false,
       discreetNotifications: false,
       openToMatchmakers: false,
+      friendSuggestions: true,
       pushDevices: 0,
     });
   });

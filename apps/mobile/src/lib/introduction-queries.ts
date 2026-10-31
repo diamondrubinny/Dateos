@@ -3,6 +3,7 @@
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 import type {
   ConsoleQuery,
+  FriendSuggestPage,
   IntroductionAnswer,
   IntroductionInput,
   IntroductionOutcome,
@@ -70,5 +71,22 @@ export function useIntroduce() {
     mutationFn: (input: IntroductionInput) =>
       apiFetch<{ id: string }>('/v1/introductions', { method: 'POST', body: json(input) }),
     onSuccess: () => client.invalidateQueries({ queryKey: ['matchmaker-console'] }),
+  });
+}
+
+/** Phase 68c: my friends here, to suggest two of them to each other. */
+export function useFriendSuggestPage() {
+  return useQuery({
+    queryKey: ['friend-suggestions'],
+    queryFn: () => apiFetch<FriendSuggestPage>('/v1/friend-suggestions'),
+  });
+}
+
+export function useSuggestFriends() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (input: IntroductionInput) =>
+      apiFetch<{ id: string }>('/v1/friend-suggestions', { method: 'POST', body: json(input) }),
+    onSuccess: () => client.invalidateQueries({ queryKey: ['friend-suggestions'] }),
   });
 }

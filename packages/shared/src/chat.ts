@@ -294,6 +294,8 @@ export const chatSettingsSchema = z.object({
   discreetNotifications: z.boolean(),
   /** Phase 68a: community matchmakers may find me in their console and introduce me. */
   openToMatchmakers: z.boolean(),
+  /** Phase 68c: friends here may suggest someone to me. */
+  friendSuggestions: z.boolean(),
 });
 export const chatSettingsInputSchema = chatSettingsSchema
   .partial()

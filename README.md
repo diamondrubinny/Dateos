@@ -106,6 +106,7 @@ NexaHeart is in active development. Here is what works today and what comes next
 | A discreet installed app (neutral name, plain icons) and countries at risk with a travel warning and automatic hiding                                                                                                             | ✅ Available |
 | Community matchmakers named by the admins: private introductions (women first, if chosen), credit when it works out                                                                                                               | ✅ Available |
 | A matchmaking résumé for one person: a short-lived, watermarked link you can end any time                                                                                                                                         | ✅ Available |
+| Friends who suggest a pair, and new profiles approved by a moderator (optional)                                                                                                                                                   | ✅ Available |
 
 ## Screenshots
 
