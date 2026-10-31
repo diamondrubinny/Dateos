@@ -28,6 +28,7 @@ import { eventShareText, eventUrl, hebrewDate, shareEvent } from '../../lib/even
 import { useCheckIn, useEvent, useEventMisses, useRsvp } from '../../lib/event-queries';
 import { useLocale } from '../../lib/locale';
 import { radius, spacing, useColors } from '../../lib/theme';
+import { venueTags } from '../../lib/venue-tags';
 
 function EventScreen() {
   const { t } = useTranslation();
@@ -145,6 +146,11 @@ function EventScreen() {
           {e.venue.stepFree ? (
             <AppText variant="caption" tone="success">
               ♿ {t('datePlan.stepFree')}
+            </AppText>
+          ) : null}
+          {venueTags(e.venue, t) ? (
+            <AppText variant="caption" tone="muted">
+              {venueTags(e.venue, t).slice(3)}
             </AppText>
           ) : null}
           {e.venue.note ? (

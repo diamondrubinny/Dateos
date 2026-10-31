@@ -27,6 +27,8 @@ const toVenue = (r: Row): Venue => ({
   address: r.address,
   note: r.note,
   stepFree: r.stepFree,
+  kosher: r.kosher,
+  shabbatClosed: r.shabbatClosed,
 });
 
 const toAdmin = (r: Row): AdminVenue => ({

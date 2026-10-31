@@ -243,6 +243,8 @@ export function toView(row: MessageRow, viewerId: string, now = Date.now()): Mes
               address: row.plan.venueAddress,
               note: row.plan.venueNote,
               stepFree: row.plan.venueStepFree,
+              kosher: row.plan.venueKosher,
+              shabbatClosed: row.plan.venueShabbatClosed,
             },
             startsAt: row.plan.startsAt.toISOString(),
             note: row.plan.note,

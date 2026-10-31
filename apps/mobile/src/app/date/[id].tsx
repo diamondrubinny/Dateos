@@ -69,6 +69,8 @@ function PlanDateScreen() {
     useConversations().data?.find((c) => c.matchId === matchId)?.profile.accessNeeds ?? [];
   const needsStepFree = [...myNeeds, ...theirNeeds].some((n) => STEP_FREE_NEEDS.includes(n));
   const [stepFreeOnly, setStepFreeOnly] = useState<boolean>();
+  // Phase 74b: kosher places only, by choice.
+  const [kosherOnly, setKosherOnly] = useState(false);
   const propose = useProposeDate(matchId);
   const counter = useCounterDate(matchId);
   const sending = counterOf ? counter : propose;
@@ -97,6 +99,7 @@ function PlanDateScreen() {
   const shown = list
     .filter((v) => category === 'all' || v.category === category)
     .filter((v) => !onlyStepFree || v.stepFree)
+    .filter((v) => !kosherOnly || v.kosher)
     // Step-free places first whenever it matters to either person.
     .sort((a, b) => (needsStepFree ? Number(b.stepFree) - Number(a.stepFree) : 0));
   const venue = list.find((v) => v.id === venueId);
@@ -192,6 +195,13 @@ function PlanDateScreen() {
               onChange={setStepFreeOnly}
             />
           ) : null}
+          {!counterOf && list.some((v) => v.kosher) ? (
+            <Checkbox
+              label={t('datePlan.kosherOnly')}
+              checked={kosherOnly}
+              onChange={setKosherOnly}
+            />
+          ) : null}
           {counterOf ? null : (
             <ChoiceGroup
               stacked
@@ -203,6 +213,8 @@ function PlanDateScreen() {
                   v.area,
                   t(`datePlan.categories.${v.category}`),
                   v.stepFree ? `♿ ${t('datePlan.stepFree')}` : null,
+                  v.kosher ? t('datePlan.kosher') : null,
+                  v.shabbatClosed ? t('datePlan.shabbatClosed') : null,
                 ]
                   .filter(Boolean)
                   .join(' · '),

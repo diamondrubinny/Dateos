@@ -118,6 +118,8 @@ describe.skipIf(!integrationEnabled)('date planner (integration)', () => {
         address: place.address,
         note: 'Busy until late',
         stepFree: true,
+        kosher: false,
+        shabbatClosed: false,
       },
     ]);
     const { rows } = await q(
@@ -180,6 +182,33 @@ describe.skipIf(!integrationEnabled)('date planner (integration)', () => {
     });
     const again = (await api(ctx, dan, 'GET', `/v1/matches/${matchId}/messages`)).json();
     expect(again.messages.at(-1).date.venue.name).toBe('Café Puaa');
+  });
+
+  it('phase 74b: kosher and closed on Shabbat, set by admins, copied into the date', async () => {
+    const venueId = await addVenue({ kosher: true, shabbatClosed: true });
+    expect((await api(ctx, noa, 'GET', '/v1/venues')).json().venues[0]).toMatchObject({
+      kosher: true,
+      shabbatClosed: true,
+    });
+    expect(
+      (await api(ctx, noa, 'PATCH', `/v1/admin/venues/${venueId}`, { kosher: false })).statusCode,
+    ).toBe(403);
+    expect(
+      (
+        await asStaff(await staff('admin'), 'POST', '/v1/admin/venues', {
+          ...place,
+          kosher: 'yes',
+        })
+      ).statusCode,
+    ).toBe(400);
+    const card = (await propose(noa, venueId)).json();
+    expect(card.date.venue).toMatchObject({ kosher: true, shabbatClosed: true });
+    // Losing the certificate later doesn't change what was agreed, but new dates see it.
+    const admin = await staff('admin');
+    await asStaff(admin, 'PATCH', `/v1/admin/venues/${venueId}`, { kosher: false });
+    const again = (await api(ctx, dan, 'GET', `/v1/matches/${matchId}/messages`)).json();
+    expect(again.messages.at(-1).date.venue).toMatchObject({ kosher: true });
+    expect((await api(ctx, noa, 'GET', '/v1/venues')).json().venues[0].kosher).toBe(false);
   });
 
   it('enforces the rules: participants only, active place, time window, kind note, one open idea', async () => {

@@ -1146,6 +1146,9 @@ export const venues = pgTable(
     address: varchar('address', { length: 160 }).notNull(),
     note: varchar('note', { length: 300 }),
     stepFree: boolean('step_free').notNull().default(false),
+    /** Phase 74b: kosher (with a valid certificate, by staff ⚖️) and closed on Shabbat. */
+    kosher: boolean('kosher').notNull().default(false),
+    shabbatClosed: boolean('shabbat_closed').notNull().default(false),
     active: boolean('active').notNull().default(true),
     ...timestamps,
   },
@@ -1173,6 +1176,8 @@ export const datePlans = pgTable(
     venueAddress: varchar('venue_address', { length: 160 }).notNull(),
     venueNote: varchar('venue_note', { length: 300 }),
     venueStepFree: boolean('venue_step_free').notNull(),
+    venueKosher: boolean('venue_kosher').notNull().default(false),
+    venueShabbatClosed: boolean('venue_shabbat_closed').notNull().default(false),
     startsAt: timestamp('starts_at', { withTimezone: true }).notNull(),
     note: varchar('note', { length: 200 }),
     status: dateStatus('status').notNull().default('proposed'),

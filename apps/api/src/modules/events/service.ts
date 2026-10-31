@@ -100,6 +100,8 @@ function baseView(
           address: v.address,
           note: v.note,
           stepFree: v.stepFree,
+          kosher: v.kosher,
+          shabbatClosed: v.shabbatClosed,
         }
       : null,
     startsAt: e.startsAt.toISOString(),

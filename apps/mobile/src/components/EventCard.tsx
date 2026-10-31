@@ -10,6 +10,7 @@ import { useEvents } from '../lib/event-queries';
 import { useLocale } from '../lib/locale';
 import { MIN_TOUCH, radius, spacing, useColors } from '../lib/theme';
 import { AppText } from './AppText';
+import { venueTags } from '../lib/venue-tags';
 
 export function formatEventTime(
   event: Pick<CommunityEvent, 'startsAt' | 'endsAt'>,
@@ -97,6 +98,7 @@ export function EventCard({ event }: { event: CommunityEvent }) {
             ? event.venue.area
             : t('datePlan.placeWithArea', { name: event.venue.name, area: event.venue.area })}
           {event.venue.stepFree ? ` · ♿ ${t('datePlan.stepFree')}` : ''}
+          {venueTags(event.venue, t)}
         </AppText>
       ) : null}
       {eventAudience(event, t) ? (

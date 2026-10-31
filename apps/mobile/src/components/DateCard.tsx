@@ -20,6 +20,7 @@ import { AppText } from './AppText';
 import { Banner } from './Banner';
 import { Button } from './Button';
 import { ChoiceGroup } from './Choice';
+import { venueTags } from '../lib/venue-tags';
 
 export function formatDateTime(iso: string, locale: string): string {
   return new Intl.DateTimeFormat(locale, {
@@ -102,6 +103,7 @@ export function DateCard({
         <AppText variant="body" tone="muted" userContent>
           {plan.venue.area} · {t(`datePlan.categories.${plan.venue.category}`)}
           {plan.venue.stepFree ? ` · ♿ ${t('datePlan.stepFree')}` : ''}
+          {venueTags(plan.venue, t)}
         </AppText>
         <AppText variant="body">{formatDateTime(plan.startsAt, locale)}</AppText>
         <AppText variant="caption" tone="muted" userContent selectable>

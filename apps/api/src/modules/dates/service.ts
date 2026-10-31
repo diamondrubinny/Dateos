@@ -187,6 +187,8 @@ export class DateService {
             venueAddress: venue.address,
             venueNote: venue.note,
             venueStepFree: venue.stepFree,
+            venueKosher: venue.kosher,
+            venueShabbatClosed: venue.shabbatClosed,
             startsAt,
             note,
           })
