@@ -41,6 +41,7 @@
     "federated-safety": "tsx federated-safety.ts",
     "federation-privacy": "tsx federation-privacy.ts",
     "trust-signals": "tsx trust-signals.ts",
+    "shabbat": "tsx shabbat.ts",
     "devices": "tsx devices.ts",
     "reactions-undo": "tsx reactions-undo.ts",
     "chat-control": "tsx chat-control.ts",

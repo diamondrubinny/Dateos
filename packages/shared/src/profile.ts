@@ -85,6 +85,8 @@ export const consentKinds = [
   'accessibility',
   /** Partner communities (phase 28b): a card, gender and who someone wants go to partners ⚖️. */
   'federation',
+  /** Shabbat and holiday mode (phase 74a): that the member keeps Shabbat, GDPR Art. 9(2)(a) ⚖️. */
+  'shabbat',
 ] as const;
 export const consentKindSchema = z.enum(consentKinds);
 export type ConsentKind = z.infer<typeof consentKindSchema>;

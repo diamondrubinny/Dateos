@@ -750,6 +750,20 @@ export class MeService {
           .set({ religionOk: [], faithOk: [], streamOk: [] })
           .where(eq(preferences.userId, userId));
       }
+      // Phase 74a: withdrawing the Shabbat consent turns the mode off and forgets its settings.
+      if (items.some((item) => item.kind === 'shabbat' && !item.granted)) {
+        await tx
+          .update(preferences)
+          .set({
+            shabbatMode: false,
+            shabbatShow: false,
+            shabbatCandles: 18,
+            shabbatSecondDay: false,
+            shabbatTimeZone: null,
+            shabbatHeld: false,
+          })
+          .where(eq(preferences.userId, userId));
+      }
       // Withdrawing the accessibility consent deletes the needs (phase 25).
       if (items.some((item) => item.kind === 'accessibility' && !item.granted)) {
         await tx

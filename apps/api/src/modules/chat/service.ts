@@ -25,6 +25,7 @@ import {
   type DateFeedbackView,
   NEW_ACCOUNT_CHAT_STARTS,
   MAX_PINNED_CHATS,
+  type RestWindow,
 } from '@nexaheart/shared';
 import { randomUUID } from 'node:crypto';
 import { and, asc, desc, eq, isNull, lt, or, sql } from 'drizzle-orm';
@@ -278,6 +279,12 @@ export class ChatService {
     /** The clock for time-based card states ("did you meet?"); tests move it. */
     private readonly now: () => number = Date.now,
   ) {}
+
+  /** Phase 74a: who's keeping Shabbat right now (and said so), for the inbox. */
+  private shabbat?: { restingShown(ids: string[]): Promise<Map<string, RestWindow>> };
+  useShabbat(shabbat: { restingShown(ids: string[]): Promise<Map<string, RestWindow>> }): void {
+    this.shabbat = shabbat;
+  }
 
   /** Whether a realtime connection may keep receiving events for this session. */
   async sessionActive(sessionId: string, userId: string): Promise<boolean> {
@@ -969,8 +976,11 @@ export class ChatService {
           .where(eq(matchPrefs.userId, viewerId))
       ).map((p) => [p.matchId, p]),
     );
+    const resting =
+      (await this.shabbat?.restingShown(summaries.map((m) => m.profile.id))) ?? new Map();
     const out: Conversation[] = [];
     for (const m of summaries) {
+      const rest = resting.get(m.profile.id);
       const [last] = await this.rows(and(eq(messages.matchId, m.id), visibleTo(viewerId)))
         .orderBy(desc(messages.createdAt))
         .limit(1);
@@ -998,6 +1008,7 @@ export class ChatService {
         muted: prefs.get(m.id)?.muted ?? false,
         archived: prefs.get(m.id)?.archived ?? false,
         pinned: Boolean(prefs.get(m.id)?.pinnedAt),
+        resting: rest ? { until: new Date(rest.end).toISOString(), kind: rest.kind } : null,
       });
     }
     // Pinned chats first, most recently pinned first (phase 38); then by latest activity.

@@ -53,12 +53,14 @@ export interface PushJob {
     | 'visible'
     | 'partner_message'
     | 'introduction'
-    | 'event_help';
+    | 'event_help'
+    | 'after_rest';
   /**
    * For 'checkin': the check-in id; for 'event': the event id; for 'call': the match id; for
    * 'visible' (a break ended): the member's own id; for 'partner_message' (phase 28c): the match
    * across communities; for 'introduction' (phase 68a): the introduction; for 'event_help'
-   * (phase 71c, to admins): the event.
+   * (phase 71c, to admins): the event; for 'after_rest' (phase 74a, things came in during
+   * Shabbat or a holiday): the member's own id.
    */
   matchId: string;
 }

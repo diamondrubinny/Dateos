@@ -1241,6 +1241,31 @@ export const en = {
       unanswered: 'Open my chats',
     },
   },
+  shabbat: {
+    nowShabbat: "It's Shabbat now, until {{end}}",
+    nowHoliday: "It's a holiday now, until {{end}}",
+    title: 'Shabbat and holidays',
+    entry: 'Shabbat and holidays',
+    intro:
+      'Quiet from candle lighting to nightfall on Shabbat and holidays, by your approximate location: no notifications, not even calls. Messages wait, and one notification tells you afterwards. Safety check-ins still come.',
+    consent: 'Let the app know I keep Shabbat and holidays',
+    consentHint:
+      "This is religious information. It's kept only with your consent, used only to time notifications (and to tell your matches, if you choose), and deleted if you withdraw.",
+    on: 'Shabbat and holiday mode',
+    next: 'Next Shabbat: {{start}} to {{end}}',
+    nextHoliday: 'Next holiday: {{start}} to {{end}}',
+    noLocation:
+      'Your approximate location is needed to work out the times. Turn on location in your settings.',
+    showMatches: "Tell my matches I'm keeping Shabbat",
+    showMatchesHint: 'Only during Shabbat and holidays, in your chats with them.',
+    candles: 'Candle lighting',
+    candlesOption: '{{n}} minutes before sunset',
+    secondDay: 'A second day of holidays',
+    secondDayHint: 'As kept outside Israel.',
+    how: 'Times are worked out on this server from your approximate location (to about a minute); Shabbat ends when the sun is 8.5° below the horizon. Customs differ: check with your community.',
+    resting: '{{name}} is keeping Shabbat right now and will answer after it ends',
+    restingHoliday: '{{name}} is keeping the holiday right now and will answer after it ends',
+  },
   appBadge: {
     label: 'Show a number on the app icon',
     hint: 'How many chats have unread messages, on the installed web app’s icon (where the device supports it). Never names.',

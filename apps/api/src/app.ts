@@ -35,6 +35,7 @@ import { photoRoutes } from './modules/photos/routes.js';
 import { adminRoutes } from './modules/admin/routes.js';
 import { federatedRoutes } from './modules/federation/member-routes.js';
 import { federationRoutes } from './modules/federation/routes.js';
+import { shabbatRoutes } from './modules/shabbat/routes.js';
 import { safetyRoutes } from './modules/safety/routes.js';
 import { deviceRoutes } from './modules/devices/routes.js';
 import { accountRoutes } from './modules/account/routes.js';
@@ -179,6 +180,7 @@ export async function buildApp(env: Env, deps: AppDependencies): Promise<Fastify
       chat: services.federatedChat,
       safety: services.federatedSafety,
     });
+    await typed.register(shabbatRoutes, { auth: services.auth, shabbat: services.shabbat });
     await typed.register(signupRoutes, { trust: services.trust });
     await typed.register(takePublicRoutes, { takes: services.takes });
     await typed.register(friendRoutes, {

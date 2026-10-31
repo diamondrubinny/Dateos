@@ -29,6 +29,7 @@ import { AudioService } from './modules/chat/audio.js';
 import { FederatedChat } from './modules/federation/chat.js';
 import { FederatedMembers } from './modules/federation/members.js';
 import { FederatedSignals } from './modules/federation/signals.js';
+import { ShabbatService } from './modules/shabbat/service.js';
 import { FederatedSafety } from './modules/federation/safety.js';
 import { FederationService } from './modules/federation/service.js';
 import { llmIcebreakers, templateIcebreakers, type TextModel } from '@nexaheart/ai';
@@ -85,6 +86,7 @@ export interface Services {
   federatedChat: FederatedChat;
   federatedSafety: FederatedSafety;
   federatedSignals: FederatedSignals;
+  shabbat: ShabbatService;
   discovery: DiscoveryService;
   realtime: Realtime;
   chat: ChatService;
@@ -411,6 +413,9 @@ export function createServices(
     reports.alertStaff(),
   );
   moderation.usePartnerOutcomes((settled) => federatedSafety.sendOutcomes(settled));
+  // 74a: Shabbat and holiday mode; matches see "Keeping Shabbat" in chat.
+  const shabbat = new ShabbatService(dbHandle.db, overrides.now);
+  chat.useShabbat(shabbat);
   // 73b: trust signals from partners.
   const federatedSignals = new FederatedSignals(dbHandle.db, federation, overrides.now);
   me.beforeDelete((userId) => federated.forgetEverywhere(userId));
@@ -440,6 +445,7 @@ export function createServices(
     federatedChat,
     federatedSafety,
     federatedSignals,
+    shabbat,
     discovery,
     mailer,
     me,

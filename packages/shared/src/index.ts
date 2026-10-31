@@ -38,4 +38,5 @@ export * from './liveness.js';
 export * from './integrations.js';
 export * from './transcripts.js';
 export * from './federation.js';
+export * from './zmanim.js';
 export * from './account.js';

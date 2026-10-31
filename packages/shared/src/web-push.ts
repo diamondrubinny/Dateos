@@ -105,6 +105,8 @@ export function pushScreen(kind: string, id: string): string {
     case 'match':
     case 'call':
       return uuid ? `/chat/${uuid}` : '/matches';
+    case 'after_rest':
+      return '/matches';
     case 'partner_message':
       return uuid ? `/partner-chat/${uuid}` : '/matches';
     case 'checkin':

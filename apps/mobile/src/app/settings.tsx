@@ -208,6 +208,12 @@ function SettingsContent() {
         />
       )}
       <QuietHours onError={() => setError(t('common.genericError'))} />
+      {/* Phase 74a: Shabbat and holidays. */}
+      <Button
+        variant="secondary"
+        label={t('shabbat.entry')}
+        onPress={() => router.push('/shabbat')}
+      />
       <AppText variant="caption" tone="muted">
         {t('notifyChoice.always')}
       </AppText>
