@@ -218,3 +218,35 @@ export type BlockedPerson = z.infer<typeof blockedPersonSchema>;
 /** "Maybe later" (phase 33). */
 export const MAX_SAVED_PROFILES = 30;
 export const saveProfileInputSchema = z.object({ targetId: z.string().min(1).max(64) });
+
+// ---------------------------------------------------------------------------------------------
+// Phase 75b: ask about a profile. Answers come only from what its owner made public (and not the
+// sensitive parts); nothing is stored.
+// ---------------------------------------------------------------------------------------------
+
+export const MAX_PROFILE_QUESTION = 200;
+/** Questions one person may ask in 24 hours. */
+export const PROFILE_QUESTIONS_DAILY = 20;
+
+export const askProfileInputSchema = z
+  .object({
+    question: z
+      .string()
+      .trim()
+      .min(3)
+      .max(MAX_PROFILE_QUESTION)
+      .regex(/^[^\p{Cc}<>]*$/u, 'One line of plain text.'),
+    locale: z.enum(['he', 'en', 'ar', 'ru']),
+  })
+  .strict();
+export type AskProfileInput = z.infer<typeof askProfileInputSchema>;
+
+/** `needs_consent`: the asker's own external-AI consent; the owner's is never revealed. */
+export const askProfileStateSchema = z.object({
+  state: z.enum(['available', 'needs_consent', 'unavailable']),
+});
+export type AskProfileState = z.infer<typeof askProfileStateSchema>;
+
+/** `answer` null: the profile doesn't say. */
+export const askProfileAnswerSchema = z.object({ answer: z.string().nullable() });
+export type AskProfileAnswer = z.infer<typeof askProfileAnswerSchema>;

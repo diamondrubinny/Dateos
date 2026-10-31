@@ -44,6 +44,7 @@
     "shabbat": "tsx shabbat.ts",
     "kosher-places": "tsx kosher-places.ts",
     "date-suggestion": "tsx date-suggestion.ts",
+    "ask-profile": "tsx ask-profile.ts",
     "devices": "tsx devices.ts",
     "reactions-undo": "tsx reactions-undo.ts",
     "chat-control": "tsx chat-control.ts",

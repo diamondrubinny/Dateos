@@ -41,6 +41,7 @@ import { deviceRoutes } from './modules/devices/routes.js';
 import { accountRoutes } from './modules/account/routes.js';
 import { notificationRoutes } from './modules/notifications/routes.js';
 import { coachRoutes } from './modules/coach/routes.js';
+import { askRoutes } from './modules/ask/routes.js';
 import { matchmakerRoutes } from './modules/matchmaker/routes.js';
 import { introductionRoutes } from './modules/introductions/routes.js';
 import { resumePublicRoutes, resumeRoutes } from './modules/resume/routes.js';
@@ -192,6 +193,11 @@ export async function buildApp(env: Env, deps: AppDependencies): Promise<Fastify
     await typed.register(coachRoutes, {
       auth: services.auth,
       db: services.dbHandle.db,
+      ai: services.ai,
+    });
+    await typed.register(askRoutes, {
+      auth: services.auth,
+      discovery: services.discovery,
       ai: services.ai,
     });
     await typed.register(matchmakerRoutes, {
