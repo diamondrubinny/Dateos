@@ -31,7 +31,7 @@
     "@nexaheart/integrations": "workspace:*",
     "@nexaheart/shared": "workspace:*",
     "@nexaheart/storage": "workspace:*",
-    "@simplewebauthn/server": "13.3.3",
+    "@simplewebauthn/server": "14.0.3",
     "better-auth": "1.7.13",
     "bullmq": "6.4.2",
     "drizzle-orm": "0.45.4",
