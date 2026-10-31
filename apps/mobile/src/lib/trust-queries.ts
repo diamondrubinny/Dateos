@@ -100,6 +100,30 @@ export interface PasskeyInfo {
   id: string;
   name: string | null;
   createdAt: string | null;
+  /** The credential's id (base64url), for the WebAuthn Signal API (phase 72). 📘 better-auth */
+  credentialID?: string;
+}
+
+type SignalCredential = typeof PublicKeyCredential & {
+  signalUnknownCredential?: (o: { rpId: string; credentialId: string }) => Promise<void>;
+};
+
+/**
+ * Phase 72: tells this device's password manager that a removed passkey is gone, so it stops
+ * offering it (📘 WebAuthn Signal API). Best effort: unsupported browsers just skip it.
+ */
+export async function signalRemovedPasskey(credentialId: string | undefined): Promise<boolean> {
+  if (!credentialId || Platform.OS !== 'web' || typeof PublicKeyCredential === 'undefined') {
+    return false;
+  }
+  const api = PublicKeyCredential as SignalCredential;
+  if (typeof api.signalUnknownCredential !== 'function') return false;
+  try {
+    await api.signalUnknownCredential({ rpId: window.location.hostname, credentialId });
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 /** Whether this browser can use passkeys at all. */
@@ -139,8 +163,11 @@ export function useAddPasskey() {
 export function useRemovePasskey() {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) =>
-      apiFetch('/v1/auth/passkey/delete-passkey', { method: 'POST', body: json({ id }) }),
+    mutationFn: async (id: string) => {
+      const known = client.getQueryData<PasskeyInfo[]>(passkeysKey)?.find((p) => p.id === id);
+      await apiFetch('/v1/auth/passkey/delete-passkey', { method: 'POST', body: json({ id }) });
+      await signalRemovedPasskey(known?.credentialID);
+    },
     onSuccess: () => client.invalidateQueries({ queryKey: passkeysKey }),
   });
 }

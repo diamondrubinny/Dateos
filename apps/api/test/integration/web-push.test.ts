@@ -166,12 +166,74 @@ describe.skipIf(!integrationEnabled)('the worker sends to browsers (integration)
       body: 'יש לך הודעה חדשה',
       kind: 'message',
       id: matchId,
+      badge: 0,
     });
     expect(sent[0]!.payload).not.toContain('Dan');
     expect(sent[0]!.options).toMatchObject({
       vapidDetails: { subject: 'https://ahava.example.org', publicKey: TEST_WEB_PUSH_KEY },
       urgency: 'normal',
     });
+  });
+
+  it('phase 72: the declarative form, the number on the icon, and "I\'m OK" on a check-in', async () => {
+    const withApp = () => {
+      const c = context();
+      return { ...c, webPush: { ...c.webPush, appUrl: 'https://ahava.example.org/' } };
+    };
+    // Dan writes: one chat with unread messages.
+    await api(ctx, dan, 'POST', `/v1/matches/${matchId}/messages`, {
+      clientId: 'msg-badge-1-xxxx',
+      text: 'Hi Noa!',
+    });
+    expect(await sendPush(withApp(), { userId: noa.id, kind: 'match', matchId })).toBe('sent');
+    const payload = JSON.parse(sent.at(-1)!.payload);
+    expect(payload).toMatchObject({
+      title: 'NexaHeart',
+      kind: 'match',
+      badge: 1,
+      web_push: 8030,
+      notification: {
+        title: 'NexaHeart',
+        body: 'יש התאמה! כדאי להגיד שלום',
+        navigate: `https://ahava.example.org/chat/${matchId}`,
+        lang: 'he',
+        app_badge: '1',
+      },
+    });
+    expect(payload.actions).toBeUndefined();
+    expect(sent.at(-1)!.payload).not.toContain('Dan');
+
+    // A muted chat doesn't count.
+    await api(ctx, noa, 'PUT', `/v1/matches/${matchId}/prefs`, { muted: true });
+    await ctx.redis.flushdb();
+    await sendPush(withApp(), { userId: noa.id, kind: 'visible', matchId: noa.id });
+    expect(JSON.parse(sent.at(-1)!.payload).badge).toBe(0);
+    await api(ctx, noa, 'PUT', `/v1/matches/${matchId}/prefs`, { muted: false });
+
+    // "I'm OK" on a check-in reminder, opening the check-in.
+    await ctx.redis.flushdb();
+    await sendPush(withApp(), { userId: noa.id, kind: 'checkin', matchId: noa.id });
+    const checkin = JSON.parse(sent.at(-1)!.payload);
+    expect(checkin.actions).toEqual([{ action: 'ok', title: 'הכול בסדר' }]);
+    expect(checkin.notification.actions).toEqual([
+      { action: 'ok', title: 'הכול בסדר', navigate: 'https://ahava.example.org/checkin?ok=1' },
+    ]);
+
+    // Turned off: no number. Discreet: no number and no button (they'd give it away).
+    await api(ctx, noa, 'PUT', '/v1/me/settings', { appBadge: false });
+    expect((await api(ctx, noa, 'GET', '/v1/me/settings')).json().appBadge).toBe(false);
+    await ctx.redis.flushdb();
+    await sendPush(withApp(), { userId: noa.id, kind: 'match', matchId });
+    const off = JSON.parse(sent.at(-1)!.payload);
+    expect(off.badge).toBeUndefined();
+    expect(off.notification.app_badge).toBeUndefined();
+    await api(ctx, noa, 'PUT', '/v1/me/settings', { appBadge: true, discreetNotifications: true });
+    await ctx.redis.flushdb();
+    await sendPush(withApp(), { userId: noa.id, kind: 'checkin', matchId: noa.id });
+    const discreet = JSON.parse(sent.at(-1)!.payload);
+    expect(discreet.badge).toBeUndefined();
+    expect(discreet.actions).toBeUndefined();
+    expect(discreet.title).not.toBe('NexaHeart');
   });
 
   it('the same rules: a muted chat sends nothing, a call still rings, urgently and briefly', async () => {

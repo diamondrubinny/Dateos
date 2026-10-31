@@ -3,7 +3,7 @@
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 import { checkinExtensionMinutes, type Checkin } from '@nexaheart/shared';
 import { useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 import { AppText } from '../components/AppText';
@@ -297,6 +297,19 @@ function CheckinScreen() {
   const { t } = useTranslation();
   const active = useActiveCheckin();
   const [notice, setNotice] = useState<string>();
+  // Phase 72: "I'm OK" on the notification opens /checkin?ok=1, which confirms once.
+  const { ok: fromNotification } = useLocalSearchParams<{ ok?: string }>();
+  const confirm = useCheckinOk();
+  const done = useRef(false);
+  useEffect(() => {
+    const checkin = active.data;
+    if (fromNotification !== '1' || done.current || !checkin) return;
+    done.current = true;
+    confirm.mutate(checkin.id, {
+      onSuccess: () => setNotice(t('checkin.okDone')),
+      onError: () => setNotice(t('common.genericError')),
+    });
+  }, [fromNotification, active.data, confirm, t]);
   if (active.isPending) return <Loading />;
   return (
     <Screen back title={t('checkin.title')}>

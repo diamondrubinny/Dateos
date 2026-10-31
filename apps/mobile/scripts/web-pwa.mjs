@@ -151,26 +151,47 @@ self.addEventListener('push', (event) => {
   } catch {
     data = {};
   }
-  const title = typeof data.title === 'string' ? data.title.slice(0, 80) : 'NexaHeart';
-  const body = typeof data.body === 'string' ? data.body.slice(0, 200) : '';
+  // Phase 72: the same notification may also come in the declarative form (web_push: 8030).
+  const shown = data.notification && typeof data.notification === 'object' ? data.notification : {};
+  const text = (a, b, max) => (typeof a === 'string' ? a : typeof b === 'string' ? b : '').slice(0, max);
+  const title = text(data.title, shown.title, 80) || 'NexaHeart';
+  const body = text(data.body, shown.body, 200);
+  // Only the known button (the check-in's "I'm OK"), with its label from the server.
+  const actions = Array.isArray(data.actions)
+    ? data.actions
+        .filter((a) => a && a.action === 'ok' && typeof a.title === 'string')
+        .map((a) => ({ action: 'ok', title: a.title.slice(0, 40) }))
+    : [];
+  // The number on the app's icon (absent when the member turned it off or is discreet).
+  const badge = Number.isInteger(data.badge) && data.badge >= 0 ? data.badge : null;
+  const setBadge =
+    badge === null || !self.navigator.setAppBadge
+      ? Promise.resolve()
+      : (badge > 0 ? self.navigator.setAppBadge(badge) : self.navigator.clearAppBadge()).catch(
+          () => undefined,
+        );
   event.waitUntil(
-    self.registration.showNotification(title, {
-      body,
-      icon: '/brand-icons/icon-192.png',
-      badge: '/icons/icon-192.png',
-      // One notification per conversation and kind: a new one replaces the last.
-      tag: String(data.kind || 'note') + ':' + String(data.id || ''),
-      data: { url: screenFor(data) },
-    }),
+    Promise.all([
+      setBadge,
+      self.registration.showNotification(title, {
+        body,
+        icon: '/brand-icons/icon-192.png',
+        badge: '/icons/icon-192.png',
+        // One notification per conversation and kind: a new one replaces the last.
+        tag: String(data.kind || 'note') + ':' + String(data.id || ''),
+        actions,
+        data: { url: screenFor(data) },
+      }),
+    ]),
   );
 });
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  const url = new URL(
-    (event.notification.data && event.notification.data.url) || '/',
-    self.location.origin,
-  ).href;
+  // Phase 72: "I'm OK" on a check-in opens the check-in, which confirms.
+  const target =
+    event.action === 'ok' ? '/checkin?ok=1' : (event.notification.data && event.notification.data.url) || '/';
+  const url = new URL(target, self.location.origin).href;
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windows) => {
       const open = windows.find((w) => new URL(w.url).origin === self.location.origin);

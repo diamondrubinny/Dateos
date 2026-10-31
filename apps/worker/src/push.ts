@@ -2,7 +2,12 @@
 // Copyright (C) 2026 Diamond Rubinny and NexaHeart contributors · https://nexaheart.com
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 import { schema, type Database } from '@nexaheart/db';
-import { isWebPushEndpoint, type PushJob, type WebPushPayload } from '@nexaheart/shared';
+import {
+  isWebPushEndpoint,
+  pushScreen,
+  type PushJob,
+  type WebPushPayload,
+} from '@nexaheart/shared';
 import { eq, inArray, sql } from 'drizzle-orm';
 import type { Redis } from 'ioredis';
 import type { Logger } from 'pino';
@@ -21,6 +26,11 @@ export interface WebPushSettings {
   subject: string;
   /** For tests: what posts the encrypted notification (default: the web-push library). */
   send?: typeof webpush.sendNotification;
+  /**
+   * Phase 72: the web app's address, for the declarative form's links (absolute, as browsers
+   * require). Without it only the service-worker form is sent.
+   */
+  appUrl?: string;
 }
 
 export interface PushContext {
@@ -80,6 +90,9 @@ const texts = {
 } as const;
 
 /** Phase 67a: discreet notifications say nothing about the community or what happened. */
+/** Phase 72: the button on the check-in notification. */
+const okTexts = { en: "I'm OK", he: 'הכול בסדר', ar: 'أنا بخير', ru: 'Я в порядке' } as const;
+
 const discreetTexts = {
   en: { title: 'New notification', body: 'You have something new' },
   he: { title: 'התראה חדשה', body: 'יש משהו חדש' },
@@ -228,17 +241,81 @@ async function sendToDevices(ctx: PushContext, job: PushJob): Promise<PushResult
   // Phase 67b: a discreet app's neutral name, never the community's, on every notification.
   const instanceName =
     settings?.discreet ?? settings?.name ?? process.env.INSTANCE_NAME ?? 'NexaHeart';
-  const discreet =
-    (
-      await ctx.db.execute<{ yes: boolean }>(
-        sql`SELECT discreet_notifications AS yes FROM preferences WHERE user_id = ${job.userId}`,
-      )
-    ).rows[0]?.yes ?? false;
+  const [prefs] = (
+    await ctx.db.execute<{ discreet: boolean; badge: boolean }>(
+      sql`SELECT discreet_notifications AS discreet, app_badge AS badge
+          FROM preferences WHERE user_id = ${job.userId}`,
+    )
+  ).rows;
+  const discreet = prefs?.discreet ?? false;
+  // Phase 72: the number on the app's icon, never with discreet notifications (it's a clue).
+  const badge =
+    browsers.length > 0 && (prefs?.badge ?? true) && !discreet
+      ? await unreadChats(ctx, job.userId)
+      : undefined;
   // Browsers first: a failure there never makes the queue retry (and repeat) the phones.
   if (browsers.length > 0 && ctx.webPush)
-    await sendToBrowsers(ctx, ctx.webPush, browsers, job, instanceName, discreet);
+    await sendToBrowsers(ctx, ctx.webPush, browsers, job, instanceName, discreet, badge);
   if (tokens.length > 0) await sendToPhones(ctx, tokens, job, instanceName, discreet);
   return 'sent';
+}
+
+/** Phase 72: chats with messages from the other person I haven't read yet (not muted or archived). */
+export async function unreadChats(ctx: Pick<PushContext, 'db'>, userId: string): Promise<number> {
+  const { rows } = await ctx.db.execute<{ n: number }>(sql`
+    SELECT count(*)::int AS n FROM matches m
+    WHERE m.unmatched_at IS NULL AND (m.user_a = ${userId} OR m.user_b = ${userId})
+      -- Muted and archived chats don't count, as in the app's own count.
+      AND NOT EXISTS (SELECT 1 FROM match_prefs p
+                      WHERE p.match_id = m.id AND p.user_id = ${userId} AND (p.muted OR p.archived))
+      AND EXISTS (
+        SELECT 1 FROM messages x
+        WHERE x.match_id = m.id AND x.sender_id <> ${userId}
+          AND x.created_at > coalesce(
+            (SELECT r.last_read_at FROM match_reads r WHERE r.match_id = m.id AND r.user_id = ${userId}),
+            '-infinity'::timestamptz))`);
+  return rows[0]?.n ?? 0;
+}
+
+/**
+ * Phase 72: what a browser gets: the service worker's form, and the declarative form (📘 WebKit's
+ * Declarative Web Push) for browsers that show it without the worker. The same generic content.
+ */
+export function webPushPayload(
+  job: PushJob,
+  locale: string,
+  instanceName: string,
+  discreet: boolean,
+  badge: number | undefined,
+  appUrl: string | undefined,
+): WebPushPayload {
+  const lang = Object.hasOwn(okTexts, locale) ? (locale as keyof typeof okTexts) : 'en';
+  const content = pushContent(job.kind, locale, instanceName, discreet);
+  // "I'm OK" on a check-in reminder; never with discreet notifications (it would say what it is).
+  const actions =
+    job.kind === 'checkin' && !discreet ? [{ action: 'ok', title: okTexts[lang] }] : undefined;
+  const base = appUrl?.replace(/\/+$/, '');
+  return {
+    ...content,
+    kind: job.kind,
+    id: job.matchId,
+    ...(badge !== undefined ? { badge } : {}),
+    ...(actions ? { actions } : {}),
+    ...(base && /^https?:\/\//.test(base)
+      ? {
+          web_push: 8030 as const,
+          notification: {
+            ...content,
+            navigate: base + pushScreen(job.kind, job.matchId),
+            lang,
+            ...(badge !== undefined ? { app_badge: String(badge) } : {}),
+            ...(actions
+              ? { actions: actions.map((a) => ({ ...a, navigate: `${base}/checkin?ok=1` })) }
+              : {}),
+          },
+        }
+      : {}),
+  };
 }
 
 /**
@@ -253,6 +330,7 @@ async function sendToBrowsers(
   job: PushJob,
   instanceName: string,
   discreet: boolean,
+  badge: number | undefined,
 ): Promise<void> {
   const send = settings.send ?? webpush.sendNotification.bind(webpush);
   const gone: string[] = [];
@@ -263,11 +341,7 @@ async function sendToBrowsers(
       gone.push(b.endpoint);
       continue;
     }
-    const payload: WebPushPayload = {
-      ...pushContent(job.kind, b.locale, instanceName, discreet),
-      kind: job.kind,
-      id: job.matchId,
-    };
+    const payload = webPushPayload(job, b.locale, instanceName, discreet, badge, settings.appUrl);
     try {
       await send(
         { endpoint: b.endpoint, keys: { p256dh: b.p256dh, auth: b.auth } },

@@ -11,6 +11,7 @@ import { router } from 'expo-router';
 import { Platform, StyleSheet, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ApiRequestError } from '../lib/api';
+import { useAppBadge } from '../lib/app-badge';
 import { authClient } from '../lib/auth-client';
 import { DisplayProvider } from '../lib/display';
 import { LocaleProvider, useLocale } from '../lib/locale';
@@ -27,6 +28,8 @@ function Navigator() {
   const { direction } = useLocale();
   const colors = useColors();
   const session = authClient.useSession();
+  // Phase 72: the number on the installed app's icon, wherever the member is in the app.
+  useAppBadge(Boolean(session.data));
   const instanceInfo = useInstance().data;
   // Phase 67b: a discreet app shows its neutral name and a plain icon in the browser tab too.
   const name = instanceInfo?.discreetName ?? instanceInfo?.name;

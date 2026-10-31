@@ -99,6 +99,8 @@ async function main(): Promise<void> {
             publicKey: env.WEB_PUSH_PUBLIC_KEY,
             privateKey: env.WEB_PUSH_PRIVATE_KEY,
             subject: webPushSubject(env),
+            // Phase 72: links in the declarative form.
+            appUrl: (env.PUBLIC_APP_URL || (env.CORS_ORIGINS.split(',')[0] ?? '')).trim(),
           }
         : undefined,
   };

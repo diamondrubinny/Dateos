@@ -6,6 +6,12 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Added
 
+- **A sturdier web app**: notifications also come in the declarative Web Push form, so browsers
+  that support it show them without the service worker; the installed app's icon shows how many
+  chats have unread messages (Settings → Notifications; never with discreet notifications); the
+  safety check-in reminder has an "I'm OK" button; removing a passkey tells the device's password
+  manager it's gone.
+
 - **Community organizers**: admins can make trusted members organizers. They propose events at the
   community's places from the app; an admin approves (the event is published with their first
   name) or declines with a reason. On their own events they post updates, answer questions

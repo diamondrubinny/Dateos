@@ -60,6 +60,7 @@ export const notificationRoutes: FastifyPluginAsyncZod<{
           discreetNotifications: preferences.discreetNotifications,
           openToMatchmakers: preferences.openToMatchmakers,
           friendSuggestions: preferences.friendSuggestions,
+          appBadge: preferences.appBadge,
         })
         .from(preferences)
         .where(eq(preferences.userId, userId));
@@ -91,6 +92,7 @@ export const notificationRoutes: FastifyPluginAsyncZod<{
         discreetNotifications: prefs?.discreetNotifications ?? false,
         openToMatchmakers: prefs?.openToMatchmakers ?? false,
         friendSuggestions: prefs?.friendSuggestions ?? true,
+        appBadge: prefs?.appBadge ?? true,
         pushDevices: devices.length + browsers.length,
       };
     },

@@ -547,6 +547,13 @@
       "when": 1793434270908,
       "tag": "0077_organizers",
       "breakpoints": true
+    },
+    {
+      "idx": 78,
+      "version": "7",
+      "when": 1793436314550,
+      "tag": "0078_app_badge",
+      "breakpoints": true
     }
   ]
 }

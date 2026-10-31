@@ -1241,6 +1241,12 @@ export const en = {
       unanswered: 'Open my chats',
     },
   },
+  appBadge: {
+    label: 'Show a number on the app icon',
+    hint: 'How many chats have unread messages, on the installed web app’s icon (where the device supports it). Never names.',
+    discreet:
+      'No number on the app icon while notifications are discreet: it would give the app away.',
+  },
   organize: {
     open: 'Organize an event',
     title: 'Organize an event',
