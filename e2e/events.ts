@@ -148,7 +148,9 @@ async function adminPublishes(browser: Browser, locale: 'en' | 'he', pool: Pool)
     await S.page.getByRole('heading', { name: a.events.title }).waitFor();
     await S.page.getByLabel(a.events.titleLabel).fill(d.title);
     await S.page.getByLabel(a.events.description).fill(d.description);
-    await S.page.getByLabel(a.events.place).selectOption({ label: `${d.venue[0]}, ${d.venue[1]}` });
+    await S.page
+      .getByLabel(a.events.place, { exact: true })
+      .selectOption({ label: `${d.venue[0]}, ${d.venue[1]}` });
     await S.page.getByLabel(a.events.date).fill(nextSaturday());
     await S.page.getByLabel(a.events.start).fill('17:00');
     await S.page.getByLabel(a.events.end).fill('20:00');

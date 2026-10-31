@@ -6,6 +6,12 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Added
 
+- **Events for a group**: staff can set who an event is for (genders, an age range, and with the
+  faith module, streams). Everyone sees it; people outside it are told why and can't take a place.
+- **Places by gender**: e.g. 12 women and 12 men, each with its own places and waiting list; a
+  freed place goes to the next person in the same group.
+- **Repeat weekly**: 1 to 12 copies of an event, a week apart, from the dashboard.
+
 - **Meet again**: for 3 days after an in-person event, people who checked in can join Meet again
   and privately choose whom they'd like to see again; only a mutual choice becomes a match and a
   chat. Nobody learns a one-sided choice.
@@ -23,6 +29,7 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Fixed
 
+- A video-call test waited a fixed 50 ms for hang-up listeners; it now waits for them.
 - Leaving an event after it ended is refused (it could erase a check-in).
 - The approval banner showed twice in Discover while on a break or with nobody to show.
 

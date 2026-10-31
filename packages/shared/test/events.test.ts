@@ -19,7 +19,45 @@ describe('event input', () => {
       capacity: null,
       kind: 'standard',
       roundMinutes: null,
+      pools: null,
     });
+  });
+
+  it('phase 71b: who it is for and places by gender', () => {
+    const parse = (over: object) => eventInputSchema.safeParse({ ...base, ...over });
+    expect(parse({ audience: { genders: ['woman'], ageMin: 25, ageMax: 35 } }).success).toBe(true);
+    expect(parse({ audience: { ageMin: 40, ageMax: 30 } }).success).toBe(false);
+    expect(parse({ audience: { ageMin: 17 } }).success).toBe(false);
+    expect(parse({ audience: { faithStreams: ['not_a_stream'] } }).success).toBe(false);
+    const pools = (p: object[]) => parse({ pools: p }).success;
+    expect(
+      pools([
+        { gender: 'woman', capacity: 12 },
+        { gender: 'man', capacity: 12 },
+      ]),
+    ).toBe(true);
+    expect(pools([{ gender: 'woman', capacity: 12 }])).toBe(false);
+    expect(
+      pools([
+        { gender: 'woman', capacity: 1 },
+        { gender: 'woman', capacity: 2 },
+      ]),
+    ).toBe(false);
+    // Speed dating: the places by gender add up to at most 40.
+    const speed = (p: object[]) =>
+      parse({ kind: 'speed', capacity: null, roundMinutes: 5, pools: p }).success;
+    expect(
+      speed([
+        { gender: 'woman', capacity: 20 },
+        { gender: 'man', capacity: 20 },
+      ]),
+    ).toBe(true);
+    expect(
+      speed([
+        { gender: 'woman', capacity: 21 },
+        { gender: 'man', capacity: 20 },
+      ]),
+    ).toBe(false);
   });
 
   it('speed dating needs a capacity of at most 40 and rounds of 3 to 10 minutes', () => {

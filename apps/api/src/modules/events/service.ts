@@ -19,16 +19,21 @@ import {
   MAX_OPEN_EVENT_QUESTIONS,
   type EventBoard,
   type EventQuestion,
+  type EventAudience,
+  eventAudienceSchema,
   MEET_AGAIN_HOURS,
   type MyNoShows,
   NO_SHOW_LATE_PLACE_HOURS,
   NO_SHOW_LIMIT,
   NO_SHOW_PAUSE_DAYS,
   NO_SHOW_WINDOW_DAYS,
+  ageOn,
+  type NotForYouReason,
 } from '@nexaheart/shared';
 import { checkHarm } from '@nexaheart/ai';
 import { and, asc, desc, eq, gt, inArray, isNull, or, sql } from 'drizzle-orm';
 import { audit } from '../../lib/audit.js';
+import { readCommunitySettings } from '../../lib/community-settings.js';
 import { HttpError } from '../../plugins/error-handler.js';
 import type { AppEvents } from '../../lib/app-events.js';
 import { noEvents } from '../../lib/app-events.js';
@@ -43,13 +48,40 @@ type VenueRow = typeof venues.$inferSelect;
 
 type Tx = Parameters<Parameters<Database['transaction']>[0]>[0];
 
+type PoolCounts = Record<string, { going: number; waiting: number }>;
+
+/** Phase 71b: what decides whether a member may take a place (profile facts only). */
+interface ViewerFacts {
+  gender: string;
+  birthDate: string;
+  /** Only stored with the religion consent (phase 62b). */
+  stream: string | null;
+}
+
+/** Phase 71b: why a member can't take a place at this event, or null. */
+export function notForYou(e: EventRow, f: ViewerFacts, today: string): NotForYouReason | null {
+  const genders = e.pools ? e.pools.map((p) => p.gender) : e.audienceGenders;
+  if (genders.length > 0 && !genders.includes(f.gender)) return 'gender';
+  const age = ageOn(f.birthDate, today);
+  if ((e.ageMin !== null && age < e.ageMin) || (e.ageMax !== null && age > e.ageMax)) return 'age';
+  if (e.faithStreams.length > 0 && (!f.stream || !e.faithStreams.includes(f.stream))) {
+    return 'faith';
+  }
+  return null;
+}
+
+/** The group a member's place is in: their gender when the event has places by gender. */
+const poolOf = (e: EventRow, f: ViewerFacts | null): string | null =>
+  e.pools ? (f?.gender ?? null) : null;
+
 /** What members and staff both see of an event. */
 function baseView(
   e: EventRow,
   v: VenueRow | null,
   going: number,
   waitingCount: number,
-): Omit<CommunityEvent, 'mine' | 'waitingAhead' | 'checkedIn' | 'meetAgainUntil'> {
+  poolCounts: PoolCounts = {},
+): Omit<CommunityEvent, 'mine' | 'waitingAhead' | 'checkedIn' | 'meetAgainUntil' | 'notForYou'> {
   return {
     id: e.id,
     title: e.title,
@@ -73,6 +105,20 @@ function baseView(
     waitingCount,
     kind: e.kind === 'speed' ? 'speed' : 'standard',
     roundMinutes: e.kind === 'speed' ? (e.roundMinutes ?? SPEED_ROUND_DEFAULT) : null,
+    audience: {
+      genders: e.audienceGenders as CommunityEvent['audience']['genders'],
+      ageMin: e.ageMin,
+      ageMax: e.ageMax,
+      faithStreams: e.faithStreams,
+    },
+    pools: e.pools
+      ? e.pools.map((p) => ({
+          gender: p.gender as NonNullable<CommunityEvent['pools']>[number]['gender'],
+          capacity: p.capacity,
+          going: poolCounts[p.gender]?.going ?? 0,
+          waiting: poolCounts[p.gender]?.waiting ?? 0,
+        }))
+      : null,
   };
 }
 
@@ -94,6 +140,7 @@ interface Row {
   waitingAhead: number | null;
   checkedIn: boolean;
   checkedInCount: number;
+  poolCounts: PoolCounts;
 }
 
 const toQuestion = (q: typeof eventQuestions.$inferSelect): EventQuestion => ({
@@ -114,13 +161,21 @@ export function meetAgainUntil(e: EventRow, checkedIn: boolean, now: number): Da
   return now >= e.endsAt.getTime() && now < until ? new Date(until) : null;
 }
 
-const toView = (r: Row, now: number): CommunityEvent => ({
-  ...baseView(r.event, r.venue, r.going, r.waitingCount),
-  mine: r.mine,
-  waitingAhead: r.waitingAhead,
-  checkedIn: r.checkedIn,
-  meetAgainUntil: meetAgainUntil(r.event, r.checkedIn, now)?.toISOString() ?? null,
-});
+const toView = (r: Row, now: number, facts: ViewerFacts | null): CommunityEvent => {
+  const base = baseView(r.event, r.venue, r.going, r.waitingCount, r.poolCounts);
+  // Phase 71b: with places by gender, "full" is about the viewer's own group.
+  const pool = poolOf(r.event, facts);
+  const mine = pool ? base.pools?.find((p) => p.gender === pool) : undefined;
+  return {
+    ...base,
+    full: mine ? mine.going >= mine.capacity : base.full,
+    mine: r.mine,
+    waitingAhead: r.waitingAhead,
+    checkedIn: r.checkedIn,
+    meetAgainUntil: meetAgainUntil(r.event, r.checkedIn, now)?.toISOString() ?? null,
+    notForYou: facts ? notForYou(r.event, facts, new Date(now).toISOString().slice(0, 10)) : null,
+  };
+};
 
 /**
  * Phase 71a: the member's missed events in the window, newest first: "going", didn't check in,
@@ -173,6 +228,7 @@ export class EventService {
     const waitingAhead = viewerId
       ? sql<number | null>`(SELECT (SELECT count(*)::int FROM event_rsvps o
             WHERE o.event_id = me.event_id AND o.status = 'waiting'
+              AND o.pool IS NOT DISTINCT FROM me.pool
               AND (o.created_at, o.user_id) < (me.created_at, me.user_id))
           FROM event_rsvps me
           WHERE me.event_id = ${events.id} AND me.user_id = ${viewerId} AND me.status = 'waiting')`
@@ -181,6 +237,12 @@ export class EventService {
       ? sql<boolean>`EXISTS (SELECT 1 FROM event_rsvps r WHERE r.event_id = ${events.id} AND r.user_id = ${viewerId} AND r.checked_in_at IS NOT NULL)`
       : sql<boolean>`false`;
     const checkedInCount = sql<number>`(SELECT count(*)::int FROM event_rsvps r WHERE r.event_id = ${events.id} AND r.checked_in_at IS NOT NULL)`;
+    // Phase 71b: going and waiting in each group (counts only).
+    const poolCounts = sql<PoolCounts>`(SELECT coalesce(jsonb_object_agg(x.pool, jsonb_build_object('going', x.going, 'waiting', x.waiting)), '{}'::jsonb)
+      FROM (SELECT r.pool, count(*) FILTER (WHERE r.status = 'going')::int AS going,
+                   count(*) FILTER (WHERE r.status = 'waiting')::int AS waiting
+            FROM event_rsvps r WHERE r.event_id = ${events.id} AND r.pool IS NOT NULL
+            GROUP BY r.pool) x)`;
     return this.db
       .select({
         event: events,
@@ -191,6 +253,7 @@ export class EventService {
         waitingAhead,
         checkedIn,
         checkedInCount,
+        poolCounts,
       })
       .from(events)
       .leftJoin(venues, eq(venues.id, events.venueId));
@@ -218,7 +281,22 @@ export class EventService {
       )
       .orderBy(asc(events.startsAt))
       .limit(50);
-    return rows.map((r) => toView(r, this.now()));
+    const facts = await this.facts(viewerId);
+    return rows.map((r) => toView(r, this.now(), facts));
+  }
+
+  /** Phase 71b: the profile facts an audience is checked against (null without a profile). */
+  private async facts(userId: string): Promise<ViewerFacts | null> {
+    const { rows } = await this.db.execute<{
+      gender: string;
+      birth_date: string;
+      faith_stream: string | null;
+    }>(sql`
+      SELECT p.gender, p.birth_date::text AS birth_date, a.faith_stream
+      FROM profiles p LEFT JOIN profile_about a ON a.user_id = p.user_id
+      WHERE p.user_id = ${userId}`);
+    const row = rows[0];
+    return row ? { gender: row.gender, birthDate: row.birth_date, stream: row.faith_stream } : null;
   }
 
   async get(id: string, viewerId: string): Promise<CommunityEvent> {
@@ -226,7 +304,7 @@ export class EventService {
     if (!row || (row.event.status === 'cancelled' && !row.mine && row.waitingAhead === null)) {
       throw notFound();
     }
-    return toView(row, this.now());
+    return toView(row, this.now(), await this.facts(viewerId));
   }
 
   /**
@@ -254,14 +332,34 @@ export class EventService {
       if (event.endsAt.getTime() <= this.now()) {
         throw new HttpError(409, ErrorCode.Conflict, 'This event has ended.');
       }
-      const [{ going, waiting, mine }] = (
-        await tx.execute<{ going: number; waiting: number; mine: string | null }>(sql`
-          SELECT count(*) FILTER (WHERE status = 'going')::int AS going,
-                 count(*) FILTER (WHERE status = 'waiting')::int AS waiting,
-                 max(status::text) FILTER (WHERE user_id = ${userId}) AS mine
-          FROM event_rsvps WHERE event_id = ${id}`)
-      ).rows as [{ going: number; waiting: number; mine: string | null }];
+      const [{ mine }] = (
+        await tx.execute<{ mine: string | null }>(sql`
+          SELECT max(status::text) AS mine FROM event_rsvps
+          WHERE event_id = ${id} AND user_id = ${userId}`)
+      ).rows as [{ mine: string | null }];
       if (mine === 'going' || (mine === 'waiting' && wait)) return;
+      // Phase 71b: who it's for, and the member's group when places are by gender.
+      const facts = await this.facts(userId);
+      const reason = facts
+        ? notForYou(event, facts, new Date(this.now()).toISOString().slice(0, 10))
+        : 'gender';
+      if (reason) {
+        throw new HttpError(
+          403,
+          ErrorCode.Forbidden,
+          `This event is for another group (${reason}).`,
+        );
+      }
+      const pool = poolOf(event, facts);
+      const [{ going, waiting }] = (
+        await tx.execute<{ going: number; waiting: number }>(sql`
+          SELECT count(*) FILTER (WHERE status = 'going')::int AS going,
+                 count(*) FILTER (WHERE status = 'waiting')::int AS waiting
+          FROM event_rsvps WHERE event_id = ${id} AND pool IS NOT DISTINCT FROM ${pool}`)
+      ).rows as [{ going: number; waiting: number }];
+      const capacityHere = event.pools
+        ? (event.pools.find((p) => p.gender === pool)?.capacity ?? 0)
+        : event.capacity;
       const paused = await this.pausedUntil(userId);
       if (paused) {
         throw new HttpError(
@@ -270,14 +368,14 @@ export class EventService {
           `New places are paused until ${paused.toISOString()} after missed events.`,
         );
       }
-      const full = event.capacity !== null && going >= event.capacity;
+      const full = capacityHere !== null && going >= capacityHere;
       if (!full) {
         await tx
           .insert(eventRsvps)
-          .values({ eventId: id, userId, status: 'going' })
+          .values({ eventId: id, userId, status: 'going', pool })
           .onConflictDoUpdate({
             target: [eventRsvps.eventId, eventRsvps.userId],
-            set: { status: 'going' },
+            set: { status: 'going', pool },
           });
         return;
       }
@@ -289,7 +387,7 @@ export class EventService {
       }
       await tx
         .insert(eventRsvps)
-        .values({ eventId: id, userId, status: 'waiting', createdAt: new Date(this.now()) })
+        .values({ eventId: id, userId, status: 'waiting', pool, createdAt: new Date(this.now()) })
         .onConflictDoNothing();
     });
   }
@@ -319,26 +417,41 @@ export class EventService {
    */
   private async promote(tx: Tx, event: EventRow): Promise<string[]> {
     if (event.status !== 'scheduled' || event.startsAt.getTime() <= this.now()) return [];
-    const [{ going }] = (
-      await tx.execute<{ going: number }>(sql`
-        SELECT count(*)::int AS going FROM event_rsvps
-        WHERE event_id = ${event.id} AND status = 'going'`)
-    ).rows as [{ going: number }];
-    const free = event.capacity === null ? MAX_EVENT_WAITLIST : event.capacity - going;
-    if (free <= 0) return [];
-    const next = await tx
-      .select({ userId: eventRsvps.userId })
-      .from(eventRsvps)
-      .where(and(eq(eventRsvps.eventId, event.id), eq(eventRsvps.status, 'waiting')))
-      .orderBy(asc(eventRsvps.createdAt), asc(eventRsvps.userId))
-      .limit(free);
-    if (next.length === 0) return [];
-    const ids = next.map((n) => n.userId);
-    await tx
-      .update(eventRsvps)
-      .set({ status: 'going', promotedAt: new Date(this.now()) })
-      .where(and(eq(eventRsvps.eventId, event.id), inArray(eventRsvps.userId, ids)));
-    return ids;
+    // Phase 71b: with places by gender, each group fills from its own waiting list.
+    const groups = event.pools
+      ? event.pools.map((p) => ({ pool: p.gender as string | null, capacity: p.capacity }))
+      : [{ pool: null, capacity: event.capacity }];
+    const promoted: string[] = [];
+    for (const group of groups) {
+      const [{ going }] = (
+        await tx.execute<{ going: number }>(sql`
+          SELECT count(*)::int AS going FROM event_rsvps
+          WHERE event_id = ${event.id} AND status = 'going'
+            AND pool IS NOT DISTINCT FROM ${group.pool}`)
+      ).rows as [{ going: number }];
+      const free = group.capacity === null ? MAX_EVENT_WAITLIST : group.capacity - going;
+      if (free <= 0) continue;
+      const next = await tx
+        .select({ userId: eventRsvps.userId })
+        .from(eventRsvps)
+        .where(
+          and(
+            eq(eventRsvps.eventId, event.id),
+            eq(eventRsvps.status, 'waiting'),
+            group.pool === null ? isNull(eventRsvps.pool) : eq(eventRsvps.pool, group.pool),
+          ),
+        )
+        .orderBy(asc(eventRsvps.createdAt), asc(eventRsvps.userId))
+        .limit(free);
+      if (next.length === 0) continue;
+      const ids = next.map((n) => n.userId);
+      await tx
+        .update(eventRsvps)
+        .set({ status: 'going', promotedAt: new Date(this.now()) })
+        .where(and(eq(eventRsvps.eventId, event.id), inArray(eventRsvps.userId, ids)));
+      promoted.push(...ids);
+    }
+    return promoted;
   }
 
   /** A content-free push: "Update about a community event you are going to". */
@@ -437,7 +550,7 @@ export class EventService {
 
   private toAdmin(r: Row): AdminEvent {
     return {
-      ...baseView(r.event, r.venue, r.going, r.waitingCount),
+      ...baseView(r.event, r.venue, r.going, r.waitingCount, r.poolCounts),
       venueId: r.event.venueId,
       createdAt: r.event.createdAt.toISOString(),
       checkedInCount: r.checkedInCount,
@@ -476,6 +589,23 @@ export class EventService {
     }
   }
 
+  /**
+   * Phase 71b: who it's for, as columns. Streams only with the faith module on (special-category
+   * data, matched against a stream given with the religion consent).
+   */
+  private async audienceColumns(audience: EventAudience | undefined) {
+    if (!audience) return {};
+    if (audience.faithStreams.length > 0 && !(await readCommunitySettings(this.db)).faith) {
+      throw invalid('Turn on the faith module before making an event for a stream.');
+    }
+    return {
+      audienceGenders: [...new Set(audience.genders)],
+      ageMin: audience.ageMin,
+      ageMax: audience.ageMax,
+      faithStreams: [...new Set(audience.faithStreams)],
+    };
+  }
+
   async create(actorId: string, input: EventInput): Promise<AdminEvent> {
     const startsAt = new Date(input.startsAt);
     const endsAt = new Date(input.endsAt);
@@ -483,6 +613,10 @@ export class EventService {
     await this.requireActiveVenue(input.venueId);
     const speed = input.kind === 'speed';
     if (speed) await this.requireSpeed();
+    const audience = await this.audienceColumns(
+      input.audience ? eventAudienceSchema.parse(input.audience) : undefined,
+    );
+    const pools = input.pools ?? null;
     const [row] = await this.db
       .insert(events)
       .values({
@@ -491,9 +625,12 @@ export class EventService {
         venueId: input.venueId,
         startsAt,
         endsAt,
-        capacity: input.capacity ?? null,
+        // With places by gender, the capacity is their sum.
+        capacity: pools ? pools.reduce((n, p) => n + p.capacity, 0) : (input.capacity ?? null),
         kind: speed ? 'speed' : 'standard',
         roundMinutes: speed ? (input.roundMinutes ?? SPEED_ROUND_DEFAULT) : null,
+        ...audience,
+        pools,
       })
       .returning({ id: events.id });
     await audit(this.db, {
@@ -516,13 +653,22 @@ export class EventService {
     const endsAt = patch.endsAt ? new Date(patch.endsAt) : current.endsAt;
     if (patch.startsAt || patch.endsAt) this.checkWindow(startsAt, endsAt);
     if (patch.venueId) await this.requireActiveVenue(patch.venueId);
+    // Phase 71b: places by gender set the capacity (their sum); null goes back to one list.
+    const pools = patch.pools !== undefined ? patch.pools : current.pools;
+    const capacity =
+      patch.pools !== undefined && pools
+        ? pools.reduce((n, p) => n + p.capacity, 0)
+        : patch.capacity !== undefined
+          ? patch.capacity
+          : current.capacity;
     if (current.kind === 'speed') {
-      if (patch.capacity === null || (patch.capacity ?? 0) > MAX_SPEED_CAPACITY) {
+      if (capacity === null || capacity > MAX_SPEED_CAPACITY) {
         throw invalid(`Speed dating needs a capacity of at most ${MAX_SPEED_CAPACITY}.`);
       }
     } else if (patch.roundMinutes !== undefined) {
       throw invalid('Only speed-dating events have rounds.');
     }
+    const audience = await this.audienceColumns(patch.audience);
     // More places (or no limit any more) go to the waiting list straight away.
     const promoted = await this.db.transaction(async (tx) => {
       const [updated] = await tx
@@ -531,14 +677,27 @@ export class EventService {
           ...(patch.title !== undefined ? { title: patch.title } : {}),
           ...(patch.description !== undefined ? { description: patch.description } : {}),
           ...(patch.venueId !== undefined ? { venueId: patch.venueId } : {}),
-          ...(patch.capacity !== undefined ? { capacity: patch.capacity } : {}),
+          ...(patch.capacity !== undefined || patch.pools !== undefined ? { capacity } : {}),
           ...(patch.roundMinutes !== undefined ? { roundMinutes: patch.roundMinutes } : {}),
+          ...(patch.pools !== undefined ? { pools } : {}),
+          ...audience,
           startsAt,
           endsAt,
         })
         .where(eq(events.id, id))
         .returning();
-      return patch.capacity !== undefined && updated ? this.promote(tx, updated) : [];
+      if (patch.pools !== undefined) {
+        // People already going or waiting keep their place, in their group (gender) or in one list.
+        await tx.execute(
+          pools
+            ? sql`UPDATE event_rsvps r SET pool = p.gender::text FROM profiles p
+                  WHERE p.user_id = r.user_id AND r.event_id = ${id} AND r.pool IS NULL`
+            : sql`UPDATE event_rsvps SET pool = NULL WHERE event_id = ${id}`,
+        );
+      }
+      return (patch.capacity !== undefined || patch.pools !== undefined) && updated
+        ? this.promote(tx, updated)
+        : [];
     });
     await this.tellPromoted(id, promoted);
     await audit(this.db, {
@@ -549,6 +708,44 @@ export class EventService {
       meta: { fields: Object.keys(patch).sort().join(',') },
     });
     return this.staffView(id);
+  }
+
+  /**
+   * Phase 71b: "Repeat weekly": copies a week apart with the same place, details, audience and
+   * places; each has its own people going.
+   */
+  async repeat(actorId: string, id: string, weeks: number): Promise<AdminEvent[]> {
+    const [current] = await this.db.select().from(events).where(eq(events.id, id));
+    if (!current) throw notFound();
+    if (current.status === 'cancelled') {
+      throw new HttpError(409, ErrorCode.Conflict, 'This event was cancelled.');
+    }
+    const week = 7 * 86_400_000;
+    const copies = Array.from({ length: weeks }, (_, i) => ({
+      title: current.title,
+      description: current.description,
+      venueId: current.venueId,
+      startsAt: new Date(current.startsAt.getTime() + (i + 1) * week),
+      endsAt: new Date(current.endsAt.getTime() + (i + 1) * week),
+      capacity: current.capacity,
+      kind: current.kind,
+      roundMinutes: current.roundMinutes,
+      audienceGenders: current.audienceGenders,
+      ageMin: current.ageMin,
+      ageMax: current.ageMax,
+      faithStreams: current.faithStreams,
+      pools: current.pools,
+    }));
+    const rows = await this.db.insert(events).values(copies).returning({ id: events.id });
+    await audit(this.db, {
+      actorId,
+      action: 'event.repeat',
+      targetType: 'event',
+      targetId: id,
+      meta: { weeks: String(weeks) },
+    });
+    for (const row of rows) this.appEvents.emit({ type: 'event.created', eventId: row.id });
+    return Promise.all(rows.map((r) => this.staffView(r.id)));
   }
 
   /** Cancels the event and tells everyone going (a content-free push). */

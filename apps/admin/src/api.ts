@@ -193,6 +193,10 @@ export const api = {
   createEvent: (input: EventInput) => request<AdminEvent>('POST', '/v1/admin/events', input),
   updateEvent: (id: string, patch: EventUpdate) =>
     request<AdminEvent>('PATCH', `/v1/admin/events/${encodeURIComponent(id)}`, patch),
+  repeatEvent: (id: string, weeks: number) =>
+    request<{ events: AdminEvent[] }>('POST', `/v1/admin/events/${encodeURIComponent(id)}/repeat`, {
+      weeks,
+    }),
   cancelEvent: (id: string) =>
     request<AdminEvent>('POST', `/v1/admin/events/${encodeURIComponent(id)}/cancel`),
   integrations: () =>

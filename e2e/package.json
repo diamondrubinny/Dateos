@@ -81,7 +81,8 @@
     "chaperone": "tsx chaperone.ts",
     "liveness": "tsx liveness.ts",
     "accountability": "tsx accountability.ts",
-    "meet-again": "tsx meet-again.ts"
+    "meet-again": "tsx meet-again.ts",
+    "event-groups": "tsx event-groups.ts"
   },
   "dependencies": {
     "@axe-core/playwright": "4.14.0",

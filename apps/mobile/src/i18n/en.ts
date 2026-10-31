@@ -1241,6 +1241,21 @@ export const en = {
       unanswered: 'Open my chats',
     },
   },
+  eventGroups: {
+    audience: 'For: {{who}}',
+    ages: 'ages {{min}}–{{max}}',
+    genders: { woman: 'women', man: 'men', nonbinary: 'nonbinary people', other: 'other' },
+    groups: { woman: 'Women', man: 'Men', nonbinary: 'Nonbinary people', other: 'Other' },
+    placesLeft: '{{group}}: places left: {{count}}',
+    groupFull: '{{group}}: full (there’s a waiting list)',
+    notForYou: {
+      gender:
+        'This event is for another group, so you can’t take a place. Other events may suit you.',
+      age: 'This event is for ages {{min}}–{{max}}, so you can’t take a place. Other events may suit you.',
+      faith:
+        'This event is for certain streams. If you belong to one, you can add it under Profile → Faith and observance.',
+    },
+  },
   meetAgain: {
     title: 'Meet again',
     teaser:
