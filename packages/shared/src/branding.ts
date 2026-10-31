@@ -104,6 +104,13 @@ export const MAX_SAFETY_RESOURCES = 2000;
 /** Phase 62c: the longest community declaration. */
 export const MAX_JOIN_DECLARATION = 300;
 
+/**
+ * Phase 73a: what partner communities see of members here before a match. `minimal`: first name,
+ * age, gender, intention, languages, verified and the first photo only.
+ */
+export const partnerCardModes = ['full', 'minimal'] as const;
+export type PartnerCardMode = (typeof partnerCardModes)[number];
+
 export const instanceSettingsInputSchema = z
   .object({
     name: plainText(40),
@@ -147,6 +154,13 @@ export const instanceSettingsInputSchema = z
       .array(z.string().regex(/^[A-Z]{2}$/))
       .max(250)
       .refine((l) => new Set(l).size === l.length),
+    /** Phase 73a: before a match, partner communities get the full card or a short one. */
+    partnerCards: z.enum(partnerCardModes),
+    /** Phase 73a: this community's country (ISO 3166-1 alpha-2), told to partners; optional. */
+    communityCountry: z
+      .string()
+      .regex(/^[A-Z]{2}$/)
+      .nullable(),
     /** Phase 67a: local help (legal aid, emergency lines), plain text with line breaks. */
     safetyResources: z
       .string()

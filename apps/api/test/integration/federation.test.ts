@@ -246,6 +246,62 @@ describe.skipIf(!integrationEnabled)('communities that connect: foundation (inte
     expect(rows.every((r) => r.target_id === PARTNER)).toBe(true);
   });
 
+  it('phase 73a: our country goes out; no partners in a country at risk; existing ones flagged', async () => {
+    const settings = (payload: object) =>
+      ctx.app.inject({
+        method: 'PATCH',
+        url: '/v1/admin/instance',
+        headers: { cookie: admin },
+        payload,
+      });
+    expect((await settings({ communityCountry: 'Israel' })).statusCode).toBe(400);
+    const saved = await settings({ communityCountry: 'IL', riskCountries: ['XA'] });
+    expect(saved.statusCode, saved.body).toBe(200);
+    expect(saved.json()).toMatchObject({ communityCountry: 'IL', partnerCards: 'full' });
+    const self = (await ctx.app.inject({ method: 'GET', url: '/.well-known/nexaheart' })).json();
+    expect(self.country).toBe('IL');
+
+    // A community that says it's in a country at risk: inviting it is refused, with the reason.
+    partner.identity.country = 'XA';
+    const refused = await asStaff(admin, 'POST', '/v1/admin/partners', {
+      url: PARTNER,
+      agreementConfirmed: true,
+    });
+    expect(refused.statusCode).toBe(422);
+    expect(refused.json().error.message).toContain('XA');
+    expect((await list()).partners).toEqual([]);
+    expect(partner.received).toEqual([]);
+
+    // It invites us: kept, flagged, and accepting it is refused.
+    await fromPartner('POST', '/v1/federation/invitations', { version: 1 });
+    const [p] = (await list()).partners;
+    expect(p).toMatchObject({ status: 'invited_in', country: 'XA', atRisk: true });
+    const accept = await asStaff(admin, 'POST', `/v1/admin/partners/${p.id}/accept`, {
+      agreementConfirmed: true,
+    });
+    expect(accept.statusCode).toBe(422);
+    expect((await list()).partners[0].status).toBe('invited_in');
+
+    // It says it moved (or wasn't there): accepting checks again and connects.
+    partner.identity.country = 'FR';
+    const ok = await asStaff(admin, 'POST', `/v1/admin/partners/${p.id}/accept`, {
+      agreementConfirmed: true,
+    });
+    expect(ok.statusCode, ok.body).toBe(200);
+    expect(ok.json().partners[0]).toMatchObject({ status: 'active', country: 'FR', atRisk: false });
+
+    // Now on our list: the partnership isn't ended, but it's flagged (after a test, it says so).
+    await settings({ riskCountries: ['XA', 'FR'] });
+    expect((await list()).partners[0]).toMatchObject({ status: 'active', atRisk: true });
+    partner.identity.country = 'DE';
+    const tested = (await asStaff(admin, 'POST', `/v1/admin/partners/${p.id}/test`)).json();
+    expect(tested.partners[0]).toMatchObject({ country: 'DE', atRisk: false });
+    // An older partner without a country is never refused for it.
+    delete partner.identity.country;
+    await asStaff(admin, 'POST', `/v1/admin/partners/${p.id}/test`);
+    expect((await list()).partners[0]).toMatchObject({ country: null, atRisk: false });
+  });
+
   it('refuses unsigned, tampered, old, replayed and self-signed requests', async () => {
     await fromPartner('POST', '/v1/federation/invitations', { version: 1 });
     const [p] = (await list()).partners;

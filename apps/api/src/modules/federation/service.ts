@@ -73,7 +73,13 @@ export interface FederationDeps {
   apiUrl: string;
   /** The web app's address, for the privacy policy link. */
   appUrl: string;
-  instance: () => Promise<{ name: string; contactEmail: string | null }>;
+  /** Phase 73a: also our country, and the countries we consider dangerous. */
+  instance: () => Promise<{
+    name: string;
+    contactEmail: string | null;
+    country: string | null;
+    riskCountries: string[];
+  }>;
   outbound: OutboundOptions;
 }
 
@@ -263,7 +269,24 @@ export class FederationService {
       publicKey: (await this.keys()).publicKey,
       contact: info.contactEmail,
       privacyUrl: `${this.deps.appUrl}/privacy`,
+      country: info.country,
     };
+  }
+
+  /**
+   * Phase 73a: no partnership with a community that says it's in a country on our
+   * countries-at-risk list (self-declared: a signal, not proof ⚖️).
+   */
+  private async refuseAtRisk(country: string | null | undefined): Promise<void> {
+    if (!country) return;
+    const { riskCountries } = await this.deps.instance();
+    if (riskCountries.includes(country)) {
+      throw new HttpError(
+        422,
+        ErrorCode.ValidationError,
+        `That community says it’s in ${country}, on this community’s list of countries at risk.`,
+      );
+    }
   }
 
   // ------------------------------------------------------------------ outgoing
@@ -603,6 +626,7 @@ export class FederationService {
       publicKey: id.publicKey,
       contact: id.contact,
       privacyUrl: id.privacyUrl,
+      country: id.country ?? null,
       status: 'invited_in' as PartnerStatus,
       createdBy: null,
       createdAt: new Date(this.now()),
@@ -673,6 +697,7 @@ export class FederationService {
       };
     };
     const self = reason === null ? await this.identity() : null;
+    const { riskCountries } = await this.deps.instance();
     const [keyRow] = self
       ? await this.db
           .select({ rotatedAt: federationKeys.rotatedAt })
@@ -690,7 +715,11 @@ export class FederationService {
       key: self
         ? { rotatedAt: keyRow?.rotatedAt?.toISOString() ?? null, waiting: announcing?.n ?? 0 }
         : null,
-      partners: rows.map((r) => ({ ...toPartner(r), ...counts(r.id) })),
+      partners: rows.map((r) => ({
+        ...toPartner(r),
+        atRisk: r.country !== null && riskCountries.includes(r.country),
+        ...counts(r.id),
+      })),
     };
   }
 
@@ -708,11 +737,13 @@ export class FederationService {
       throw new HttpError(409, ErrorCode.Conflict, 'This community is already in the list.');
     }
     const identity = await this.discover(target);
+    await this.refuseAtRisk(identity.country);
     const values = {
       name: identity.name,
       publicKey: identity.publicKey,
       contact: identity.contact,
       privacyUrl: identity.privacyUrl,
+      country: identity.country ?? null,
       status: 'invited_out' as PartnerStatus,
       createdBy: actorId,
       createdAt: new Date(this.now()),
@@ -750,6 +781,16 @@ export class FederationService {
     if (partner.status !== 'invited_in') {
       throw new HttpError(409, ErrorCode.Conflict, 'There is no invitation to accept.');
     }
+    // Phase 73a: its country as it says now (it may have changed since it invited us).
+    const country =
+      (await this.discover(partner.url).catch(() => null))?.country ?? partner.country;
+    if (country !== partner.country) {
+      await this.db
+        .update(federationPartners)
+        .set({ country })
+        .where(eq(federationPartners.id, partner.id));
+    }
+    await this.refuseAtRisk(country);
     await this.send(partner.url, 'POST', '/v1/federation/accept', {});
     await this.activate(partner.id);
     await audit(this.db, {
@@ -792,9 +833,15 @@ export class FederationService {
     await this.send(partner.url, 'GET', '/v1/federation/ping').catch((error: Error) => {
       lastError = error.message.slice(0, 200);
     });
+    // Phase 73a: the country it says it's in now, so a partner on our list is flagged.
+    const identity = lastError ? null : await this.discover(partner.url).catch(() => null);
     await this.db
       .update(federationPartners)
-      .set({ lastError, ...(lastError ? {} : { lastSeenAt: new Date(this.now()) }) })
+      .set({
+        lastError,
+        ...(lastError ? {} : { lastSeenAt: new Date(this.now()) }),
+        ...(identity ? { country: identity.country ?? null } : {}),
+      })
       .where(eq(federationPartners.id, partner.id));
     await audit(this.db, {
       actorId,
@@ -875,13 +922,14 @@ export class FederationService {
   }
 }
 
-function toPartner(r: PartnerRow): Omit<Partner, 'reports' | 'outbox'> {
+function toPartner(r: PartnerRow): Omit<Partner, 'reports' | 'outbox' | 'atRisk'> {
   return {
     id: r.id,
     url: r.url,
     name: r.name,
     contact: r.contact,
     privacyUrl: r.privacyUrl,
+    country: r.country,
     status: r.status as PartnerStatus,
     createdAt: r.createdAt.toISOString(),
     activatedAt: r.activatedAt?.toISOString() ?? null,

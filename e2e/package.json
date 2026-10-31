@@ -39,6 +39,7 @@
     "federated-discovery": "tsx federated-discovery.ts",
     "federated-chat": "tsx federated-chat.ts",
     "federated-safety": "tsx federated-safety.ts",
+    "federation-privacy": "tsx federation-privacy.ts",
     "devices": "tsx devices.ts",
     "reactions-undo": "tsx reactions-undo.ts",
     "chat-control": "tsx chat-control.ts",

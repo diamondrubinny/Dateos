@@ -141,6 +141,8 @@ export interface AdminInstanceSettings {
   safetyResources: string | null;
   discreetName: string | null;
   riskCountries: string[];
+  partnerCards: 'full' | 'minimal';
+  communityCountry: string | null;
   introductionOrder: IntroductionOrder;
   profileApproval: boolean;
   joinMinAge: number;

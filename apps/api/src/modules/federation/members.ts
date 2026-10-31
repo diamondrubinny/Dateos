@@ -71,6 +71,11 @@ const takingPartSql = sql`u.status = 'active' AND ${notOnBreak('u')} AND NOT u.i
   AND EXISTS (SELECT 1 FROM preferences pr0 WHERE pr0.user_id = p.user_id)
   AND EXISTS (SELECT 1 FROM photos ph WHERE ph.user_id = p.user_id AND ph.status = 'clean' AND ph.purpose = 'profile')`;
 
+/** Phase 73a: the community shows partners only short cards before a match. */
+const communityShortSql = sql`COALESCE((SELECT partner_cards = 'minimal' FROM instance_settings WHERE id = 1), false)`;
+/** …or this member (`p.user_id`) chose to. */
+const shortCardSql = sql`(pr.partner_short_card OR ${communityShortSql})`;
+
 const newAlias = () => randomBytes(16).toString('base64url');
 
 /**
@@ -162,12 +167,26 @@ export class FederatedMembers {
 
   async status(userId: string): Promise<FederatedStatus> {
     const partners = await this.federation.activePartners();
+    const { rows } = await this.db.execute<{ mine: boolean | null; community: boolean }>(sql`
+      SELECT (SELECT partner_short_card FROM preferences WHERE user_id = ${userId}) AS mine,
+             ${communityShortSql} AS community`);
     return {
       available: partners.length > 0,
       joined: await this.joined(userId),
       consentVersion: FEDERATION_CONSENT_VERSION,
       partners: partners.map((p) => ({ id: p.id, name: p.name, privacyUrl: p.privacyUrl })),
+      shortCard: Boolean(rows[0]?.mine),
+      communityShort: Boolean(rows[0]?.community),
     };
+  }
+
+  /** Phase 73a: partners see only my short card until we match (my choice, any time). */
+  async setShortCard(userId: string, shortCard: boolean): Promise<FederatedStatus> {
+    await this.db
+      .update(preferences)
+      .set({ partnerShortCard: shortCard })
+      .where(eq(preferences.userId, userId));
+    return this.status(userId);
   }
 
   /** Joining is an explicit, versioned consent ⚖️. */
@@ -555,10 +574,11 @@ export class FederatedMembers {
       bio: string | null;
       languages: string[];
       verified: boolean;
+      short: boolean;
     }>(sql`
       SELECT p.user_id AS id, p.display_name AS name, p.birth_date::text AS birth_date,
              p.gender::text AS gender, p.intention::text AS intention, p.bio, p.languages,
-             p.verified_at IS NOT NULL AS verified
+             p.verified_at IS NOT NULL AS verified, ${shortCardSql} AS short
       FROM profiles p
       JOIN "user" u ON u.id = p.user_id
       JOIN preferences pr ON pr.user_id = p.user_id
@@ -622,7 +642,8 @@ export class FederatedMembers {
     const blurred = await blurredOwners(this.db, null, ids);
     const cards = rows.flatMap((r): FederatedCard[] => {
       const alias = aliases.get(r.id);
-      const own = photoRows.filter((ph) => ph.userId === r.id);
+      // Phase 73a: the short card has the first photo only, and no bio or prompts.
+      const own = photoRows.filter((ph) => ph.userId === r.id).slice(0, r.short ? 1 : undefined);
       if (!alias || own.length === 0) return [];
       return [
         {
@@ -631,11 +652,13 @@ export class FederatedMembers {
           age: ageOn(r.birth_date, this.today()),
           gender: r.gender,
           intention: partnerIntention(r.intention),
-          bio: r.bio,
+          bio: r.short ? null : r.bio,
           languages: r.languages.slice(0, 10),
-          prompts: promptRows
-            .filter((pr) => pr.userId === r.id)
-            .map((pr) => ({ promptKey: pr.promptKey as PromptKey, answer: pr.answer })),
+          prompts: r.short
+            ? []
+            : promptRows
+                .filter((pr) => pr.userId === r.id)
+                .map((pr) => ({ promptKey: pr.promptKey as PromptKey, answer: pr.answer })),
           photos: own.map((ph) => ({
             id: ph.id,
             width: ph.width,
@@ -758,7 +781,16 @@ export class FederatedMembers {
         AND ph.media_key IS NOT NULL AND ${takingPartSql}
         AND NOT EXISTS (SELECT 1 FROM federation_decisions d
           WHERE d.user_id = p.user_id AND d.partner_id = ${partner.id}
-            AND d.alias = ${viewer} AND d.kind = 'block')`);
+            AND d.alias = ${viewer} AND d.kind = 'block')
+        -- Phase 73a: with the short card, only the first photo until the two match.
+        AND (
+          NOT (SELECT ${shortCardSql} FROM preferences pr WHERE pr.user_id = p.user_id)
+          OR ph.id = (SELECT f.id FROM photos f
+            WHERE f.user_id = p.user_id AND f.status = 'clean' AND f.purpose = 'profile'
+            ORDER BY f.position LIMIT 1)
+          OR EXISTS (SELECT 1 FROM federation_matches m
+            WHERE m.partner_id = ${partner.id} AND m.user_id = p.user_id AND m.alias = ${viewer})
+        )`);
     if (!rows[0]) throw notFound();
     const object = await this.storage.get(this.storage.buckets.media, rows[0].key);
     // Phase 66a: partners' members get a blurred copy of photos that may be blurred here.

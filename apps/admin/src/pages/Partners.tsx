@@ -3,7 +3,7 @@
 // Keep the "Powered by NexaHeart" credit: an additional term of the license (see NOTICE).
 import type { Partner, PartnersResponse } from '@nexaheart/shared';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
-import { api } from '../api';
+import { api, type AdminInstanceSettings } from '../api';
 import { format, useLocale } from '../i18n';
 import { Badge, ErrorBox, formatDate, Loading } from '../components/ui';
 
@@ -14,6 +14,97 @@ const tones = {
   suspended: 'urgent',
   ended: 'muted',
 } as const;
+
+/**
+ * Phase 73a: what partners see before a match (the full or the short card), and this community's
+ * country, told to partners. Admins only.
+ */
+function BeforeAMatch() {
+  const { t } = useLocale();
+  const p = t.partners;
+  const [settings, setSettings] = useState<AdminInstanceSettings>();
+  const [cards, setCards] = useState<'full' | 'minimal'>('full');
+  const [country, setCountry] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<Error>();
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    api.settings().then(
+      (s) => {
+        setSettings(s);
+        setCards(s.partnerCards);
+        setCountry(s.communityCountry ?? '');
+      },
+      (err: Error) => setError(err),
+    );
+  }, []);
+
+  const save = async (e: FormEvent) => {
+    e.preventDefault();
+    setBusy(true);
+    setError(undefined);
+    setSaved(false);
+    try {
+      setSettings(
+        await api.saveSettings({
+          partnerCards: cards,
+          communityCountry: country.trim().toUpperCase() || null,
+        }),
+      );
+      setSaved(true);
+    } catch (err) {
+      setError(err as Error);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (!settings) return error ? <ErrorBox error={error} /> : null;
+  return (
+    <form className="card stack" aria-labelledby="before-match-title" onSubmit={save}>
+      <h2 id="before-match-title">{p.privacyTitle}</h2>
+      <fieldset>
+        <legend>{p.cardsLabel}</legend>
+        {(['full', 'minimal'] as const).map((mode) => (
+          <label key={mode} className="checkbox">
+            <input
+              type="radio"
+              name="partner-cards"
+              value={mode}
+              checked={cards === mode}
+              onChange={() => setCards(mode)}
+            />
+            {mode === 'full' ? p.cardsFull : p.cardsMinimal}
+          </label>
+        ))}
+        <p className="help">{p.cardsHelp}</p>
+      </fieldset>
+      <label htmlFor="community-country">{p.countryLabel}</label>
+      <input
+        id="community-country"
+        dir="ltr"
+        maxLength={2}
+        autoComplete="off"
+        aria-describedby="community-country-help"
+        value={country}
+        onChange={(e) => setCountry(e.target.value)}
+        pattern="[A-Za-z]{2}"
+        style={{ maxWidth: '6em' }}
+      />
+      <p id="community-country-help" className="help">
+        {p.countryHelp}
+      </p>
+      {error ? <ErrorBox error={error} /> : null}
+      <p role="status" className={saved ? 'alert alert-ok' : 'visually-hidden'}>
+        {saved ? p.savedPrivacy : ''}
+      </p>
+      <button type="submit" className="button primary" disabled={busy}>
+        {p.savePrivacy}
+      </button>
+    </form>
+  );
+}
 
 /**
  * Communities that connect (phase 28): partnerships with other NexaHeart communities, and (28d)
@@ -101,6 +192,12 @@ export function Partners({ isAdmin }: { isAdmin: boolean }) {
             received: x.reports.received,
           })}
           {x.outbox > 0 ? ` · ${format(p.outbox, { n: x.outbox })}` : ''}
+        </p>
+      ) : null}
+      {x.country ? <p className="muted">{format(p.country, { country: x.country })}</p> : null}
+      {x.atRisk && x.status !== 'ended' ? (
+        <p className="alert alert-error" data-testid="partner-at-risk">
+          {p.atRisk}
         </p>
       ) : null}
       {x.status === 'suspended' ? <p className="muted">{p.suspendedNote}</p> : null}
@@ -304,6 +401,7 @@ export function Partners({ isAdmin }: { isAdmin: boolean }) {
           ) : null}
         </div>
       ) : null}
+      {data?.enabled && isAdmin ? <BeforeAMatch /> : null}
       {data && data.partners.length === 0 && data.enabled ? (
         <p className="empty">{p.empty}</p>
       ) : null}

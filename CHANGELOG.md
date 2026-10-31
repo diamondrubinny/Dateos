@@ -6,6 +6,12 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Added
 
+- **Less before a match, and no partners where it's dangerous**: members can show partner
+  communities only a short card (first name, age, first photo...) until they match, and admins can
+  choose it for everyone; other photos can't be fetched before a match. Communities can say which
+  country they're in; inviting or accepting a community in a country on the countries-at-risk
+  list is refused, and existing partners there are flagged.
+
 - **A sturdier web app**: notifications also come in the declarative Web Push form, so browsers
   that support it show them without the service worker; the installed app's icon shows how many
   chats have unread messages (Settings → Notifications; never with discreet notifications); the
