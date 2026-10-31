@@ -5,6 +5,9 @@ import { schema, type Database } from '@nexaheart/db';
 import {
   ErrorCode,
   firstToHear,
+  FRIEND_SUGGESTIONS_DAILY,
+  type FriendSuggestPage,
+  type IntroductionKind,
   INTRODUCTION_DAYS,
   INTRODUCTIONS_DAILY,
   type ConsoleQuery,
@@ -95,6 +98,7 @@ export class IntroductionService {
       JOIN profiles p ON p.user_id = u.id
       JOIN preferences pf ON pf.user_id = u.id AND pf.open_to_matchmakers
       WHERE u.status = 'active' AND u.id <> ${matchmakerId} AND ${notOnBreak('u')}
+        AND p.review_status = 'approved'
         AND NOT EXISTS (SELECT 1 FROM blocks bl WHERE (bl.blocker_id = u.id AND bl.blocked_id = ${matchmakerId})
                                                    OR (bl.blocker_id = ${matchmakerId} AND bl.blocked_id = u.id))
         ${q ? sql`AND p.display_name ILIKE ${q}` : sql``}
@@ -120,20 +124,20 @@ export class IntroductionService {
         intention: r.intention as MatchmakerConsole['members'][number]['intention'],
         photoUrl: r.photo ? photoUrl(r.photo) : null,
       })),
-      sent: await this.sent(matchmakerId),
-      left: Math.max(0, INTRODUCTIONS_DAILY - (await this.sentToday(matchmakerId))),
+      sent: await this.sent(matchmakerId, 'matchmaker'),
+      left: Math.max(0, INTRODUCTIONS_DAILY - (await this.sentToday(matchmakerId, 'matchmaker'))),
     };
   }
 
-  private async sentToday(matchmakerId: string): Promise<number> {
+  private async sentToday(byId: string, kind: IntroductionKind): Promise<number> {
     const { rows } = await this.db.execute<{ n: number }>(sql`
       SELECT count(*)::int AS n FROM introductions
-      WHERE matchmaker_id = ${matchmakerId} AND created_at > now() - interval '24 hours'`);
+      WHERE matchmaker_id = ${byId} AND kind = ${kind} AND created_at > now() - interval '24 hours'`);
     return rows[0]?.n ?? 0;
   }
 
   /** My introductions as a matchmaker: their state, never who answered what. */
-  private async sent(matchmakerId: string): Promise<SentIntroduction[]> {
+  private async sent(byId: string, kind: IntroductionKind): Promise<SentIntroduction[]> {
     const { rows } = await this.db.execute<{
       id: string;
       a_id: string;
@@ -149,7 +153,7 @@ export class IntroductionService {
         ${STATE_SQL} AS state, it.outcome, it.created_at
       FROM introductions it
       JOIN profiles pa ON pa.user_id = it.a_id JOIN profiles pb ON pb.user_id = it.b_id
-      WHERE it.matchmaker_id = ${matchmakerId}
+      WHERE it.matchmaker_id = ${byId} AND it.kind = ${kind}
       ORDER BY it.created_at DESC LIMIT 50`);
     return rows.map((r) => ({
       id: r.id,
@@ -164,19 +168,68 @@ export class IntroductionService {
 
   async introduce(matchmakerId: string, input: IntroductionInput): Promise<{ id: string }> {
     await this.requireMatchmaker(matchmakerId);
+    return this.create(matchmakerId, input, 'matchmaker');
+  }
+
+  // ---------------------------------------------------------------- friends who suggest (68c)
+
+  /** People I'm friends with here: a friends-mode match, or my double-date pair. */
+  private async friendsOf(userId: string) {
+    const { rows } = await this.db.execute<{
+      id: string;
+      display_name: string;
+      photo: string | null;
+    }>(sql`
+      SELECT o.id, p.display_name, ${firstPhoto('o.id')} AS photo
+      FROM "user" o JOIN profiles p ON p.user_id = o.id
+      WHERE o.status = 'active' AND o.id IN (
+        SELECT CASE WHEN m.user_a = ${userId} THEN m.user_b ELSE m.user_a END FROM matches m
+        WHERE m.unmatched_at IS NULL AND m.mode = 'friend'
+          AND (m.user_a = ${userId} OR m.user_b = ${userId})
+        UNION
+        SELECT CASE WHEN pa.user_a = ${userId} THEN pa.user_b ELSE pa.user_a END FROM pairs pa
+        WHERE pa.ended_at IS NULL AND (pa.user_a = ${userId} OR pa.user_b = ${userId}))
+      ORDER BY p.display_name, o.id`);
+    return rows;
+  }
+
+  async friendPage(userId: string): Promise<FriendSuggestPage> {
+    return {
+      friends: (await this.friendsOf(userId)).map((r) => ({
+        id: r.id,
+        displayName: r.display_name,
+        photoUrl: r.photo ? photoUrl(r.photo) : null,
+      })),
+      sent: await this.sent(userId, 'friend'),
+      left: Math.max(0, FRIEND_SUGGESTIONS_DAILY - (await this.sentToday(userId, 'friend'))),
+    };
+  }
+
+  /** A friend suggests two of their friends to each other: the same private answers. */
+  async suggest(userId: string, input: IntroductionInput): Promise<{ id: string }> {
+    const friends = new Set((await this.friendsOf(userId)).map((f) => f.id));
+    if (!friends.has(input.aId) || !friends.has(input.bId)) throw cantIntroduce();
+    return this.create(userId, input, 'friend');
+  }
+
+  private async create(
+    byId: string,
+    input: IntroductionInput,
+    kind: IntroductionKind,
+  ): Promise<{ id: string }> {
     const { aId, bId, note } = input;
-    if (aId === matchmakerId || bId === matchmakerId) throw cantIntroduce();
-    if ((await this.sentToday(matchmakerId)) >= INTRODUCTIONS_DAILY) {
-      throw new HttpError(
-        429,
-        ErrorCode.RateLimited,
-        `At most ${INTRODUCTIONS_DAILY} introductions a day.`,
-      );
+    if (aId === byId || bId === byId) throw cantIntroduce();
+    const daily = kind === 'friend' ? FRIEND_SUGGESTIONS_DAILY : INTRODUCTIONS_DAILY;
+    if ((await this.sentToday(byId, kind)) >= daily) {
+      throw new HttpError(429, ErrorCode.RateLimited, `At most ${daily} a day.`);
     }
+    // Matchmakers: members who opted in. Friends: members who didn't turn friend suggestions off.
+    const consent =
+      kind === 'friend' ? sql.raw('pf.friend_suggestions') : sql.raw('pf.open_to_matchmakers');
     const { rows: people } = await this.db.execute<{ id: string; gender: string }>(sql`
       SELECT u.id, p.gender FROM "user" u
-      JOIN profiles p ON p.user_id = u.id
-      JOIN preferences pf ON pf.user_id = u.id AND pf.open_to_matchmakers
+      JOIN profiles p ON p.user_id = u.id AND p.review_status = 'approved'
+      JOIN preferences pf ON pf.user_id = u.id AND ${consent}
       WHERE u.id IN (${aId}, ${bId}) AND u.status = 'active' AND ${notOnBreak('u')}`);
     const a = people.find((p) => p.id === aId);
     const b = people.find((p) => p.id === bId);
@@ -200,17 +253,17 @@ export class IntroductionService {
     const firstId = firstToHear(await this.deps.order(), a, b);
     const id = await this.db.transaction(async (tx) => {
       const { rows } = await tx.execute<{ id: string }>(sql`
-        INSERT INTO introductions (matchmaker_id, a_id, b_id, note, first_id, expires_at)
-        VALUES (${matchmakerId}, ${aId}, ${bId}, ${note}, ${firstId},
+        INSERT INTO introductions (matchmaker_id, kind, a_id, b_id, note, first_id, expires_at)
+        VALUES (${byId}, ${kind}, ${aId}, ${bId}, ${note}, ${firstId},
           now() + make_interval(days => ${INTRODUCTION_DAYS}))
         RETURNING id`);
       const created = rows[0]!.id;
       await audit(tx, {
-        actorId: matchmakerId,
+        actorId: byId,
         action: 'introduction.created',
         targetType: 'introduction',
         targetId: created,
-        meta: { order: firstId ? 'women_first' : 'together' },
+        meta: { kind, order: firstId ? 'women_first' : 'together' },
       });
       return created;
     });
@@ -224,6 +277,7 @@ export class IntroductionService {
   async mine(userId: string): Promise<MyIntroductions> {
     const { rows } = await this.db.execute<{
       id: string;
+      kind: IntroductionKind;
       mm_name: string | null;
       mm_since: Date | null;
       note: string;
@@ -237,7 +291,7 @@ export class IntroductionService {
       created_at: Date;
       expires_at: Date;
     }>(sql`
-      SELECT it.id, pm.display_name AS mm_name, mk.granted_at AS mm_since, it.note,
+      SELECT it.id, it.kind, pm.display_name AS mm_name, mk.granted_at AS mm_since, it.note,
         o.id AS other_id, po.display_name AS other_name, ${firstPhoto('o.id')} AS other_photo,
         CASE WHEN it.a_id = ${userId} THEN it.a_answer ELSE it.b_answer END AS my_answer,
         ${STATE_SQL} AS state, it.match_id, it.outcome, it.created_at, it.expires_at
@@ -254,7 +308,11 @@ export class IntroductionService {
       ORDER BY it.created_at DESC LIMIT 50`);
     const received: ReceivedIntroduction[] = rows.map((r) => ({
       id: r.id,
-      matchmaker: r.mm_name ? { displayName: r.mm_name, since: iso(r.mm_since) } : null,
+      kind: r.kind,
+      // A friend's suggestion names the friend, never with a matchmaker's badge.
+      matchmaker: r.mm_name
+        ? { displayName: r.mm_name, since: r.kind === 'matchmaker' ? iso(r.mm_since) : null }
+        : null,
       note: r.note,
       other: {
         id: r.other_id,
@@ -380,7 +438,8 @@ export class IntroductionService {
       if (removed.length === 0) throw notFound();
       const { rows } = await tx.execute(sql`
         UPDATE introductions SET closed_at = now()
-        WHERE matchmaker_id = ${userId} AND matched_at IS NULL AND closed_at IS NULL
+        WHERE matchmaker_id = ${userId} AND kind = 'matchmaker' AND matched_at IS NULL
+          AND closed_at IS NULL
           AND expires_at > now()
         RETURNING id`);
       await audit(tx, {
@@ -418,7 +477,7 @@ export class IntroductionService {
         count(*) FILTER (WHERE it.outcome = 'married')::int AS married
       FROM matchmakers mk
       JOIN profiles p ON p.user_id = mk.user_id
-      LEFT JOIN introductions it ON it.matchmaker_id = mk.user_id
+      LEFT JOIN introductions it ON it.matchmaker_id = mk.user_id AND it.kind = 'matchmaker'
         AND it.created_at >= ${from}::date AND it.created_at < ${to}::date + 1
       GROUP BY mk.user_id, p.display_name, mk.granted_at
       ORDER BY p.display_name`);

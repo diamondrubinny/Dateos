@@ -221,6 +221,7 @@ export function useChatSettings() {
         hideDistance: boolean;
         discreetNotifications: boolean;
         openToMatchmakers: boolean;
+        friendSuggestions: boolean;
         pushDevices: number;
       }>('/v1/me/settings'),
   });

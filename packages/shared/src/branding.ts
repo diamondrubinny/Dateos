@@ -136,6 +136,8 @@ export const instanceSettingsInputSchema = z
     faithModule: z.boolean(),
     /** Phase 66a: everyone's photos are blurred until two people match. */
     photosAfterMatch: z.boolean(),
+    /** Phase 68c: a moderator approves each new profile before others see it. */
+    profileApproval: z.boolean(),
     /** Phase 68a: who hears about an introduction first. */
     introductionOrder: z.enum(introductionOrders),
     /** Phase 67b: a neutral name for the installed app (with plain icons), or null. */

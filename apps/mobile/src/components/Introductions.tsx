@@ -50,10 +50,22 @@ export function OpenToMatchmakers({ onError }: { onError: () => void }) {
         checked={settings.data?.openToMatchmakers ?? false}
         onChange={(v) => set.mutate({ openToMatchmakers: v }, { onError })}
       />
+      {/* Phase 68c. */}
+      <Checkbox
+        label={t('suggest.settingLabel')}
+        hint={t('suggest.settingHint')}
+        checked={settings.data?.friendSuggestions ?? true}
+        onChange={(v) => set.mutate({ friendSuggestions: v }, { onError })}
+      />
       <Button
         variant="secondary"
         label={t('intro.entry')}
         onPress={() => router.push('/introductions')}
+      />
+      <Button
+        variant="secondary"
+        label={t('suggest.title')}
+        onPress={() => router.push('/suggest-friends')}
       />
     </>
   );

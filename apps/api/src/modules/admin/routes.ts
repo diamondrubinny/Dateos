@@ -56,6 +56,8 @@ import {
   grantMatchmakerSchema,
   matchmakerReportQuerySchema,
   matchmakersReportSchema,
+  pendingProfilesSchema,
+  reviewDecisionSchema,
 } from '@nexaheart/shared';
 import type { Storage, StoredObject } from '@nexaheart/storage';
 import type { FastifyReply } from 'fastify';
@@ -81,6 +83,7 @@ import type { ModerationService } from './moderation.js';
 import type { AppealService } from '../safety/appeals.js';
 import type { ComplianceService } from '../compliance/service.js';
 import type { IntroductionService } from '../introductions/service.js';
+import type { ProfileReviewService } from './review.js';
 
 const ok = z.object({ ok: z.literal(true) });
 const idParams = z.object({ id: z.uuid() });
@@ -115,6 +118,8 @@ export const adminRoutes: FastifyPluginAsyncZod<{
   compliance?: ComplianceService;
   /** Phase 68a. */
   introductions?: IntroductionService;
+  /** Phase 68c. */
+  profileReview?: ProfileReviewService;
 }> = async (
   app,
   {
@@ -135,6 +140,7 @@ export const adminRoutes: FastifyPluginAsyncZod<{
     appeals,
     compliance,
     introductions,
+    profileReview,
   },
 ) => {
   await app.register(multipart, {
@@ -402,6 +408,30 @@ export const adminRoutes: FastifyPluginAsyncZod<{
       return { entries: await moderation.auditLog(before, limit, only) };
     },
   );
+
+  // ---------------------------------------------------------------- new profiles (phase 68c, staff)
+
+  if (profileReview) {
+    app.get(
+      '/v1/admin/profile-reviews',
+      { schema: { response: { 200: pendingProfilesSchema } } },
+      async () => ({ profiles: await profileReview.pending() }),
+    );
+    app.post(
+      '/v1/admin/profile-reviews/:userId',
+      {
+        schema: {
+          params: z.object({ userId: z.string().min(1).max(64) }),
+          body: reviewDecisionSchema,
+          response: { 200: ok },
+        },
+      },
+      async (request) => {
+        await profileReview.decide(currentUser(request).id, request.params.userId, request.body);
+        return { ok: true as const };
+      },
+    );
+  }
 
   // ---------------------------------------------------------------- matchmakers (phase 68a, admins)
 

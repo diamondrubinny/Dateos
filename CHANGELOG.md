@@ -6,6 +6,13 @@ All notable changes to NexaHeart. Versions follow [Semantic Versioning](https://
 
 ### Added
 
+- **Friends who suggest a pair**: suggest two of your friends here (friends-mode matches or your
+  double-date partner) to each other. They answer privately, as with a community matchmaker; you
+  only see whether it went ahead. Members can turn friend suggestions off.
+- **New profiles approved by hand**: a community can have a moderator approve each new profile
+  before others see it (Dashboard → New profiles), or ask for a change with a reason and a note
+  the member sees and answers by sending it again.
+
 - **Matchmaking résumé**: a read-only page about you for one person (a parent, a matchmaker), by a
   link that works for a day, three days or a week and can be ended any time. You choose what it
   shows (photo, about me, answers, faith); the page and a watermark burned into the photo say whom

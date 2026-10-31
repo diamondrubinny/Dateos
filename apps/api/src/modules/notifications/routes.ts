@@ -59,6 +59,7 @@ export const notificationRoutes: FastifyPluginAsyncZod<{
           hideDistance: preferences.hideDistance,
           discreetNotifications: preferences.discreetNotifications,
           openToMatchmakers: preferences.openToMatchmakers,
+          friendSuggestions: preferences.friendSuggestions,
         })
         .from(preferences)
         .where(eq(preferences.userId, userId));
@@ -89,6 +90,7 @@ export const notificationRoutes: FastifyPluginAsyncZod<{
         hideDistance: prefs?.hideDistance ?? false,
         discreetNotifications: prefs?.discreetNotifications ?? false,
         openToMatchmakers: prefs?.openToMatchmakers ?? false,
+        friendSuggestions: prefs?.friendSuggestions ?? true,
         pushDevices: devices.length + browsers.length,
       };
     },

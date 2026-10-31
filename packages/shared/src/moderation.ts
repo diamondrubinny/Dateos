@@ -371,3 +371,60 @@ export const safetyOverviewSchema = z.object({
   appealsWaiting: z.number().int(),
 });
 export type SafetyOverview = z.infer<typeof safetyOverviewSchema>;
+
+// ---------------------------------------------------------------------------
+// Phase 68c: new profiles approved by hand (when the community turns it on)
+// ---------------------------------------------------------------------------
+
+export const profileReviewStatuses = ['approved', 'pending', 'changes'] as const;
+export type ProfileReviewStatus = (typeof profileReviewStatuses)[number];
+/** What a moderator asks the member to change. */
+export const profileReviewReasons = ['photos', 'about', 'answers', 'other'] as const;
+export type ProfileReviewReason = (typeof profileReviewReasons)[number];
+export const MAX_REVIEW_NOTE = 300;
+
+export const profileReviewSchema = z.object({
+  status: z.enum(profileReviewStatuses),
+  reason: z.enum(profileReviewReasons).nullable(),
+  note: z.string().nullable(),
+});
+export type ProfileReview = z.infer<typeof profileReviewSchema>;
+
+export const reviewDecisionSchema = z.discriminatedUnion('decision', [
+  z.object({ decision: z.literal('approve') }).strict(),
+  z
+    .object({
+      decision: z.literal('changes'),
+      reason: z.enum(profileReviewReasons),
+      note: z
+        .string()
+        .trim()
+        .min(1)
+        .max(MAX_REVIEW_NOTE)
+        // eslint-disable-next-line no-control-regex -- matching control characters is the point
+        .refine(
+          (v) => !/[\u0000-\u0009\u000B\u000C\u000E-\u001F\u007F<>]/.test(v),
+          'Plain text only',
+        )
+        .nullable(),
+    })
+    .strict(),
+]);
+export type ReviewDecision = z.infer<typeof reviewDecisionSchema>;
+
+/** A profile waiting in the queue: what any member would see, no email or place. */
+export const pendingProfileSchema = z.object({
+  userId: z.string(),
+  displayName: z.string(),
+  age: z.number().int(),
+  gender: z.string(),
+  intention: z.string(),
+  bio: z.string().nullable(),
+  prompts: z.array(z.object({ promptKey: z.string(), answer: z.string() })),
+  photoIds: z.array(z.uuid()),
+  /** Sent again after changes were asked. */
+  resubmitted: z.boolean(),
+  since: z.string(),
+});
+export type PendingProfile = z.infer<typeof pendingProfileSchema>;
+export const pendingProfilesSchema = z.object({ profiles: z.array(pendingProfileSchema) });

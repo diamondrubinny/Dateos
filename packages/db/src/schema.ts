@@ -212,6 +212,17 @@ export const profiles = pgTable('profiles', {
   eventCheckInAt: timestamp('event_check_in_at', { withTimezone: true }),
   /** Last time a profile photo was added or removed (a selfie taken before can't be approved). */
   photosChangedAt: timestamp('photos_changed_at', { withTimezone: true }),
+  /**
+   * Phase 68c: 'approved' (and every profile from before), or, where a moderator approves new
+   * profiles, 'pending' until then or 'changes' when asked to change something.
+   */
+  reviewStatus: varchar('review_status', { length: 10 }).notNull().default('approved'),
+  reviewReason: varchar('review_reason', { length: 10 }),
+  reviewNote: varchar('review_note', { length: 300 }),
+  reviewedAt: timestamp('reviewed_at', { withTimezone: true }),
+  reviewedBy: text('reviewed_by'),
+  /** Sent again after changes were asked. */
+  resubmittedAt: timestamp('resubmitted_at', { withTimezone: true }),
   ...timestamps,
 });
 
@@ -309,6 +320,8 @@ export const preferences = pgTable(
     discreetNotifications: boolean('discreet_notifications').notNull().default(false),
     /** Phase 68a: community matchmakers may find me in their console (off by default). */
     openToMatchmakers: boolean('open_to_matchmakers').notNull().default(false),
+    /** Phase 68c: friends here may suggest someone to me (on by default). */
+    friendSuggestions: boolean('friend_suggestions').notNull().default(true),
     /** Receiver control: people can turn video and voice calls off (phase 15). */
     acceptCalls: boolean('accept_calls').notNull().default(true),
     /** Dealbreakers (phase 19): empty means any; a missing answer always passes. */
@@ -988,6 +1001,8 @@ export const instanceSettings = pgTable(
     discreetName: varchar('discreet_name', { length: 30 }),
     /** Phase 68a: who hears about an introduction first ('together' or 'women_first'). */
     introductionOrder: varchar('introduction_order', { length: 12 }).notNull().default('together'),
+    /** Phase 68c: a moderator approves each new profile before others see it. */
+    profileApproval: boolean('profile_approval').notNull().default(false),
     /** Phase 67b: ISO 3166-1 alpha-2 codes the operator considers dangerous (no default). */
     riskCountries: text('risk_countries')
       .array()
@@ -1973,6 +1988,8 @@ export const introductions = pgTable(
       .notNull()
       .references(() => user.id, { onDelete: 'cascade' }),
     note: varchar('note', { length: 300 }).notNull(),
+    /** Phase 68c: 'matchmaker' or 'friend' (a friend who knows both; no badge, no credit). */
+    kind: varchar('kind', { length: 10 }).notNull().default('matchmaker'),
     /** Who hears first (women first); null: both together. */
     firstId: text('first_id'),
     aAnswer: varchar('a_answer', { length: 3 }),

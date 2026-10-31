@@ -39,6 +39,8 @@ export async function readCommunitySettings(db: Database): Promise<{
   intentions: Intention[];
   faith: boolean;
   join: { minAge: number; maxAge: number | null; genders: Gender[]; declaration: string | null };
+  /** Phase 68c: a moderator approves each new profile. */
+  profileApproval: boolean;
 }> {
   const [row] = await db
     .select({
@@ -48,6 +50,7 @@ export async function readCommunitySettings(db: Database): Promise<{
       maxAge: schema.instanceSettings.joinMaxAge,
       genders: schema.instanceSettings.joinGenders,
       declaration: schema.instanceSettings.joinDeclaration,
+      profileApproval: schema.instanceSettings.profileApproval,
     })
     .from(schema.instanceSettings)
     .where(eq(schema.instanceSettings.id, 1));
@@ -57,6 +60,7 @@ export async function readCommunitySettings(db: Database): Promise<{
   return {
     intentions: offered.length > 0 ? offered : [...intentions],
     faith: row?.faith ?? false,
+    profileApproval: row?.profileApproval ?? false,
     join: {
       minAge: Math.max(MIN_AGE, row?.minAge ?? MIN_AGE),
       maxAge: row?.maxAge ?? null,

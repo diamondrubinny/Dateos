@@ -172,7 +172,8 @@ export function candidateSql(q: CandidateQuery): SQL {
       JOIN locations l ON l.user_id = p.user_id
       LEFT JOIN profile_embeddings e ON e.user_id = p.user_id
       LEFT JOIN profile_about ma ON ma.user_id = p.user_id
-      WHERE p.user_id = ${q.viewerId}
+      -- Phase 68c: a profile waiting for a moderator neither sees nor is seen.
+      WHERE p.user_id = ${q.viewerId} AND p.review_status = 'approved'
     )
     SELECT
       c.user_id AS id,
@@ -195,7 +196,7 @@ export function candidateSql(q: CandidateQuery): SQL {
       (SELECT count(*) FROM impressions im WHERE im.candidate_id = c.user_id AND im.created_at > now() - interval '24 hours')::int AS impressions_24h,
       cardinality(ARRAY(SELECT unnest(me.interests) INTERSECT SELECT unnest(ca.interests)))::int AS shared_interests
     FROM me
-    JOIN profiles c ON c.user_id <> me.user_id
+    JOIN profiles c ON c.user_id <> me.user_id AND c.review_status = 'approved'
     JOIN "user" u ON u.id = c.user_id AND u.status = 'active' AND ${notOnBreak('u')}
     JOIN preferences cpr ON cpr.user_id = c.user_id
     JOIN locations cl ON cl.user_id = c.user_id
