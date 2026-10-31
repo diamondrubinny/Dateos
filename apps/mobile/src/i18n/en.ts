@@ -2289,6 +2289,11 @@ export const en = {
       'Your card: first name, age, gender, what you’re looking for, bio, prompts, photos, languages and whether you’re verified. Your photos stay here: they’re sent through this community each time, never copied.',
     filter:
       'To show you only people who fit both ways, each search sends your gender, who you’re interested in, your age and the ages you’re looking for. Each community knows you by a different code name, never your account.',
+    shortLabel: 'Until we match, show only my first name, age and first photo',
+    shortHint:
+      'Partner communities won’t see your bio, prompts or other photos before you match. After a match, they can.',
+    shortCommunity:
+      'This community shows partners only a short card before a match: first name, age, gender, what you’re looking for, languages and your first photo.',
     neverTitle: 'What never leaves this community',
     never:
       'Your email, location or distance, religion, accessibility needs, voice, friends’ takes, messages and reports.',

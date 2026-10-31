@@ -857,6 +857,22 @@ const en = {
     suspendedDone: 'Suspended. Nothing crosses until you resume it.',
     resume: 'Resume',
     resumedDone: 'Resumed.',
+    privacyTitle: 'Before a match',
+    cardsLabel: 'What partner communities see of members here before a match',
+    cardsFull:
+      'The full card: first name, age, gender, what they’re looking for, bio, prompts, photos, languages, verified',
+    cardsMinimal:
+      'A short card: first name, age, gender, what they’re looking for, languages, verified and the first photo. The rest only after a match.',
+    cardsHelp:
+      'Members can also choose the short card for themselves. A short card is safer for a community whose members could be at risk if seen.',
+    countryLabel: 'This community’s country (optional)',
+    countryHelp:
+      'Two letters (ISO 3166-1), for example IL. Partners see it with this community’s address. Inviting, or accepting, a community that says it’s in a country on your list of countries at risk (Branding) is refused.',
+    savePrivacy: 'Save',
+    savedPrivacy: 'Saved.',
+    country: 'Country: {{country}}',
+    atRisk:
+      'It says it’s in a country on your list of countries at risk. Consider suspending or ending the partnership.',
     suspendedNote:
       'Suspended: nothing crosses either way and their members don’t appear here, but nothing is deleted. Deletions you owe them are still sent.',
     counts: 'Reports: {{sent}} sent ({{reviewed}} reviewed) · {{received}} received',
@@ -1953,6 +1969,22 @@ const he: Messages = {
     suspendedDone: 'הושהתה. שום דבר לא עובר עד שממשיכים.',
     resume: 'המשך השותפות',
     resumedDone: 'השותפות ממשיכה.',
+    privacyTitle: 'לפני התאמה',
+    cardsLabel: 'מה קהילות שותפות רואות מחברי הקהילה כאן לפני התאמה',
+    cardsFull:
+      'הכרטיס המלא: שם פרטי, גיל, מגדר, מה מחפשים, ביו, תשובות לשאלות, תמונות, שפות, אימות',
+    cardsMinimal:
+      'כרטיס מקוצר: שם פרטי, גיל, מגדר, מה מחפשים, שפות, אימות ותמונה ראשונה. כל השאר רק אחרי התאמה.',
+    cardsHelp:
+      'גם חברי הקהילה יכולים לבחור כרטיס מקוצר לעצמם. כרטיס מקוצר בטוח יותר לקהילה שחשיפה עלולה לסכן את החברים בה.',
+    countryLabel: 'המדינה של הקהילה (לא חובה)',
+    countryHelp:
+      'שתי אותיות (ISO 3166-1), למשל IL. השותפים רואים אותה יחד עם הכתובת של הקהילה. הזמנה של קהילה, או קבלת הזמנה ממנה, נדחית כשהיא מצהירה שהיא במדינה שברשימת המדינות בסיכון (מיתוג).',
+    savePrivacy: 'שמירה',
+    savedPrivacy: 'נשמר.',
+    country: 'מדינה: {{country}}',
+    atRisk:
+      'הקהילה מצהירה שהיא במדינה שברשימת המדינות בסיכון. כדאי לשקול להשהות או לסיים את השותפות.',
     suspendedNote:
       'מושהית: שום דבר לא עובר לשום כיוון וחברי הקהילה שלהם לא מופיעים כאן, אבל שום דבר לא נמחק. בקשות מחיקה שאתם חייבים להם עדיין נשלחות.',
     counts: 'דיווחים: {{sent}} נשלחו ({{reviewed}} נבדקו) · {{received}} התקבלו',

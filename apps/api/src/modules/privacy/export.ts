@@ -594,6 +594,7 @@ export async function exportMemberData(
           hideDistance: preferences.hideDistance,
           discreetNotifications: preferences.discreetNotifications,
           appBadge: preferences.appBadge,
+          partnerShortCard: preferences.partnerShortCard,
           openToMatchmakers: preferences.openToMatchmakers,
           friendSuggestions: preferences.friendSuggestions,
           showMetInPersonBadge: preferences.showMetBadge,

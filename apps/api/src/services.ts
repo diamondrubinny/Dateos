@@ -324,8 +324,13 @@ export function createServices(
       apiUrl: env.PUBLIC_API_URL,
       appUrl: appUrl(env),
       instance: async () => {
-        const info = await instance.info();
-        return { name: info.name, contactEmail: info.contactEmail };
+        const settings = await instance.adminSettings();
+        return {
+          name: settings.name,
+          contactEmail: settings.contactEmail,
+          country: settings.communityCountry,
+          riskCountries: settings.riskCountries,
+        };
       },
       outbound: {
         allowPrivate: env.INTEGRATIONS_ALLOW_PRIVATE,

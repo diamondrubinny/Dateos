@@ -47,6 +47,12 @@ export const federationIdentitySchema = z.object({
   publicKey: z.string().min(40).max(200),
   contact: z.string().max(200).nullable(),
   privacyUrl: z.url().nullable(),
+  /** Phase 73a: the community's own country (ISO 3166-1 alpha-2), if it says; older ones don't. */
+  country: z
+    .string()
+    .regex(/^[A-Z]{2}$/)
+    .nullable()
+    .optional(),
 });
 export type FederationIdentity = z.infer<typeof federationIdentitySchema>;
 
@@ -76,6 +82,9 @@ export const partnerSchema = z.object({
   endedAt: z.string().nullable(),
   lastSeenAt: z.string().nullable(),
   lastError: z.string().nullable(),
+  /** Phase 73a: the country it declares, and whether it's on our countries-at-risk list. */
+  country: z.string().nullable(),
+  atRisk: z.boolean(),
   /** 28d: reports our members sent to them, how many they reviewed, and reports from them. */
   reports: z.object({
     sent: z.number().int(),
@@ -236,8 +245,16 @@ export const federatedStatusSchema = z.object({
   partners: z.array(
     z.object({ id: z.uuid(), name: z.string(), privacyUrl: z.string().nullable() }),
   ),
+  /**
+   * Phase 73a: before a match partners see only the short card (first name, age, first photo...),
+   * because this member chose it (`shortCard`) or the community did (`communityShort`).
+   */
+  shortCard: z.boolean(),
+  communityShort: z.boolean(),
 });
 export type FederatedStatus = z.infer<typeof federatedStatusSchema>;
+
+export const federatedCardChoiceSchema = z.object({ shortCard: z.boolean() }).strict();
 
 export const federatedJoinSchema = z.object({ version: z.string().min(1).max(32) }).strict();
 

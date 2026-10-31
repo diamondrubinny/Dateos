@@ -324,6 +324,8 @@ export const preferences = pgTable(
     friendSuggestions: boolean('friend_suggestions').notNull().default(true),
     /** Phase 72: a number on the installed app's icon (on by default; never when discreet). */
     appBadge: boolean('app_badge').notNull().default(true),
+    /** Phase 73a: partners see only the short card of me until we match. */
+    partnerShortCard: boolean('partner_short_card').notNull().default(false),
     /** Receiver control: people can turn video and voice calls off (phase 15). */
     acceptCalls: boolean('accept_calls').notNull().default(true),
     /** Dealbreakers (phase 19): empty means any; a missing answer always passes. */
@@ -1010,6 +1012,9 @@ export const instanceSettings = pgTable(
       .array()
       .notNull()
       .default(sql`'{}'::text[]`),
+    /** Phase 73a: what partners see before a match (`full` or `minimal`), and our country. */
+    partnerCards: varchar('partner_cards', { length: 10 }).notNull().default('full'),
+    communityCountry: varchar('community_country', { length: 2 }),
     /** Phase 62c: who may join (ages, genders: empty means everyone) and a declaration. */
     joinMinAge: smallint('join_min_age').notNull().default(18),
     joinMaxAge: smallint('join_max_age'),
@@ -1730,6 +1735,8 @@ export const federationPartners = pgTable(
     publicKey: text('public_key').notNull(),
     contact: varchar('contact', { length: 200 }),
     privacyUrl: text('privacy_url'),
+    /** Phase 73a: the country the partner declares (ISO 3166-1 alpha-2), if any. */
+    country: varchar('country', { length: 2 }),
     status: varchar('status', { length: 16 }).notNull(),
     createdBy: text('created_by').references(() => user.id, { onDelete: 'set null' }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),

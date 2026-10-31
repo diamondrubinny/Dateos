@@ -554,6 +554,13 @@
       "when": 1793436314550,
       "tag": "0078_app_badge",
       "breakpoints": true
+    },
+    {
+      "idx": 79,
+      "version": "7",
+      "when": 1793438557224,
+      "tag": "0079_federation_privacy",
+      "breakpoints": true
     }
   ]
 }

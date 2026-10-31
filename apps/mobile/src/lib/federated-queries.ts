@@ -58,6 +58,19 @@ export function useLeaveFederated() {
   });
 }
 
+/** Phase 73a: partners see only my short card until we match. */
+export function useFederatedShortCard() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (shortCard: boolean) =>
+      apiFetch<FederatedStatus>('/v1/federated/card', {
+        method: 'PUT',
+        body: json({ shortCard }),
+      }),
+    onSuccess: (status) => client.setQueryData(federatedKeys.status, status),
+  });
+}
+
 export function useFederatedDeck(enabled: boolean) {
   return useQuery({
     queryKey: federatedKeys.deck,

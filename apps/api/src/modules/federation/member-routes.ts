@@ -9,6 +9,7 @@ import {
   federatedMessagesPageSchema,
   sendMessageSchema,
   federatedJoinSchema,
+  federatedCardChoiceSchema,
   federatedMatchSchema,
   federatedProfileSchema,
   federatedStatusSchema,
@@ -46,6 +47,15 @@ export const federatedRoutes: FastifyPluginAsyncZod<{
       schema: { body: federatedJoinSchema, response: { 200: federatedStatusSchema } },
     },
     async (request) => members.join(currentUser(request).id, request.body.version),
+  );
+  // Phase 73a: partners see only my short card until we match.
+  app.put(
+    '/v1/federated/card',
+    {
+      config: perUserLimit(30, 60 * MINUTE),
+      schema: { body: federatedCardChoiceSchema, response: { 200: federatedStatusSchema } },
+    },
+    async (request) => members.setShortCard(currentUser(request).id, request.body.shortCard),
   );
   app.post(
     '/v1/federated/leave',

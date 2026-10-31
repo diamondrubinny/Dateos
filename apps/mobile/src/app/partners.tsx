@@ -11,7 +11,12 @@ import { Checkbox } from '../components/Choice';
 import { Loading } from '../components/Loading';
 import { RequireSession } from '../components/RequireSession';
 import { Screen } from '../components/Screen';
-import { useFederatedStatus, useJoinFederated, useLeaveFederated } from '../lib/federated-queries';
+import {
+  useFederatedShortCard,
+  useFederatedStatus,
+  useJoinFederated,
+  useLeaveFederated,
+} from '../lib/federated-queries';
 import { radius, spacing, useColors } from '../lib/theme';
 
 /**
@@ -24,6 +29,7 @@ function PartnersScreen() {
   const status = useFederatedStatus();
   const join = useJoinFederated();
   const leave = useLeaveFederated();
+  const shortCard = useFederatedShortCard();
   const [agreed, setAgreed] = useState(false);
   const [confirmLeave, setConfirmLeave] = useState(false);
   const [notice, setNotice] = useState<{ tone: 'success' | 'error'; text: string }>();
@@ -63,6 +69,21 @@ function PartnersScreen() {
           <AppText variant="heading">{t('partners.sharesTitle')}</AppText>
           <AppText variant="body">{t('partners.shares')}</AppText>
           <AppText variant="body">{t('partners.filter')}</AppText>
+          {/* Phase 73a: less before a match, by the community's choice or the member's. */}
+          {data.communityShort ? (
+            <Banner tone="info" message={t('partners.shortCommunity')} />
+          ) : (
+            <Checkbox
+              label={t('partners.shortLabel')}
+              hint={t('partners.shortHint')}
+              checked={data.shortCard}
+              onChange={(v) =>
+                shortCard.mutate(v, {
+                  onError: () => setNotice({ tone: 'error', text: t('common.genericError') }),
+                })
+              }
+            />
+          )}
           <AppText variant="heading">{t('partners.neverTitle')}</AppText>
           <AppText variant="body">{t('partners.never')}</AppText>
           <AppText variant="body" tone="muted">

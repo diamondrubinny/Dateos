@@ -7,6 +7,7 @@ import {
   type FederatedMatch,
   type FederatedProfile,
 } from '@nexaheart/shared';
+import { strFromU8, unzipSync } from 'fflate';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { api, createMember, type Member, type MemberOptions } from './members.js';
 import {
@@ -219,6 +220,63 @@ describe.skipIf(!integrationEnabled)(
       await qa('DELETE FROM federation_decisions WHERE user_id = $1', [noa.id]);
       expect((await deck(a, noa)).map((c) => c.displayName)).toEqual(['Tom']);
       void tom;
+    });
+
+    it('phase 73a: the short card before a match (member or community), photos after it', async () => {
+      const noa = await member(a, { name: 'Noa', gender: 'woman', interestedIn: ['man'] });
+      const dan = await member(b, { name: 'Dan', gender: 'man', interestedIn: ['woman'] });
+      // A second clean photo for Dan, after the first.
+      const second = (
+        await qb(
+          `INSERT INTO photos (user_id, status, position, width, height, media_key)
+           SELECT user_id, 'clean', 1, 64, 64, media_key FROM photos WHERE id = $1 RETURNING id`,
+          [dan.photoId],
+        )
+      ).rows[0].id as string;
+      await qb(`UPDATE profiles SET bio = 'Dan rides bikes' WHERE user_id = $1`, [dan.id]);
+      const full = (await deck(a, noa))[0]!;
+      expect(full.bio).toBe('Dan rides bikes');
+      expect(full.prompts).toHaveLength(1);
+      expect(full.photos).toHaveLength(2);
+
+      // Dan chooses the short card.
+      const status = await api(b, dan, 'PUT', '/v1/federated/card', { shortCard: true });
+      expect(status.json()).toMatchObject({ shortCard: true, communityShort: false });
+      await qa('DELETE FROM federation_decisions');
+      const short = (await deck(a, noa))[0]!;
+      expect(short).toMatchObject({ displayName: 'Dan', bio: null, prompts: [] });
+      expect(short.photos.map((p) => p.url)).toEqual([
+        `/v1/federated/photos/${short.partnerId}/${dan.photoId}`,
+      ]);
+      // The second photo can't be fetched before a match.
+      const secondUrl = `/v1/federated/photos/${short.partnerId}/${second}`;
+      expect((await api(a, noa, 'GET', secondUrl)).statusCode).toBe(404);
+      expect((await api(a, noa, 'GET', short.photos[0]!.url)).statusCode).toBe(200);
+
+      // After a match it can.
+      await decide(a, noa, short, 'like');
+      await decide(b, dan, (await deck(b, dan))[0]!, 'like');
+      expect(await matchesOf(a, noa)).toHaveLength(1);
+      expect((await api(a, noa, 'GET', secondUrl)).statusCode).toBe(200);
+
+      // The community's choice applies to everyone, whatever they chose; it's in the status.
+      await api(b, dan, 'PUT', '/v1/federated/card', { shortCard: false });
+      await qb(`INSERT INTO instance_settings (id, partner_cards) VALUES (1, 'minimal')
+        ON CONFLICT (id) DO UPDATE SET partner_cards = 'minimal'`);
+      const tom = await member(b, { name: 'Tom', gender: 'man', interestedIn: ['woman'] });
+      const tomCard = (await deck(a, noa)).find((c) => c.displayName === 'Tom')!;
+      expect(tomCard).toMatchObject({ bio: null, prompts: [] });
+      expect((await api(b, tom, 'GET', '/v1/federated/status')).json()).toMatchObject({
+        shortCard: false,
+        communityShort: true,
+      });
+      // The member's choice is in the export.
+      await api(b, tom, 'PUT', '/v1/federated/card', { shortCard: true });
+      const zip = unzipSync(new Uint8Array((await api(b, tom, 'GET', '/v1/me/export')).rawPayload));
+      expect(strFromU8(zip['data.json']!)).toContain('"partnerShortCard": true');
+      expect(
+        (await api(b, tom, 'PUT', '/v1/federated/card', { shortCard: 'yes' })).statusCode,
+      ).toBe(400);
     });
 
     it('unmatching tells the partner', async () => {

@@ -18,6 +18,7 @@ import {
   MIN_AGE,
   type Gender,
   type IntroductionOrder,
+  type PartnerCardMode,
 } from '@nexaheart/shared';
 import type { StoredObject } from '@nexaheart/storage';
 import { and, eq, sql } from 'drizzle-orm';
@@ -62,6 +63,8 @@ export interface AdminInstanceSettings {
   safetyResources: string | null;
   discreetName: string | null;
   riskCountries: string[];
+  partnerCards: PartnerCardMode;
+  communityCountry: string | null;
   introductionOrder: IntroductionOrder;
   profileApproval: boolean;
   joinMinAge: number;
@@ -226,6 +229,8 @@ export class InstanceService {
       safetyResources: info.community.safetyResources,
       discreetName: info.discreetName,
       riskCountries: info.community.riskCountries,
+      partnerCards: row?.partnerCards === 'minimal' ? 'minimal' : 'full',
+      communityCountry: row?.communityCountry ?? null,
       introductionOrder: row?.introductionOrder === 'women_first' ? 'women_first' : 'together',
       profileApproval: row?.profileApproval ?? false,
       joinMinAge: info.community.join.minAge,
